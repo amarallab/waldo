@@ -11,10 +11,15 @@ __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
 # standard imports
+import os
+import sys
 import unittest
-from flag_timepoints import *
 import numpy as np
-import matplotlib.pyplot as plt
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.abspath(HERE +'/../../importing'))
+
+from flags_and_breaks import *
 
 class TestFlagTimepoints(unittest.TestCase):
     def test_consolidate_all_true_flags(self):

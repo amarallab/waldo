@@ -94,13 +94,10 @@ def equally_space_xy_for_stepsize(x, y, step=0.5, kind='linear', n_interp_pts=50
 
 def create_spine_matricies(spines):
     N = len(spines)
-<<<<<<< local
-    N_pts = max([len(s) for s in spines])        
-=======
     N_pts = max([len(s) for s in spines])
     if not N_pts:
         return False, False
->>>>>>> other
+
     x_matrix = np.zeros((N, N_pts), dtype=float)
     y_matrix = np.zeros((N, N_pts), dtype=float)
     for i,pts in enumerate(spines):

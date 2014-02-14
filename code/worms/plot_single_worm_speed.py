@@ -27,9 +27,9 @@ project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
 sys.path.append(project_directory)
 
 # nonstandard imports
-#from Shared.Code.WormMetrics.spine_measures import compute_spine_measures
-#from Shared.Code.WormMetrics.centroid_measures import compute_centroid_measures
-#from Shared.Code.WormMetrics.basic_measures import compute_basic_measures
+#from Shared.Code.wormmetrics.spine_measures import compute_spine_measures
+#from Shared.Code.wormmetrics.centroid_measures import compute_centroid_measures
+#from Shared.Code.wormmetrics.basic_measures import compute_basic_measures
 from Shared.Code.WormMetrics.switchboard import pull_metric_for_blob_id
 from Shared.Code.Database.mongo_retrieve import pull_data_type_for_blob
 #from Shared.Code.Database.mongo_retrieve import unique_blob_ids_for_query

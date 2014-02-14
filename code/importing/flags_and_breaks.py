@@ -22,11 +22,11 @@ import matplotlib.pyplot as plt
 import scipy
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-sys.path.append(project_directory)
+SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../shared/'
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from shared.wio.file_manager import get_data, write_tmp_file
+from wio.file_manager import get_data, write_tmp_file
 
 def consolidate_flags(all_flags):
     '''

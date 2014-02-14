@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-Filename: re_import_metadata.py
+Filename: update_database_metadata.py
 Description: scripts for updating the metadata in the database such that it matches the
 values in our index spreadsheets. Aso has script to print differences for one ex_id.
 

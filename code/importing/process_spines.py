@@ -28,12 +28,8 @@ sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
 from create_spine import create_spine_from_outline
-<<<<<<< local
+
 from flags_and_breaks import flag_blob_id, create_breaks_for_blob_id
-=======
-from flag_timepoints import flag_blob_id
-from breaks_and_coils import create_breaks_for_blob_id
->>>>>>> other
 from smooth_spines_in_time import smooth_good_regions_repeatedly
 from compute_basic_measurements import compute_basic_measurements
 from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query

@@ -6,6 +6,7 @@ Description:
 # standard imports
 import os
 import sys
+import numpy as np
 
 # set paths
 code_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../../'
@@ -13,20 +14,21 @@ assert os.path.exists(code_directory), 'code directory not found'
 sys.path.append(code_directory)
 
 # nonstandard imports
-from database.mongo_retrieve import pull_data_type_for_blob
-from importing.flag_timepoints import consolidate_flags
+import wio.file_manager
+from wio.file_manager import get_data
+from importing.flags_and_breaks import consolidate_flags
 from filtering.filter_utilities import filter_stat_timedict as fst
 from show_measure import quickplot_stat2
-
-def keep_unflagged_timepoints(flag_timedict, other_timedict):
+'''
+def keep_unflagged_timepoints(flags, data):
     unflagged_timedict = {}
     missmatched_key_count = 0
     for t in sorted(flag_timedict):
 
-        #assert t in other_timedict, str(t) + ' not in timedict'
-        if unicode(t) in other_timedict:
+        #assert t in data, str(t) + ' not in timedict'
+        if unicode(t) in data:
             if flag_timedict[t]:
-                unflagged_timedict[t] = other_timedict[t]
+                unflagged_timedict[t] = data[t]
         else:
             missmatched_key_count += 1
             if missmatched_key_count < 10:
@@ -36,10 +38,10 @@ def keep_unflagged_timepoints(flag_timedict, other_timedict):
     if missmatched_key_count > 0 :
         print 'There are this many missmatched keys', missmatched_key_count
         print 'Flag timedict has', len(flag_timedict) 
-        print 'Other timedict has', len(other_timedict)
+        print 'Other timedict has', len(data)
         for i in sorted(flag_timedict.keys())[:10]:
             print 'a', i, len(i)
-        for i in  sorted(k for k in other_timedict.keys() if len(k) == 7)[:10]:
+        for i in sorted(k for k in data.keys() if len(k) == 7)[:10]:
             print 'b', i, len(i)
 
 
@@ -50,82 +52,9 @@ def rescale_timedict(timedict, scaling_factor=1):
     for t in sorted(timedict):
         rescaled_timedict[t] = timedict[t]/scaling_factor
     return rescaled_timedict
-
 '''
-# depreciated. testing to see if it works without before removal.
-def get_scaling_factors(source_data_entry):
-    # get the scaling factors
-    pixels_per_mm = float(source_data_entry.get('pixels_per_mm', 1.0))
-    pixels_per_body_length = float(source_data_entry.get('pixels_per_body_length', 1.0))
 
-        try:
-        pixels_per_mm = float(source_data_entry['pixels_per_mm'])
-    except Exception as e:
-        print e, '\n', blob_id, 'has no specified pixels_per_mm'
-        pixels_per_mm = 1
-
-    try:
-        pixels_per_body_length = float(source_data_entry['midline_median'])
-    except Exception as e:
-        print e, '\n', blob_id, 'has no specified midline_median'
-        pixels_per_body_length = 1.0
-
-    return pixels_per_mm, pixels_per_body_length
-'''
-'''
-def compute_basic_measures(blob_id, metric='all', smooth=True, **kwargs):
-    """
-
-    :param blob_id:
-    :param metric:
-    :param smoothed:
-    """
-    assert metric in ['all', 'width_mm', 'width_bl', 'size_mm2']
-    flags_entry = pull_data_type_for_blob(blob_id, 'flags', **kwargs)
-    all_flag_dicts = flags_entry['data']
-    flag_timedict = consolidate_flags(all_flag_dicts)
-    pixels_per_mm = float(flags_entry.get('pixels-per-mm', 1.0))
-    pixels_per_bl = float(flags_entry.get('pixels-per-body-length', 1.0))
-
-    # making robust to depreciated notation that should no longer be in database
-    if pixels_per_mm == 1.0:
-        pixels_per_mm = float(flags_entry.get('pixels_per_mm', 1.0))
-    if pixels_per_bl == 1.0:
-        pixels_per_bl = float(flags_entry.get('pixels_per_body_length', 1.0))
-    if pixels_per_bl == 1.0:
-        pixels_per_bl = float(flags_entry.get('midline-median', 1.0))
-    # pull size data, remove flagged timepoints, rescale, and insert.
-    if metric == 'size_mm2' or metric == 'all':
-        source_data_entry = pull_data_type_for_blob(blob_id, 'size_raw', **kwargs)
-        size_timedict = source_data_entry['data']
-        unflagged_sizedict = keep_unflagged_timepoints(flag_timedict, size_timedict)
-        rescaled_sizedict = rescale_timedict(unflagged_sizedict, pixels_per_mm**2)
-    if metric == 'size_mm2':
-        if smooth:
-            return fst(rescaled_sizedict)
-        else:
-            return rescaled_sizedict
-
-    # pull width data and remove flagged timepoints
-    source_data_entry = pull_data_type_for_blob(blob_id, 'width50', **kwargs)
-    width_timedict = source_data_entry['data']
-    unflagged_width_timedict = keep_unflagged_timepoints(flag_timedict, width_timedict)
-    width_mm_timedict = rescale_timedict(unflagged_width_timedict, pixels_per_mm)
-    width_bl_timedict = rescale_timedict(unflagged_width_timedict, pixels_per_bl)
-
-    if metric =='width_mm':
-        if smooth:
-            return fst(width_mm_timedict)
-        else: return width_mm_timedict
-    if metric == 'width_bl':
-        if smooth:
-            return fst(width_bl_timedict)
-        else: return width_bl_timedict
-    return {'width_mm': fst(width_mm_timedict),
-            'width_bl': fst(width_bl_timedict),
-            'size_mm2': fst(rescaled_sizedict)}
-'''
-def compute_size_measures(blob_id, smooth=True, source_data_entry=None, flag_data_entry=None, **kwargs):
+def compute_size_measures(blob_id, smooth=True, **kwargs):
     '''
 
     :param blob_id:
@@ -133,16 +62,14 @@ def compute_size_measures(blob_id, smooth=True, source_data_entry=None, flag_dat
     :param smoothed:
     '''
 
-    if flag_data_entry:
-        assert flag_data_entry['data_type'] == 'flags', 'Error: wrong type of flag data entry provided'
-    else:
-        flag_data_entry = pull_data_type_for_blob(blob_id, data_type='flags', **kwargs)
 
-    all_flag_dicts = flag_data_entry['data']
-    flag_timedict = consolidate_flags(all_flag_dicts)
+    times_f, all_flags = get_data(blob_id, data_type='flags', **kwargs)
+    metadata = get_data(blob_id, data_type='metadata', split_time_and_data=False)
+    times_s, sizes = get_data(blob_id, data_type='size_raw', **kwargs)
+
+    flags = consolidate_flags(all_flags)
     pixels_per_mm = float(flag_data_entry.get('pixels-per-mm', 1.0))
     pixels_per_bl = float(flag_data_entry.get('pixels-per-body-length', 1.0))
-
     # making robust to depreciated notation that should no longer be in database
     if pixels_per_mm == 1.0:
         pixels_per_mm = float(flag_data_entry.get('pixels_per_mm', 1.0))
@@ -152,17 +79,9 @@ def compute_size_measures(blob_id, smooth=True, source_data_entry=None, flag_dat
         pixels_per_bl = float(flag_data_entry.get('midline-median', 1.0))
 
 
-    datatype = 'size_raw'
-    if source_data_entry:
-        assert source_data_entry['data_type'] == datatype, 'Error: wrong type of data entry provided'
-    else:
-        source_data_entry = pull_data_type_for_blob(blob_id, data_type=datatype, **kwargs)
-
-    # pull size data, remove flagged timepoints, rescale, and insert.
-    size_timedict = source_data_entry['data']
-    unflagged_sizedict = keep_unflagged_timepoints(flag_timedict, size_timedict)
-    rescaled_sizedict = rescale_timedict(unflagged_sizedict, pixels_per_mm**2)
-
+    # pull size data, remove flagged timepoints, rescale, and return
+    unflagged_sizes = [s for (s,f) in izip(sizes, flags) if f]
+    rescaled_sizes = np.array(unflagged_sizes) / (pixels_per_mm**2)
     if smooth:
         return fst(rescaled_sizedict)
     else:

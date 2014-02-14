@@ -61,10 +61,6 @@ def read_summary(filename):
                 data[h].append(c) 
     return data
 
-
-
-
-
 def main():
     filename = DATA_DIR + 'N2 A1 V3B bleach3.summary'
     data = read_summary(filename)

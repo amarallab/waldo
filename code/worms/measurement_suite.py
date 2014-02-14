@@ -22,7 +22,7 @@ sys.path.append(shared_directory)
 # nonstandard imports
 from WormMetrics.spine_measures import compute_spine_measures
 from WormMetrics.centroid_measures import compute_centroid_measures
-#from WormMetrics.basic_measures import compute_basic_measures
+#from wormmetrics.basic_measures import compute_basic_measures
 from WormMetrics.basic_measures import compute_width_measures
 from WormMetrics.basic_measures import compute_size_measures
 from database.mongo_retrieve import mongo_query

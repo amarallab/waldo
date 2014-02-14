@@ -63,6 +63,6 @@ FILTER = {'min_body_lengths': 2, 'min_duration': 120, 'min_size': 50}
 
 SMOOTHING = {'spine_poly_order': 4, 'spine_window_size': 13,
               'time_poly_order': 4, 'time_window_size': 19,
-             'N_points':50, 'time_step':0.1}
+              'N_points':50, 'time_step':0.1}
 
 

@@ -25,7 +25,7 @@ sys.path.append(CODE_DIR)
 
 # nonstandard imports
 from settings.local import SPREADSHEET, LOGISTICS
-from google_spreadsheet_interface import Spreadsheet_Interface
+from wio.google_spreadsheet_interface import Spreadsheet_Interface
 
 # Globals
 USER = SPREADSHEET['user']

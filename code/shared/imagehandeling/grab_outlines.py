@@ -30,7 +30,6 @@ from settings.local import LOGISTICS
 # Globals
 DATA_DIR = LOGISTICS['filesystem_data']
 
-
 def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, **kwargs):
     timekey = ('%.3f' % float(timepoint)).replace('.', '?')
     temp_filename = '{path}{ex_id}/timekey{tk}_blobs.tmp'.format(path=data_dir, ex_id=ex_id, tk=timekey)

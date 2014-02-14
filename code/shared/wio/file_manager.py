@@ -18,7 +18,9 @@ from glob import glob
 #from itertools import izip
  
 # path definitions
-CODE_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../'
+HERE = os.path.dirname(os.path.realpath(__file__))
+PROJECT_HOME = os.path.abspath(HERE + '/../../')
+CODE_DIR = os.path.abspath(HERE + '/../')
 SHARED_DIR = CODE_DIR + 'shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
@@ -27,10 +29,13 @@ sys.path.append(SHARED_DIR)
 from database.mongo_retrieve import pull_data_type_for_blob, timedict_to_list
 from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS, FILTER
-from experiment_index import Experiment_Attribute_Index
+from annotation.experiment_index import Experiment_Attribute_Index
+from wormmetrics.switchboard import switchboard
+
 from wio.blob_reader import Blob_Reader
 
-TMP_DIR = os.path.dirname(os.path.realpath(__file__)) + '/tmp/'
+EXPORT_PATH = LOGISTICS['export_dir']
+TMP_DIR = PROJECT_HOME + '/data/processing/'
         
 def silent_remove(filename):
     try:
@@ -38,25 +43,80 @@ def silent_remove(filename):
     except OSError:
         pass
 
-def ensure_dir_present(directory):
-    if not os.path.isdir(directory):
-        os.mkdir(directory)
+def pull_blob_data(blob_id, metric):
+    ''' returns a list of times and a list of data for a given blob_id and metric.
 
-ensure_dir_present(TMP_DIR)
+    This function chooses which program to call in order to calculate or retrieve
+    the desired metric.
+    '''
+    pull_data = switchboard(metric=metric, harsh=False)
+    if pull_data:
+        data_timedict = pull_data(blob_id, metric=metric, for_plotting=True)
+    else:
+        data_timedict = pull_data_type_for_blob(blob_id, data_type=metric, **kwargs)['data']
+    times, data = timedict_to_list(data_timedict)
+    return times, data
+    
+
+def ensure_dir_exists(path):
+    ''' recursivly creates path in filesystem, if it does not exist '''
+    path = os.path.abspath(path)
+    savedir = ''
+    for i, d in enumerate(path.split('/')):
+        if d:
+            savedir += '/{d}'.format(d=d)        
+            if not os.path.isdir(savedir):
+                os.mkdir(savedir)
+                print 'created:{d}'.format(d=savedir)
+    return savedir
+
+def manage_save_path(out_dir, path_tag, ID, data_type):
+    ''' returns a unique descriptive file name to store data and makes sure path to it exists'''
+    # get directories in order
+    out_dir = '{d}/{b}/'.format(d=out_dir.rstrip('/'), b=path_tag.lstrip('/'))
+    out_dir = ensure_dir_exists(out_dir.rstrip('/'))
+
+    now_string = time.ctime().replace('  ', '_').replace(' ', '_')
+    now_string = now_string.replace(':', '.').strip()
+    save_name = '{path}/{ID}_{dt}_time-{n}.json'.format(path=out_dir, ID=ID, 
+                                                        dt=data_type, n=now_string)
+    print save_name
+    return save_name
+
+
+def get_ex_ids(query, **kwargs):
+    ''' return a list of unique ex_id names for a query'''
+    return list(set([e['ex_id'] for e in mongo_query(query=query, projection={'ex_id':1}, **kwargs)]))
+
+def get_blob_ids(query, **kwargs):
+    ''' return a list of unique blob_id names for a query'''
+    return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
+    
+def format_tmp_filename(blob_id, data_type, tmp_dir):
+    ex_id = '_'.join(blob_id.split('_')[:2])
+    blob_path = '{path}/{eID}'.format(path=tmp_dir, eID=ex_id)
+    ensure_dir_exists(blob_path)
+    tmp_file = '{path}/{bID}-{dt}.json'.format(path=blob_path, bID=blob_id,
+                                               dt=data_type)
+    return tmp_file
 
 def write_tmp_file(blob_id, data_type, data, tmp_dir=TMP_DIR):
-    blob_path = '{path}/{bID}'.format(path=tmp_dir, bID=blob_id)
-    ensure_dir_present(blob_path)
-    tmp_file = '{path}/{dt}.json'.format(path=blob_path, dt=data_type)
+    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
     json.dump(data, open(tmp_file, 'w'))
 
 def read_tmp_file(blob_id, data_type, tmp_dir=TMP_DIR):
-    blob_path = '{path}/{bID}'.format(path=tmp_dir, bID=blob_id)
-    ensure_dir_present(blob_path)
+    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
+    if os.path.isfile(tmp_file):
+        return json.load(open(tmp_file, 'r'))    
+    '''
+    ex_id = '_'.join(blob_id.split('_')[:1])    
+    blob_path = '{path}/{eID}'.format(path=tmp_dir, eID=ex_id)
+    ensure_dir_exists(blob_path)
     if os.path.isdir(blob_path):
-        tmp_file = '{path}/{dt}.json'.format(path=blob_path, dt=data_type)
+        tmp_file = '{path}/{bID}-{dt}.json'.format(path=blob_path, dt=data_type)
         if os.path.isfile(tmp_file):
             return json.load(open(tmp_file, 'r'))
+    '''
     return None
     
 def clear_tmp_file(blob_id, data_type='all'):
@@ -123,7 +183,7 @@ def store_data_in_db(blob_id, data_type, times, data, description, db_doc=None, 
     timedict = times_to_timedict(times, data)
     store_timedict_in_db(blob_id, data_type, timedict, description, db_doc, **kwargs)
 '''    
-        
-
+       
+ensure_dir_exists(TMP_DIR)
         
     

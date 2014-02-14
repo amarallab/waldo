@@ -27,9 +27,6 @@ assert os.path.exists(shared_code_directory), 'shared code directory not found'
 sys.path.append(shared_code_directory)
 
 # nonstandard imports
-#from database.mongo_retrieve import pull_data_type_for_blob
-#from database.mongo_insert import insert_data_into_db
-#from filtering.filter_utilities import smooth_and_equally_space_point_format
 from GeometricCalculations import compute_displacement_along_curve
 from GeometricCalculations.distance import euclidean
 from wio.file_manager import get_data, write_tmp_file, store_data_in_db
@@ -46,64 +43,6 @@ SPINE_WINDOW_SIZE = SMOOTHING['spine_window_size']
 T_STEP = SMOOTHING['time_step']
 N_POINTS = SMOOTHING['N_points']
 
-<<<<<<< local
-# TODO: set up the defaults for space smoothing as well.
-    
-def is_head_correct(spines, verbose=True):
-    """
-    returns the total displacement along the spine during a particular subsection of time-points (or 'region')
-    The function is to check that the worm is mostly moving towards the head in a region of times.
-
-    :param spines: a list of spines
-    :param verbose: toggle on/off for messages
-
-    distance_towards_head = 0.
-    """
-    counts_vs_head = 0
-    counts_vs_tail = 0
-    distance_towards_head = 0.
-    if len(spines) <= 2:
-        return True
-    for i, _ in enumerate(spines[:-1], start=1):
-        # get the two spines
-        spine1, spine2 = spines[i-1], spines[i]
-        # get displacement
-        dist = compute_displacement_along_curve(spine1, spine2)
-        # update counts
-        distance_towards_head += dist
-        if dist > 0.:
-            counts_vs_head += 1
-        else:
-            counts_vs_tail += 1
-
-    if verbose:
-        print 'distance_towards_head={d}'.format(d=distance_towards_head)
-        print '{head} head / {tail} tail'.format(head=counts_vs_head, tail=counts_vs_tail)
-    return distance_towards_head < 0.
-
-'''
-def space_time_smoothing(times, spines, spine_poly_order=4,
-                         spine_running_window_size=13,
-                         time_poly_order=4, time_running_window_size=13):
-
-
-    
-
-    spaced_times, timed_spines = smooth_and_equally_space_point_format(times, spines,
-                                                                       running_window_size=time_running_window_size,
-                                                                       order=time_poly_order,
-                                                                       filter_method='savitzky_golay')
-    # smooth each spine in space
-    smoothed_spines = []
-    for spine_points in timed_spines:
-        newspine = smooth_and_space_xy_points(points=spine_points, poly_order=spine_poly_order,
-                                              window_size=spine_running_window_size, point_num=50)
-        smoothed_spines.append(newspine)
-    return spaced_times, smoothed_spines
-'''
-
-=======
->>>>>>> other
 def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
                                    spine_poly_order=SPINE_POLY_ORDER,
                                    spine_running_window_size=SPINE_WINDOW_SIZE,

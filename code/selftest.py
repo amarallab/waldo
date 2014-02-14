@@ -21,7 +21,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from importing.experiment_index import Experiment_Attribute_Index
+from annotation.experiment_index import Experiment_Attribute_Index
 from settings.local import MONGO as mongo_settings
 #from waldo import import_ex_id
 #from waldo import process_ex_id
@@ -41,20 +41,11 @@ def run_everything(**kwargs):
     for ex_id in sorted(target_ex_ids):
         print 'testing', ex_id
         process_ex_id(ex_id, 
-<<<<<<< local
                       # overwride 
                       min_body_lengths=0,
                       min_duration=1,
                       min_size=1,
                       data_dir=TEST_DATA_DIR)
-=======
-                       # overwride 
-                       min_body_lengths=0,
-                       min_duration=1,
-                       min_size=1,
-                       data_dir=TEST_DATA_DIR)
->>>>>>> other
-
 
 if __name__ == '__main__':
     run_everything()

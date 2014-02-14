@@ -4,10 +4,15 @@ Author: Peter
 Description: generates two fake flag timedicts and makes sure breaks_and_coils successfully identifies 'good_regions'.
 '''
 # standard imports
+import sys
+import os
 import unittest
-import breaks_and_coils
 import math
 import random
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.abspath(HERE +'/../../importing'))
+import flags_and_breaks
 
 class TestPartManagement(unittest.TestCase):
     
@@ -16,7 +21,7 @@ class TestPartManagement(unittest.TestCase):
         flags = [True for _ in times]
         for i in [250, 500, 750]:
             flags[i] = False
-        breaks = breaks_and_coils.create_break_list(times, flags)
+        breaks = flags_and_breaks.create_break_list(times, flags)
         self.assertEqual(breaks, [])
 
     def test_find_all_bad_for_many_flags(self):
@@ -24,7 +29,7 @@ class TestPartManagement(unittest.TestCase):
         flags = [False for _ in times]
         for i in [250, 500, 750]:
             flags[i] = True         
-        breaks = breaks_and_coils.create_break_list(times, flags)
+        breaks = flags_and_breaks.create_break_list(times, flags)
         self.assertEqual(breaks, [(times[0], times[-1])])
 
     def test_find_breaks_bad_start(self):
@@ -34,7 +39,7 @@ class TestPartManagement(unittest.TestCase):
             if i in [250, 500, 750]:
                 switch = not switch
             flags.append(switch)
-        breaks = breaks_and_coils.create_break_list(times, flags)
+        breaks = flags_and_breaks.create_break_list(times, flags)
         break_solution = [(25.0, 49.9), (75.0, 99.9)]
         for b1, b2 in zip(breaks, break_solution):
             for i, j in zip(b1, b2):
@@ -47,7 +52,7 @@ class TestPartManagement(unittest.TestCase):
             if i in [250, 500, 750]:
                 switch = not switch
             flags.append(switch)
-        breaks = breaks_and_coils.create_break_list(times, flags)
+        breaks = flags_and_breaks.create_break_list(times, flags)
         break_solution = [(0.0, 24.9), (50.0, 74.9)]
         for b1, b2 in zip(breaks, break_solution):
             for i, j in zip(b1, b2):
@@ -71,7 +76,7 @@ class TestPartManagement(unittest.TestCase):
             flags = list(baseflags)
             for j in xrange(i, i+w):
                 flags[j] = True
-            result_flags = breaks_and_coils.flag_trouble_areas(flags,
+            result_flags = flags_and_breaks.flag_trouble_areas(flags,
                                                                min_ok_streak_len)
             # if True streak is less than min window size, all Trues removed
             if w < min_ok_streak_len:
@@ -88,7 +93,7 @@ class TestPartManagement(unittest.TestCase):
     def test_remove_loner_flags(self):
         # function toggles
         N, window_size, min_nonflag_fraction = 20, 5 , 0.5
-        function = breaks_and_coils.remove_loner_flags        
+        function = flags_and_breaks.remove_loner_flags        
         baseflags = [True for _ in xrange(N)]
         w = window_size
         # change number of False flags in row
