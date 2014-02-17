@@ -86,7 +86,7 @@ def update_annotation_worksheet(data_ex_ids, annotated_ex_ids, ex_ids_to_add, ex
             annotated_ex_ids[ex_id] = {}
         annotated_ex_ids[ex_id].update(get_attributes_for_dir(ex_dir=ex_dir, sources=source_computers,
                                                               scaling_factors=scaling_factors))
-        print annotated_ex_ids[ex_id]
+        #print annotated_ex_ids[ex_id]
     for ex_id in sorted(annotated_ex_ids.keys()):
         updated_sheet.append(annotated_ex_ids[ex_id])
     return updated_sheet
@@ -121,14 +121,15 @@ def update_main(update_list=[], update_all=False, overwrite=False,
     # step1: initiate connection to google-docs and download/write all annotations
     si = Spreadsheet_Interface(email=USER, password=PASSWORD, row_id=ROW_ID)
     ensure_dir_exists(save_dir)
-    print save_dir, 'savedir'
-    all_annotated_sheets = si.download_all_worksheets(sheet_name=ANNOTATION_SHEET, write_jsons=True, save_dir=save_dir)
+    all_annotated_sheets = si.download_all_worksheets(sheet_name=ANNOTATION_SHEET,
+                                                      write_tsvs=True, save_dir=save_dir)
 
     # Only initialize these if updates are required.
     source_computers, scaling_factors = None, None
 
     # step2: go through all
     dirs_by_yearmonth = inventory_data_directories()
+    print 'writing annotation files to: {p}'.format(p=os.path.abspath(save_dir))
     for yearmonth in sorted(dirs_by_yearmonth):
         data_ex_ids = dirs_by_yearmonth[yearmonth]
         annotated_ex_ids = all_annotated_sheets.get(yearmonth, {})
@@ -141,7 +142,6 @@ def update_main(update_list=[], update_all=False, overwrite=False,
             if not scaling_factors:
                 scaling_factors = si.pull_scaling_factors(sheet_name=SCALEING_SHEET)
 
-            print 'updating', yearmonth
             # determine how many ex_ids to add and how many to remove.
             ex_ids_to_add, ex_ids_to_remove = [], []
             if overwrite:
@@ -154,7 +154,6 @@ def update_main(update_list=[], update_all=False, overwrite=False,
             # perform the update
             updated_rows = update_annotation_worksheet(data_ex_ids, annotated_ex_ids, ex_ids_to_add, ex_ids_to_remove,
                                                        source_computers, scaling_factors)
-            headers = [ROW_ID] + list(headers)
             si.upload_sheet(headers=HEADERS, rows=updated_rows, spreadsheet=ANNOTATION_SHEET, worksheet=yearmonth)
 
             # inform the user of the update.
