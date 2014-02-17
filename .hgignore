@@ -1,0 +1,43 @@
+# use glob syntax
+syntax: glob
+
+# python cruft
+*.pyc
+
+# emacs cruft
+*~
+
+# aspell cruft
+*.bak
+
+# latex cruft
+*.aux
+*.blg
+*.dvi
+*.log
+
+# Mac stuff
+*.DS_Store
+
+# binaries
+
+# text files
+*.txt
+*.dat
+*logfile
+
+# png files
+*.png
+
+# pdf files
+*.pdf
+*.json
+
+# Directory
+
+
+# editor and ide files
+.idea/*
+.ropeproject/*
+*.sublime-*
+

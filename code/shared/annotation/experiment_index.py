@@ -25,16 +25,14 @@ import os
 import sys
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-sys.path.append(project_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../')
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS as logistics_settings
+from wio.file_manager import ensure_dir_exists, INDEX_DIR
 
 # global default value
-INDEX_DIR = logistics_settings['annotation']
-assert os.path.isdir(INDEX_DIR)
-
 class Experiment_Attribute_Index(object):
 
     def __init__(self, index_tsv_directory=INDEX_DIR):
@@ -43,10 +41,8 @@ class Experiment_Attribute_Index(object):
         :param index_tsv_directory: the directory that contains the index spreadsheet data in tsv files.
         """
         # make sure there is a backslash at the end of the directory name
-        if index_tsv_directory[-1] != '/':
-            index_tsv_directory += '/'
-
-        self.dir = index_tsv_directory
+        self.dir = '{dir}/'.format(dir=index_tsv_directory.rstrip('/'))
+        ensure_dir_exists(self.dir)
         self.files = glob(self.dir + '*.tsv')
         self.attribute_index = {}
         self.ex_ids = []
@@ -135,7 +131,8 @@ if __name__ == '__main__':
     # examples of possible usages
     print len(ei.ex_ids), 'total'
     print len(ei.unflagged_ex_ids), 'unflagged'
+    '''
     print ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_aging')
     print ei.return_attribute_for_ex_ids(['20130423_123836', '20130410_143246', '20130413_150111', '20130325_152726'], 'pixels-per-mm')
     print ei.return_ex_ids_within_dates(start_date='20120300', end_date='20121000')
-
+    '''

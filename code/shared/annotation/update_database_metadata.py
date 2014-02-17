@@ -23,8 +23,9 @@ import sys
 import math
 
 # path definitions
-project_directory =  os.path.dirname(os.path.realpath(__file__)) + '/../'
-sys.path.append(project_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../')
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from experiment_index import Experiment_Attribute_Index

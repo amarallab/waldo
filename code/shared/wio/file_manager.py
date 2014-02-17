@@ -33,7 +33,7 @@ from settings.local import LOGISTICS
 
 
 from wio.blob_reader import Blob_Reader
-
+INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
 TMP_DIR = PROJECT_HOME + '/data/processing/'
         
