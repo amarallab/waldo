@@ -21,9 +21,6 @@ from glob import glob
 HERE = os.path.dirname(os.path.realpath(__file__))
 CODE_DIR = os.path.abspath(HERE + '/../../')
 PROJECT_HOME = os.path.abspath(CODE_DIR + '/../')
-print CODE_DIR, 'code'
-print PROJECT_HOME, 'proj'
-
 SHARED_DIR = CODE_DIR + '/shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)

@@ -31,13 +31,14 @@ def truncate(content, length=15, suffix='...'):
 
 class Spreadsheet_Interface:
 
-    def __init__(self, email, password):
+    def __init__(self, email, password, row_id='ex-id'):
         self.gd_client = gdata.spreadsheet.service.SpreadsheetsService()
         self.gd_client.email = email
         self.gd_client.password = password
         self.gd_client.source = 'Spreadsheets GData Sample'
         self.gd_client.ProgrammaticLogin()
-
+        self.row_id = row_id
+        
     def index_spread_sheets(self):
         feed = self.gd_client.GetSpreadsheetsFeed()
         sheet_to_id = {}
@@ -86,8 +87,6 @@ class Spreadsheet_Interface:
 
     def upload_sheet(self, headers, rows, spreadsheet, worksheet):
         """
-
-
         :param headers: list of column headers that will appear in the first row.
         :param rows:
         :param spreadsheet: name of the google-spreadsheet (str)
@@ -109,6 +108,7 @@ class Spreadsheet_Interface:
         key, wksht_id = self.names_to_keys(spreadsheet=spreadsheet, worksheet=worksheet)
         for i, col_name in enumerate(headers, start=1):
             entry = self.gd_client.UpdateCell(row=1, col=i, inputValue=str(col_name), key=key, wksht_id=wksht_id)
+            
 
             assert isinstance(entry, gdata.spreadsheet.SpreadsheetsCell)
         
@@ -167,9 +167,9 @@ class Spreadsheet_Interface:
             headers, rn, r = self.download_sheet(sheet_name, worksheet)
 
             this_sheet = {}
-            for ex_id, attributes in izip(rn, r):
-                this_sheet[ex_id] = attributes
-                this_sheet[ex_id]['ex-id'] = ex_id
+            for row_id, attributes in izip(rn, r):
+                this_sheet[row_id] = attributes
+                this_sheet[row_id][self.row_id] = row_id
             sheet_dict[worksheet] = this_sheet
 
             if write_jsons:
@@ -177,8 +177,9 @@ class Spreadsheet_Interface:
                 save_name = '{dir}{name}.tsv'.format(dir=save_dir, name=worksheet)
                 with open(save_name, 'w') as f:
                     f.write('\t'.join(headers) + '\n')
-                    for ex_id in sorted(this_sheet):
-                        f.write('\t'.join([this_sheet[ex_id].get(h, '') for h in headers]) + '\n')
+                    for row_id in sorted(this_sheet):
+                        f.write('\t'.join([this_sheet[row_id].get(h, '')
+                                           for h in headers]) + '\n')
             #for sheet_name, contents in sheet_dict.iteritems():
             #print 'writing {name}'.format(name=save_name)
             #json.dump(contents, open(save_name, 'w'), indent=4, sort_keys=True)

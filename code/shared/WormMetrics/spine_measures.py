@@ -17,7 +17,6 @@ SHARED_DIRECTORY = os.path.abspath(HERE + '/../')
 CODE_DIRECTORY = os.path.abspath(SHARED_DIRECTORY + '/../')
 sys.path.append(CODE_DIRECTORY)
 sys.path.append(SHARED_DIRECTORY)
-print SHARED_DIRECTORY
 
 # nonstandard imports
 #from database.mongo_retrieve import pull_data_type_for_blob
@@ -86,25 +85,12 @@ def compute_all_curvatures(times, spine_list, points, scaling_factor=1, verbose=
 
     return curvature_timedict
 
-
 def compute_length(spine):
-    tot_distance = 0.
-    na_values = ['', -1, 'NA', 'NaN', None]
-    if len(spine) > 0 or spine in na_values:
+    na_values = ['', -1, 'NA', 'NaN', None, []]
+    if len(spine) == 0 or spine in na_values:
         return 'NA'
-    x, y = zip(*spine)
-
-    '''
-    for k in range(len(spine) - 1):
-        #tot_distance += euclidean_distance(spine[k][0], spine[k][1], spine[k + 1][0], spine[k + 1][1])
-        tot_distance += euclidean(spine[k], spine[k + 1])
-    # alternate one line interpretation
-    #tot_distance = sum(euclidean(spine[k], spine[k + 1]) for k in range(len(spine) - 1))
-    tot_distance = tot_distance / scaling_factor
-    return tot_distance
-    '''
-    return tot_distance
-
+    dx, dy = map(np.diff, map(np.array, zip(*spine)))
+    return np.sqrt(dx**2 + dy**2).sum()
 
 def compute_speed_along_spine(spine1, spine2, t_plus_dt, t, perpendicular, points, median_length, show_plot):
     '''
@@ -295,19 +281,6 @@ def compute_spine_measures(blob_id, metric='all', smooth=False, source_data_entr
         return fst(pull_measure(metric))
     else:
         return pull_measure(metric)
-    '''
-        for measure_name in measures:
-            if smooth:
-                all_datasets[measure_name] = fst(pull_measure(measure_name))
-            else:
-                all_datasets[measure_name] = pull_measure(measure_name)
-        return all_datasets
-    elif smooth:
-        return fst(pull_measure(metric))
-    else:
-        return pull_measure(metric)
-    '''
-
 
 def rescale_timedict(timedict, scaling_factor=1):
     rescaled_timedict = {}

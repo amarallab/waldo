@@ -32,6 +32,7 @@ USER = SPREADSHEET['user']
 PASSWORD = SPREADSHEET['password']
 ANNOTATION_SHEET = SPREADSHEET['spreadsheet']
 SCALEING_SHEET = SPREADSHEET['scaling-factors']
+ROW_ID = SPREADSHEET['row-id']
 HEADERS = SPREADSHEET['columns']
 DEFAULT_DATA_DIR = LOGISTICS['filesystem_data']
 DEFAULT_LOGISTICS_DIR = LOGISTICS['inventory']
@@ -115,7 +116,7 @@ def update_main(update_list=[], update_all=False, overwrite=False, remove_missin
     :param remove_missing: remove rows from the google-docs if they are not present in local raw data
     """
     # step1: initiate connection to google-docs and download/write all annotations
-    si = Spreadsheet_Interface(email=USER, password=PASSWORD)
+    si = Spreadsheet_Interface(email=USER, password=PASSWORD, row_id=ROW_ID)
     all_annotated_sheets = si.download_all_worksheets(sheet_name=ANNOTATION_SHEET, write_jsons=True, save_dir=DEFAULT_SAVE_DIR)
 
     # Only initialize these if updates are required.
@@ -149,6 +150,7 @@ def update_main(update_list=[], update_all=False, overwrite=False, remove_missin
             # perform the update
             updated_rows = update_annotation_worksheet(data_ex_ids, annotated_ex_ids, ex_ids_to_add, ex_ids_to_remove,
                                                        source_computers, scaling_factors)
+            headers = [ROW_ID] + list(headers)
             si.upload_sheet(headers=HEADERS, rows=updated_rows, spreadsheet=ANNOTATION_SHEET, worksheet=yearmonth)
 
             # inform the user of the update.
