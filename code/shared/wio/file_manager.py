@@ -28,13 +28,13 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from database.mongo_retrieve import pull_data_type_for_blob, timedict_to_list
 from database.mongo_insert import insert_data_into_db, times_to_timedict
-from settings.local import LOGISTICS, FILTER
-from annotation.experiment_index import Experiment_Attribute_Index
-from wormmetrics.switchboard import switchboard
+from settings.local import LOGISTICS
+#from annotation.experiment_index import Experiment_Attribute_Index
+
 
 from wio.blob_reader import Blob_Reader
 
-EXPORT_PATH = LOGISTICS['export_dir']
+EXPORT_PATH = LOGISTICS['export']
 TMP_DIR = PROJECT_HOME + '/data/processing/'
         
 def silent_remove(filename):
@@ -42,22 +42,7 @@ def silent_remove(filename):
         os.remove(filename)
     except OSError:
         pass
-
-def pull_blob_data(blob_id, metric):
-    ''' returns a list of times and a list of data for a given blob_id and metric.
-
-    This function chooses which program to call in order to calculate or retrieve
-    the desired metric.
-    '''
-    pull_data = switchboard(metric=metric, harsh=False)
-    if pull_data:
-        data_timedict = pull_data(blob_id, metric=metric, for_plotting=True)
-    else:
-        data_timedict = pull_data_type_for_blob(blob_id, data_type=metric, **kwargs)['data']
-    times, data = timedict_to_list(data_timedict)
-    return times, data
-    
-
+   
 def ensure_dir_exists(path):
     ''' recursivly creates path in filesystem, if it does not exist '''
     path = os.path.abspath(path)

@@ -101,7 +101,11 @@ def create_spine_matricies(spines):
     x_matrix = np.zeros((N, N_pts), dtype=float)
     y_matrix = np.zeros((N, N_pts), dtype=float)
     for i,pts in enumerate(spines):
-        x_matrix[i], y_matrix[i] = zip(*pts)                 
+        if len(pts) == N_pts:
+            x_matrix[i], y_matrix[i] = zip(*pts)
+        else:
+            x_matrix[i] = [-1] * N_pts
+            y_matrix[i] = [-1] * N_pts
     return x_matrix, y_matrix
 
 def equally_space_matricies_times(eq_times, orig_times, x_mat, y_mat):

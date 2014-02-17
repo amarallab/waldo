@@ -32,7 +32,7 @@ from database.mongo_insert import insert_blob_entries
 from database.mongo_insert import timedict_to_entry
 from settings.local import LOGISTICS, FILTER
 
-from wio.experiment_index import Experiment_Attribute_Index
+from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
 from wio.file_manager import write_tmp_file
 
