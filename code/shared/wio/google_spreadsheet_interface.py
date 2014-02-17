@@ -9,12 +9,11 @@ __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
+from itertools import izip
+import json
 import gdata.spreadsheet.service
 import gdata.service
 import gdata.spreadsheet
-
-from itertools import izip
-import json
 
 try:
     from xml.etree import ElementTree
@@ -27,7 +26,6 @@ def truncate(content, length=15, suffix='...'):
         return content
     else:
         return content[:length] + suffix
-
 
 class Spreadsheet_Interface:
 

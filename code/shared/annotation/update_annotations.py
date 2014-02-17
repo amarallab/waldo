@@ -25,6 +25,7 @@ sys.path.append(CODE_DIR)
 
 # nonstandard imports
 from settings.local import SPREADSHEET, LOGISTICS
+from wio.file_manager import ensure_dir_exists
 from wio.google_spreadsheet_interface import Spreadsheet_Interface
 
 # Globals
@@ -34,6 +35,7 @@ ANNOTATION_SHEET = SPREADSHEET['spreadsheet']
 SCALEING_SHEET = SPREADSHEET['scaling-factors']
 ROW_ID = SPREADSHEET['row-id']
 HEADERS = SPREADSHEET['columns']
+
 DEFAULT_DATA_DIR = LOGISTICS['filesystem_data']
 DEFAULT_LOGISTICS_DIR = LOGISTICS['inventory']
 DEFAULT_SAVE_DIR = LOGISTICS['annotation']
@@ -105,7 +107,8 @@ def get_source_computers(inventory_path=DEFAULT_LOGISTICS_DIR):
             source_computers[ex_id] = camera
     return source_computers
 
-def update_main(update_list=[], update_all=False, overwrite=False, remove_missing=True):
+def update_main(update_list=[], update_all=False, overwrite=False,
+                remove_missing=True, save_dir=DEFAULT_SAVE_DIR):
     """
     A two step process that (1) writes all currently annotated data (in google-docs) to json files and (2) Updates
     google-docs to contain entries for all raw data files.
@@ -117,7 +120,9 @@ def update_main(update_list=[], update_all=False, overwrite=False, remove_missin
     """
     # step1: initiate connection to google-docs and download/write all annotations
     si = Spreadsheet_Interface(email=USER, password=PASSWORD, row_id=ROW_ID)
-    all_annotated_sheets = si.download_all_worksheets(sheet_name=ANNOTATION_SHEET, write_jsons=True, save_dir=DEFAULT_SAVE_DIR)
+    ensure_dir_exists(save_dir)
+    print save_dir, 'savedir'
+    all_annotated_sheets = si.download_all_worksheets(sheet_name=ANNOTATION_SHEET, write_jsons=True, save_dir=save_dir)
 
     # Only initialize these if updates are required.
     source_computers, scaling_factors = None, None
@@ -135,7 +140,6 @@ def update_main(update_list=[], update_all=False, overwrite=False, remove_missin
                 source_computers = get_source_computers()
             if not scaling_factors:
                 scaling_factors = si.pull_scaling_factors(sheet_name=SCALEING_SHEET)
-
 
             print 'updating', yearmonth
             # determine how many ex_ids to add and how many to remove.
