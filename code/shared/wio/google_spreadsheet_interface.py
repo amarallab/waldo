@@ -90,8 +90,14 @@ class Spreadsheet_Interface:
         :param spreadsheet: name of the google-spreadsheet (str)
         :param worksheet: name of worksheet inside google-spreadsheet (str)
         """
-        sheet_to_id, worksheet_ids = self.index_spread_sheets()
+        # make sure that row_id is the first item in the headers list
+        # this will make later identification possible
+        row_id = self.row_id
+        if str(row_id) != str(headers[0]):
+            headers = [row_id] + headers
 
+        # find address of sheet + worksheet
+        sheet_to_id, worksheet_ids = self.index_spread_sheets()
         if worksheet in worksheet_ids[spreadsheet]:
             worksheet_entry = self.gd_client.GetWorksheetsFeed(key=sheet_to_id[spreadsheet],
                                                                wksht_id=worksheet_ids[spreadsheet][worksheet])
@@ -104,16 +110,15 @@ class Spreadsheet_Interface:
 
         
         key, wksht_id = self.names_to_keys(spreadsheet=spreadsheet, worksheet=worksheet)
+        # write header row on the worksheet
         for i, col_name in enumerate(headers, start=1):
-            entry = self.gd_client.UpdateCell(row=1, col=i, inputValue=str(col_name), key=key, wksht_id=wksht_id)
-            
-
+            entry = self.gd_client.UpdateCell(row=1, col=i, inputValue=str(col_name), key=key, wksht_id=wksht_id)            
             assert isinstance(entry, gdata.spreadsheet.SpreadsheetsCell)
         
         for row in rows:
-            for i in row:
-                assert i in headers, '{col} is not in headers\n{h}'.format(col=i, h=headers)
-                assert isinstance(row[i], str), '{col} is not in string format\n{h}'.format(col=i, h=headers)
+            #for i in row:
+            #    assert i in headers, '{col} is not in headers\n{h}'.format(col=i, h=headers)
+            #    assert isinstance(row[i], str), '{col} is not in string format\n{h}'.format(col=i, h=headers)
             self.gd_client.InsertRow(row_data=row, key=key, wksht_id=wksht_id)
             
 
@@ -134,8 +139,10 @@ class Spreadsheet_Interface:
         for entry in feed.entry:
             if entry.cell.row == '1':
                 col_header.append((entry.cell.col, entry.cell.text))
+        if len(col_header) == 0:
+            print spreadsheet, worksheet, 'did not have headers'
+            return [], [], []
         cols, headers = zip(*col_header)
-
         # use list feed to get the rest.
         feed = self.gd_client.GetListFeed(key=key, wksht_id=wksht_id)
         rows = []
@@ -146,14 +153,14 @@ class Spreadsheet_Interface:
         
         return headers, row_names, rows
 
-    def download_all_worksheets(self, sheet_name, write_jsons=True, save_dir=''):
+    def download_all_worksheets(self, sheet_name, write_tsvs=True, save_dir=''):
         """
         Returns a dictionary containing the contents of all the worksheets within a particular google-spreadsheet.
         Has an option to write all worksheets to json files.
 
         :param sheet_name: name of the google-docs sheet to download (string)
-        :param write_jsons: toggle that will write a json for each worksheet (bool)
-        :param save_dir: if write_jsons, this string specifies the directory jsons should be written to.
+        :param write_tsvs: toggle that will write a json for each worksheet (bool)
+        :param save_dir: if write_tsvs, this string specifies the directory jsons should be written to.
         :return:
         """
         sheet_to_id, worksheet_ids = self.index_spread_sheets()
@@ -170,9 +177,10 @@ class Spreadsheet_Interface:
                 this_sheet[row_id][self.row_id] = row_id
             sheet_dict[worksheet] = this_sheet
 
-            if write_jsons:
-                print 'writing {worksheet} file to {dir}'.format(worksheet=worksheet, dir=save_dir)
-                save_name = '{dir}{name}.tsv'.format(dir=save_dir, name=worksheet)
+            if write_tsvs:
+                #print 'writing {worksheet} file to {dir}'.format(worksheet=worksheet, dir=save_dir)
+                save_name = '{dir}/{name}.tsv'.format(dir=save_dir.rstrip('/'),
+                                                      name=worksheet)
                 with open(save_name, 'w') as f:
                     f.write('\t'.join(headers) + '\n')
                     for row_id in sorted(this_sheet):
