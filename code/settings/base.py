@@ -53,12 +53,20 @@ SPREADSHEET = {'user': 'your gmail name',
                'spreadsheet': 'annotation',
                'scaling-factors': 'scaling-factors',
                'row-id': 'ex-id',
-               'columns': ['vid-flags', 'name', 'vid-duration',
-                          'num-blobs-files', 'num-images', 'source-camera',
-                          'purpose', 'label', 'strain', 'age', 'growth-medium',
-                          'set-temp', 'stimulus', 'food', 'compounds',
-                          'lid', 'plate-id', 'l1-arrest', 'pixels-per-mm']
+               'columns': ['dataset', 'label', 'vid-flags', 'name',
+                           'strain', 'age', 'plate-id', 'l1-arrest',
+                           'growth-conditions',
+                           'set-temp', 'stimulus', 'food', 'compounds',
+                           'pixels-per-mm', 'vid-duration', 'num-blobs-files',
+                           'num-images', 'source-camera']
                }
+'''    
+'vid-flags', 'name', 'vid-duration',
+'num-blobs-files', 'num-images', 'source-camera',
+'purpose', 'label', 'strain', 'age', 'growth-medium',
+'set-temp', 'stimulus', 'food', 'compounds',
+'lid', 'plate-id', 'l1-arrest', 'pixels-per-mm'
+'''
 
 FILTER = {'min_body_lengths': 2, 'min_duration': 120, 'min_size': 50}
 
