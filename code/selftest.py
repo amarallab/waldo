@@ -36,7 +36,8 @@ def run_everything(**kwargs):
     ''' imports and processes test data. '''
     # get all ex_ids denoted as 'test'
     ei = Experiment_Attribute_Index()
-    target_ex_ids = set(ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='test'))
+    target_ex_ids = set(ei.return_ex_ids_with_attribute(key_attribute='dataset', attribute_value='test'))
+    print '{N} test ids found: {l}'.format(N=len(target_ex_ids), l=target_ex_ids)
     # process all ex_ids
     for ex_id in sorted(target_ex_ids):
         print 'testing', ex_id

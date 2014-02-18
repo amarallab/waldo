@@ -20,9 +20,10 @@ from scipy.ndimage.morphology import binary_fill_holes
 
 # path specifications
 test_directory = os.path.dirname(os.path.realpath(__file__)) 
-project_directory = test_directory + '/../../../'
+project_directory = test_directory + '/../../../../'
 shared_directory = project_directory + 'code/shared/'
 test_data_dir = test_directory + '/data/'
+print project_directory
 sys.path.append(shared_directory)
 sys.path.append(project_directory + '/code/')
 
@@ -320,7 +321,7 @@ def write_index_file(ex_id='00000000_000001'):
     sum_file = sum_file[0]
     with open(sum_file, 'r') as f:
         last_time = f.readlines()[-1].split()[1]
-    cols = SPREADSHEET['columns']
+    cols = [SPREADSHEET['row-id']] + SPREADSHEET['columns']
     data = {}
     for c in cols:
         data[c] = 'test'

@@ -98,7 +98,7 @@ def process_ex_id(ex_id, **kwargs):
     # processing blobs section.
     # must perform: process_spines.process_ex_id
     N = len(blob_ids)
-    for i, blob_id in enumerate(sorted(blob_ids)[3:5], start=1):
+    for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)    
         try:

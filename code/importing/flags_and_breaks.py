@@ -183,7 +183,6 @@ def flag_report(blob_id):
 
 def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     times, _, _ = get_data(blob_id, data_type='width20')
-    print kwargs
 
     all_flags = {'width20_flags': flag_blob_data(blob_id, 'width20', options='long', **kwargs),
                  'width50_flags': flag_blob_data(blob_id, 'width50', options='long', **kwargs),
@@ -356,32 +355,39 @@ def create_break_list(times, flags, verbose=False):
     return break_list
 
 def get_flagged_times(blob_id):
-    times, all_flags = get_data(blob_id, data_type='flags')
+    times, all_flags, _ = get_data(blob_id, data_type='flags')    
     flags = consolidate_flags(all_flags)
-    for i in zip(times, flags):
-        print i
-        
-    flagged_times = [t for (t, f) in zip(times, flags) if not f]
-    print flagged_times
-    return flagged_times
+    #flagged_times1 = []
+    #for (t, f) in zip(times, flags):
+    #    print t, f, f == False
+    #    if f == False:
+    #        flagged_times1.append(t)        
+    #print 'are equal?', flagged_times == flagged_times1
+    #print 'those were the flagged times!'
+    return [t for (t, f) in zip(times, flags) if f==False]
 
-
-    
-    
 
 def good_segments_from_data(break_list, times, data, flagged_times, verbose=True):
     
     def remove_flagged_points(region, flagged_times):
-        times, data = zip(*region)
-        filtered_region = zip(times, data)
-        # TODO: 
+        ''' returns a region with all the 
+        flagged timepoints removed. '''
+        filtered_region = []
+        for (t,d) in region:
+            is_good = True
+            for tf in flagged_times:
+                if math.fabs(tf - t) < 0.05:
+                    is_good = False
+            if is_good:
+                filtered_region.append((t,d))
         return filtered_region
     
     if len(times) ==0:
         return True
 
     if len(break_list) == 0:
-        return remove_flagged_points(zip(times, data), flagged_times)
+        # this returns a list with one region.
+        return [remove_flagged_points(zip(times, data), flagged_times)]
     
     bstarts, bstops = zip(*break_list)
     #print bstarts, bstops
