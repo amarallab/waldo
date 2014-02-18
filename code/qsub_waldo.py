@@ -192,8 +192,8 @@ def main(args, db_attribute):
 
 if __name__ == '__main__':
     # Toggles
-    db_attribute = ('purpose', 'N2_aging')
-    #db_attribute = ('purpose', 'disease_models')
+    #db_attribute = ('purpose', 'N2_aging')
+    db_attribute = ('dataset', 'disease_models')
     #db_attribute = ('purpose', 'thermo_recovery')
     #db_attribute = ('purpose', 'zoom_test')
     #db_attribute = ('purpose', 'copas_TJ3001')
