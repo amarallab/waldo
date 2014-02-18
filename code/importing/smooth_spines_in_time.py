@@ -81,10 +81,8 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
             continue
         # transform spine point format into matrix format
         times, spines = zip(*region)
-        
         x_matrix, y_matrix = create_spine_matricies(spines)
         # smooth once in both directions and make sure points are equally spaced along spine
-        
         x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_running_window_size, order=time_poly_order)
         x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_running_window_size, order=spine_poly_order)
         x_matrix, y_matrix = equally_space_matrix_distances(x_matrix, y_matrix)
@@ -92,6 +90,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         eq_times = equally_spaced_tenth_second_times(start=times[0], end=times[-1])
         x_matrix, y_matrix = equally_space_matricies_times(eq_times, times, x_matrix, y_matrix)
         # now that times have been set, smooth + space spines repeatedly
+
         for i in range(repeated_smoothings):
             x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_running_window_size, order=time_poly_order)
             x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_running_window_size, order=spine_poly_order)

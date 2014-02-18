@@ -28,6 +28,9 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from wio.file_manager import get_data, write_tmp_file
 
+# Globals
+NULL_FLAGS = [-1, [], '', 'NA', 'NaN', u'', u'NA', u'NaN', None]
+
 def consolidate_flags(all_flags):
     '''
     takes a dictionary of flag dictionaries and consolidates them into one
@@ -113,7 +116,7 @@ def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
 
     return xmin, xmax
 
-def flag_outliers(values, options='both'):
+def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
     '''
     if flag == True, that timepoint is good.
     if flag == False, something wrong with timepoint
@@ -124,7 +127,7 @@ def flag_outliers(values, options='both'):
     # note: we have passed -1 in certain parts of the data to indicate an error in processing.
     # here we remove all -1s to calculate threshold, 
     # later we automatically flag all times that had -1       
-    null_flags = [-1, '', [], 'NA', 'NaN']
+    
     data = [d for d in values if d not in null_flags]
     min_threshold, max_threshold = calculate_threshold(data, p=0.05)
 
@@ -367,16 +370,19 @@ def get_flagged_times(blob_id):
     return [t for (t, f) in zip(times, flags) if f==False]
 
 
-def good_segments_from_data(break_list, times, data, flagged_times, verbose=True):
+def good_segments_from_data(break_list, times, data, flagged_times, verbose=True, null_flags=NULL_FLAGS):
     
-    def remove_flagged_points(region, flagged_times):
+    def remove_flagged_points(region, flagged_times, null_flags=null_flags):
         ''' returns a region with all the 
-        flagged timepoints removed. '''
+        flagged timepoints removed and all the timepoints with
+        null data values removed. '''
         filtered_region = []
         for (t,d) in region:
             is_good = True
             for tf in flagged_times:
                 if math.fabs(tf - t) < 0.05:
+                    is_good = False
+                if d in null_flags:
                     is_good = False
             if is_good:
                 filtered_region.append((t,d))
