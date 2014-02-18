@@ -39,7 +39,7 @@ def qsub_run_script(python_script='waldo.py', args='', job_name='job',
     qsub_directory = LOGISTICS['qsub_directory']
     ensure_dir_exists(qsub_directory)
     for job_num in range(number_of_jobs):
-        cmd = 'python ' + project_directory + python_script
+        cmd = 'python {dir}/{py}'.format(dir=CODE_DIR, py=python_script)
         for i, ex_id in enumerate(args):
             if i%number_of_jobs == job_num:
                 cmd += ' ' + str(ex_id)
@@ -161,6 +161,7 @@ def main(args, db_attribute):
     :param args: arguments from command line.
     :param db_attribute: tuple to toggle behavior of script.
     """
+    '''
     if args.i:
         if args.o:
             print 'batch importing with overwrite'
@@ -170,8 +171,11 @@ def main(args, db_attribute):
             ex_ids = choose_ex_ids(db_attribute=db_attribute, blobfiles=True, stage1=False)
         print ex_ids
         qsub_run_script(python_script='waldo.py -ti', job_name='import', args=ex_ids, number_of_jobs=30)
-
+    '''    
     if args.p:
+        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
+        qsub_run_script(python_script='waldo.py -tp', job_name='process', args=ex_ids, number_of_jobs=20)
+        '''
         if args.o:
             print 'batch processing with overwrite'
             ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True)
@@ -179,12 +183,13 @@ def main(args, db_attribute):
             print 'batch processing'
             ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True, stage2=False)
         qsub_run_script(python_script='waldo.py -tp', job_name='process', args=ex_ids, number_of_jobs=20)
-
+        '''
+    '''
     if args.m:
         print 'batch measurments'
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage2=True)
         qsub_run_script(python_script='waldo.py -tm', job_name='measure', args=ex_ids, number_of_jobs=20)
-
+    '''
     if args.e:
         print 'batch export'
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage2=True, exported=False)
