@@ -30,7 +30,7 @@ sys.path.append(shared_code_directory)
 from GeometricCalculations import compute_displacement_along_curve
 from GeometricCalculations.distance import euclidean
 from wio.file_manager import get_data, write_tmp_file, store_data_in_db
-from flags_and_breaks import good_segments_from_data
+from flags_and_breaks import good_segments_from_data, get_flagged_times
 from create_spine import smooth_and_space_xy_points
 from equally_space import *
 from settings.local import SMOOTHING 
@@ -67,7 +67,11 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
     break_list, _ = get_data(blob_id, data_type='breaks',
                              split_time_and_data=False, **kwargs)
     times, spines, db_doc = get_data(blob_id, data_type='treated_spine', **kwargs)
-    good_regions = good_segments_from_data(break_list, times=times, data=spines)
+    flagged_times = get_flagged_times(blob_id)
+    good_regions = good_segments_from_data(break_list, times=times, data=spines,
+                                           flagged_times=flagged_times)
+                                           
+                                           
     # initialize buckets
     smoothed_times, smoothed_spines = [], []
     # each region is smoothed independently
@@ -77,6 +81,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
             continue
         # transform spine point format into matrix format
         times, spines = zip(*region)
+        
         x_matrix, y_matrix = create_spine_matricies(spines)
         # smooth once in both directions and make sure points are equally spaced along spine
         

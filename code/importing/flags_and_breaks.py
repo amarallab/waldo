@@ -355,12 +355,33 @@ def create_break_list(times, flags, verbose=False):
         break_list.append((st, et))
     return break_list
 
-def good_segments_from_data(break_list, times, data, verbose=True):
+def get_flagged_times(blob_id):
+    times, all_flags = get_data(blob_id, data_type='flags')
+    flags = consolidate_flags(all_flags)
+    for i in zip(times, flags):
+        print i
+        
+    flagged_times = [t for (t, f) in zip(times, flags) if not f]
+    print flagged_times
+    return flagged_times
+
+
+    
+    
+
+def good_segments_from_data(break_list, times, data, flagged_times, verbose=True):
+    
+    def remove_flagged_points(region, flagged_times):
+        times, data = zip(*region)
+        filtered_region = zip(times, data)
+        # TODO: 
+        return filtered_region
+    
     if len(times) ==0:
         return True
 
     if len(break_list) == 0:
-        return [zip(times, data)]
+        return remove_flagged_points(zip(times, data), flagged_times)
     
     bstarts, bstops = zip(*break_list)
     #print bstarts, bstops
@@ -392,14 +413,15 @@ def good_segments_from_data(break_list, times, data, verbose=True):
                 
         elif not is_good and was_good and region:
             # region ended so add it to the good regions if anything is in region.
-            #print 'ending good region', t, len(datum) 
-            good_regions.append(region)
+            #print 'ending good region', t, len(datum)
+            good_regions.append(remove_flagged_points(region, flagged_times))
             region_boundaries.append((region_start, t))
         
     # if the loop ends with a good timepoint, store the region.
     if is_good:
-        good_regions.append(region)
-        region_boundaries.append((region_start, t))        
+        good_regions.append(remove_flagged_points(region, flagged_times))
+        region_boundaries.append((region_start, t))
+        
     if verbose:
         s, e, r = times[0], times[-1], region_boundaries
         print '({s} to {e}s) good regions are: {r}'.format(s=s, e=e, r=r)
