@@ -14,17 +14,18 @@ import os
 import sys
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-shared_directory = project_directory + 'code/shared/'
-assert os.path.exists(shared_directory), 'code directory not found'
-sys.path.append(shared_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+CODE_DIR = os.path.abspath(HERE + '/../')
+SHARED_DIR = CODE_DIR + '/shared/'
+sys.path.append(CODE_DIR)
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from WormMetrics.spine_measures import compute_spine_measures
-from WormMetrics.centroid_measures import compute_centroid_measures
+from wormmetrics.spine_measures import compute_spine_measures
+from wormmetrics.centroid_measures import compute_centroid_measures
 #from wormmetrics.basic_measures import compute_basic_measures
-from WormMetrics.basic_measures import compute_width_measures
-from WormMetrics.basic_measures import compute_size_measures
+from wormmetrics.basic_measures import compute_width_measures
+from wormmetrics.basic_measures import compute_size_measures
 from database.mongo_retrieve import mongo_query
 from database.mongo_retrieve import unique_blob_ids_for_query
 from database.mongo_insert import compute_and_insert_measurements

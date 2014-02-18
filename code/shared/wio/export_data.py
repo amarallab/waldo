@@ -20,14 +20,16 @@ import time
 from itertools import izip
 
 # path definitions
-project_directory =  os.path.dirname(os.path.realpath(__file__)) + '/../../../'
-sys.path.append(project_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../')
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from code.shared.wio.file_manager import EXPORT_PATH, manage_save_path, get_blob_ids, pull_blob_data
-import WormMetrics.switchboard as sb
-from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
+import wormmetrics.switchboard as sb
 import database.mongo_retrieve as mr
+from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids, get_data
+#from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
+
 
 
 def export_blob_percentiles_by_ex_id(ex_id, out_dir=EXPORT_PATH, path_tag='', verbose=True, **kwargs):
@@ -133,7 +135,7 @@ def write_full_plate_timeseries(ex_id, metric='centroid_speed', path_tag='', out
     data_dict = {}
     for blob_id in blob_ids:
         #data_timedict = pull_metric_for_blob_id(blob_id=blob_id, metric=metric, remove_skips=True, **kwargs)
-        times, data = pull_blob_data(blob_id, metric=metric, **kwargs)
+        times, data = get_data(blob_id, metric=metric, **kwargs)
         if len(data) == 0:
             print blob_id, 'has not data points, apparently'
             continue
@@ -181,7 +183,7 @@ def pull_blob_timeseires_for_ex_id(ex_id, data_type, out_dir=EXPORT_PATH, path_t
     for blob_id in blob_ids:
         blob_data[blob_id] = {}
         try:
-            times, data = pull_blob_data(blob_id, metric=data_type, **kwargs)
+            times, data = get_data(blob_id, metric=data_type, **kwargs)
             blob_data[blob_id] = {'time':times, 'data':data}
         except Exception as e:
             print 'Exception for {bi}'.format(bi=blob_id)
@@ -198,7 +200,7 @@ def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH, path_ta
     path_tag - used to extend the name of the path, if desired.
     savename - bypass all path creation steps and save file with this name.
     '''
-    times, data = pull_blob_data(blob_id, metric=data_type, **kwargs)
+    times, data = get_data(blob_id, metric=data_type, **kwargs)
     if not savename:
         save_name = mangage_save_path(out_dir=out_dir, path_tag=path_tag, ID=blob_id, data_type=data_type)
     json.dump({'time':times, 'data':data}, open(savename, 'w'), indent=4, sort_keys=True)

@@ -15,15 +15,19 @@ import glob
 import argparse
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/'
-sys.path.append(project_directory)
+CODE_DIR = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = CODE_DIR + '/shared/'
+sys.path.append(CODE_DIR)
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from Shared.Code.Database.mongo_retrieve import mongo_query
-from Shared.Code.Settings.data_settings import logistics_settings
-from Import.Code.experiment_index import Experiment_Attribute_Index
+from database.mongo_retrieve import mongo_query
+from settings.local import LOGISTICS
+from annotation.experiment_index import Experiment_Attribute_Index
+from wio.file_manager import ensure_dir_exists
 
-def qsub_run_script(python_script='waldo.py', args='', job_name='job', number_of_jobs=25 ):
+def qsub_run_script(python_script='waldo.py', args='', job_name='job',
+                    number_of_jobs=25):
     """ Runs parallel python jobs on cluster after receiving a list of arguments for that script.
 
     :param python_script: which python script should be run
@@ -32,7 +36,8 @@ def qsub_run_script(python_script='waldo.py', args='', job_name='job', number_of
     :param number_of_jobs: number of jobs
     """
 
-    qsub_directory = logistics_settings['qsub_directory']
+    qsub_directory = LOGISTICS['qsub_directory']
+    ensure_dir_exists(qsub_directory)
     for job_num in range(number_of_jobs):
         cmd = 'python ' + project_directory + python_script
         for i, ex_id in enumerate(args):
@@ -105,7 +110,7 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
 
     # Check whether or not raw data directory is present for ex_ids and modify list of target ex_ids
     if blobfiles is not None:
-        ex_ids_with_blobfiles = set(list_ex_ids_with_raw_data(inventory_directory=logistics_settings['phoenix_data']))
+        ex_ids_with_blobfiles = set(list_ex_ids_with_raw_data(inventory_directory=LOGISTICS['cluster_data']))
         if blobfiles:
             target_ex_ids = target_ex_ids & ex_ids_with_blobfiles
         else:
@@ -138,7 +143,7 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
         print 'Of these, {N} ex_ids have worm spines in database. {Y} considered further.'.format(N=len(ex_ids_with_spines_in_db),
                                                                                                   Y=len(target_ex_ids))
     if exported is not None:
-        exported_ex_ids = set(list_ex_ids_with_exported_data(export_directory=logistics_settings['export_dir']))
+        exported_ex_ids = set(list_ex_ids_with_exported_data(export_directory=LOGISTICS['export']))
         if exported:
             target_ex_ids = target_ex_ids & exported_ex_ids
         else:

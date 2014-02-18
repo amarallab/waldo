@@ -44,7 +44,7 @@ LOGISTICS = {
     # cluster variables
     'cluster_data': '/home/projects/worm_movement/Data/MWT_RawData/',
     'cluster_address': 'peterwinter@phoenix.research.northwestern.edu',
-    'qsub_directory': PROJECT_DIRECTORY + 'Logistics/Cluster/BashScripts/',
+    'qsub_directory': PROJECT_DIRECTORY + 'data/qsub/',
     }
 
 SPREADSHEET = {'user': 'your gmail name',
