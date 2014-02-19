@@ -23,7 +23,8 @@ import sys
 import matplotlib.pyplot as plt        
 
 # path definitions
-PROJECT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
+HERE = os.path.dirname(os.path.realpath(__file__))
+PROJECT_DIR = os.path.abspath(HERE + '/../../')
 sys.path.append(PROJECT_DIR)
 
 # nonstandard imports

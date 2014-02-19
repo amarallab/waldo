@@ -14,9 +14,12 @@ from itertools import izip
 from pylab import *
 
 # Path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-exception_directory = os.path.dirname(os.path.realpath(__file__)) + '/'
-sys.path.append(project_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../shared/')
+PROJECT_DIR = os.path.abspath(HERE + '/../../')
+EXCEPTION_DIR = PROJECT_DIR + '/data/importing/exceptions/'
+sys.path.append(SHARED_DIR)
+sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
 from Encoding.decode_outline import pull_smoothed_outline, decode_outline
@@ -233,13 +236,13 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
     if len(intersection_xs) == 0:
         print 'intersection points are zero!'
         write_pathological_input((spine, outline), input_type='spine/outline', note='no intersection points',
-                                 savename='%sno_intersection_%s.json' % (exception_directory, str(time.time())))
+                                 savename='%sno_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
         return (-1, -1), (-1, -1), False, -1
 
     if len(intersection_xs) % 2 != 0:
         print 'intersection points are odd', len(intersection_xs)
         write_pathological_input((spine, outline), input_type='spine/outline', note='num intersection points odd',
-                                 savename='%sodd_num_intersection_%s.json' % (exception_directory, str(time.time())))
+                                 savename='%sodd_num_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
         #print intersection_xs, intersection_ys
         return (intersection_xs[0], intersection_ys[0]), (-1, -1), False, -1
 
@@ -256,7 +259,7 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
     if len(point_pair) == 0:
         print 'spine outside of outline'
         write_pathological_input((spine, outline), input_type='spine/outline', note='spine outside outline',
-                                 savename='%sspine_outside_outline_%s.json' % (exception_directory, str(time.time())))
+                                 savename='%sspine_outside_outline_%s.json' % (EXCEPTION_DIR, str(time.time())))
         return -1, -1, False, -1
     else:
         width = math.sqrt((point_pair[0][0] - point_pair[1][0]) ** 2 + (point_pair[0][1] - point_pair[1][1]) ** 2)
@@ -266,4 +269,5 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
 if __name__ == "__main__":
     blob_id = '20120914_172813_01708'
     blob_id = '20130320_164252_05955'
+    blob_id = '20130319_150235_01501'
     compute_basic_measurements(blob_id=blob_id)

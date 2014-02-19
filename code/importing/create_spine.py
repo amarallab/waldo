@@ -17,22 +17,22 @@ from itertools import izip
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__)) 
-project_directory = os.path.abspath(HERE + '/../../')
-shared_directory = os.path.abspath(project_directory + 'code/shared/')
-sys.path.append(project_directory)
-sys.path.append(shared_directory)
+PROJECT_DIR = os.path.abspath(HERE + '/../../')
+SHARED_DIR = os.path.abspath(PROJECT_DIR + 'code/shared/')
+sys.path.append(PROJECT_DIR)
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from skeletonize_outline import compute_skeleton_from_outline
 from Encoding.decode_outline import decode_outline
 from filtering.equally_space import equally_space
 from filtering.filter_utilities import savitzky_golay
-from settings.local import SMOOTHING as processing_settings
+from settings.local import SMOOTHING
 from wio.file_manager import get_data, insert_data_into_db, write_tmp_file
 
 # set defaults from settings file
-default_poly_order = processing_settings['spine_poly_order']
-default_window_size = processing_settings['spine_window_size']
+DEFAULT_ORDER = SMOOTHING['spine_poly_order']
+DEFAULT_WINDOW = SMOOTHING['spine_window_size']
 
 def create_spine_from_outline(blob_id, store_in_db=False, store_tmp=True, verbose=False, **kwargs):
     '''
@@ -119,14 +119,14 @@ def show_worm_video(spine_timedict):
         pl.raw()
         pl.clf()
 
-def smooth_and_space_xy_points(points, poly_order=default_poly_order, window_size=default_window_size, point_num=50):
+def smooth_and_space_xy_points(points, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WINDOW, point_num=50):
     xs, ys = zip(*points)
     filtered_xs = list(savitzky_golay(np.array(xs), window_size=window_size, order=poly_order))
     filtered_ys = list(savitzky_golay(np.array(ys), window_size=window_size, order=poly_order))
     return equally_space(zip(filtered_xs, filtered_ys), points=point_num)
 
 
-def treat_spine(times, spines, poly_order=default_poly_order, window_size=default_window_size, verbose=True):
+def treat_spine(times, spines, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WINDOW, verbose=True):
     """
     this function returns a recalculated spine_timedict that has been polynomially smoothed and now contains 50 points
     along it's centerline. Each spines now faces in the same direction as the spine one timestep earlier.

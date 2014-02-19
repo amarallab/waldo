@@ -20,11 +20,11 @@ import random
 import math
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-shared_code_directory = project_directory + 'code/shared/'
-assert os.path.exists(project_directory), 'project directory not found'
-assert os.path.exists(shared_code_directory), 'shared code directory not found'
-sys.path.append(shared_code_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../shared/')
+PROJECT_DIR = os.path.abspath(HERE + '/../../')
+assert os.path.exists(SHARED_DIR), 'shared code directory not found'
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from filtering.filter_utilities import savitzky_golay

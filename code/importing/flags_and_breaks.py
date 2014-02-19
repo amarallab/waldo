@@ -22,7 +22,8 @@ import matplotlib.pyplot as plt
 import scipy
 
 # path definitions
-SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../shared/'
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../shared/')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
@@ -449,6 +450,7 @@ if __name__ == '__main__':
     blob_id = '20130319_150235_01070'
     blob_id = '20130320_164252_05955'
     blob_id = '00000000_000001_00008'
+    blob_id = '20130319_150235_01830'
     print 'using blob_id', blob_id
     #find_coils(blob_id)
 
@@ -459,7 +461,12 @@ if __name__ == '__main__':
     print breaks
     times, all_flags, db_doc = get_data(blob_id, data_type='flags')
     flags = consolidate_flags(all_flags)
-    for i in good_segments_from_data(breaks, times, flags):
+    flagged_times = get_flagged_times(blob_id)
+    good_segments = good_segments_from_data(break_list=breaks, times=times, data=flags, 
+                                            flagged_times=flagged_times)
+    print type(good_segments)
+    print len(good_segments)
+    for i in good_segments:
         print
         print i
         print
