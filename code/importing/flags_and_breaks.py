@@ -22,11 +22,15 @@ import matplotlib.pyplot as plt
 import scipy
 
 # path definitions
-SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../shared/'
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../shared/')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import get_data, write_tmp_file
+
+# Globals
+NULL_FLAGS = [-1, [], '', 'NA', 'NaN', u'', u'NA', u'NaN', None]
 
 def consolidate_flags(all_flags):
     '''
@@ -113,7 +117,7 @@ def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
 
     return xmin, xmax
 
-def flag_outliers(values, options='both'):
+def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
     '''
     if flag == True, that timepoint is good.
     if flag == False, something wrong with timepoint
@@ -124,7 +128,7 @@ def flag_outliers(values, options='both'):
     # note: we have passed -1 in certain parts of the data to indicate an error in processing.
     # here we remove all -1s to calculate threshold, 
     # later we automatically flag all times that had -1       
-    null_flags = [-1, '', [], 'NA', 'NaN']
+    
     data = [d for d in values if d not in null_flags]
     min_threshold, max_threshold = calculate_threshold(data, p=0.05)
 
@@ -183,7 +187,6 @@ def flag_report(blob_id):
 
 def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     times, _, _ = get_data(blob_id, data_type='width20')
-    print kwargs
 
     all_flags = {'width20_flags': flag_blob_data(blob_id, 'width20', options='long', **kwargs),
                  'width50_flags': flag_blob_data(blob_id, 'width50', options='long', **kwargs),
@@ -347,41 +350,52 @@ def create_break_list(times, flags, verbose=False):
         return []
     # otherwise continue
     for st, et in izip(break_starts, break_ends):
-        if verbose:
-            print 'break: {st} to {et}'.format(st=st, et=et)
-        msg = 'start:{st}\tend:{et}\n'.format(st=st, et=et)
-        #msg += 'starts:{bs}\nends:{be}'.format(bs=break_starts, be=break_ends)
-        assert st < et, msg
-        break_list.append((st, et))
+        # remove breaks where start and end points are equal
+        if st != et:
+            if verbose:
+                print 'break: {st} to {et}'.format(st=st, et=et)
+            msg = 'start:{st}\tend:{et}\n'.format(st=st, et=et)
+            assert st < et, msg
+            break_list.append((st, et))
     return break_list
 
 def get_flagged_times(blob_id):
-    times, all_flags = get_data(blob_id, data_type='flags')
+    times, all_flags, _ = get_data(blob_id, data_type='flags')    
     flags = consolidate_flags(all_flags)
-    for i in zip(times, flags):
-        print i
-        
-    flagged_times = [t for (t, f) in zip(times, flags) if not f]
-    print flagged_times
-    return flagged_times
+    #flagged_times1 = []
+    #for (t, f) in zip(times, flags):
+    #    print t, f, f == False
+    #    if f == False:
+    #        flagged_times1.append(t)        
+    #print 'are equal?', flagged_times == flagged_times1
+    #print 'those were the flagged times!'
+    return [t for (t, f) in zip(times, flags) if f==False]
 
 
+def good_segments_from_data(break_list, times, data, flagged_times, verbose=True, null_flags=NULL_FLAGS):
     
-    
-
-def good_segments_from_data(break_list, times, data, flagged_times, verbose=True):
-    
-    def remove_flagged_points(region, flagged_times):
-        times, data = zip(*region)
-        filtered_region = zip(times, data)
-        # TODO: 
+    def remove_flagged_points(region, flagged_times, null_flags=null_flags):
+        ''' returns a region with all the 
+        flagged timepoints removed and all the timepoints with
+        null data values removed. '''
+        filtered_region = []
+        for (t,d) in region:
+            is_good = True
+            for tf in flagged_times:
+                if math.fabs(tf - t) < 0.05:
+                    is_good = False
+                if d in null_flags:
+                    is_good = False
+            if is_good:
+                filtered_region.append((t,d))
         return filtered_region
     
     if len(times) ==0:
         return True
 
     if len(break_list) == 0:
-        return remove_flagged_points(zip(times, data), flagged_times)
+        # this returns a list with one region.
+        return [remove_flagged_points(zip(times, data), flagged_times)]
     
     bstarts, bstops = zip(*break_list)
     #print bstarts, bstops
@@ -436,6 +450,7 @@ if __name__ == '__main__':
     blob_id = '20130319_150235_01070'
     blob_id = '20130320_164252_05955'
     blob_id = '00000000_000001_00008'
+    blob_id = '20130319_150235_01830'
     print 'using blob_id', blob_id
     #find_coils(blob_id)
 
@@ -446,7 +461,12 @@ if __name__ == '__main__':
     print breaks
     times, all_flags, db_doc = get_data(blob_id, data_type='flags')
     flags = consolidate_flags(all_flags)
-    for i in good_segments_from_data(breaks, times, flags):
+    flagged_times = get_flagged_times(blob_id)
+    good_segments = good_segments_from_data(break_list=breaks, times=times, data=flags, 
+                                            flagged_times=flagged_times)
+    print type(good_segments)
+    print len(good_segments)
+    for i in good_segments:
         print
         print i
         print

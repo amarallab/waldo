@@ -23,7 +23,8 @@ import sys
 import matplotlib.pyplot as plt        
 
 # path definitions
-PROJECT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
+HERE = os.path.dirname(os.path.realpath(__file__))
+PROJECT_DIR = os.path.abspath(HERE + '/../../')
 sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
@@ -99,7 +100,7 @@ def process_ex_id(ex_id, **kwargs):
     # processing blobs section.
     # must perform: process_spines.process_ex_id
     N = len(blob_ids)
-    for i, blob_id in enumerate(sorted(blob_ids)[3:5], start=1):
+    for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
         measure_all(blob_id, **kwargs)
@@ -130,12 +131,14 @@ def all_unprocessed_blob_ids(**kwargs):
     unprocessed_ids = [blob_id for blob_id in all_ids not in processed_ids]
     return unprocessed_ids
 
-
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         # test worm
         blob_id = '00000000_000001_00001'
-
+        blob_id = '00000000_000001_00008'
+        blob_id = '20130319_150235_01070'
+        blob_id = '20130319_150235_00014'
+        blob_id = '20130319_150235_00426'
         # large bson error:
         #blob_id = '20130331_160517_02379'
         #blob_id = '20130320_164252_05955'
@@ -146,7 +149,7 @@ if __name__ == '__main__':
         #blob_id = '20130324_115435_04452'
         #blob_id = '20130319_150235_01070'
 
-        basic_data_to_smoothspine(blob_id)
+        basic_data_to_smoothspine(blob_id, verbose=True)
         #for blob_id in all_unprocessed_blob_ids():
         #    basic_data_to_smoothspine(blob_id)
     else:

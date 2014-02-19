@@ -12,9 +12,6 @@ import sys
 
 # path definitions
 project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-print project_directory
-print
-print
 sys.path.append(project_directory)
 
 # nonstandard imports

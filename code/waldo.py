@@ -31,8 +31,8 @@ from importing.process_spines import process_ex_id
 import database.mongo_support_functions as mongo
 from settings.local import MONGO
 
-TIMING_DIR = PROJECT_DIR + 'data/diagnostics/timing'
-PROFILE_DIR = PROJECT_DIR + 'data/diagnostics/profileing'
+TIMING_DIR = PROJECT_DIR + '/data/diagnostics/timing'
+PROFILE_DIR = PROJECT_DIR + '/data/diagnostics/profileing'
 MONGO_SETTINGS = {'ip':MONGO['ip'], 'port':MONGO['port'],
                   'database_name':MONGO['database'],
                   'collection_name':MONGO['blobs']}

@@ -20,11 +20,11 @@ import random
 import math
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-shared_code_directory = project_directory + 'code/shared/'
-assert os.path.exists(project_directory), 'project directory not found'
-assert os.path.exists(shared_code_directory), 'shared code directory not found'
-sys.path.append(shared_code_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARED_DIR = os.path.abspath(HERE + '/../shared/')
+PROJECT_DIR = os.path.abspath(HERE + '/../../')
+assert os.path.exists(SHARED_DIR), 'shared code directory not found'
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from filtering.filter_utilities import savitzky_golay
@@ -116,6 +116,12 @@ def create_spine_matricies(spines):
 def equally_space_matricies_times(eq_times, orig_times, x_mat, y_mat):
     kind = 'linear'
     N_cols = len(x_mat[0])
+    # make absolutely sure that intepolated times are inside origional timerange
+    if eq_times[0] < orig_times[0]:
+        eq_times = eq_times[1:]
+    if eq_times[-1] > orig_times[-1]:
+        eq_times = eq_times[:-1]
+
     N_times = len(eq_times)
     x_new = np.zeros((N_times, N_cols), dtype=float)
     y_new = np.zeros((N_times, N_cols), dtype=float)
