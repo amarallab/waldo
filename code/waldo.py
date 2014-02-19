@@ -24,11 +24,9 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from worms.measurement_suite import measure_all_for_ex_id
+#from worms.measurement_suite import measure_all_for_ex_id
 from wio.export_data import export_blob_percentiles_by_ex_id
 from wio.file_manager import ensure_dir_exists
-#from importing.import_rawdata_into_db import import_ex_id
-#from importing.process_spines import process_ex_id
 from importing.process_spines import process_ex_id
 import database.mongo_support_functions as mongo
 from settings.local import MONGO
@@ -84,11 +82,8 @@ def main(args):
     """
     if args.all:
         args.p, args.e = True, True
-    #if args.i:
-    #    run_function_for_ex_ids(f=import_ex_id, name='import', ex_ids=args.ex_ids)
     if args.p:
         run_function_for_ex_ids(f=process_ex_id, name='process', ex_ids=args.ex_ids)
-    #if args.m:
     #    run_function_for_ex_ids(f=measure_all_for_ex_id, name='measure', ex_ids=args.ex_ids)
     if args.e:
         run_function_for_ex_ids(f=export_blob_percentiles_by_ex_id, name='export', ex_ids=args.ex_ids)

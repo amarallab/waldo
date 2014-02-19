@@ -19,40 +19,6 @@ from wio.file_manager import get_data
 from importing.flags_and_breaks import consolidate_flags
 from filtering.filter_utilities import filter_stat_timedict as fst
 from show_measure import quickplot_stat2
-'''
-def keep_unflagged_timepoints(flags, data):
-    unflagged_timedict = {}
-    missmatched_key_count = 0
-    for t in sorted(flag_timedict):
-
-        #assert t in data, str(t) + ' not in timedict'
-        if unicode(t) in data:
-            if flag_timedict[t]:
-                unflagged_timedict[t] = data[t]
-        else:
-            missmatched_key_count += 1
-            if missmatched_key_count < 10:
-                print str(t) + ' not in timedict', missmatched_key_count
-
-
-    if missmatched_key_count > 0 :
-        print 'There are this many missmatched keys', missmatched_key_count
-        print 'Flag timedict has', len(flag_timedict) 
-        print 'Other timedict has', len(data)
-        for i in sorted(flag_timedict.keys())[:10]:
-            print 'a', i, len(i)
-        for i in sorted(k for k in data.keys() if len(k) == 7)[:10]:
-            print 'b', i, len(i)
-
-
-    return unflagged_timedict
-
-def rescale_timedict(timedict, scaling_factor=1):
-    rescaled_timedict = {}
-    for t in sorted(timedict):
-        rescaled_timedict[t] = timedict[t]/scaling_factor
-    return rescaled_timedict
-'''
 
 def compute_size_measures(blob_id, smooth=True, **kwargs):
     '''
@@ -61,7 +27,6 @@ def compute_size_measures(blob_id, smooth=True, **kwargs):
     :param metric:
     :param smoothed:
     '''
-
 
     times_f, all_flags = get_data(blob_id, data_type='flags', **kwargs)
     metadata = get_data(blob_id, data_type='metadata', split_time_and_data=False)
@@ -86,7 +51,6 @@ def compute_size_measures(blob_id, smooth=True, **kwargs):
         return fst(rescaled_sizedict)
     else:
         return rescaled_sizedict
-
 
 def compute_width_measures(blob_id, metric='all', source_data_entry=None, flag_data_entry=None, smooth=True, **kwargs):
     '''
@@ -115,7 +79,6 @@ def compute_width_measures(blob_id, metric='all', source_data_entry=None, flag_d
     if pixels_per_bl == 1.0:
         pixels_per_bl = float(flag_data_entry.get('midline-median', 1.0))
 
-
     datatype = 'width50'
     if source_data_entry:
         assert source_data_entry['data_type'] == datatype, 'Error: wrong type of data entry provided'
@@ -137,7 +100,6 @@ def compute_width_measures(blob_id, metric='all', source_data_entry=None, flag_d
         else: return width_bl_timedict
     return {'width_mm': fst(width_mm_timedict),
             'width_bl': fst(width_bl_timedict)}
-
 
 if __name__ == "__main__":
     #blob_id = '20121119_162934_07337'

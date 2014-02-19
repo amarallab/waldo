@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+a#!/usr/bin/env python
 
 '''
 Filename: process_spines.py
@@ -36,6 +36,7 @@ from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
 from import_rawdata_into_db import create_entries_from_blobs_files
 import shared.wio
+from measurement_suite import measure_all
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     """
@@ -50,7 +51,6 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     if verbose:
         print 'spine created with {N} time-points.'.format(N=len(treated_spines))
     # calculate necessary measurments to flag wrong shapes
-
     compute_basic_measurements(blob_id, **kwargs)
     if verbose:
         print 'basic measurements calculated'
@@ -67,6 +67,7 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     smoothed_times, smoothed_spines = smooth_good_regions_repeatedly(blob_id, **kwargs)
     if verbose:
         print 'finished smoothing spine with {N} remaining time-points'.format(N=len(smoothed_times))
+        
     return smoothed_times, smoothed_spines
 
 def process_ex_id(ex_id, **kwargs):
@@ -100,7 +101,8 @@ def process_ex_id(ex_id, **kwargs):
     N = len(blob_ids)
     for i, blob_id in enumerate(sorted(blob_ids)[3:5], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
-        times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)    
+        times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
+        measure_all(blob_id, **kwargs)
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
             pass
@@ -113,6 +115,7 @@ def process_ex_id(ex_id, **kwargs):
         times, spines = zip(*good_stuff)
         x, y = zip(*zip(*spines)[0])
         '''
+        try:
         plt.plot(x, y)
         x, y = zip(*zip(*spines)[25])
         plt.plot(x, y)

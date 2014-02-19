@@ -29,10 +29,8 @@ sys.path.append(SHARED_DIR)
 from database.mongo_retrieve import pull_data_type_for_blob, timedict_to_list
 from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
-#from annotation.experiment_index import Experiment_Attribute_Index
-
-
 from wio.blob_reader import Blob_Reader
+
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
 TMP_DIR = PROJECT_HOME + '/data/processing/'

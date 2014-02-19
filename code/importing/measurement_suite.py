@@ -21,6 +21,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
+
 from wormmetrics.spine_measures import compute_spine_measures
 from wormmetrics.centroid_measures import compute_centroid_measures
 #from wormmetrics.basic_measures import compute_basic_measures
