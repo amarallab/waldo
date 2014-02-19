@@ -87,16 +87,13 @@ def encode_outline(points):
 
 
 def decode_outline(outline_parts):
-    #assert type(outline_string) == str
-    #parts = outline_string.split()
-    assert len(outline_parts) == 3
-    
+    # broken input if there are not three outline parts, return empty string
+    if len(outline_parts) != 3:
+        return []    
     start_xy, length, outline = outline_parts
     x, y = int(start_xy[0]), int(start_xy[1])
     length = int(length)
-
     pts = []
-
     # go through each character in the outline string
     for o in outline:
         # convert character into integer.
@@ -104,31 +101,24 @@ def decode_outline(outline_parts):
         steps = steps - ARBIRARY_CONVERSION_FACTOR
         assert steps <= 63, 'error:(%s) is not in encoding range' % o
         assert steps >= 0, 'error:(%s) is not in encoding range' % o
-
         # convert intager into a binary string
         bit = str(bin1(steps))
         # remove the first two characters which 
         bit = bit[2:]
-
         # if the binary string is less than 6 digits long,
         # add zeros to the front to make it 6 digits.
         desired_length = 6
         for i in xrange(desired_length):
             if len(bit) < desired_length:
                 bit = '0' + bit
-
         #print o, ord(o)-ARBIRARY_CONVERSION_FACTOR, bit, len(bit)
         def increment_loc(x, y, b):
-            '''
-            need to use this to increment my xy coords...
-            '''
+            ''' need to use this to increment my xy coords... '''
             format_error = 'Error: boolean format is wrong:%s' % b
             unkown_error = 'Error: something unexpeted:%s' % b
-
             assert len(b) == 2, format_error
             assert b[0] == '0' or b[0] == '1', format_error
             assert b[1] == '0' or b[1] == '1', format_error
-
             if b == '00':
                 x -= 1
             elif b == '01':

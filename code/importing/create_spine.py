@@ -52,6 +52,13 @@ def create_spine_from_outline(blob_id, store_in_db=False, store_tmp=True, verbos
     num_short_spines = 0
     for t, encoded_outline in izip(times, encoded_outlines):
         outline = decode_outline(encoded_outline)
+        # if error in decoding outline
+        if len(outline) == 0:
+            outlines.append([])
+            spines.append([])
+            flagged_timepoints.append(t)
+            continue
+        '''
         # do I really need such a strange test?
         for pt in outline:
             if type(pt) != tuple:
@@ -62,7 +69,7 @@ def create_spine_from_outline(blob_id, store_in_db=False, store_tmp=True, verbos
                 int(pt[0]) + int(pt[1])
             except Exception as e:
                 print e, '\n', outline, 'outline int test failed'
-
+        '''
         outlines.append(outline)
         try:
             spine = compute_skeleton_from_outline(outline)
@@ -72,16 +79,13 @@ def create_spine_from_outline(blob_id, store_in_db=False, store_tmp=True, verbos
         except Exception as e:
             print e
             print 'Warning: skeleton reconstruction failed for time {t}'.format(t=t)
-            spines.append('')
-            # todo: add a flag that will be caught in next step.
-            #spine_timedict[t] = -1
+            spines.append([])
             flagged_timepoints.append(t)
     print len(flagged_timepoints), 'time-points flagged during spine creation'
     print num_short_spines, 'time-points with spines too short' 
     # equally spaces points and removes reversals of head and tail in the worm spines
     treated_spines = treat_spine(times, spines)
     #show_worm_video(treated_spine_timedict)
-
     # insert it back into the database
     data_type = 'treated_spine'
     if store_in_db:
@@ -161,13 +165,14 @@ def treat_spine(times, spines, poly_order=default_poly_order, window_size=defaul
             treated_spines.append([])
             #print 'Warning: len spine smaller than polynomial smoothing window:', len(spine), t_key
     if verbose:            
-        print 'goodcount = ', goodcount, 'badcount = ', badcount
+        N = len(treated_spines)
+        print 'good: {g}/{N}\tbad:{b}/{N}'.format(g=goodcount, b=badcount, N=N)
 
     #ion()
     #2. equally space and reverse points if backwards
     
     treated_spines = map(lambda x: equally_space(x, points=50), treated_spines)
-    print len(treated_spines)
+
     #standardized_spines = [treated_spines[0]]
     for i in range(len(treated_spines)):
         if i > 0:
@@ -247,4 +252,5 @@ def reverse_points_if_backwards(xy, xy_next):
 
 if __name__ == "__main__":
     blob_id = '20121124_181927_00197'
+    blob_id = '20130319_150235_00426'
     create_spine_from_outline(blob_id)

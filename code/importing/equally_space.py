@@ -116,6 +116,12 @@ def create_spine_matricies(spines):
 def equally_space_matricies_times(eq_times, orig_times, x_mat, y_mat):
     kind = 'linear'
     N_cols = len(x_mat[0])
+    # make absolutely sure that intepolated times are inside origional timerange
+    if eq_times[0] < orig_times[0]:
+        eq_times = eq_times[1:]
+    if eq_times[-1] > orig_times[-1]:
+        eq_times = eq_times[:-1]
+
     N_times = len(eq_times)
     x_new = np.zeros((N_times, N_cols), dtype=float)
     y_new = np.zeros((N_times, N_cols), dtype=float)

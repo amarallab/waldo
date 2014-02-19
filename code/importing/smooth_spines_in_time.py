@@ -20,11 +20,12 @@ import pylab as pl
 #from scipy.spatial.distance import euclidean
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-shared_code_directory = project_directory + 'code/shared/'
-assert os.path.exists(project_directory), 'project directory not found'
-assert os.path.exists(shared_code_directory), 'shared code directory not found'
-sys.path.append(shared_code_directory)
+HERE = os.path.dirname(os.path.realpath(__file__)) 
+PROJECT_DIRECTORY = os.path.abspath(HERE + '/../../')
+SHARED_DIRECTORY = PROJECT_DIRECTORY + '/code/shared/'
+assert os.path.exists(PROJECT_DIRECTORY), 'project directory not found'
+assert os.path.exists(SHARED_DIRECTORY), 'shared code directory not found'
+sys.path.append(SHARED_DIRECTORY)
 
 # nonstandard imports
 from GeometricCalculations import compute_displacement_along_curve

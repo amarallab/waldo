@@ -298,7 +298,10 @@ def compute_basic_properties(blob, distance_metric='box_diagonal'):
     # calculate properties from size
     times = blob['time']
     median_size = np.median(blob['size'])
-    median_midline = np.median(blob['midline'])
+    #print blob['midline']
+    #print set([type(m) for m in blob['midline']])
+    midlines = [m for m in blob['midline'] if type(m) ==float]
+    median_midline = np.median(midlines)
 
     if distance_metric == 'start_to_end':
         d = 0

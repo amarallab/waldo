@@ -349,12 +349,13 @@ def create_break_list(times, flags, verbose=False):
         return []
     # otherwise continue
     for st, et in izip(break_starts, break_ends):
-        if verbose:
-            print 'break: {st} to {et}'.format(st=st, et=et)
-        msg = 'start:{st}\tend:{et}\n'.format(st=st, et=et)
-        #msg += 'starts:{bs}\nends:{be}'.format(bs=break_starts, be=break_ends)
-        assert st < et, msg
-        break_list.append((st, et))
+        # remove breaks where start and end points are equal
+        if st != et:
+            if verbose:
+                print 'break: {st} to {et}'.format(st=st, et=et)
+            msg = 'start:{st}\tend:{et}\n'.format(st=st, et=et)
+            assert st < et, msg
+            break_list.append((st, et))
     return break_list
 
 def get_flagged_times(blob_id):
