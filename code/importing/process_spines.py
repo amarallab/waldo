@@ -36,8 +36,8 @@ from compute_basic_measurements import compute_basic_measurements
 from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
 from import_rawdata_into_db import create_entries_from_blobs_files
-import shared.wio
-#from measurement_suite import measure_all
+#import wio.file_manager import get_metadata, get_timeseries
+from measurement_suite import measure_all
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     """
@@ -68,7 +68,6 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     smoothed_times, smoothed_spines = smooth_good_regions_repeatedly(blob_id, **kwargs)
     if verbose:
         print 'finished smoothing spine with {N} remaining time-points'.format(N=len(smoothed_times))
-        
     return smoothed_times, smoothed_spines
 
 def process_ex_id(ex_id, **kwargs):
@@ -91,11 +90,13 @@ def process_ex_id(ex_id, **kwargs):
 
     # check if entries for ex_id already exist, dont do anything
     if not overwrite:
-        entries = mongo_query({'ex_id': ex_id, 'data_type': 'metadata'}, {'blob_id': 1, 'duration': 1}, **kwargs)
+        entries = mongo_query({'ex_id': ex_id, 'data_type': 'metadata'},
+                              {'blob_id': 1, 'duration': 1}, **kwargs)
         if len(entries) > 0:
             return False
     
-    blob_ids = create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, store_tmp= True, **kwargs)
+    blob_ids = create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, 
+                                               min_size, store_tmp= True, **kwargs)
 
     # processing blobs section.
     # must perform: process_spines.process_ex_id
@@ -103,19 +104,18 @@ def process_ex_id(ex_id, **kwargs):
     for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
-        # todo add measurement step here
-        #measure_all(blob_id, **kwargs)
+        measure_all(blob_id, **kwargs)
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
             pass
         except Exception as e:
             print e
-        print 'den of data', len(times), len(spines)
         good_stuff = [(t, s) for (t, s) in zip(times, spines) if s]
         if len(good_stuff) <= 3:
             continue
         times, spines = zip(*good_stuff)
         x, y = zip(*zip(*spines)[0])
+        break
         '''
         try:
         plt.plot(x, y)

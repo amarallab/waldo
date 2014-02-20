@@ -91,15 +91,6 @@ def read_tmp_file(blob_id, data_type, tmp_dir=TMP_DIR):
     tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
     if os.path.isfile(tmp_file):
         return json.load(open(tmp_file, 'r'))    
-    '''
-    ex_id = '_'.join(blob_id.split('_')[:1])    
-    blob_path = '{path}/{eID}'.format(path=tmp_dir, eID=ex_id)
-    ensure_dir_exists(blob_path)
-    if os.path.isdir(blob_path):
-        tmp_file = '{path}/{bID}-{dt}.json'.format(path=blob_path, dt=data_type)
-        if os.path.isfile(tmp_file):
-            return json.load(open(tmp_file, 'r'))
-    '''
     return None
     
 def clear_tmp_file(blob_id, data_type='all'):
@@ -109,6 +100,7 @@ def clear_tmp_file(blob_id, data_type='all'):
     if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
         os.rmdir(blob_path)
 
+'''
 def get_data(blob_id, data_type, split_time_and_data=True, 
              search_db=True, **kwargs):
     tmp_data = read_tmp_file(blob_id=blob_id, data_type=data_type)
@@ -127,18 +119,9 @@ def get_data(blob_id, data_type, split_time_and_data=True,
         return tmp_data, None
     # temp file not located, and search_db=True, attempt to find data in database.
     elif search_db:
-        try:
-            db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
-            print 'warning: could not find tmp file for', blob_id, data_type
-            if len(db_doc) > 0:
-                found_it = True
-            # either split data into times and data or leave alone
-        # Stop everything if no to temp file or database doc.
-        except Exception as e:
-            print '\nFailure! could not locate data'
-            print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt=data_type)
-            print e
-
+        db_doc = search_db_for_data(blob_id, data_type=data_type, **kwargs)
+        if db_doc:
+            found_it = True
     # if found from db
     if split_time_and_data and found_it:
         times, data = timedict_to_list(db_doc['data'])
@@ -150,6 +133,54 @@ def get_data(blob_id, data_type, split_time_and_data=True,
         return False, False, None
     else:
         return False, None            
+'''
+
+def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
+
+    # default: look in tmp file and split into 'time' and 'data'
+    data_dict = read_tmp_file(blob_id=blob_id, data_type=data_type)
+    # temp file not located, and search_db=True, attempt to find data in database.
+    if search_db and not isinstance(data_dict, dict):
+        data_dict = search_db_for_data(blob_id, data_type=data_type, **kwargs)
+
+    # if data source found
+    if isinstance(data_dict, dict):
+        times, data = data_dict.get('time', []), data_dict.get('data', [])        
+
+        if not times and not data:
+            print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
+        return times, data
+    # if data source not found
+    return None, None
+        
+
+
+
+def get_metadata(blob_id, search_db=True, **kwargs):
+    data_type = 'metadata'
+    metadata = read_tmp_file(blob_id=blob_id, data_type=data_type)
+    # default: look in tmp file and split into 'time' and 'data'
+    found_it = False
+    # look in temp file but do not split results
+    if metadata != None:
+        return metadata
+    # temp file not located, and search_db=True, attempt to find data in database.
+    elif search_db:
+        metadata = search_db_for_data(blob_id, data_type='metadata')
+    return metadata
+    
+def search_db_for_data(blob_id, data_type, **kwargs):
+    try:
+        db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
+        print 'warning: could not find tmp file for', blob_id, data_type
+        # either split data into times and data or leave alone
+        # Stop everything if no to temp file or database doc.
+        return db_doc
+    except Exception as e:
+        print '\nFailure! could not locate data'
+        print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt=data_type)
+        print e
+        return None
 
 def store_data_in_db(blob_id, data_type, data, description, db_doc=None, **kwargs):
     if not db_doc:

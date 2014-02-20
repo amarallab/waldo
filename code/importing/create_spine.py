@@ -28,13 +28,13 @@ from Encoding.decode_outline import decode_outline
 from filtering.equally_space import equally_space
 from filtering.filter_utilities import savitzky_golay
 from settings.local import SMOOTHING
-from wio.file_manager import get_data, insert_data_into_db, write_tmp_file
+from wio.file_manager import get_timeseries, insert_data_into_db, write_tmp_file
 
 # set defaults from settings file
 DEFAULT_ORDER = SMOOTHING['spine_poly_order']
 DEFAULT_WINDOW = SMOOTHING['spine_window_size']
 
-def create_spine_from_outline(blob_id, store_in_db=False, store_tmp=True, verbose=False, **kwargs):
+def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     '''
     pulls encoded outline documents from the database calculates a centerline
     called 'spine', smoothes it using a polynomial-smoothing technique, 
@@ -45,7 +45,7 @@ def create_spine_from_outline(blob_id, store_in_db=False, store_tmp=True, verbos
 
     '''
     # if temp data is cached, use that instead of querying database
-    times, encoded_outlines, db_doc = get_data(blob_id=blob_id, data_type='encoded_outline')
+    times, encoded_outlines = get_timeseries(blob_id=blob_id, data_type='encoded_outline')
     outlines = []
     spines = []
     flagged_timepoints = []
@@ -87,11 +87,7 @@ def create_spine_from_outline(blob_id, store_in_db=False, store_tmp=True, verbos
     treated_spines = treat_spine(times, spines)
     #show_worm_video(treated_spine_timedict)
     # insert it back into the database
-    data_type = 'treated_spine'
-    if store_in_db:
-        description = 'spine with 50 points.'
-        insert_data_into_db(blob_id=blob_id, data_type=data_type, times=times, data=treated_spines,
-                            description=description, db_doc=db_doc, **kwargs)
+    data_type = 'spine_rough'
     if store_tmp:        
         data ={'time':times, 'data':treated_spines}
         write_tmp_file(data=data, blob_id=blob_id, data_type=data_type)

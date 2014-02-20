@@ -24,14 +24,14 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 from GeometricCalculations.distance import euclidean
-from wio.file_manager import get_blob_ids, get_data
+from wio.file_manager import get_blob_ids, get_timeseries
 
 # TODO? move remove flag functionality further upstream?
 def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):    
     ''' default option to remove flagged timepoints!'''
-    times, data = get_data(blob_id, data_type=data_type, **kwargs)
+    times, data = get_timeseries(blob_id, data_type=data_type, **kwargs)
     if remove_flags:
-        times_f, all_flags = get_data(blob_id, data_type='flags', **kwargs)
+        times_f, all_flags = get_timeseries(blob_id, data_type='flags', **kwargs)
         flags = consolidate_flags(all_flags)
         unflagged_timeseries = [(t, s) for (t, s, f) in izip(times, data, flags) if f]
         times, data = zip(*unflagged_timeseries)
@@ -54,7 +54,7 @@ def compute_width(blob_id, **kwargs):
 def compute_centroid_speed(blob_id, **kwargs):
     # speed is not a body shape.
     # TODO get xy_raw processed ahead of time.
-    times, xy, _ = get_data(blob_id, data_type='xy_raw', **kwargs)    
+    times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)    
     stimes, speeds = [], []
     for i in range(len(t) - 1):
         dt = t[i + 1] - t[i]
@@ -111,7 +111,7 @@ def displacement_along_curve(curve1, curve2, perpendicular=False, points='all'):
     return total_displacement
 
 def compute_length(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
+    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
     na_values = ['', -1, 'NA', 'NaN', None, []]
     ltimes, lengths = [], []
     for t, spine in izip(times, spines):        
@@ -121,7 +121,7 @@ def compute_length(blob_id, **kwargs):
     return times, lengths
 
 def compute_speed_along(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
+    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
     stimes, speeds = [], []
     for i in range(len(times)):
         if i + 1 < len(spines) and len(spines[i]) > 0 and len(spines[i + 1]) > 0:
@@ -132,7 +132,7 @@ def compute_speed_along(blob_id, **kwargs):
     return stimes, speeds
 
 def compute_speed_perp(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
+    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
     stimes, speeds = [], []
     perpendicular = True
     for i in range(len(times)):
@@ -144,7 +144,7 @@ def compute_speed_perp(blob_id, **kwargs):
     return stimes, speeds
 
 def compute_curvature(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
+    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
     ctimes, curvatures = [], []
     for t, spine in izip(times, spines):
         if len(spine) > 0:

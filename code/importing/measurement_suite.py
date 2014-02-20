@@ -12,6 +12,7 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
+import numpy as np
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -21,34 +22,32 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-
-#from wormmetrics.spine_measures import compute_spine_measures
-#from wormmetrics.centroid_measures import compute_centroid_measures
-#from wormmetrics.basic_measures import compute_basic_measures
-#from wormmetrics.basic_measures import compute_width_measures
-#from wormmetrics.basic_measures import compute_size_measures
-#from database.mongo_retrieve import mongo_query
-#from database.mongo_retrieve import unique_blob_ids_for_query
-#from database.mongo_insert import compute_and_insert_measurements
-#from database.mongo_insert import filter_skipped_and_out_of_range
 from wormmetrics.measurement_switchboard import pull_blob_data
-from wio.file_manager import write_tmp_file
+from wio.file_manager import write_tmp_file, get_metadata
 
-STANDARD_MEASUREMENTS = ['length', 'centroid_speed_bl', 'curve_bl'] 
+STANDARD_MEASUREMENTS = ['length', 'cent_speed_bl', 'curve_bl'] 
 # add angle over time
 
 def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **kwargs):
-    """
-    
+    """    
     Arguments:
     - `blob_id`:
     - `**kwargs`:
-    """
+    """    
+    metadata = get_metadata(blob_id, **kwargs)
+    lt, lengths = pull_blob_data(blob_id, metric='length', **kwargs)
+    pixels_per_bl = np.median(lengths)
+    '''
     for metric in measurements:        
+        if metric == 'length':
+            continue
         t, data = pull_blob_data(blob_id, metric=metric, **kwargs)
+        print metric
+        print t
+        print data
         if store_tmp:
             write_tmp_file(blob_id, data_type=metric, data={'time':t, 'data':data})
-        
+    ''' 
 '''
 def measure_all_depreciated(blob_id, **kwargs):
     try:
@@ -77,7 +76,7 @@ if __name__ == '__main__':
         # type 1 bug. missing times: 20130318_142605_00201
         blob_ids = ['20130318_142605_00201']
         blob_ids = ['20130324_115435_04452']
-        print len(blob_ids)
+        blob_ids = ['00000000_000001_00003']
         for blob_id in blob_ids[:2]:
             measure_all(blob_id)
     else:

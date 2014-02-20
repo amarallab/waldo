@@ -27,7 +27,7 @@ SHARED_DIR = os.path.abspath(HERE + '/../shared/')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.file_manager import get_data, write_tmp_file
+from wio.file_manager import get_timeseries, write_tmp_file
 
 # Globals
 NULL_FLAGS = [-1, [], '', 'NA', 'NaN', u'', u'NA', u'NaN', None]
@@ -155,7 +155,7 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, **kwargs
     data_type - 
     show_plot -
     '''
-    times, data, _ = get_data(blob_id=blob_id, data_type=data_type, **kwargs)
+    times, data = get_timeseries(blob_id=blob_id, data_type=data_type, **kwargs)
     # check to see if all data is correct type
     err_msg = lambda x: 'Error: {bi} {dt} has a {t} ' \
                         'type value in data'.format(bi=blob_id, dt=data_type, t=type(x))
@@ -186,7 +186,7 @@ def flag_report(blob_id):
     #count_flagged_points(blob_id, 'spine_shift_speed')
 
 def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
-    times, _, _ = get_data(blob_id, data_type='width20')
+    times, _ = get_timeseries(blob_id, data_type='width20')
 
     all_flags = {'width20_flags': flag_blob_data(blob_id, 'width20', options='long', **kwargs),
                  'width50_flags': flag_blob_data(blob_id, 'width50', options='long', **kwargs),
@@ -196,16 +196,8 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
                 }
 
     data_type = 'flags'
-    '''
-    if store_in_db:
-        description = 'several dictionaries of boolean flags for each timepoint'
-        #blob_metadata = mongo_query({'blob_id': blob_id, 'data_type': 'metadata'}, find_one=True, **kwargs)
-        #insert_data_into_db(all_flag_dicts, blob_metadata, data_type, description, **kwargs)
-        #store_timedict_in_db(blob_id=blob_id, data_type=data_type, timedict=all_flag_dicts, description=description)
-    '''
     if store_tmp:
-        write_tmp_file(blob_id=blob_id, data_type=data_type, data={'data':all_flags, 'time':times})        
-
+        write_tmp_file(blob_id=blob_id, data_type=data_type, data={'data':all_flags, 'time':times})
     if verbose:
         flags = consolidate_flags(all_flags)
         N = len(flags)
@@ -214,7 +206,6 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
         good = len([i for i in flags if i])
         bad = N - good
         print '{flags} out of {N} timepoints flagged ({r} %)'.format(flags=bad, N=N, r=100 * bad / N)
-
     return all_flags
 
 
@@ -273,7 +264,7 @@ def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     :param verbose: toggle to turn on/off messages while running
     :param insert: toggle to turn on/off the import of resulting break_list into the database.
     """
-    times, all_flags, db_doc = get_data(blob_id, data_type='flags')    
+    times, all_flags = get_timeseries(blob_id, data_type='flags')    
     # find general breakpoints
     flags = consolidate_flags(all_flags)
     break_list = create_break_list(times, flags)
@@ -281,7 +272,7 @@ def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
         print 'found {i} breaks from flags'.format(i=len(break_list))
     data_type = 'breaks'                            
     if store_tmp:
-        write_tmp_file(blob_id, data_type=data_type, data=break_list)
+        write_tmp_file(blob_id, data_type=data_type, data={'time':[], 'data':break_list})
     return break_list
 
 def flag_trouble_areas(flags, min_ok_streak_len=10):
@@ -360,7 +351,7 @@ def create_break_list(times, flags, verbose=False):
     return break_list
 
 def get_flagged_times(blob_id):
-    times, all_flags, _ = get_data(blob_id, data_type='flags')    
+    times, all_flags = get_timeseries(blob_id, data_type='flags')    
     flags = consolidate_flags(all_flags)
     #flagged_times1 = []
     #for (t, f) in zip(times, flags):
@@ -459,7 +450,7 @@ if __name__ == '__main__':
     
     breaks = create_breaks_for_blob_id(blob_id, insert=False)
     print breaks
-    times, all_flags, db_doc = get_data(blob_id, data_type='flags')
+    times, all_flags = get_timeseries(blob_id, data_type='flags')
     flags = consolidate_flags(all_flags)
     flagged_times = get_flagged_times(blob_id)
     good_segments = good_segments_from_data(break_list=breaks, times=times, data=flags, 

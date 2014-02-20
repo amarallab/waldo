@@ -24,7 +24,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.file_manager import get_blob_ids, get_data
+from wio.file_manager import get_blob_ids, get_metadata, get_timeseries
 from compute_metrics import *
 
 # globals
@@ -63,8 +63,7 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
     scaling_factor_type = args.get('units', '')
     # make sure we have appropriate scaling factor
     if not pixels_per_mm and str(scaling_factor_type) in ['mm', 'mm2']:        
-        metadata = get_data(blob_id, data_type='metadata',
-                            split_time_and_data=False, **kwargs)
+        metadata = get_metadata(blob_id, **kwargs)
         pixels_per_mm = metadata.get('pixels-per-mm', 1.0)
         if pixels_per_mm == 1.0:
             print 'Warning, not getting appropriate pixels-per-mm for', blob_id
@@ -82,7 +81,8 @@ def find_data(blob_id, metric, **kwargs):
     ''' order of operations for locating data.
     '''
     # check if result already cached locally
-    times, data, _ = get_data(blob_id, data_type=metric, search_db=False)
+    times, data = get_timeseries(blob_id, data_type=metric, search_db=False)
+    #print 'not already cached'
     if times and data:
         return times, data, {}
     # check if it can be calculated
@@ -91,8 +91,9 @@ def find_data(blob_id, metric, **kwargs):
     if metric_computation_function:
         times, data = metric_computation_function(blob_id=blob_id, metric=metric, **kwargs)
         return times, data, args
+    #print 'metric not found'
     # check if it is cached locally or in db.
-    times, data, _ = get_data(blob_id, data_type=metric, **kwargs)
+    times, data, _ = get_timeseries(blob_id, data_type=metric, **kwargs)
     return times, data, {}
 
 def measure_matches_metric(measure_type, metric):
@@ -131,7 +132,7 @@ def switchboard(metric, switches=dict(SWITCHES)):
                     print 'warning: argument option not found', arg
             return m_function, kwargs
 
-    print 'the metric you specified, ({m}) could not be located'.format(m=measure)
+    print 'the metric you specified, ({m}) could not be located'.format(m=metric)
     return False, {}
 
 

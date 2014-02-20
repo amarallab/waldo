@@ -12,6 +12,7 @@ import math
 import time
 from itertools import izip
 from pylab import *
+import numpy as np
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -25,17 +26,29 @@ sys.path.append(PROJECT_DIR)
 from Encoding.decode_outline import pull_smoothed_outline, decode_outline
 from GeometricCalculations import get_ortogonal_to_spine, find_intersection_points, check_point_is_inside_box
 from ExceptionHandling.record_exceptions import write_pathological_input
-from shared.wio.file_manager import get_data, store_data_in_db, write_tmp_file
+from shared.wio.file_manager import get_timeseries, store_data_in_db, write_tmp_file
 
 def compute_basic_measurements(blob_id, verbose=True, **kwargs):
     lengths = calculate_lengths_for_blob_id(blob_id, **kwargs)
     if verbose:
-        print 'lengths calculated ({N} timepoints)'.format(N=len(lengths))
+        try:
+            m, s = np.mean(lengths), np.std(lengths)
+            print 'lengths calculated ({N} timepoints)'.format(N=len(lengths))
+            print 'mean:{m}, std:{s}'.format(m=m, s=s)                    
+        except:
+            print 'could not compute mean and std for lengths'
     w20, w50, w80 = calculate_widths_for_blob_id(blob_id, **kwargs)
     if verbose:
         print 'widths calculated ({N20}/{N50}/{N80} timepoints at 20/50/80)'.format(N20=len(w20),
                                                                                     N50=len(w50),
                                                                                     N80=len(w80))
+        try:
+            ms = [np.mean(w) for w in [w20, w50, w80]]
+            ss = [np.std(w) for w in [w20, w50, w80]]
+            print 'width means {ms}'.format(ms=ms)
+            print 'width stds {ss}'.format(ss=ss)
+        except:
+            print 'could not compute mean and std for widths'
 
 def calculate_length_for_timepoint(spine):
     length = 0.0
@@ -47,7 +60,7 @@ def calculate_length_for_timepoint(spine):
     return length
 
 
-def calculate_lengths_for_blob_id(blob_id, times=[], store_in_db=False, store_tmp=True, **kwargs):
+def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
     """
     Calculates and returns the timedict of lengths. Optionally inserts lengths into database.
 
@@ -57,22 +70,18 @@ def calculate_lengths_for_blob_id(blob_id, times=[], store_in_db=False, store_tm
     :param spine_entry: database document containing the list of spines.
     :return: timedict of lengths.
     """
-    times, spines, db_doc = get_data(blob_id=blob_id, data_type='treated_spine', **kwargs)
+    times, spines = get_timeseries(blob_id=blob_id, data_type='spine_rough', **kwargs)
     lengths = []
     for spine in spines:
         lengths.append(calculate_length_for_timepoint(spine))
-    data_type = 'length'
-    if store_in_db:
-        description = 'summed distance along treated spine'
-        store_data_in_db(blob_id=blob_id, data_type=data_type, times=times, data=treated_spines,
-                         description=description, db_doc=db_doc, **kwargs)
+    data_type = 'length_rough'
     if store_tmp:
         data ={'time':times, 'data':lengths}
-        write_tmp_file(data=data, blob_id=blob_id, data_type='length')
+        write_tmp_file(data=data, blob_id=blob_id, data_type=data_type)
     return lengths
 
 
-def calculate_widths_for_blob_id(blob_id, store_in_db=True, store_tmp=True, **kwargs):
+def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
     """
     calculates and returns three timedicts with the widths at 20, 50, and 80% of the length of the worm.
 
@@ -82,21 +91,10 @@ def calculate_widths_for_blob_id(blob_id, store_in_db=True, store_tmp=True, **kw
     :return: a tuple of three width timedicts.
     """
     # if temp data is cached, use that instead of querying database
-    times, spines, db_doc1 = get_data(blob_id=blob_id, data_type='treated_spine')
-    times, encoded_outlines, db_doc2 = get_data(blob_id=blob_id, data_type='encoded_outline')
-    # if one of these is true, make sure to use it. doesnt matter which.
-    if db_doc1:
-        db_doc = db_doc1
-    elif db_doc2:
-        db_doc = db_doc2
-    else:
-        db_doc = None
-
-    #show_worm_video(spine_timedict, outline_timedict)
-    width20 = []
-    width50 = []
-    width80 = []
-
+    times, spines = get_timeseries(blob_id=blob_id, data_type='spine_rough')
+    times, encoded_outlines = get_timeseries(blob_id=blob_id, data_type='encoded_outline')
+    
+    width20, width50, width80 = [], [], []
     for spine, en_outline in izip(spines, encoded_outlines):
         outline = decode_outline(en_outline)
         if len(spine) == 50:
@@ -118,19 +116,9 @@ def calculate_widths_for_blob_id(blob_id, store_in_db=True, store_tmp=True, **kw
         data ={'time':times, 'data':width80}
         write_tmp_file(data=data, blob_id=blob_id, data_type='width80')
 
-    if store_in_db:
-        description = 'summed distance to two nearest points, 20percent along worm'
-        db_doc = store_data_in_db(blob_id=blob_id, data_type='width20', times=times, data=width20,
-                                  description=description, db_doc=db_doc, **kwargs)
-        description = 'summed distance to two nearest points, 50percent along worm'
-        db_doc = store_data_in_db(blob_id=blob_id, data_type='width50', times=times, data=width50,
-                                  description=description, db_doc=db_doc, **kwargs)
-        description = 'summed distance to two nearest points, 20percent along worm'
-        db_doc = store_data_in_db(blob_id=blob_id, data_type='width80', times=times, data=width80,
-                                  description=description, db_doc=db_doc, **kwargs)
     return width20, width50, width80
 
-
+'''
 def show_worm_video(spine_timedict, outline_timedict):
     # floats sort more properly than strings, hence using sorted tuple with (float, string)
     times = sorted([(float(t.replace('?', '.')), t) for t in spine_timedict])
@@ -172,7 +160,7 @@ def show_worm_video(spine_timedict, outline_timedict):
             time.sleep(1)
 
         clf()
-
+'''
 
 def calculate_spineshift(t1, t2, spine1, spine2):
     assert type(t1) == type(t2) == float
@@ -188,7 +176,8 @@ def calculate_spineshift(t1, t2, spine1, spine2):
     spine_shift_speed = spine_shift_d / dt
     return spine_shift_speed
 
-
+# depricated
+'''
 def calculate_spineshift_for_blob_id(blob_id, insert=True, **kwargs):
     spine_entry = pull_data_type_for_blob(blob_id, 'treated_spine', **kwargs)
     spine_timedict = spine_entry['data']
@@ -209,7 +198,7 @@ def calculate_spineshift_for_blob_id(blob_id, insert=True, **kwargs):
         data_type = 'spine_shift_speed'
         insert_data_into_db(spine_shift_timedict, spine_entry, data_type, description, **kwargs)
     return spine_shift_timedict
-
+'''
 
 def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
     '''
