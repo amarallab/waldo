@@ -21,7 +21,7 @@ sys.path.append(SHARED_DIRECTORY)
 # nonstandard imports
 #from database.mongo_retrieve import pull_data_type_for_blob
 #from database.mongo_retrieve import timedict_to_list
-from wio.file_manager import get_data
+from wio.file_manager import 
 from GeometricCalculations import compute_displacement_along_curve
 from GeometricCalculations.distance import euclidean
 from filtering.filter_utilities import filter_stat_timedict as fst

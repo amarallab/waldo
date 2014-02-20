@@ -14,92 +14,62 @@ assert os.path.exists(code_directory), 'code directory not found'
 sys.path.append(code_directory)
 
 # nonstandard imports
-import wio.file_manager
 from wio.file_manager import get_data
 from importing.flags_and_breaks import consolidate_flags
 from filtering.filter_utilities import filter_stat_timedict as fst
 from show_measure import quickplot_stat2
 
-def compute_size_measures(blob_id, smooth=True, **kwargs):
+def compute_size_measures(blob_id, **kwargs):
     '''
-
     :param blob_id:
-    :param metric:
-    :param smoothed:
     '''
-
     times_f, all_flags = get_data(blob_id, data_type='flags', **kwargs)
-    metadata = get_data(blob_id, data_type='metadata', split_time_and_data=False)
     times_s, sizes = get_data(blob_id, data_type='size_raw', **kwargs)
-
     flags = consolidate_flags(all_flags)
     pixels_per_mm = float(flag_data_entry.get('pixels-per-mm', 1.0))
-    pixels_per_bl = float(flag_data_entry.get('pixels-per-body-length', 1.0))
     # making robust to depreciated notation that should no longer be in database
-    if pixels_per_mm == 1.0:
-        pixels_per_mm = float(flag_data_entry.get('pixels_per_mm', 1.0))
-    if pixels_per_bl == 1.0:
-        pixels_per_bl = float(flag_data_entry.get('pixels_per_body_length', 1.0))
-    if pixels_per_bl == 1.0:
-        pixels_per_bl = float(flag_data_entry.get('midline-median', 1.0))
-
-
+    #if pixels_per_mm == 1.0:
+    #    pixels_per_mm = float(flag_data_entry.get('pixels_per_mm', 1.0))
     # pull size data, remove flagged timepoints, rescale, and return
-    unflagged_sizes = [s for (s,f) in izip(sizes, flags) if f]
-    rescaled_sizes = np.array(unflagged_sizes) / (pixels_per_mm**2)
-    if smooth:
-        return fst(rescaled_sizedict)
-    else:
-        return rescaled_sizedict
+    unflagged_timeseries = [(t, s) for (t, s, f) in izip(times_s, sizes, flags) if f]
+    times, sizes = zip(*unflagged_timeseries)
+    rescaled_sizes = np.array(sizes) / (pixels_per_mm**2)
+    return times, rescaled_sizes
 
-def compute_width_measures(blob_id, metric='all', source_data_entry=None, flag_data_entry=None, smooth=True, **kwargs):
+
+def compute_width_measures(blob_id, metric='all', **kwargs):
     '''
 
     :param blob_id:
     :param metric:
-    :param smoothed:
     '''
     assert metric in ['all', 'width_mm', 'width_bl']
+    times_f, all_flags, doc = get_data(blob_id, data_type='flags', **kwargs)
+    times, widths, _ get_data(blob_id, data_type='width50', **kwargs)
+    flags = consolidate_flags(all_flags)
 
-    if flag_data_entry:
-        assert flag_data_entry['data_type'] == 'flags', 'Error: wrong type of flag data entry provided'
-    else:
-        flag_data_entry = pull_data_type_for_blob(blob_id, 'flags', **kwargs)
 
-    all_flag_dicts = flag_data_entry['data']
-    flag_timedict = consolidate_flags(all_flag_dicts)
-    pixels_per_mm = float(flag_data_entry.get('pixels-per-mm', 1.0))
-    pixels_per_bl = float(flag_data_entry.get('pixels-per-body-length', 1.0))
-
+    pixels_per_mm = float(doc.get('pixels-per-mm', 1.0))
+    pixels_per_bl = float(doc.get('pixels-per-body-length', 1.0))
     # making robust to depreciated notation that should no longer be in database
-    if pixels_per_mm == 1.0:
-        pixels_per_mm = float(flag_data_entry.get('pixels_per_mm', 1.0))
-    if pixels_per_bl == 1.0:
-        pixels_per_bl = float(flag_data_entry.get('pixels_per_body_length', 1.0))
+    #if pixels_per_mm == 1.0:
+    #    pixels_per_mm = float(flag_data_entry.get('pixels_per_mm', 1.0))
+    #if pixels_per_bl == 1.0:
+    #    pixels_per_bl = float(flag_data_entry.get('pixels_per_body_length', 1.0))
     if pixels_per_bl == 1.0:
         pixels_per_bl = float(flag_data_entry.get('midline-median', 1.0))
 
-    datatype = 'width50'
-    if source_data_entry:
-        assert source_data_entry['data_type'] == datatype, 'Error: wrong type of data entry provided'
-    else:
-        source_data_entry = pull_data_type_for_blob(blob_id, data_type=datatype, **kwargs)
-
-    width_timedict = source_data_entry['data']
-    unflagged_width_timedict = keep_unflagged_timepoints(flag_timedict, width_timedict)
-    width_mm_timedict = rescale_timedict(unflagged_width_timedict, pixels_per_mm)
-    width_bl_timedict = rescale_timedict(unflagged_width_timedict, pixels_per_bl)
-
+    unflagged_timeseries = [(t, w) for (t, w, f) in izip(times, widths, flags) if f]
+    times, widths = zip(*unflagged_timeseries)
+    #unflagged_width_timedict = keep_unflagged_timepoints(flag_timedict, width_timedict)
+    #width_mm_timedict = rescale_timedict(unflagged_width_timedict, pixels_per_mm)
+    #width_bl_timedict = rescale_timedict(unflagged_width_timedict, pixels_per_bl)
     if metric =='width_mm':
-        if smooth:
-            return fst(width_mm_timedict)
-        else: return width_mm_timedict
-    if metric == 'width_bl':
-        if smooth:
-            return fst(width_bl_timedict)
-        else: return width_bl_timedict
-    return {'width_mm': fst(width_mm_timedict),
-            'width_bl': fst(width_bl_timedict)}
+        return times, np.array(widths) / (pixels_per_mm)
+    if metric =='width_mm':
+        return times, np.array(widths) / (pixels_per_bl)
+    return {'width_mm': np.array(widths) / (pixels_per_mm),
+            'width_bl': np.array(widths) / (pixels_per_bl)}
 
 if __name__ == "__main__":
     #blob_id = '20121119_162934_07337'
@@ -109,7 +79,7 @@ if __name__ == "__main__":
     metric = 'width_bl'
     #metric = 'width_mm'
     #metric = 'size_mm2'
-    stat_timedict1 = compute_basic_measures(blob_id, metric=metric, smooth=False)
-    stat_timedict2 = compute_basic_measures(blob_id, metric=metric, smooth=True)
-    print len(stat_timedict1), len(stat_timedict2)
-    quickplot_stat2(stat_timedict1, stat_timedict2, 'raw', 'smoothed')
+    stat_timedict1 = compute_basic_measures(blob_id, metric=metric)#, smooth=False)
+    stat_timedict2 = compute_basic_measures(blob_id, metric=metric)#, smooth=True)
+    #print len(stat_timedict1), len(stat_timedict2)
+    #quickplot_stat2(stat_timedict1, stat_timedict2, 'raw', 'smoothed')
