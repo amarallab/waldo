@@ -13,6 +13,7 @@ __status__ = 'prototype'
 import os
 import sys
 import math
+import numpy as np
 from itertools import izip
 
 # path definitions

@@ -70,7 +70,7 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
         print 'finished smoothing spine with {N} remaining time-points'.format(N=len(smoothed_times))
     return smoothed_times, smoothed_spines
 
-def process_ex_id(ex_id, **kwargs):
+def process_ex_id(ex_id, debug=False,**kwargs):
     '''
     processes all blobs in database from ex_id from raw data all the way to smoothspines.
     if ex_id does not have any blobs already in database, it reads the .blobs files and inserts
@@ -115,7 +115,6 @@ def process_ex_id(ex_id, **kwargs):
             continue
         times, spines = zip(*good_stuff)
         x, y = zip(*zip(*spines)[0])
-        break
         '''
         try:
         plt.plot(x, y)
@@ -126,6 +125,8 @@ def process_ex_id(ex_id, **kwargs):
         plt.savefig(blob_id + '.png')
         plt.clf()
         '''
+        if debug:
+            break
     # TODO: add compile all blob measurements into plate timeseries here.
 
 def all_unprocessed_blob_ids(**kwargs):

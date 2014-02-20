@@ -160,9 +160,8 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, **kwargs
     err_msg = lambda x: 'Error: {bi} {dt} has a {t} ' \
                         'type value in data'.format(bi=blob_id, dt=data_type, t=type(x))
     def check(x):
-        assert type(x) in [int, float], err_msg        
-    map(check, data)
-        
+        assert type(x) in [int, float], err_msg
+    map(check, data)        
     flags = flag_outliers(data, options=options)
     if show_plot:
         plot_fit_hists(data, xlabel=data_type)
@@ -182,7 +181,7 @@ def flag_report(blob_id):
     count_flagged_points(blob_id, 'width20')
     count_flagged_points(blob_id, 'width50')
     count_flagged_points(blob_id, 'width80')
-    count_flagged_points(blob_id, 'length')
+    count_flagged_points(blob_id, 'length_rough')
     #count_flagged_points(blob_id, 'spine_shift_speed')
 
 def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
@@ -191,8 +190,10 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     all_flags = {'width20_flags': flag_blob_data(blob_id, 'width20', options='long', **kwargs),
                  'width50_flags': flag_blob_data(blob_id, 'width50', options='long', **kwargs),
                  'width80_flags': flag_blob_data(blob_id, 'width80', options='long', **kwargs),
-                 'length_flags_short': flag_blob_data(blob_id, 'length', options='short', **kwargs),
-                 'length_flags_long': flag_blob_data(blob_id, 'length', options='long', **kwargs),
+                 'length_flags_short': flag_blob_data(blob_id, 'length_rough', options='short', 
+                                                      **kwargs),
+                 'length_flags_long': flag_blob_data(blob_id, 'length_rough', options='long', 
+                                                     **kwargs),
                 }
 
     data_type = 'flags'

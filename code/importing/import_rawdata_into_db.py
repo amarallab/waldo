@@ -38,8 +38,9 @@ from wio.file_manager import write_tmp_file
 
 DATA_DIR = LOGISTICS['filesystem_data']
 
-def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, max_blob_files=1000,
-                                    data_dir=DATA_DIR, store_db=True, store_tmp=True, **kwargs):
+def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
+                                    max_blob_files=10000,
+                                    data_dir=DATA_DIR, store_db=False, store_tmp=True, **kwargs):
     ''' creates a list of database documents out of all worthy blobs for a particular recording.
 
     :param ex_id: the experiment index of the recording
