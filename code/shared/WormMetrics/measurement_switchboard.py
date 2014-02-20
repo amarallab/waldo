@@ -25,7 +25,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import get_blob_ids, get_data
-from GeometricCalculations.distance import euclidean
+from compute_metrics import *
 
 # globals
 # TODO: Figure out a way to build the switchboard from the functions without hard coding in acceptable_types
@@ -42,27 +42,68 @@ SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
                             'units': ['bl', 'mm']}}        
 
 # **** main function of the module. 
-def pull_blob_data(blob_id, metric, remove_skips=True, **kwargs):
+def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
     ''' returns a list of times and a list of data for a given blob_id and metric.
 
     This function chooses which program to call in order to calculate or retrieve
     the desired metric.
     '''
-    metric_computation_function, args = switchboard(metric)
-    if metric_computation_function:
-        times, data = metric_computation_function(blob_id=blob_id, metric=metric, **kwargs)
-    else:
-        times, data, _ = get_data(blob_id, data_type=metric, **kwargs)['data']
+    # get the data before skips removed, scaled to units
+    times, data, args = find_data(blob_id, metric, **kwargs)    
+    # skips are a nuscence. for now, remove them permenantly
+    remove_skips = True
     if remove_skips:
         ntimes, ndata = [], []
-        for t,v in izip(times, data)
+        for t,v in izip(times, data):
             if isinstance(v, float):
                 ntimes.append(t)
                 ndata.append(v)
         times, data = ntimes, ndata
+    # this block of code handles all scaling factor operations
+    scaling_factor_type = args.get('units', '')
+    # make sure we have appropriate scaling factor
+    if not pixels_per_mm and str(scaling_factor_type) in ['mm', 'mm2']:        
+        metadata = get_data(blob_id, data_type='metadata',
+                            split_time_and_data=False, **kwargs)
+        pixels_per_mm = metadata.get('pixels-per-mm', 1.0)
+        if pixels_per_mm == 1.0:
+            print 'Warning, not getting appropriate pixels-per-mm for', blob_id
+    if not pixels_per_bl and scaling_factor_type=='bl':        
+        _, lengths = compute_length(blob_id, **kwargs)
+        pixels_per_bl = np.median(lengths)
+    # implement that scaling factor.
+    if scaling_factor_type == 'mm':
+        data = np.array(data)  / pixels_per_mm        
+    if scaling_factor_type == 'bl':
+        data = np.array(data)  / pixels_per_bl        
     return times, data
 
-def switchboard(metric):
+def find_data(blob_id, metric, **kwargs):
+    ''' order of operations for locating data.
+    '''
+    # check if result already cached locally
+    times, data, _ = get_data(blob_id, data_type=metric, search_db=False)
+    if times and data:
+        return times, data, {}
+    # check if it can be calculated
+    metric_computation_function, args = switchboard(metric)
+    # TODO: bulild in args.
+    if metric_computation_function:
+        times, data = metric_computation_function(blob_id=blob_id, metric=metric, **kwargs)
+        return times, data, args
+    # check if it is cached locally or in db.
+    times, data, _ = get_data(blob_id, data_type=metric, **kwargs)
+    return times, data, {}
+
+def measure_matches_metric(measure_type, metric):
+    numparts = len(measure_type.split('_'))
+    split_name = metric.split('_')
+    if numparts > split_name:
+        return False
+    measure_sized_metric = '_'.join(split_name[:numparts])
+    return str(measure_type) == str(measure_sized_metric)
+
+def switchboard(metric, switches=dict(SWITCHES)):
     """
     searches through SWITCHES Global dictionary and returns the function used to calculate it.
     
@@ -71,22 +112,24 @@ def switchboard(metric):
     :return: function to calculate the
     :type return: function
     """
-    def measure_matches_metric(measure_type, metric):
-        nubparts = len(measure_type.split('_'))
-        split_name = metric.split('_')
-        if numparts > split_name:
-            return False
-        measure_sized_metric = '_'.join(split_name[:numparts])
-        return str(measure_type) == str(measure_sized_metric)
-
     args = {}
     metric = str(metric)
-    for measure_type, arg_options in SWITCHES.iteritems():        
+    for measure_type, arg_options in switches.iteritems():        
+        # this copy is to prevent SWITCHES from being changed.
+        arg_options = dict(arg_options)
         m_function = arg_options.pop('func', None)
-        if right_name(measure_type, metric):
+        if measure_matches_metric(measure_type, metric):
             args = metric.split(measure_type)[-1].split('_')
-            
-            return m_function, args
+            kwargs = {}
+            for arg in args:
+                found_arg_option = False
+                for key, values in arg_options.iteritems():
+                    if arg in values:
+                        kwargs[key] = arg
+                        found_arg_option = True
+                if len(arg) > 0 and not found_arg_option:
+                    print 'warning: argument option not found', arg
+            return m_function, kwargs
 
     print 'the metric you specified, ({m}) could not be located'.format(m=measure)
     return False, {}
@@ -128,157 +171,6 @@ def pull_all_for_blob_id(blob_id, out_format='values', **kwargs):
     return all_data
 '''
 
-# TODO? move remove flag functionality further upstream?
-def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):    
-    ''' default option to remove flagged timepoints!'''
-    times, data = get_data(blob_id, data_type=data_type, **kwargs)
-    if remove_flags:
-        times_f, all_flags = get_data(blob_id, data_type='flags', **kwargs)
-        flags = consolidate_flags(all_flags)
-        unflagged_timeseries = [(t, s) for (t, s, f) in izip(times, data, flags) if f]
-        times, data = zip(*unflagged_timeseries)
-    return times, data
-
-# todo
-def space_basic_data_type_linearly(times, values):
-    return times, values
-
-def compute_size(blob_id, **kwargs):    
-    # size is a body shape property. if we've flagged the shape, don't measure size.
-    return pull_basic_data_type(blob_id, data_type='size_raw',
-                                remove_flags=True, **kwargs)
-
-def compute_width(blob_id, **kwargs):
-    # size is a body shape property. if we've flagged the shape, don't measure size.
-    return pull_basic_data_type(blob_id, data_type='width50', 
-                                remove_flags=True, **kwargs)
-
-def compute_centroid_speed(blob_id, **kwargs):
-    # speed is not a body shape.
-    # TODO get xy_raw processed ahead of time.
-    times, xy, _ = get_data(blob_id, data_type='xy_raw', **kwargs)    
-    stimes, speeds = [], []
-    for i in range(len(t) - 1):
-        dt = t[i + 1] - t[i]
-        xy_future = xy[i + 1]
-        xy_now = xy[i]
-        ds = math.sqrt((xy_future[0] - xy_now[0]) ** 2 + (xy_future[1] - xy_now[1]) ** 2)
-        stimes.append(t[i])
-        speeds.append(ds/dt)
-    return times, speeds
-
-def length_of_spine(spine):
-        dx, dy = map(np.diff, map(np.array, zip(*spine)))
-        return np.sqrt(dx**2 + dy**2).sum()
-
-def speed_along_spine(spine1, spine2, t_plus_dt, t, perpendicular, points='all'):
-    '''
-        this function takes a spine
-        list of [[x1,y1], [x2,y2], ...]
-        and returns the average speed along (or perpendicular to) the spine
-    '''
-    dt = t_plus_dt - t
-    assert dt > 0, 'times are not sorted!'
-    assert len(spine1) > 0, 'spine1 is empty'
-    assert len(spine1) == len(spine2), 'spines of different lengths'
-    if points == 'all': points = range(len(spine1))
-    displacement = displacement_along_curve(spine1, spine2, perpendicular=perpendicular, 
-                                                    points=points)
-    speed = displacement / len(points) / dt
-    return speed
-
-# TODO: rewrite using numpy
-def displacement_along_curve(curve1, curve2, perpendicular=False, points='all'):
-    """
-        curve1 and curve2 are lists of tuples (x,y)
-        the function return the sum of the 
-        projections of (curve2-curve1) along curve1
-        if perpendicular, the displacement is computed
-        perpendicular to the spine
-    """
-    if points == 'all': points = range(len(curve1))
-    total_displacement = 0.
-    for i in points:
-        if i + 1 < len(curve1):
-            p2 = curve1[i + 1]
-            p1 = curve1[i]
-            p1_later = curve2[i]
-            # positive number if p1_later gets closer to p2
-            dist = get_direction_and_distance(p1, p2,
-                                              p1, p1_later,
-                                              perpendicular=perpendicular)
-            total_displacement += dist
-    return total_displacement
-
-def compute_length(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
-    na_values = ['', -1, 'NA', 'NaN', None, []]
-    ltimes, lengths = [], []
-    for t, spine in izip(times, spines):        
-        if len(spine) != 0 or spine not in na_values:
-            ltimes.append(t)
-            lengths.append(length_of_spine(spine))
-    return times, lengths
-
-def compute_speed_along(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
-    stimes, speeds = [], []
-    for i in range(len(times)):
-        if i + 1 < len(spines) and len(spines[i]) > 0 and len(spines[i + 1]) > 0:
-            speed = speed_along_spine(spines[i], spines[i + 1],
-                                      times[i + 1], times[i])
-            stimes.append(time[i])
-            speeds.append(speed)
-    return stimes, speeds
-
-def compute_speed_perp(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
-    stimes, speeds = [], []
-    perpendicular = True
-    for i in range(len(times)):
-        if i + 1 < len(spines) and len(spines[i]) > 0 and len(spines[i + 1]) > 0:
-            speed = speed_along_spine(spines[i], spines[i + 1],
-                                      times[i + 1], times[i], perpendicular=True)
-            stimes.append(t)
-            speeds.append(speed)
-    return stimes, speeds
-
-def compute_curvature(blob_id, **kwargs):
-    times, spines, _ = get_data(blob_id, data_type='spine', **kwargs)
-    ctimes, curvatures = [], []
-    for t, spine in izip(times, spines):
-        if len(spine) > 0:
-            curve = curvature_of_spine(spine_list[i], points, scaling_factor)
-            ctimes.append(t)
-            curvatures.append(curve)
-    return ctimes, curvatures
-
-def curvature_of_spine(spine, points='all'):
-    def compute_curvature_from_three_points(p, q, t):
-        """
-        Solution from: http://mathworld.wolfram.com/SSSTheorem.html
-        p,q and t are tuples (x,y)
-        """
-        a = euclidean(p, q)
-        b = euclidean(t, q)
-        c = euclidean(p, t)
-        if a == 0 or b == 0 or c == 0:
-            return 0.
-        s = 0.5 * (a + b + c)
-        # preventing round off error from breaking code
-        if (s * (s - a) * (s - b) * (s - c)) < 0:
-            K = 0.
-        else:
-            K = math.sqrt(s * (s - a) * (s - b) * (s - c))
-        return K / (a * b * c) * 4.
-    if points == 'all':
-        points = range(len(spine))
-    curvatures = []
-    for i in points:
-        if 1 < i < len(spine) - 1:
-            curvature = compute_curvature_from_three_points(spine[i - 1], spine[i], spine[i + 1])
-            curvatures.append(curvature)
-    return np.mean(curvatures)
 
 if __name__ == '__main__':
     '''
@@ -294,12 +186,8 @@ if __name__ == '__main__':
     #bID='00000000_000001_00001'
     import time
     start = time.time()
-    pull_all_for_blob_id(blob_id=bID)
-    dur1 = time.time() - start
-    start = time.time()
-    pull_all_for_blob_id2(blob_id=bID)
-    dur2 = time.time() - start
+    pull_blob_data(blob_id=bID, metric='length')
+    dur = time.time() - start
 
-    print '1', dur1
-    print '2', dur2
-    print dur1/dur2
+    print '1', dur
+

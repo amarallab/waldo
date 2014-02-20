@@ -109,9 +109,11 @@ def clear_tmp_file(blob_id, data_type='all'):
     if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
         os.rmdir(blob_path)
 
-def get_data(blob_id, data_type, split_time_and_data=True, **kwargs):
+def get_data(blob_id, data_type, split_time_and_data=True, 
+             search_db=True, **kwargs):
     tmp_data = read_tmp_file(blob_id=blob_id, data_type=data_type)
     # default: look in tmp file and split into 'time' and 'data'
+    found_it = False
     if tmp_data != None and split_time_and_data:
         times = tmp_data.get('time', [])
         data = tmp_data.get('data', [])
@@ -123,25 +125,31 @@ def get_data(blob_id, data_type, split_time_and_data=True, **kwargs):
     # look in temp file but do not split results
     elif tmp_data != None:
         return tmp_data, None
-    # temp file not located, attempt to find data in database.
-    else:
+    # temp file not located, and search_db=True, attempt to find data in database.
+    elif search_db:
         try:
             db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
             print 'warning: could not find tmp file for', blob_id, data_type
+            if len(db_doc) > 0:
+                found_it = True
             # either split data into times and data or leave alone
-            if split_time_and_data:
-                times, data = timedict_to_list(db_doc['data'])
-                return times, data, db_doc
-            else:
-                return db_doc['data'], db_doc
-
         # Stop everything if no to temp file or database doc.
         except Exception as e:
             print '\nFailure! could not locate data'
             print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt=data_type)
             print e
-            assert False
-    return times, data, db_doc
+
+    # if found from db
+    if split_time_and_data and found_it:
+        times, data = timedict_to_list(db_doc['data'])
+        return times, data, db_doc
+    elif found_it:
+        return db_doc['data'], db_doc
+    # if nothing is found.
+    elif split_time_and_data:
+        return False, False, None
+    else:
+        return False, None            
 
 def store_data_in_db(blob_id, data_type, data, description, db_doc=None, **kwargs):
     if not db_doc:

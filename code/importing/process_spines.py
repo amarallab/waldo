@@ -1,4 +1,4 @@
-a#!/usr/bin/env python
+#!/usr/bin/env python
 
 '''
 Filename: process_spines.py
@@ -37,7 +37,7 @@ from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
 from import_rawdata_into_db import create_entries_from_blobs_files
 import shared.wio
-from measurement_suite import measure_all
+#from measurement_suite import measure_all
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     """
@@ -103,7 +103,8 @@ def process_ex_id(ex_id, **kwargs):
     for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
-        measure_all(blob_id, **kwargs)
+        # todo add measurement step here
+        #measure_all(blob_id, **kwargs)
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
             pass
@@ -125,6 +126,8 @@ def process_ex_id(ex_id, **kwargs):
         plt.savefig(blob_id + '.png')
         plt.clf()
         '''
+    # TODO: add compile all blob measurements into plate timeseries here.
+
 def all_unprocessed_blob_ids(**kwargs):
     all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)
     processed_ids = unique_blob_ids_for_query({'data_type': 'raw_spine'}, **kwargs)

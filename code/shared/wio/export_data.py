@@ -30,8 +30,6 @@ import database.mongo_retrieve as mr
 from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids, get_data
 #from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
 
-
-
 def export_blob_percentiles_by_ex_id(ex_id, out_dir=EXPORT_PATH, path_tag='', verbose=True, **kwargs):
     """
     write a json for an ex_id in which each blob has a dictionary of measurements containing

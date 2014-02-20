@@ -19,7 +19,7 @@ import cProfile as profile
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))
 PROJECT_DIR = os.path.abspath(CODE_DIR + '/../')
-SHARED_DIR = CODE_DIR + 'shared/'
+SHARED_DIR = CODE_DIR + '/shared/'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
