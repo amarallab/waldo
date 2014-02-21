@@ -162,43 +162,6 @@ def show_worm_video(spine_timedict, outline_timedict):
         clf()
 '''
 
-def calculate_spineshift(t1, t2, spine1, spine2):
-    assert type(t1) == type(t2) == float
-    assert type(spine1) == type(spine2) == list
-    dt = t2 - t1
-    spine_shift_d = 0
-    for pt1, pt2 in izip(spine1, spine2):
-        x1, y1 = pt1
-        x2, y2 = pt2
-        d = (math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2))
-        spine_shift_d += d
-        #print t1, t2, dt, spine_shift_d
-    spine_shift_speed = spine_shift_d / dt
-    return spine_shift_speed
-
-# depricated
-'''
-def calculate_spineshift_for_blob_id(blob_id, insert=True, **kwargs):
-    spine_entry = pull_data_type_for_blob(blob_id, 'treated_spine', **kwargs)
-    spine_timedict = spine_entry['data']
-
-    spine_shift_timedict = {}
-
-    # floats sort more properly than strings, hence using sorted tuple with (float, string)
-    times = sorted([(float(t.replace('?', '.')), t) for t in spine_timedict])
-    for i, t in enumerate(times[:-1]):
-        t1, tkey1 = times[i]
-        t2, tkey2 = times[i + 1]
-        spine_shift_timedict[tkey2] = calculate_spineshift(t1, t2,
-                                                           spine_timedict[tkey1],
-                                                           spine_timedict[tkey2])
-
-    if insert:
-        description = 'summed euclidian distance across all points on the spine between each frame timesteps'
-        data_type = 'spine_shift_speed'
-        insert_data_into_db(spine_shift_timedict, spine_entry, data_type, description, **kwargs)
-    return spine_shift_timedict
-'''
 
 def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
     '''
@@ -224,13 +187,15 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
 
     if len(intersection_xs) == 0:
         print 'intersection points are zero!'
-        write_pathological_input((spine, outline), input_type='spine/outline', note='no intersection points',
+        write_pathological_input((spine, outline), input_type='spine/outline', 
+                                 note='no intersection points',
                                  savename='%sno_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
         return (-1, -1), (-1, -1), False, -1
 
     if len(intersection_xs) % 2 != 0:
         print 'intersection points are odd', len(intersection_xs)
-        write_pathological_input((spine, outline), input_type='spine/outline', note='num intersection points odd',
+        write_pathological_input((spine, outline), input_type='spine/outline', 
+                                 note='num intersection points odd',
                                  savename='%sodd_num_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
         #print intersection_xs, intersection_ys
         return (intersection_xs[0], intersection_ys[0]), (-1, -1), False, -1

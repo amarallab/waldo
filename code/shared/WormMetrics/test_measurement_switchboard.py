@@ -78,7 +78,7 @@ class TestMeasureSwitchboard(unittest.TestCase):
                 self.assertEqual(kwargs, s)
 
     def test_switchboard_function_args2(self):
-        metric = 'curv_bl_mid'
+        metric = 'curve_bl_mid'
         f_sol = compute_curvature
         kwargs_sol = {'units': 'bl', 'position':'mid'}
         f, kwargs = switchboard(metric)

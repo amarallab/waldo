@@ -32,7 +32,7 @@ from compute_metrics import *
 SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
              'size': {'func': compute_size, 'units': ['mm2']},
              'length': {'func': compute_length, 'units': ['mm']},
-             'curv': {'func': compute_curvature, 'units': ['mm', 'bl'], 
+             'curve': {'func': compute_curvature, 'units': ['mm', 'bl'], 
                       'position':['head', 'mid', 'tail']},
              'speed_along': {'func': compute_speed_along, 'units':['mm', 'bl'], 
                              'position':['head', 'mid', 'tail']},
@@ -89,11 +89,12 @@ def find_data(blob_id, metric, **kwargs):
     metric_computation_function, args = switchboard(metric)
     # TODO: bulild in args.
     if metric_computation_function:
+        print 'computing metric', metric, 'using', metric_computation_function
         times, data = metric_computation_function(blob_id=blob_id, metric=metric, **kwargs)
         return times, data, args
     #print 'metric not found'
     # check if it is cached locally or in db.
-    times, data, _ = get_timeseries(blob_id, data_type=metric, **kwargs)
+    times, data = get_timeseries(blob_id, data_type=metric, **kwargs)
     return times, data, {}
 
 def measure_matches_metric(measure_type, metric):

@@ -54,19 +54,18 @@ def compute_width(blob_id, **kwargs):
 
 def compute_centroid_speed(blob_id, **kwargs):
     # speed is not a body shape.
-    # TODO get xy_raw processed ahead of time.
-    times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)    
-    stimes, speeds = [], []
-    for i in range(len(t) - 1):
-        dt = t[i + 1] - t[i]
-        xy_future = xy[i + 1]
-        xy_now = xy[i]
-        ds = math.sqrt((xy_future[0] - xy_now[0]) ** 2 + (xy_future[1] - xy_now[1]) ** 2)
-        # in case of divide by zero error
-        if dt > 0.0000001:
-            stimes.append(t[i])
-            speeds.append(ds/dt)
-    return times, speeds
+    times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)    
+    x, y = zip(*xy)
+    dt = np.diff(np.array(times))
+    dx = np.diff(np.array(x))
+    dy = np.diff(np.array(y))
+    # to guard against division by zero
+    for i, t in enumerate(dt):
+        if t < 0.0000001:
+            dt[i] = 0.0000001
+    speeds = np.sqrt(dx**2 + dy**2) / dt
+    return times[1:], speeds
+    
 
 def length_of_spine(spine):
         dx, dy = map(np.diff, map(np.array, zip(*spine)))
@@ -235,7 +234,7 @@ def compute_curvature(blob_id, **kwargs):
     ctimes, curvatures = [], []
     for t, spine in izip(times, spines):
         if len(spine) > 0:
-            curve = curvature_of_spine(spine_list[i], points, scaling_factor)
+            curve = curvature_of_spine(spine)
             ctimes.append(t)
             curvatures.append(curve)
     return ctimes, curvatures
