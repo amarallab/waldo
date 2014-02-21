@@ -63,7 +63,7 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
     # make sure we have appropriate scaling factor
     if not pixels_per_mm and str(scaling_factor_type) in ['mm', 'mm2']:        
         metadata = get_metadata(blob_id, **kwargs)
-        pixels_per_mm = metadata.get('pixels-per-mm', 1.0)
+        pixels_per_mm = float(metadata.get('pixels-per-mm', 1.0))
         if pixels_per_mm == 1.0:
             print 'Warning, not getting appropriate pixels-per-mm for', blob_id
     if not pixels_per_bl and scaling_factor_type=='bl':        

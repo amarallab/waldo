@@ -56,12 +56,12 @@ def ensure_dir_exists(path):
 def manage_save_path(out_dir, path_tag, ID, data_type):
     ''' returns a unique descriptive file name to store data and makes sure path to it exists'''
     # get directories in order
-    out_dir = '{d}/{b}/'.format(d=out_dir.rstrip('/'), b=path_tag.lstrip('/'))
+    out_dir = '{d}/{tag}/'.format(d=out_dir.rstrip('/'), tag=path_tag.lstrip('/'))
     out_dir = ensure_dir_exists(out_dir.rstrip('/'))
 
     #now_string = time.ctime().replace('  ', '_').replace(' ', '_')
     #now_string = now_string.replace(':', '.').strip()
-    save_name = '{path}/{ID}_{dt}_.json'.format(path=out_dir, ID=ID, dt=data_type)
+    save_name = '{path}/{ID}-{dt}'.format(path=out_dir, ID=ID, dt=data_type)
     print save_name
     return save_name
 

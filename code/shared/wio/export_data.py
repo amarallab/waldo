@@ -91,18 +91,19 @@ def export_index_files(props=['age', 'source-camera', 'label'], dataset='N2_agin
 
 def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='', 
                                 out_dir=EXPORT_PATH, save_name=None, 
-                                as_json=False, **kwargs):
+                                as_json=False, blob_ids=[], **kwargs):
                                 
     # manage save path + name
     if not save_name:
         save_name = manage_save_path(out_dir=out_dir, path_tag=path_tag, 
                                      ID=ex_id, data_type=metric)
-    # make list of all blobs
-    blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type':'smoothed_spine'}, **kwargs)
+    if not blob_ids:
+        # make list of all blobs
+        blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type':'spine'}, **kwargs)
     # compile a dict containing values for all blobs. data binned every 10th second.
     data_dict = {}
     for blob_id in blob_ids:
-        # calculate metric for blob, skip if empty list returned
+        # calculate metric for blob, skip if empty list returned        
         times, data = pull_blob_data(blob_id, metric=metric, **kwargs)
         if len(data) == 0:
             continue
@@ -120,7 +121,7 @@ def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='',
         json.dump(data_dict, open(save_name, 'w'), indent=4, sort_keys=True)
     elif len(data_dict) > 1:
         times_sorted = sorted([(float(t), t) for t in data_dict])
-        with open(save_name, 'w') as f:
+        with open(save_name+'.dat', 'w') as f:
             for (tf, t) in times_sorted:
                 line = '{t},{l}'.format(t=t, l=','.join(map(str, data_dict[t])))
                 f.write(line + '\n')

@@ -54,8 +54,8 @@ def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **
 
 def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
 
-    blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)
-    print blob_ids
+    if not blob_ids:
+        blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)
     
     metadata = get_metadata(blob_id=blob_ids[0], **kwargs)    
     dataset = metadata.get('dataset', 'none')
@@ -63,7 +63,9 @@ def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASURE
         path_tag = '{ds}-{m}'.format(ds=dataset, m=metric)
         print path_tag
         write_full_plate_timeseries(ex_id=ex_id,
+                                    metric=metric,
                                     path_tag=path_tag,
+                                    blob_ids=blob_ids,
                                     **kwargs)
     
 
