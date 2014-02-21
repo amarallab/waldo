@@ -37,7 +37,7 @@ from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
 from import_rawdata_into_db import create_entries_from_blobs_files
 #import wio.file_manager import get_metadata, get_timeseries
-from measurement_suite import measure_all
+from measurement_suite import measure_all, write_plate_timeseries_set
 from centroid import process_centroid
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
@@ -62,7 +62,7 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     # (flags + treated_spine) to (flagged_spine)
     create_breaks_for_blob_id(blob_id, **kwargs)
     if verbose:
-        print 'Finalzing Spine For Good Regions'
+        print 'Finalzing Spine for Good Regions'
     smoothed_times, smoothed_spines = smooth_good_regions_repeatedly(blob_id, **kwargs)
     if verbose:
         print '\tfinished smoothing spine | N: {N}'.format(N=len(smoothed_times))
@@ -128,6 +128,7 @@ def process_ex_id(ex_id, debug=False,**kwargs):
         if debug:
             break
     # TODO: add compile all blob measurements into plate timeseries here.
+    write_plate_timeseries_set(ex_id, blob_ids=blob_ids, **kwargs)
 
 def all_unprocessed_blob_ids(**kwargs):
     all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)

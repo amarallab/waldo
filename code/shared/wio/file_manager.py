@@ -26,7 +26,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from database.mongo_retrieve import pull_data_type_for_blob, timedict_to_list
+from database.mongo_retrieve import pull_data_type_for_blob, timedict_to_list, mongo_query
 from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
@@ -59,13 +59,11 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
     out_dir = '{d}/{b}/'.format(d=out_dir.rstrip('/'), b=path_tag.lstrip('/'))
     out_dir = ensure_dir_exists(out_dir.rstrip('/'))
 
-    now_string = time.ctime().replace('  ', '_').replace(' ', '_')
-    now_string = now_string.replace(':', '.').strip()
-    save_name = '{path}/{ID}_{dt}_time-{n}.json'.format(path=out_dir, ID=ID, 
-                                                        dt=data_type, n=now_string)
+    #now_string = time.ctime().replace('  ', '_').replace(' ', '_')
+    #now_string = now_string.replace(':', '.').strip()
+    save_name = '{path}/{ID}_{dt}_.json'.format(path=out_dir, ID=ID, dt=data_type)
     print save_name
     return save_name
-
 
 def get_ex_ids(query, **kwargs):
     ''' return a list of unique ex_id names for a query'''

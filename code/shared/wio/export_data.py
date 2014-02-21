@@ -25,9 +25,9 @@ SHARED_DIR = os.path.abspath(HERE + '/../')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wormmetrics.switchboard import pull_blob_data
+from wormmetrics.measurement_switchboard import pull_blob_data
 from database.mongo_retrieve import mongo_query
-from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids, get_data
+from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids
 #from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
 
 '''
@@ -149,7 +149,7 @@ def pull_blob_timeseires_for_ex_id(ex_id, data_type, out_dir=EXPORT_PATH, path_t
     for blob_id in blob_ids:
         blob_data[blob_id] = {}
         try:
-            times, data = get_data(blob_id, metric=data_type, **kwargs)
+            times, data = pull_blob_data(blob_id, metric=data_type, **kwargs)
             blob_data[blob_id] = {'time':times, 'data':data}
         except Exception as e:
             print 'Exception for {bi}'.format(bi=blob_id)
@@ -166,7 +166,7 @@ def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH, path_ta
     path_tag - used to extend the name of the path, if desired.
     savename - bypass all path creation steps and save file with this name.
     '''
-    times, data = get_data(blob_id, metric=data_type, **kwargs)
+    times, data = pull_blob_data(blob_id, metric=data_type, **kwargs)
     if not savename:
         save_name = mangage_save_path(out_dir=out_dir, path_tag=path_tag, ID=blob_id, data_type=data_type)
     json.dump({'time':times, 'data':data}, open(savename, 'w'), indent=4, sort_keys=True)

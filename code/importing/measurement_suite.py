@@ -23,8 +23,8 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wormmetrics.measurement_switchboard import pull_blob_data
-from wio.file_manager import write_tmp_file, get_metadata
-
+from wio.file_manager import write_tmp_file, get_metadata, get_blob_ids
+from wio.export_data import write_full_plate_timeseries
 # add angle over distance
 STANDARD_MEASUREMENTS = ['length_mm', 'curve_bl', 'cent_speed_bl']
 
@@ -52,11 +52,29 @@ def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **
             write_tmp_file(blob_id, data_type=metric, data={'time':t, 'data':list(data)})
         print '\tstored {m}'.format(m=metric)
 
+def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
+
+    blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)
+    print blob_ids
+    
+    metadata = get_metadata(blob_id=blob_ids[0], **kwargs)    
+    dataset = metadata.get('dataset', 'none')
+    for metric in measurements:
+        path_tag = '{ds}-{m}'.format(ds=dataset, m=metric)
+        print path_tag
+        write_full_plate_timeseries(ex_id=ex_id,
+                                    path_tag=path_tag,
+                                    **kwargs)
+    
+
+    
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        bi = '00000000_000001_00001'
-        bi = '00000000_000001_00008'
-        measure_all(blob_id=bi)
+        #bi = '00000000_000001_00001'
+        #bi = '00000000_000001_00008'
+        #measure_all(blob_id=bi)
+        write_plate_timeseries_set(ex_id='00000000_000001')
     else:
         ex_ids = sys.argv[1:]
         for ex_id in ex_ids[:]:
