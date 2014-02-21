@@ -76,6 +76,8 @@ def get_blob_ids(query, **kwargs):
     return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
     
 def format_tmp_filename(blob_id, data_type, tmp_dir):
+    errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
+    assert isinstance(blob_id, basestring), errmsg
     ex_id = '_'.join(blob_id.split('_')[:2])
     blob_path = '{path}/{eID}'.format(path=tmp_dir, eID=ex_id)
     ensure_dir_exists(blob_path)
