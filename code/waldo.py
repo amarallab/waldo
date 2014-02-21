@@ -52,6 +52,7 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
     ensure_dir_exists(timing_dir)
     time_file = '{dir}/{type}_{now}_x{N}.json'.format(dir=timing_dir, type=name,
                                                       now=now_string, N=len(ex_ids))
+    mongo_client = None
     try:
         # initialize the connection to the mongo client
         mongo_client, _ = mongo.start_mongo_client(**MONGO_SETTINGS)
@@ -75,7 +76,8 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
     except Exception as e:
         print 'Error with {name} at time {t}\n{err}'.format(name=name, t=time.clock(), err=e)
     finally:
-        mongo_client.close()
+        if mongo_client:
+            mongo_client.close()
 
 def main(args):
     """ all arguments are parsed here and the appropriate functions are called.
