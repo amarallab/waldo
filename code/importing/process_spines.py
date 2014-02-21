@@ -127,7 +127,6 @@ def process_ex_id(ex_id, debug=False,**kwargs):
         '''
         if debug:
             break
-    # TODO: add compile all blob measurements into plate timeseries here.
     write_plate_timeseries_set(ex_id, blob_ids=blob_ids, **kwargs)
 
 def all_unprocessed_blob_ids(**kwargs):

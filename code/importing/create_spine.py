@@ -209,7 +209,7 @@ def treat_spine(times, spines, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WIN
                 pass
             #treated_spine_timedict[t_key] = final_spine
 
-    print '\trough spines aligned: {b}'.format(b=reversed_flag_total)
+    print '\trough spines aligned: {b}'.format(b= not reversed_flag_total)
     return treated_spines
 
 

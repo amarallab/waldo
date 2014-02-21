@@ -383,9 +383,13 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
         return filtered_region
     
     if len(times) ==0:
-        return True
+        print 'error -- no times:', times
+        return []
 
     if len(break_list) == 0:
+        if verbose:
+            s, e = times[0], times[-1]
+            print '\tfrom start: {s}s | end: {e}s | N regions: 1'.format(s=s, e=e)
         # this returns a list with one region.
         return [remove_flagged_points(zip(times, data), flagged_times)]
     
