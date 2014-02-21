@@ -50,7 +50,14 @@ def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **
                                  **kwargs)
         if store_tmp:
             write_tmp_file(blob_id, data_type=metric, data={'time':t, 'data':list(data)})
-        print '\tstored {m}'.format(m=metric)
+
+        try:
+            mean = round(np.mean(data), ndigits=2)
+            s = round(np.std(data), ndigits=2)
+        except:
+            mean, std = 'Na', 'Na'
+        N = len(data)
+        print '\t{m} mean: {mn} | std: {s} | N: {N}'.format(m=metric, mn=mean, s=s, N=N)
 
 def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
 
