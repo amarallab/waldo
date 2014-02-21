@@ -29,26 +29,28 @@ from ExceptionHandling.record_exceptions import write_pathological_input
 from shared.wio.file_manager import get_timeseries, store_data_in_db, write_tmp_file
 
 def compute_basic_measurements(blob_id, verbose=True, **kwargs):
+
     lengths = calculate_lengths_for_blob_id(blob_id, **kwargs)
     if verbose:
         try:
-            m, s = np.mean(lengths), np.std(lengths)
-            print 'lengths calculated ({N} timepoints)'.format(N=len(lengths))
-            print 'mean:{m}, std:{s}'.format(m=m, s=s)                    
+            m = round(np.mean(lengths), ndigits=2)
+            s = round(np.std(lengths), ndigits=2)
+            print '\tlengths mean:{m} | std:{s} | N:{N}'.format(m=m, s=s, N=len(lengths))
         except:
-            print 'could not compute mean and std for lengths'
+            print '\tcould not compute mean and std for lengths'
     w20, w50, w80 = calculate_widths_for_blob_id(blob_id, **kwargs)
     if verbose:
-        print 'widths calculated ({N20}/{N50}/{N80} timepoints at 20/50/80)'.format(N20=len(w20),
-                                                                                    N50=len(w50),
-                                                                                    N80=len(w80))
+        print '\twidths at 20% | 50% | 80% along spine'
+        print '\twidth N: {N20} | {N50} | {N80}'.format(N20=len(w20), N50=len(w50), N80=len(w80))
         try:
-            ms = [np.mean(w) for w in [w20, w50, w80]]
-            ss = [np.std(w) for w in [w20, w50, w80]]
-            print 'width means {ms}'.format(ms=ms)
-            print 'width stds {ss}'.format(ss=ss)
+            ms = [round(np.mean(w), ndigits=2) for w in [w20, w50, w80]]
+            ss = [round(np.std(w), ndigits=2) for w in [w20, w50, w80]]
+            ms = ' | '.join(map(str, ms))
+            ss = ' | '.join(map(str, ss))
+            print '\twidth means: {ms}'.format(ms=ms)
+            print '\twidth stds: {ss}'.format(ss=ss)
         except:
-            print 'could not compute mean and std for widths'
+            print '\tcould not compute mean and std for widths'
 
 def calculate_length_for_timepoint(spine):
     length = 0.0
@@ -186,14 +188,14 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
     intersection_xs, intersection_ys = find_intersection_points(q1, orthogonal_m, outline)
 
     if len(intersection_xs) == 0:
-        print 'intersection points are zero!'
+        #print 'intersection points are zero!'
         write_pathological_input((spine, outline), input_type='spine/outline', 
                                  note='no intersection points',
                                  savename='%sno_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
         return (-1, -1), (-1, -1), False, -1
 
     if len(intersection_xs) % 2 != 0:
-        print 'intersection points are odd', len(intersection_xs)
+        #print 'intersection points are odd', len(intersection_xs)
         write_pathological_input((spine, outline), input_type='spine/outline', 
                                  note='num intersection points odd',
                                  savename='%sodd_num_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
@@ -211,7 +213,7 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
                 point_pair = [points[i], points[j]]
 
     if len(point_pair) == 0:
-        print 'spine outside of outline'
+        #print 'spine outside of outline'
         write_pathological_input((spine, outline), input_type='spine/outline', note='spine outside outline',
                                  savename='%sspine_outside_outline_%s.json' % (EXCEPTION_DIR, str(time.time())))
         return -1, -1, False, -1

@@ -49,26 +49,23 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     """
     kwargs['store_in_db'] = False
     kwargs['store_tmp'] = True
+    if verbose:
+        print 'Creating Rough Spine from Outline'
     times, treated_spines, bad_times = create_spine_from_outline(blob_id, verbose=verbose, **kwargs)
     if verbose:
-        print 'spine created with {N} time-points.'.format(N=len(treated_spines))
+        print '\tspine created with {N} time-points.'.format(N=len(treated_spines))
     # calculate necessary measurments to flag wrong shapes
+        print 'Computing Rough Measurements'
     compute_basic_measurements(blob_id, **kwargs)
-    if verbose:
-        print 'basic measurements calculated'
     # flag parts of spine creation process
     flag_blob_id(blob_id, **kwargs)
-    if verbose:
-        print 'flag breaks inserted'
     # (flags + treated_spine) to (flagged_spine)
     create_breaks_for_blob_id(blob_id, **kwargs)
-    # (flagged_spine) to (smoothed_spine)
-    #smooth_unflagged_timepoints(blob_id) # depreciated
     if verbose:
-        print 'flags saved'
+        print 'Finalzing Spine For Good Regions'
     smoothed_times, smoothed_spines = smooth_good_regions_repeatedly(blob_id, **kwargs)
     if verbose:
-        print 'finished smoothing spine with {N} remaining time-points'.format(N=len(smoothed_times))
+        print '\tfinished smoothing spine | N: {N}'.format(N=len(smoothed_times))
     return smoothed_times, smoothed_spines
 
 def process_ex_id(ex_id, debug=False,**kwargs):
@@ -104,8 +101,8 @@ def process_ex_id(ex_id, debug=False,**kwargs):
     N = len(blob_ids)
     for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
-        times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
         process_centroid(blob_id, **kwargs)
+        times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
         measure_all(blob_id, **kwargs)
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
@@ -147,6 +144,7 @@ if __name__ == '__main__':
         blob_id = '20130319_150235_00014'
         blob_id = '20130319_150235_00426'
         blob_id = '20130319_150235_01501'
+        blob_id = '20130319_150235_01830'
         # large bson error:
         #blob_id = '20130331_160517_02379'
         #blob_id = '20130320_164252_05955'

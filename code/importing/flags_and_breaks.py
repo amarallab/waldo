@@ -195,7 +195,7 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
                  'length_flags_long': flag_blob_data(blob_id, 'length_rough', options='long', 
                                                      **kwargs),
                 }
-
+    
     data_type = 'flags'
     if store_tmp:
         write_tmp_file(blob_id=blob_id, data_type=data_type, data={'data':all_flags, 'time':times})
@@ -206,7 +206,7 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
         #good = np.count_nonzero(flag_list)
         good = len([i for i in flags if i])
         bad = N - good
-        print '{flags} out of {N} timepoints flagged ({r} %)'.format(flags=bad, N=N, r=100 * bad / N)
+        print '\tall flags: {flags} | N: {N} | {r} %'.format(flags=bad, N=N, r=100 * bad / N)
     return all_flags
 
 
@@ -270,7 +270,7 @@ def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     flags = consolidate_flags(all_flags)
     break_list = create_break_list(times, flags)
     if verbose:
-        print 'found {i} breaks from flags'.format(i=len(break_list))
+        print '\tbreaks from flags: {i}'.format(i=len(break_list))
     data_type = 'breaks'                            
     if store_tmp:
         write_tmp_file(blob_id, data_type=data_type, data={'time':[], 'data':break_list})
@@ -345,7 +345,7 @@ def create_break_list(times, flags, verbose=False):
         # remove breaks where start and end points are equal
         if st != et:
             if verbose:
-                print 'break: {st} to {et}'.format(st=st, et=et)
+                print '\tbreak: {st} to {et}'.format(st=st, et=et)
             msg = 'start:{st}\tend:{et}\n'.format(st=st, et=et)
             assert st < et, msg
             break_list.append((st, et))
@@ -429,8 +429,8 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
         region_boundaries.append((region_start, t))
         
     if verbose:
-        s, e, r = times[0], times[-1], region_boundaries
-        print '({s} to {e}s) good regions are: {r}'.format(s=s, e=e, r=r)
+        s, e, r = times[0], times[-1], len(region_boundaries)
+        print '\tfrom start: {s}s | end: {e}s | N regions: {r}'.format(s=s, e=e, r=r)
         #print 'from', times[0], 'to', times[-1], 'regions are:', region_boundaries
     return good_regions
 

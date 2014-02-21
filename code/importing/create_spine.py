@@ -81,8 +81,8 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
             print 'Warning: skeleton reconstruction failed for time {t}'.format(t=t)
             spines.append([])
             flagged_timepoints.append(t)
-    print len(flagged_timepoints), 'time-points flagged during spine creation'
-    print num_short_spines, 'time-points with spines too short' 
+    print '\tN flags during spine creation: {N}'.format(N=len(flagged_timepoints))
+    print '\tN spines too short: {N}'.format(N=num_short_spines)
     # equally spaces points and removes reversals of head and tail in the worm spines
     treated_spines = treat_spine(times, spines)
     #show_worm_video(treated_spine_timedict)
@@ -162,7 +162,7 @@ def treat_spine(times, spines, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WIN
             #print 'Warning: len spine smaller than polynomial smoothing window:', len(spine), t_key
     if verbose:            
         N = len(treated_spines)
-        print 'good: {g}/{N}\tbad:{b}/{N}'.format(g=goodcount, b=badcount, N=N)
+        print '\tgood: {g} | bad: {b} | total: {N}'.format(g=goodcount, b=badcount, N=N)
 
     #ion()
     #2. equally space and reverse points if backwards
@@ -209,10 +209,7 @@ def treat_spine(times, spines, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WIN
                 pass
             #treated_spine_timedict[t_key] = final_spine
 
-    print 'did reversals fail?', reversed_flag_total
-    '''
-    '''
-
+    print '\trough spines aligned: {b}'.format(b=reversed_flag_total)
     return treated_spines
 
 

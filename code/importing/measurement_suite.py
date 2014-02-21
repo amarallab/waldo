@@ -34,13 +34,14 @@ def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **
     - `blob_id`:
     - `**kwargs`:
     """    
+    print 'Computing Standard Measurements'
     # prepare scaling factors to convert from pixels to units
     metadata = get_metadata(blob_id, **kwargs)
     lt, lengths = pull_blob_data(blob_id, metric='length', **kwargs)
     pixels_per_bl = float(np.median(lengths))
     pixels_per_mm = float(metadata.get('pixels-per-mm', 1.0))
-    print 'units: (bl:{bl}), (mm:{mm})'.format(bl=pixels_per_bl,
-                                               mm=pixels_per_mm)
+    print '\tunits mm : {mm} | bl: {bl}'.format(bl=round(pixels_per_bl, ndigits=2),
+                                               mm=round(pixels_per_mm, ndigits=2))
     # loop through standard set of measurements and write them
     for metric in measurements:        
         t, data = pull_blob_data(blob_id, metric=metric,
@@ -49,11 +50,12 @@ def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **
                                  **kwargs)
         if store_tmp:
             write_tmp_file(blob_id, data_type=metric, data={'time':t, 'data':list(data)})
-        print 'stored {m}'.format(m=metric)
+        print '\tstored {m}'.format(m=metric)
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         bi = '00000000_000001_00001'
+        bi = '00000000_000001_00008'
         measure_all(blob_id=bi)
     else:
         ex_ids = sys.argv[1:]

@@ -31,15 +31,20 @@ from filtering.filter_utilities import savitzky_golay
 
 NUM_POINTS = 50
 
-
 def euclidean(list1, list2):
     ''' calculates euclidean distance between numerical values in two lists'''
     return math.sqrt(sum((x - y) ** 2 for x, y in izip(list1, list2)))
 
 def equally_spaced_tenth_second_times(start=0.0, end=60.0):
-    start, end = round(start, ndigits=1), round(end, ndigits=1)
-    N = int((end - start) / 0.1 )
-    return [i/10. + start for i in xrange(N)]
+    starti, endi = round(start, ndigits=1), round(end, ndigits=1)
+    N = int((endi - starti) / 0.1 )    
+    # include this check to be absolutely certain all new
+    # times fall inside start and end times
+    times = []
+    for t in [i/10. + starti for i in xrange(N+1)]:
+        if start <= t <= end:
+            times.append(t)
+    return times
 
 def equally_space_N_xy_points(x, y, N=50, kind='linear'):
     # get distance traveled between each point
@@ -92,26 +97,31 @@ def equally_space_xy_for_stepsize(x, y, step=0.5, kind='linear', n_interp_pts=50
     #print 'from t to s we go from {N} to {n} points'.format(N=N, n=len(new_x))      
     return new_x, new_y
 
-def create_spine_matricies(spines):
-    N = len(spines)
+def create_spine_matricies(times, spines):
+    # find the longest spine, if no spines have lenght, return False
     N_pts = max([len(s) for s in spines])
     if not N_pts:
-        return False, False
-
-    # need to filter out 
+        return times, False, False     
+    # only keep spines that match longest length. otherwise remove.
+    good_count, bad_count = 0, 0    
+    g_times, g_spines = [], []
+    for t, spine in izip(times, spines):
+        if len(spine) == N_pts:
+            g_times.append(t)
+            g_spines.append(spine)
+            good_count += 1
+        else:
+            bad_count += 1
+    print '\tcreating spine matricies. good: {g} | bad: {b}'.format(g=good_count, b=bad_count)    
+    # initialize matrix sizes to number of good spines, and longest lenght spine
+    N = len(g_spines)
     x_matrix = np.zeros((N, N_pts), dtype=float)
     y_matrix = np.zeros((N, N_pts), dtype=float)
-    for i,pts in enumerate(spines):
-        x_matrix[i], y_matrix[i] = zip(*pts)
-        # the commented code ignores bad spines and writes over them
-        '''
-        if len(pts) == N_pts:
-            x_matrix[i], y_matrix[i] = zip(*pts)        
-        else:
-            x_matrix[i] = [-1] * N_pts
-            y_matrix[i] = [-1] * N_pts
-        '''
-    return x_matrix, y_matrix
+    #print 'x dimensions', len(x_matrix), len(x_matrix[0])
+    #print 'y dimensions', len(y_matrix), len(y_matrix[0])
+    for i,pts in enumerate(g_spines):
+        x_matrix[i], y_matrix[i] = zip(*pts)        
+    return g_times, x_matrix, y_matrix
 
 def equally_space_matricies_times(eq_times, orig_times, x_mat, y_mat):
     kind = 'linear'
@@ -121,15 +131,19 @@ def equally_space_matricies_times(eq_times, orig_times, x_mat, y_mat):
         eq_times = eq_times[1:]
     if eq_times[-1] > orig_times[-1]:
         eq_times = eq_times[:-1]
-
+    # initialize empty arrays for x,y
     N_times = len(eq_times)
     x_new = np.zeros((N_times, N_cols), dtype=float)
-    y_new = np.zeros((N_times, N_cols), dtype=float)
+    y_new = np.zeros((N_times, N_cols), dtype=float)    
+    #print 'x dimensions', len(x_mat), len(x_mat[0])
+    #print 'y dimensions', len(y_mat), len(y_mat[0])
+    #print 't', len(orig_times)
     for col in range(N_cols):
+        # interpolate new x, y values
         interp_x = interpolate.interp1d(orig_times, x_mat[:,col], kind=kind)
         interp_y = interpolate.interp1d(orig_times, y_mat[:,col], kind=kind)        
         x_new[:,col] = interp_x(eq_times)
-        y_new[:,col] = interp_y(eq_times)
+        y_new[:,col] = interp_y(eq_times)    
     return x_new, y_new
 
 def smooth_matricies_cols(x_mat, y_mat, window, order):
@@ -159,8 +173,8 @@ def set_matrix_orientation(x_mat, y_mat, verbose=True):
             backward_counts += 1
         dist_forward += dist
     if verbose:
-        print 'dist_forward={d}'.format(d=dist_forward)
-        print '{head} head / {tail} tail'.format(head=forward_counts, tail=backward_counts)
+        h, t, d = forward_counts, backward_counts, round(dist_forward, ndigits=1)
+        print '\tdirection head: {h} | tail: {t} | dist: {d} pix'.format(h=h, t=t, d=d)
     if dist_forward < 0.0:
         x_mat, y_mat = x_mat[:,::-1], y_mat[:, ::-1]
     return x_mat, y_mat
@@ -223,9 +237,7 @@ if __name__ == '__main__':
     
     x = [(i + random.uniform(-0.5, 0.5))for i in xrange(10)]
     y = [(i + random.uniform(-0.5, 0.5))for i in xrange(10)]
-    dists(x, y)
     x1,y1 = equally_space_N_xy_points(x, y, N=50)
-    dists(x1, y1)
     '''
     dists(x, y)
     step = 0.1

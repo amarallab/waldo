@@ -45,6 +45,9 @@ def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwar
     # interpolate positions for equally spaced timepoints
     kind = 'linear'
     eq_times = equally_spaced_tenth_second_times(orig_times[0], orig_times[-1])
+    #print orig_times[0], orig_times[-1]
+    #print eq_times[0], eq_times[-1]
+
     interp_x = interpolate.interp1d(orig_times, x1, kind=kind)
     interp_y = interpolate.interp1d(orig_times, y1, kind=kind)        
     x_new = interp_x(eq_times)
