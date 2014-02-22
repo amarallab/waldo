@@ -78,7 +78,8 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
     # each region is smoothed independently
     for i, region in enumerate(good_regions, start=1):
         # if region is too small, it is not worth smoothing
-        if len(region) < time_window:            
+        safety_factor = 1.3
+        if len(region) < time_window * safety_factor:            
             continue
         times, spines = zip(*region)
         s, e, N = times[0], times[-1], len(region)
