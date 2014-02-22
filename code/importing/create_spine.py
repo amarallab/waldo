@@ -31,8 +31,8 @@ from settings.local import SMOOTHING
 from wio.file_manager import get_timeseries, insert_data_into_db, write_tmp_file
 
 # set defaults from settings file
-DEFAULT_ORDER = SMOOTHING['spine_poly_order']
-DEFAULT_WINDOW = SMOOTHING['spine_window_size']
+DEFAULT_ORDER = SMOOTHING['spine_order']
+DEFAULT_WINDOW = SMOOTHING['spine_window']
 
 def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     '''

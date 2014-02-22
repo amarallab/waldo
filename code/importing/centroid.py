@@ -30,8 +30,8 @@ from equally_space import equally_spaced_tenth_second_times
 from equally_space import equally_spaced_tenth_second_times
 from filtering.filter_utilities import savitzky_golay
 
-ORDER = SMOOTHING['time_poly_order']
-WINDOW = SMOOTHING['time_window_size']
+ORDER = SMOOTHING['time_order']
+WINDOW = SMOOTHING['time_window']
 
 def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwargs):
     """

@@ -38,9 +38,9 @@ from settings.local import SMOOTHING
 
 # set defaults from settings file
 TIME_ORDER = SMOOTHING['time_order']
-TIME_WINDOW_SIZE = SMOOTHING['time_window_size']
-SPINE_POLY_ORDER = SMOOTHING['spine_poly_order']
-SPINE_WINDOW_SIZE = SMOOTHING['spine_window_size']
+TIME_WINDOW = SMOOTHING['time_window']
+SPINE_ORDER = SMOOTHING['spine_order']
+SPINE_WINDOW = SMOOTHING['spine_window']
 T_STEP = SMOOTHING['time_step']
 N_POINTS = SMOOTHING['N_points']
 
@@ -49,7 +49,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
                                    spine_order=SPINE_ORDER, 
                                    spine_window=SPINE_WINDOW,                                   
                                    time_order=TIME_ORDER, 
-                                   time_window=TIME_WINDOW_SIZE,                                   
+                                   time_window=TIME_WINDOW,                                   
                                    store_tmp=True,
                                    time_step=T_STEP, **kwargs):
     """
