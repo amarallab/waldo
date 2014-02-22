@@ -204,7 +204,11 @@ class Blob_Reader(object):
                     # if line_id not defined, this is the first line looked at. ensure it matches blob_id.
                     else:
                         line_id = int(line[1:])
-                        assert line_id == blob_id
+                        if line_id != blob_id:
+                            print 'WARNING index/blobs file mismatch'
+                            print 'blob id:', blob_id
+                            print 'line id:', line_id
+                            return []
                 # data line, store for processing
                 else:
                     lines.append(line)

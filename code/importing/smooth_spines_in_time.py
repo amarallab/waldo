@@ -37,18 +37,19 @@ from equally_space import *
 from settings.local import SMOOTHING 
 
 # set defaults from settings file
-TIME_POLY_ORDER = SMOOTHING['time_poly_order']
+TIME_ORDER = SMOOTHING['time_order']
 TIME_WINDOW_SIZE = SMOOTHING['time_window_size']
 SPINE_POLY_ORDER = SMOOTHING['spine_poly_order']
 SPINE_WINDOW_SIZE = SMOOTHING['spine_window_size']
 T_STEP = SMOOTHING['time_step']
 N_POINTS = SMOOTHING['N_points']
 
+
 def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
-                                   spine_poly_order=SPINE_POLY_ORDER,
-                                   spine_running_window_size=SPINE_WINDOW_SIZE,
-                                   time_poly_order=TIME_POLY_ORDER,
-                                   time_running_window_size=TIME_WINDOW_SIZE,
+                                   spine_order=SPINE_ORDER, 
+                                   spine_window=SPINE_WINDOW,                                   
+                                   time_order=TIME_ORDER, 
+                                   time_window=TIME_WINDOW_SIZE,                                   
                                    store_tmp=True,
                                    time_step=T_STEP, **kwargs):
     """
@@ -57,10 +58,10 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
 
     :param blob_id: blob_id used to
     :param repeated_smoothings: number of times smoothing process should be repeated. (int)
-    :param spine_poly_order:
-    :param spine_running_window_size:
-    :param time_poly_order:
-    :param time_running_window_size:
+    :param spine_order:
+    :param spine_window:
+    :param time_order:
+    :param time_window:
     :param insert: toggle if resulting data should be inserted into database.
     :return: timedict of smooothed spines.
     """
@@ -77,7 +78,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
     # each region is smoothed independently
     for i, region in enumerate(good_regions, start=1):
         # if region is too small, it is not worth smoothing
-        if len(region) < spine_running_window_size:            
+        if len(region) < time_window:            
             continue
         times, spines = zip(*region)
         s, e, N = times[0], times[-1], len(region)
@@ -86,8 +87,8 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         # transform spine point format into matrix format
         times, x_matrix, y_matrix = create_spine_matricies(times, spines)
         # smooth once in both directions and make sure points are equally spaced along spine
-        x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_running_window_size, order=time_poly_order)
-        x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_running_window_size, order=spine_poly_order)
+        x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
+        x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
         x_matrix, y_matrix = equally_space_matrix_distances(x_matrix, y_matrix)
         # interpolate missing times 
         eq_times = equally_spaced_tenth_second_times(start=times[0], end=times[-1])
@@ -95,8 +96,8 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         # now that times have been set, smooth + space spines repeatedly
 
         for i in range(repeated_smoothings):
-            x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_running_window_size, order=time_poly_order)
-            x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_running_window_size, order=spine_poly_order)
+            x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
+            x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
             x_matrix, y_matrix = equally_space_matrix_distances(x_matrix, y_matrix)
         # check if head is correct and reverse row orientation if not
         x_matrix, y_matrix = set_matrix_orientation(x_matrix, y_matrix)
