@@ -25,11 +25,12 @@ SHARED_DIR = os.path.abspath(HERE + '/../')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-import wormmetrics.switchboard as sb
-import database.mongo_retrieve as mr
-from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids, get_data
+from wormmetrics.measurement_switchboard import pull_blob_data
+from database.mongo_retrieve import mongo_query
+from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids
 #from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
 
+'''
 def export_blob_percentiles_by_ex_id(ex_id, out_dir=EXPORT_PATH, path_tag='', verbose=True, **kwargs):
     """
     write a json for an ex_id in which each blob has a dictionary of measurements containing
@@ -54,13 +55,9 @@ def export_blob_percentiles_by_ex_id(ex_id, out_dir=EXPORT_PATH, path_tag='', ve
             print blob_id, 'not working', e
 
     json.dump(blob_data, open(save_name, 'w'), indent=4, sort_keys=True)
+'''
 
-if __name__ == '__main__':
-    ex_id = '00000000_000001'
-    export_blob_percentiles_by_ex_id(ex_id)
-
-
-def export_index_files(props=['age', 'source-camera', 'label'], purpose='N2_aging',
+def export_index_files(props=['age', 'source-camera', 'label'], dataset='N2_aging',
                        store_blobs=True, out_dir=EXPORT_PATH, tag='', **kwargs):
     """
     writes a json with a dictionary of ex_ids and the value of a correspoinding property
@@ -74,7 +71,8 @@ def export_index_files(props=['age', 'source-camera', 'label'], purpose='N2_agin
     else:
         id_type = 'ex_id'
 
-    for e in mr.mongo_query({'purpose': purpose, 'data_type': 'smoothed_spine'}, {'data': 0}, **kwargs):
+    for e in mongo_query({'dataset': dataset, 'data_type': 'smoothed_spine'}, 
+                         {'data': 0}, **kwargs):
         if e[id_type] not in data:
             data[e[id_type]] = {}
         for prop in props:
@@ -91,68 +89,39 @@ def export_index_files(props=['age', 'source-camera', 'label'], purpose='N2_agin
             line = [dID] + [data[dID][i] for i in props]
             f.write(','.join(map(str, line)) + '\n')
 
-
-if __name__ == '__main__':
-    # INDEX FILE EXAMPLES
-    #export_index_files(props=['label', 'age'], tag='_')
-    #export_index_files(props=['age'], tag='_N2ages', store_blobs=False)
-    export_index_files(props=['midline_median'], tag='_N2ages_midlinemedian', store_blobs=True)
-    #export_index_files(props=['duration'], tag='_duration')
-    #export_ex_id_index(prop='age')
-    #export_ex_id_index(prop='source-camera')
-
-    # WRITE FULL PLATE TIMESERIES EXAMPLE
-    ex_id = '20130320_102312'
-    write_full_plate_timeseries(ex_id, save_name='test{id}.txt'.format(id=ex_id), **kwargs)
-
-    # WORM TIME-SERIES EXAMPLES
-    # data toggles
-    ex_ids = get_ex_ids({'purpose':'N2_aging', 'data_type':'smoothed_spine'})
-    print ex_ids
-    #ex_ids = ['20130319_134739'] #, '20130321_144656', '20130320_140644']
-    #data_type = 'speed_along_bl'
-    #data_type = 'centroid_speed_bl'
-    data_type = 'smooth_length'
-
-    # save toggles
-    purpose = 'segment_test'
-    purpose = 'length'
-    out_dir = '{path}{purp}-{dt}/'.format(path=EXPORT_PATH, purp=purpose, dt=data_type)
-    for ex_id in ex_ids:
-        pull_data_for_ex_id(ex_id, data_type, out_dir=out_dir)
-
-def write_full_plate_timeseries(ex_id, metric='centroid_speed', path_tag='', out_dir=EXPORT_PATH, save_name=None, as_json=False, **kwargs):
-
+def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='', 
+                                out_dir=EXPORT_PATH, save_name=None, 
+                                as_json=False, blob_ids=[], **kwargs):
+                                
     # manage save path + name
     if not save_name:
-        save_name = manage_save_path(out_dir=out_dir, path_tag=path_tag, ID=ex_id, data_type=metric)
-
-    # make list of all blobs
-    blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type':'smoothed_spine'}, **kwargs)
-    # make giant dict of all values.
+        save_name = manage_save_path(out_dir=out_dir, path_tag=path_tag, 
+                                     ID=ex_id, data_type=metric)
+    if not blob_ids:
+        # make list of all blobs
+        blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type':'spine'}, **kwargs)
+    # compile a dict containing values for all blobs. data binned every 10th second.
     data_dict = {}
     for blob_id in blob_ids:
-        #data_timedict = pull_metric_for_blob_id(blob_id=blob_id, metric=metric, remove_skips=True, **kwargs)
-        times, data = get_data(blob_id, metric=metric, **kwargs)
+        # calculate metric for blob, skip if empty list returned        
+        times, data = pull_blob_data(blob_id, metric=metric, **kwargs)
         if len(data) == 0:
-            print blob_id, 'has not data points, apparently'
             continue
-        #for key, value in data_timedict.iteritems():
+        # store blob values in comiled dict.
         for t, value in izip(times, data):
-            new_key = ('%.1f' % float(t))
+            new_key = ('%.1f' % float(round(t, ndigits=1)))
             if new_key not in data_dict:
                 data_dict[new_key] = []
             data_dict[new_key].append(value)
 
-    # if empty, write anyway.
+    # if empty, write anyway, but print warning
     if len(data_dict) == 0:
         print ex_id, 'has no data'
-
     if as_json:
         json.dump(data_dict, open(save_name, 'w'), indent=4, sort_keys=True)
     elif len(data_dict) > 1:
         times_sorted = sorted([(float(t), t) for t in data_dict])
-        with open(save_name, 'w') as f:
+        with open(save_name+'.dat', 'w') as f:
             for (tf, t) in times_sorted:
                 line = '{t},{l}'.format(t=t, l=','.join(map(str, data_dict[t])))
                 f.write(line + '\n')
@@ -181,7 +150,7 @@ def pull_blob_timeseires_for_ex_id(ex_id, data_type, out_dir=EXPORT_PATH, path_t
     for blob_id in blob_ids:
         blob_data[blob_id] = {}
         try:
-            times, data = get_data(blob_id, metric=data_type, **kwargs)
+            times, data = pull_blob_data(blob_id, metric=data_type, **kwargs)
             blob_data[blob_id] = {'time':times, 'data':data}
         except Exception as e:
             print 'Exception for {bi}'.format(bi=blob_id)
@@ -198,7 +167,42 @@ def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH, path_ta
     path_tag - used to extend the name of the path, if desired.
     savename - bypass all path creation steps and save file with this name.
     '''
-    times, data = get_data(blob_id, metric=data_type, **kwargs)
+    times, data = pull_blob_data(blob_id, metric=data_type, **kwargs)
     if not savename:
         save_name = mangage_save_path(out_dir=out_dir, path_tag=path_tag, ID=blob_id, data_type=data_type)
     json.dump({'time':times, 'data':data}, open(savename, 'w'), indent=4, sort_keys=True)
+
+
+if __name__ == '__main__':
+    # INDEX FILE EXAMPLES
+    #export_index_files(props=['label', 'age'], tag='_')
+    #export_index_files(props=['age'], tag='_N2ages', store_blobs=False)
+    export_index_files(props=['midline_median'], tag='_N2ages_midlinemedian', store_blobs=True)
+    #export_index_files(props=['duration'], tag='_duration')
+    #export_ex_id_index(prop='age')
+    #export_ex_id_index(prop='source-camera')
+
+    # WRITE FULL PLATE TIMESERIES EXAMPLE
+    ex_id = '20130320_102312'
+    write_full_plate_timeseries(ex_id, save_name='test{id}.txt'.format(id=ex_id), **kwargs)
+
+    # WORM TIME-SERIES EXAMPLES
+    # data toggles
+    ex_ids = get_ex_ids({'dataset':'N2_aging', 'data_type':'smoothed_spine'})
+    print ex_ids
+    #ex_ids = ['20130319_134739'] #, '20130321_144656', '20130320_140644']
+    #data_type = 'speed_along_bl'
+    #data_type = 'centroid_speed_bl'
+    data_type = 'smooth_length'
+
+    # save toggles
+    dataset = 'segment_test'
+    dataset = 'length'
+    out_dir = '{path}{dset}-{dt}/'.format(path=EXPORT_PATH, dset=dataset, dt=data_type)
+    for ex_id in ex_ids:
+        pull_data_for_ex_id(ex_id, data_type, out_dir=out_dir)
+
+    # to export percentiles
+    ex_id = '00000000_000001'
+    #export_blob_percentiles_by_ex_id(ex_id)
+

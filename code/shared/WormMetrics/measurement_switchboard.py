@@ -28,11 +28,10 @@ from wio.file_manager import get_blob_ids, get_metadata, get_timeseries
 from compute_metrics import *
 
 # globals
-# TODO: Figure out a way to build the switchboard from the functions without hard coding in acceptable_types
 SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
              'size': {'func': compute_size, 'units': ['mm2']},
              'length': {'func': compute_length, 'units': ['mm']},
-             'curv': {'func': compute_curvature, 'units': ['mm', 'bl'], 
+             'curve': {'func': compute_curvature, 'units': ['mm', 'bl'], 
                       'position':['head', 'mid', 'tail']},
              'speed_along': {'func': compute_speed_along, 'units':['mm', 'bl'], 
                              'position':['head', 'mid', 'tail']},
@@ -64,7 +63,7 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
     # make sure we have appropriate scaling factor
     if not pixels_per_mm and str(scaling_factor_type) in ['mm', 'mm2']:        
         metadata = get_metadata(blob_id, **kwargs)
-        pixels_per_mm = metadata.get('pixels-per-mm', 1.0)
+        pixels_per_mm = float(metadata.get('pixels-per-mm', 1.0))
         if pixels_per_mm == 1.0:
             print 'Warning, not getting appropriate pixels-per-mm for', blob_id
     if not pixels_per_bl and scaling_factor_type=='bl':        
@@ -89,11 +88,12 @@ def find_data(blob_id, metric, **kwargs):
     metric_computation_function, args = switchboard(metric)
     # TODO: bulild in args.
     if metric_computation_function:
+        #print 'computing metric', metric, 'using', metric_computation_function
         times, data = metric_computation_function(blob_id=blob_id, metric=metric, **kwargs)
         return times, data, args
     #print 'metric not found'
     # check if it is cached locally or in db.
-    times, data, _ = get_timeseries(blob_id, data_type=metric, **kwargs)
+    times, data = get_timeseries(blob_id, data_type=metric, **kwargs)
     return times, data, {}
 
 def measure_matches_metric(measure_type, metric):
@@ -106,12 +106,11 @@ def measure_matches_metric(measure_type, metric):
 
 def switchboard(metric, switches=dict(SWITCHES)):
     """
-    searches through SWITCHES Global dictionary and returns the function used to calculate it.
+    returns the function and kwargs for a given metric string.
     
     :param metric:
     :type metric: str
-    :return: function to calculate the
-    :type return: function
+    :return: function, kwargs
     """
     args = {}
     metric = str(metric)

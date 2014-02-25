@@ -37,18 +37,19 @@ from equally_space import *
 from settings.local import SMOOTHING 
 
 # set defaults from settings file
-TIME_POLY_ORDER = SMOOTHING['time_poly_order']
-TIME_WINDOW_SIZE = SMOOTHING['time_window_size']
-SPINE_POLY_ORDER = SMOOTHING['spine_poly_order']
-SPINE_WINDOW_SIZE = SMOOTHING['spine_window_size']
+TIME_ORDER = SMOOTHING['time_order']
+TIME_WINDOW = SMOOTHING['time_window']
+SPINE_ORDER = SMOOTHING['spine_order']
+SPINE_WINDOW = SMOOTHING['spine_window']
 T_STEP = SMOOTHING['time_step']
 N_POINTS = SMOOTHING['N_points']
 
+
 def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
-                                   spine_poly_order=SPINE_POLY_ORDER,
-                                   spine_running_window_size=SPINE_WINDOW_SIZE,
-                                   time_poly_order=TIME_POLY_ORDER,
-                                   time_running_window_size=TIME_WINDOW_SIZE,
+                                   spine_order=SPINE_ORDER, 
+                                   spine_window=SPINE_WINDOW,                                   
+                                   time_order=TIME_ORDER, 
+                                   time_window=TIME_WINDOW,                                   
                                    store_tmp=True,
                                    time_step=T_STEP, **kwargs):
     """
@@ -57,13 +58,14 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
 
     :param blob_id: blob_id used to
     :param repeated_smoothings: number of times smoothing process should be repeated. (int)
-    :param spine_poly_order:
-    :param spine_running_window_size:
-    :param time_poly_order:
-    :param time_running_window_size:
+    :param spine_order:
+    :param spine_window:
+    :param time_order:
+    :param time_window:
     :param insert: toggle if resulting data should be inserted into database.
     :return: timedict of smooothed spines.
     """
+
     # get data into proper form
     _, break_list = get_timeseries(blob_id, data_type='breaks', **kwargs)
     times, spines = get_timeseries(blob_id, data_type='spine_rough', **kwargs)
@@ -71,20 +73,23 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
     good_regions = good_segments_from_data(break_list, times=times, data=spines,
                                            flagged_times=flagged_times)
                                            
-                                           
     # initialize buckets
     smoothed_times, smoothed_spines = [], []
     # each region is smoothed independently
-    for region in good_regions:
+    for i, region in enumerate(good_regions, start=1):
         # if region is too small, it is not worth smoothing
-        if len(region) < spine_running_window_size:
+        safety_factor = 1.3
+        if len(region) < time_window * safety_factor:            
             continue
-        # transform spine point format into matrix format
         times, spines = zip(*region)
-        x_matrix, y_matrix = create_spine_matricies(spines)
+        s, e, N = times[0], times[-1], len(region)
+        print '\tregion {i}'.format(i=i)
+        print '\tstart: {s} | end: {e} | N: {n}'.format(s=s, e=e, n=N)
+        # transform spine point format into matrix format
+        times, x_matrix, y_matrix = create_spine_matricies(times, spines)
         # smooth once in both directions and make sure points are equally spaced along spine
-        x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_running_window_size, order=time_poly_order)
-        x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_running_window_size, order=spine_poly_order)
+        x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
+        x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
         x_matrix, y_matrix = equally_space_matrix_distances(x_matrix, y_matrix)
         # interpolate missing times 
         eq_times = equally_spaced_tenth_second_times(start=times[0], end=times[-1])
@@ -92,8 +97,8 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         # now that times have been set, smooth + space spines repeatedly
 
         for i in range(repeated_smoothings):
-            x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_running_window_size, order=time_poly_order)
-            x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_running_window_size, order=spine_poly_order)
+            x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
+            x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
             x_matrix, y_matrix = equally_space_matrix_distances(x_matrix, y_matrix)
         # check if head is correct and reverse row orientation if not
         x_matrix, y_matrix = set_matrix_orientation(x_matrix, y_matrix)
@@ -111,6 +116,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         write_tmp_file(data=data, blob_id=blob_id, data_type=data_type)
     return smoothed_times, smoothed_spines
 
+'''
 def distance_between_spines(spines1, spines2):
     """
     returns total euclidian distance between all spines in one list and all spines in another list.
@@ -125,12 +131,15 @@ def distance_between_spines(spines1, spines2):
         for pt1, pt2 in zip(spine1, spine2):
             dist += euclidean(pt1, pt2)
     return dist
+'''
 
 if __name__ == "__main__":
     #blob_id ='20120914_172813_01708'
     #blob_id = '20121119_162934_07337'
     blob_id = '00000000_000001_00001'
     blob_id = '00000000_000001_00008'
+    blob_id = '20130319_150235_01830'
+    blob_id = '20130319_150235_00002'
     #blob_id = '20130319_150235_01070'
     #blob_id = '20130320_164252_05955'
     #blob_id = '20130320_153235_40328'

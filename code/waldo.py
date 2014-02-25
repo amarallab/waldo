@@ -25,7 +25,8 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 #from worms.measurement_suite import measure_all_for_ex_id
-from wio.export_data import export_blob_percentiles_by_ex_id
+#from wio.export_data import write_full_plate_timeseries
+#from importing.measurement_suite import
 from wio.file_manager import ensure_dir_exists
 from importing.process_spines import process_ex_id
 import database.mongo_support_functions as mongo
@@ -51,6 +52,7 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
     ensure_dir_exists(timing_dir)
     time_file = '{dir}/{type}_{now}_x{N}.json'.format(dir=timing_dir, type=name,
                                                       now=now_string, N=len(ex_ids))
+    mongo_client = None
     try:
         # initialize the connection to the mongo client
         mongo_client, _ = mongo.start_mongo_client(**MONGO_SETTINGS)
@@ -74,19 +76,20 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
     except Exception as e:
         print 'Error with {name} at time {t}\n{err}'.format(name=name, t=time.clock(), err=e)
     finally:
-        mongo_client.close()
+        if mongo_client:
+            mongo_client.close()
 
 def main(args):
     """ all arguments are parsed here and the appropriate functions are called.
     :param args: arguments from argparse (namespace object)
     """
-    if args.all:
-        args.p, args.e = True, True
+    #if args.all:
+    #    args.p, args.e = True, True
     if args.p:
         run_function_for_ex_ids(f=process_ex_id, name='process', ex_ids=args.ex_ids)
     #    run_function_for_ex_ids(f=measure_all_for_ex_id, name='measure', ex_ids=args.ex_ids)
-    if args.e:
-        run_function_for_ex_ids(f=export_blob_percentiles_by_ex_id, name='export', ex_ids=args.ex_ids)
+    #if args.e:
+    #    run_function_for_ex_ids(f=write_plate_timeseries_set, name='export', ex_ids=args.ex_ids)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prefix_chars='-',
@@ -96,7 +99,7 @@ if __name__ == '__main__':
     #parser.add_argument('-i', action='store_true', help='import data')    
     parser.add_argument('-p', action='store_true', help='process data')
     #parser.add_argument('-m', action='store_true', help='measurement')
-    parser.add_argument('-e', action='store_true', help='export percentiles')
+    #parser.add_argument('-e', action='store_true', help='export percentiles')
     parser.add_argument('-t', action='store_true', help='records processing time')
     parser.add_argument('--all', action='store_true', help='import, process, and aggregate measurements')
     #parser.add_argument('--overwrite', action='store_true', help='overwrite previous documents in database')
