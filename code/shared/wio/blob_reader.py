@@ -253,6 +253,26 @@ def calculate_midline_from_line(line):
     except Exception as e:
         print e
         return None
+    
+def calculate_midline_from_line2(line):
+    ''' accepts a single line from a blobs file and returns a length estimate 
+    or None.
+    '''
+    # the midline portion starts with a '%' and ends either with '%%' or line end.
+    split_line = line.split('%') 
+    if len(split_line) < 2: return None
+    if len(split_line) > 4: return None
+    cols = split_line[1].split()
+    # there are 22 columns (all integers)
+    if len(cols) != 22: return None
+    # [x1, y1, x2, y2, ... ]
+    try: 
+        dx = np.diff(np.array([float(x) for x in cols[::2]]))
+        dy = np.diff(np.array([float(y) for y in cols[1::2]]))
+        return np.sqrt(dx**2 +dy**2)
+    except Exception as e:
+        print e
+        return None
 
 def is_blob_worthy(aggregate_attributes, min_body_lengths, min_duration, min_size): 
     ''' accepts dictionary of aggregate_attributes and returns True if it passes

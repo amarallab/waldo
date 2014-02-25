@@ -47,7 +47,7 @@ def run_everything(**kwargs):
                       min_duration=1,
                       min_size=1,
                       data_dir=TEST_DATA_DIR,
-                      debug=True)
+                      debug=False)
 
 if __name__ == '__main__':
     run_everything()

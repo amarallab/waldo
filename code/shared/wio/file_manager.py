@@ -101,7 +101,7 @@ def clear_tmp_file(blob_id, data_type='all'):
     silent_remove(tmp_file)
     if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
         os.rmdir(blob_path)
-
+                                  
 '''
 def get_data(blob_id, data_type, split_time_and_data=True, 
              search_db=True, **kwargs):

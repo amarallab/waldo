@@ -82,7 +82,6 @@ def trim_spine_matrix(spine_matrix, endpoints, branchpoints):
                 sm[new_pt[0]][new_pt[1]] = 0
                 paths_from_endpoints[k].append(new_pt)
 
-
 def cut_branchpoints_from_spine_matrix(spine_matrix):
     '''
     repeatedly calls trim_spine_matrix in order to remove all branches in a particular spine matrix.
