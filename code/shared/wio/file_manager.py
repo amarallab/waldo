@@ -83,7 +83,17 @@ def format_tmp_filename(blob_id, data_type, tmp_dir):
                                                dt=data_type)
     return tmp_file
 
+'''
 def write_tmp_file(blob_id, data_type, data, tmp_dir=TMP_DIR):
+    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
+    json.dump(data, open(tmp_file, 'w'))
+'''
+
+def write_timeseries_file(blob_id, data_type, times, data, tmp_dir=TMP_DIR):    
+    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
+    json.dump({'time':times, 'data':data}, open(tmp_file, 'w'))
+    
+def write_metadata_file(blob_id, data_type, data, tmp_dir=TMP_DIR):
     tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
     json.dump(data, open(tmp_file, 'w'))
 
@@ -92,7 +102,7 @@ def read_tmp_file(blob_id, data_type, tmp_dir=TMP_DIR):
     if os.path.isfile(tmp_file):
         return json.load(open(tmp_file, 'r'))    
     return None
-    
+
 def clear_tmp_file(blob_id, data_type='all'):
     blob_path = '{path}/{bID}'.format(path=tmp_dir, bID=blob_id)
     tmp_file = '{path}/{dt}.json'.format(path=blob_path, dt=data_type)
@@ -153,11 +163,8 @@ def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
     # if data source not found
     return None, None
         
-
-
-
-def get_metadata(blob_id, search_db=True, **kwargs):
-    data_type = 'metadata'
+def get_metadata(blob_id, data_type='metadata', search_db=True, **kwargs):
+    
     metadata = read_tmp_file(blob_id=blob_id, data_type=data_type)
     # default: look in tmp file and split into 'time' and 'data'
     found_it = False
@@ -182,6 +189,7 @@ def search_db_for_data(blob_id, data_type, **kwargs):
         print e
         return None
 
+'''                             
 def store_data_in_db(blob_id, data_type, data, description, db_doc=None, **kwargs):
     if not db_doc:
         db_doc = read_tmp_file(blob_id=blob_id, data_type='metadata')
@@ -198,7 +206,7 @@ def store_data_in_db(blob_id, data_type, data, description, db_doc=None, **kwarg
                         description=description, **kwargs)                        
     return db_doc
 
-'''                         
+
 
 def store_data_in_db(blob_id, data_type, times, data, description, db_doc=None, **kwargs):
     # convert back to timedict form. then insert

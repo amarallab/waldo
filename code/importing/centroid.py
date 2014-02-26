@@ -24,7 +24,7 @@ sys.path.append(PROJECT_DIR)
 # nonstandard imports
 from Encoding.decode_outline import pull_smoothed_outline, decode_outline
 from ExceptionHandling.record_exceptions import write_pathological_input
-from shared.wio.file_manager import get_timeseries, write_tmp_file
+from shared.wio.file_manager import get_timeseries, write_timeseries_file
 from settings.local import SMOOTHING 
 from equally_space import equally_spaced_tenth_second_times
 from equally_space import equally_spaced_tenth_second_times
@@ -68,8 +68,9 @@ def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwar
         plt.show()
     # store as cached file
     if store_tmp:
-        data ={'time':eq_times, 'data':xy}
-        write_tmp_file(data=data, blob_id=blob_id, data_type='xy')
+        #data ={'time':eq_times, 'data':xy}
+        write_timeseries_file(blob_id=blob_id, data_type='xy',
+                              times=eq_times, data=xy)
     return eq_times, xy
 
 if __name__ == '__main__':

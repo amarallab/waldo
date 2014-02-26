@@ -26,7 +26,7 @@ sys.path.append(PROJECT_DIR)
 from Encoding.decode_outline import pull_smoothed_outline, decode_outline
 from GeometricCalculations import get_ortogonal_to_spine, find_intersection_points, check_point_is_inside_box
 from ExceptionHandling.record_exceptions import write_pathological_input
-from shared.wio.file_manager import get_timeseries, store_data_in_db, write_tmp_file
+from shared.wio.file_manager import get_timeseries, write_timeseries_file
 
 def compute_basic_measurements(blob_id, verbose=True, **kwargs):
 
@@ -78,8 +78,8 @@ def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
         lengths.append(calculate_length_for_timepoint(spine))
     data_type = 'length_rough'
     if store_tmp:
-        data ={'time':times, 'data':lengths}
-        write_tmp_file(data=data, blob_id=blob_id, data_type=data_type)
+        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+                              times=times, data=lengths)
     return lengths
 
 
@@ -111,12 +111,12 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
         width80.append(w80)
 
     if store_tmp:
-        data ={'time':times, 'data':width20}
-        write_tmp_file(data=data, blob_id=blob_id, data_type='width20')
-        data ={'time':times, 'data':width50}
-        write_tmp_file(data=data, blob_id=blob_id, data_type='width50')
-        data ={'time':times, 'data':width80}
-        write_tmp_file(data=data, blob_id=blob_id, data_type='width80')
+        write_timeseries_file(blob_id=blob_id, data_type='width20',
+                              times=times, data=width20)
+        write_timeseries_file(blob_id=blob_id, data_type='width50',
+                              times=times, data=width50)
+        write_timeseries_file(blob_id=blob_id, data_type='width80',
+                              times=times, data=width80)
 
     return width20, width50, width80
 

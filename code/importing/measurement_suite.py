@@ -23,7 +23,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wormmetrics.measurement_switchboard import pull_blob_data
-from wio.file_manager import write_tmp_file, get_metadata, get_blob_ids
+from wio.file_manager import write_timeseries_file, get_metadata, get_blob_ids
 from wio.export_data import write_full_plate_timeseries
 # add angle over distance
 STANDARD_MEASUREMENTS = ['length_mm', 'curve_bl', 'cent_speed_bl']
@@ -49,7 +49,8 @@ def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **
                                  pixels_per_mm=pixels_per_mm, 
                                  **kwargs)
         if store_tmp:
-            write_tmp_file(blob_id, data_type=metric, data={'time':t, 'data':list(data)})
+            write_timeseries_file(blob_id, data_type=metric,
+                                  times=t, data=list(data))
 
         try:
             mean = round(np.mean(data), ndigits=2)

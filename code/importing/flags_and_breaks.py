@@ -27,7 +27,7 @@ SHARED_DIR = os.path.abspath(HERE + '/../shared/')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.file_manager import get_timeseries, write_tmp_file
+from wio.file_manager import get_timeseries, write_timeseries_file, write_metadata_file
 
 # Globals
 NULL_FLAGS = [-1, [], '', 'NA', 'NaN', u'', u'NA', u'NaN', None]
@@ -198,7 +198,8 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     
     data_type = 'flags'
     if store_tmp:
-        write_tmp_file(blob_id=blob_id, data_type=data_type, data={'data':all_flags, 'time':times})
+        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+                              data=all_flags, times=times)
     if verbose:
         flags = consolidate_flags(all_flags)
         N = len(flags)
@@ -273,7 +274,7 @@ def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
         print '\tbreaks from flags: {i}'.format(i=len(break_list))
     data_type = 'breaks'                            
     if store_tmp:
-        write_tmp_file(blob_id, data_type=data_type, data={'time':[], 'data':break_list})
+        write_metadata_file(blob_id, data_type=data_type, data=break_list)
     return break_list
 
 def flag_trouble_areas(flags, min_ok_streak_len=10):

@@ -28,7 +28,7 @@ from Encoding.decode_outline import decode_outline
 from filtering.equally_space import equally_space
 from filtering.filter_utilities import savitzky_golay
 from settings.local import SMOOTHING
-from wio.file_manager import get_timeseries, insert_data_into_db, write_tmp_file
+from wio.file_manager import get_timeseries, insert_data_into_db, write_timeseries_file
 
 # set defaults from settings file
 DEFAULT_ORDER = SMOOTHING['spine_order']
@@ -89,8 +89,8 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     # insert it back into the database
     data_type = 'spine_rough'
     if store_tmp:        
-        data ={'time':times, 'data':treated_spines}
-        write_tmp_file(data=data, blob_id=blob_id, data_type=data_type)
+        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+                              times=times, data=treated_spines)
     return times, treated_spines, flagged_timepoints
 
 def show_worm_video(spine_timedict):

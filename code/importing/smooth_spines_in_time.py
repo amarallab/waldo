@@ -30,7 +30,7 @@ sys.path.append(SHARED_DIRECTORY)
 # nonstandard imports
 from GeometricCalculations import compute_displacement_along_curve
 from GeometricCalculations.distance import euclidean
-from wio.file_manager import get_timeseries, write_tmp_file, store_data_in_db
+from wio.file_manager import get_timeseries, write_timeseries_file, get_metadata
 from flags_and_breaks import good_segments_from_data, get_flagged_times
 from create_spine import smooth_and_space_xy_points
 from equally_space import *
@@ -67,7 +67,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
     """
 
     # get data into proper form
-    _, break_list = get_timeseries(blob_id, data_type='breaks', **kwargs)
+    break_list = get_metadata(blob_id, data_type='breaks', **kwargs)
     times, spines = get_timeseries(blob_id, data_type='spine_rough', **kwargs)
     flagged_times = get_flagged_times(blob_id)
     good_regions = good_segments_from_data(break_list, times=times, data=spines,
@@ -112,8 +112,8 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         map(smoothed_times.append, eq_times)
     data_type = 'spine'
     if store_tmp:
-        data ={'time':smoothed_times, 'data':smoothed_spines}
-        write_tmp_file(data=data, blob_id=blob_id, data_type=data_type)
+        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+                              times=smoothed_times, data=smoothed_spines)
     return smoothed_times, smoothed_spines
 
 '''
