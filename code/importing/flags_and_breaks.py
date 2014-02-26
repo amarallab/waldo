@@ -74,7 +74,7 @@ def plot_fit_hists(x, num_bins=200, xlabel=''):
     # the histogram of the data_from_list
     n, bins, patches = ax.hist(x, num_bins, normed=1, facecolor='green', alpha=0.25)
     bincenters = 0.5 * (bins[1:] + bins[:-1])
-    mu, sigma = fit_gaussian(x, denote_succes=False)
+    mu, sigma = fit_gaussian(x)
     y = mlab.normpdf(bincenters, mu, sigma)
     l = ax.plot(bincenters, y, 'r--', linewidth=2, label='fit dist')
     ax.legend()
@@ -85,6 +85,8 @@ def plot_fit_hists(x, num_bins=200, xlabel=''):
 
 
 def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
+
+
     # some testdata has no variance whatsoever, this is escape clause
     if math.fabs(max(x) - min(x)) < 1e-5:
         if verbose:
@@ -148,7 +150,7 @@ def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
             flags.append(flag_criterion(k))
     return map(bool, flags)
 
-def flag_blob_data(blob_id, data_type, options='both', show_plot=False, **kwargs):
+def flag_blob_data(blob_id, data_type, options='both', show_plot=True, verbose=True, **kwargs):
     '''
     inputs:
     blob_id - 
@@ -161,7 +163,19 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, **kwargs
                         'type value in data'.format(bi=blob_id, dt=data_type, t=type(x))
     def check(x):
         assert type(x) in [int, float], err_msg
-    map(check, data)        
+    map(check, data)
+
+    # if more than half of points are zero, flag everything.
+    N = len(data)
+    zeros = len([x for x in data if x == 0.0])
+    if N ==0:
+        return []
+    if zeros / float(N):
+        print '\t{dt} {p} % of N = {N} points are 0.0 | flag all'.format(p=round(100*zeros/float(N), ndigits=2),
+                                                                         dt=data_type, N=N)
+        return [False] * N
+    
+        
     flags = flag_outliers(data, options=options)
     if show_plot:
         plot_fit_hists(data, xlabel=data_type)
@@ -186,7 +200,6 @@ def flag_report(blob_id):
 
 def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     times, _ = get_timeseries(blob_id, data_type='width20')
-
     all_flags = {'width20_flags': flag_blob_data(blob_id, 'width20', options='long', **kwargs),
                  'width50_flags': flag_blob_data(blob_id, 'width50', options='long', **kwargs),
                  'width80_flags': flag_blob_data(blob_id, 'width80', options='long', **kwargs),
@@ -448,6 +461,7 @@ if __name__ == '__main__':
     blob_id = '20130320_164252_05955'
     blob_id = '00000000_000001_00008'
     blob_id = '20130319_150235_01830'
+    blob_id = '20130719_124520_00951'
     print 'using blob_id', blob_id
     #find_coils(blob_id)
 
