@@ -31,9 +31,13 @@ from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
 
+if False:
+    from h5_interface import write_h5_timeseries_base, read_h5_timeseries_base
+
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
-TMP_DIR = PROJECT_HOME + '/data/processing/'
+JSON_DIR = PROJECT_HOME + '/data/processing/'
+H5_DIR = PROJECT_HOME + '/data/h5-binaries/'
         
 def silent_remove(filename):
     try:
@@ -73,60 +77,75 @@ def get_blob_ids(query, **kwargs):
     ''' return a list of unique blob_id names for a query'''
     return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
     
-def format_tmp_filename(blob_id, data_type, tmp_dir):
+def format_json_filename(blob_id, data_type, json_dir):
     errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
     assert isinstance(blob_id, basestring), errmsg
     ex_id = '_'.join(blob_id.split('_')[:2])
-    blob_path = '{path}/{eID}'.format(path=tmp_dir, eID=ex_id)
+    blob_path = '{path}/{eID}'.format(path=json_dir, eID=ex_id)
     ensure_dir_exists(blob_path)
-    tmp_file = '{path}/{bID}-{dt}.json'.format(path=blob_path, bID=blob_id,
+    json_file = '{path}/{bID}-{dt}.json'.format(path=blob_path, bID=blob_id,
                                                dt=data_type)
-    return tmp_file
+    return json_file
 
-'''
-def write_tmp_file(blob_id, data_type, data, tmp_dir=TMP_DIR):
-    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
-    json.dump(data, open(tmp_file, 'w'))
-'''
 
-def write_timeseries_file(blob_id, data_type, times, data, tmp_dir=TMP_DIR):    
-    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
-    json.dump({'time':times, 'data':data}, open(tmp_file, 'w'))
+def format_h5_path(blob_id, data_type, h5_dir):
+    errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
+    assert isinstance(blob_id, basestring), errmsg    
+    ex_id = '_'.join(blob_id.split('_')[:2])
+    file_path = '{path}/{eID}'.format(path=json_dir, eID=ex_id)
+    ensure_dir_exists(file_path)
+    h5_file = '{path}.h5'.format(path=blob_path)
+    h5_dataset = '{bID}/{dt}'.format(path=blob_path, bID=blob_id)
+    return h5_file, h5_dataset
     
-def write_metadata_file(blob_id, data_type, data, tmp_dir=TMP_DIR):
-    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
-    json.dump(data, open(tmp_file, 'w'))
+def write_h5_timeseries(blob_id, data_type, times, data, h5_dir=H5_DIR):
+    h5_file, h5_dset = format_h5_path(blob_id, data_type, h5_dir)
+    write_h5_timeseries_base(h5_file, h5_path, times, data)
+    
+def read_h5_timeseries(blob_id, data_type, times, data, h5_dir=H5_DIR):
+    h5_file, h5_dset = format_h5_path(blob_id, data_type, h5_dir)
+    times, data = read_h5_timeseries_base(h5_file, h5_path)
+    return times, data
+    
+def write_timeseries_file(blob_id, data_type, times, data, json_dir=JSON_DIR):
+    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
+    json.dump({'time':times, 'data':data}, open(json_file, 'w'))
 
-def read_tmp_file(blob_id, data_type, tmp_dir=TMP_DIR):
-    tmp_file = format_tmp_filename(blob_id, data_type, tmp_dir=tmp_dir)
-    if os.path.isfile(tmp_file):
-        return json.load(open(tmp_file, 'r'))    
+        
+def write_metadata_file(blob_id, data_type, data, json_dir=JSON_DIR):
+    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
+    json.dump(data, open(json_file, 'w'))
+
+def read_json_file(blob_id, data_type, json_dir=JSON_DIR):
+    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
+    if os.path.isfile(json_file):
+        return json.load(open(json_file, 'r'))    
     return None
 
-def clear_tmp_file(blob_id, data_type='all'):
-    blob_path = '{path}/{bID}'.format(path=tmp_dir, bID=blob_id)
-    tmp_file = '{path}/{dt}.json'.format(path=blob_path, dt=data_type)
-    silent_remove(tmp_file)
+def clear_json_file(blob_id, data_type='all'):
+    blob_path = '{path}/{bID}'.format(path=json_dir, bID=blob_id)
+    json_file = '{path}/{dt}.json'.format(path=blob_path, dt=data_type)
+    silent_remove(json_file)
     if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
         os.rmdir(blob_path)
                                   
 '''
 def get_data(blob_id, data_type, split_time_and_data=True, 
              search_db=True, **kwargs):
-    tmp_data = read_tmp_file(blob_id=blob_id, data_type=data_type)
-    # default: look in tmp file and split into 'time' and 'data'
+    json_data = read_json_file(blob_id=blob_id, data_type=data_type)
+    # default: look in json file and split into 'time' and 'data'
     found_it = False
-    if tmp_data != None and split_time_and_data:
-        times = tmp_data.get('time', [])
-        data = tmp_data.get('data', [])
+    if json_data != None and split_time_and_data:
+        times = json_data.get('time', [])
+        data = json_data.get('data', [])
         if not times:
             print 'No Times Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
         if not data:
             print 'No Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
         return times, data, None
     # look in temp file but do not split results
-    elif tmp_data != None:
-        return tmp_data, None
+    elif json_data != None:
+        return json_data, None
     # temp file not located, and search_db=True, attempt to find data in database.
     elif search_db:
         db_doc = search_db_for_data(blob_id, data_type=data_type, **kwargs)
@@ -147,8 +166,8 @@ def get_data(blob_id, data_type, split_time_and_data=True,
 
 def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
 
-    # default: look in tmp file and split into 'time' and 'data'
-    data_dict = read_tmp_file(blob_id=blob_id, data_type=data_type)
+    # default: look in json file and split into 'time' and 'data'
+    data_dict = read_json_file(blob_id=blob_id, data_type=data_type)
     # temp file not located, and search_db=True, attempt to find data in database.
     if search_db and not isinstance(data_dict, dict):
         data_dict = search_db_for_data(blob_id, data_type=data_type, **kwargs)
@@ -165,8 +184,8 @@ def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
         
 def get_metadata(blob_id, data_type='metadata', search_db=True, **kwargs):
     
-    metadata = read_tmp_file(blob_id=blob_id, data_type=data_type)
-    # default: look in tmp file and split into 'time' and 'data'
+    metadata = read_json_file(blob_id=blob_id, data_type=data_type)
+    # default: look in json file and split into 'time' and 'data'
     found_it = False
     # look in temp file but do not split results
     if metadata != None:
@@ -179,7 +198,7 @@ def get_metadata(blob_id, data_type='metadata', search_db=True, **kwargs):
 def search_db_for_data(blob_id, data_type, **kwargs):
     try:
         db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
-        print 'warning: could not find tmp file for', blob_id, data_type
+        print 'warning: could not find json file for', blob_id, data_type
         # either split data into times and data or leave alone
         # Stop everything if no to temp file or database doc.
         return db_doc
@@ -192,11 +211,11 @@ def search_db_for_data(blob_id, data_type, **kwargs):
 '''                             
 def store_data_in_db(blob_id, data_type, data, description, db_doc=None, **kwargs):
     if not db_doc:
-        db_doc = read_tmp_file(blob_id=blob_id, data_type='metadata')
+        db_doc = read_json_file(blob_id=blob_id, data_type='metadata')
     if not db_doc:
         try:
             db_doc = mongo_query({'blob_id':blob_id, 'data_type':'metadata'}, find_one=True)
-            print 'warning: could not find tmp file for', blob_id, 'metadata'
+            print 'warning: could not find json file for', blob_id, 'metadata'
         except Exception as e:
             print '\nFailure! could not locate data'
             print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt='metadata')
@@ -214,6 +233,6 @@ def store_data_in_db(blob_id, data_type, times, data, description, db_doc=None, 
     store_timedict_in_db(blob_id, data_type, timedict, description, db_doc, **kwargs)
 '''    
        
-ensure_dir_exists(TMP_DIR)
+ensure_dir_exists(JSON_DIR)
         
     
