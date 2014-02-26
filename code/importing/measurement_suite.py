@@ -76,9 +76,6 @@ def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASURE
                                     blob_ids=blob_ids,
                                     **kwargs)
     
-
-    
-
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         #bi = '00000000_000001_00001'

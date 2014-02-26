@@ -28,6 +28,10 @@ sys.path.append(SHARED_DIR)
 from wormmetrics.measurement_switchboard import pull_blob_data
 from database.mongo_retrieve import mongo_query
 from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids
+from settings.local import LOGISTICS
+
+PLATE_DIR = LOGISTICS['data'] + 'plate_timeseries'
+
 #from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
 
 '''
@@ -90,7 +94,7 @@ def export_index_files(props=['age', 'source-camera', 'label'], dataset='N2_agin
             f.write(','.join(map(str, line)) + '\n')
 
 def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='', 
-                                out_dir=EXPORT_PATH, save_name=None, 
+                                out_dir=PLATE_DIR, save_name=None, 
                                 as_json=False, blob_ids=[], **kwargs):
                                 
     # manage save path + name

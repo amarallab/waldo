@@ -34,7 +34,7 @@ syntax: glob
 *.json
 
 # Directory
-
+./data/*
 
 # editor and ide files
 .idea/*
