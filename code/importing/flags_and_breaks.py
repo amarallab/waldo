@@ -68,6 +68,7 @@ def fit_gaussian(x, num_bins=200):
     else:
         return None
 
+
 def plot_fit_hists(x, num_bins=200, xlabel=''):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -82,7 +83,6 @@ def plot_fit_hists(x, num_bins=200, xlabel=''):
     ax.set_xlim([0, mu + 10 * sigma])
     plt.show()
     plt.clf()
-
 
 def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
 
@@ -150,7 +150,7 @@ def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
             flags.append(flag_criterion(k))
     return map(bool, flags)
 
-def flag_blob_data(blob_id, data_type, options='both', show_plot=True, verbose=True, **kwargs):
+def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=True, **kwargs):
     '''
     inputs:
     blob_id - 
