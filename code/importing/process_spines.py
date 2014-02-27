@@ -99,6 +99,8 @@ def process_ex_id(ex_id, debug=False,**kwargs):
     # processing blobs section.
     # must perform: process_spines.process_ex_id
     N = len(blob_ids)
+    if N ==0:
+        return None
     for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
         process_centroid(blob_id, **kwargs)
