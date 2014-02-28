@@ -171,10 +171,11 @@ def main(args, db_attribute):
             ex_ids = choose_ex_ids(db_attribute=db_attribute, blobfiles=True, stage1=False)
         print ex_ids
         qsub_run_script(python_script='waldo.py -ti', job_name='import', args=ex_ids, number_of_jobs=30)
-    '''    
+    '''
+    dataset = str(db_attribute[1])
     if args.p:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
-        qsub_run_script(python_script='waldo.py -tp', job_name='process', args=ex_ids, number_of_jobs=20)
+        qsub_run_script(python_script='waldo.py -tp', job_name=dataset, args=ex_ids, number_of_jobs=20)
         '''
         if args.o:
             print 'batch processing with overwrite'

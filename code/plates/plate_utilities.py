@@ -31,6 +31,7 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from settings.local import LOGISTICS
 from wio.file_manager import ensure_dir_exists
+from annotation.experiment_index import Experiment_Attribute_Index
 
 # Globals
 PLATE_DIR = os.path.abspath(LOGISTICS['data'] + 'plate_summary')
@@ -97,6 +98,73 @@ def read_plate_summaryo(sum_type, dataset, data_type, path=PLATE_DIR):
     if os.path.isfile(filename):
         return json.load(open(filename, 'r'))
     return None
+
+def ex_id_to_datetime(ex_id):
+    ''' converts an experiment id to a datetime object '''     
+    parts = ex_id.split('_')
+    if len(parts) != 2:
+        print 'Error: something is off with this ex_id', ex_id
+        return None
+    yearmonthday, hourminsec = parts
+    year, month, day = map(int, [yearmonthday[:4], yearmonthday[4:6], yearmonthday[6:]])
+    h, m, s = map(int, [hourminsec[:2], hourminsec[2:-2], hourminsec[-2:]])
+    return datetime.datetime(year, month, day, h, m, s)
+
+def parse_plate_timeseries_txt_file(dfile):
+    times, data = [], []
+    with open(dfile) as f:
+        for line in f:
+            line = line.strip().split(',')
+            times.append(float(line[0]))
+            data.append(map(float, line[1:]))
+    return times, data
+
+def organize_plate_metadata(ex_id):
+    ei = Experiment_Attribute_Index()
+
+    m = ei.return_attributes_for_ex_id(ex_id)
+    label = m.get('label', 'label')
+    sub_label = m.get('sublabel', 'set')
+    sub_label = '{l}-{sl}'.format(l=label, sl=sub_label)
+    pID = m.get('plate-id', 'set B')
+    day = m.get('age', 'A0')
+
+    recording_time = ex_id
+    plating_time = m.get('l1-arrest', None)
+    #print 'plated at:', plating_time
+    #print 'recorded at:', recording_time
+    hours = 0
+    if recording_time and plating_time:
+        t0 = ex_id_to_datetime(plating_time)
+        t1 = ex_id_to_datetime(recording_time) 
+        hours = (t1 - t0).total_seconds()/3600.
+
+
+    #age = '{et} - {pt}'.format(et=recording_time, pt=plating_time)
+    #for i in m:
+    #    print i
+    return hours, label, sub_label, pID, day
+
+
+def return_flattened_plate_timeseries(dfile):
+    """
+    """
+    
+    times, data = parse_plate_timeseries_txt_file(dfile)
+    flat_data = []
+    if not len(times):
+        return []
+    for i, t_bin in enumerate(data):
+        flat_data += list(t_bin)
+    # take data out of bins and remove nan values
+    flat_data = np.array(flat_data)
+    N_w_nan = len(flat_data)
+    flat_data = flat_data[np.logical_not(np.isnan(flat_data))]
+    N_wo_nan = len(flat_data)
+    if N_wo_nan != N_wo_nan:
+        print '{N} nans removed'.format(N=N_w_nan-N_wo_nan)
+    return flat_data
+
 
 if __name__ == '__main__':
     dataset = 'disease_models'
