@@ -215,7 +215,7 @@ class Blob_Reader(object):
                     lines.append(line)
         return lines
 
-def parse_outline_from_line(line, decode=False):
+def parse_outline_from_line(line):
     ''' accepts a single line from a blobs file and returns a parsed outline 
     or None.
     '''    
@@ -227,13 +227,10 @@ def parse_outline_from_line(line, decode=False):
     # (x, y, length of outline, outline encoded in string)
     if len(cols) != 4: return None
     try:
-        xy = (int(cols[0]),int(cols[1]))
+        x, y = int(cols[0]), int(cols[1])
         p_num = int(cols[2])
         outline_code = cols[3]
-        if decode:
-            return decode_outline((xy, p_num, outline_code))
-        else:
-            return xy, p_num, outline_code
+        return x, y, p_num, outline_code
     except Exception as e:
         print e
         return None

@@ -49,7 +49,7 @@ def write_h5_timeseries_base(h5_file, h5_path, times, data):
                            compression='lzf')
         grp.create_dataset(name='data',                           
                            shape=data.shape,
-                           dtype=float,
+                           dtype=data.dtype,
                            data=data,
                            chunks=True,
                            compression='lzf')
@@ -83,3 +83,30 @@ def read_h5_timeseries_base(h5_file, h5_path):
 
 def delete_h5_dataset(h5_file, h5_path, times, data):
     pass
+
+
+# main is purely for testing purposes
+if __name__ == '__main__':
+    from file_manager import get_timeseries, format_h5_path
+    bID = '00000000_000001_00001'
+    data_type = 'encoded_outline'
+    h5_file, h5_path = format_h5_path(blob_id=bID, data_type=data_type,
+                                      h5_dir='./')
+    times, data = get_timeseries(blob_id=bID, data_type=data_type)
+    xy, l, o = zip(*data)
+    x, y = zip(*xy)
+    #x = map(str, x)
+    #y = map(str, y)
+    #l = map(str, l)    
+    #o = map(str, o)
+    data = zip(x, y, l, o)        
+    times = np.array(times)
+    data = np.array(data, dtype=str)
+    print data.dtype
+    print times[:10]
+    print data[:10]    
+    write_h5_timeseries_base(h5_file, h5_path, times, data)
+    times, data = read_h5_timeseries_base(h5_file, h5_path)
+    print times[:10]
+    print data[:10]    
+    x, y, l, o = zip(*data)

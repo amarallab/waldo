@@ -31,9 +31,12 @@ from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
 
-if True:
+try:
     from h5_interface import write_h5_timeseries_base, read_h5_timeseries_base
-
+except Exception as e:
+    print 'h5 interface error'
+    print e
+    
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
 JSON_DIR = PROJECT_HOME + '/data/processing/'
@@ -99,7 +102,7 @@ def format_h5_path(blob_id, data_type, h5_dir):
     print h5_file
     print h5_dataset
     return h5_file, h5_dataset
-
+'''
 def write_outlines(blob_id, data_type, times, data, h5_dir=H5_DIR):
     h5_file, h5_path = format_h5_path(blob_id, data_type, h5_dir)
     write_h5_outlines(h5_file, h5_path, times, data)
@@ -113,7 +116,7 @@ def read_h5_timeseries(blob_id, data_type, h5_dir=H5_DIR):
     times, data = read_h5_timeseries_base(h5_file, h5_path)
     print data
     return times, data
-    
+'''    
 def write_timeseries_file(blob_id, data_type, times, data, json_dir=JSON_DIR):
     json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
     json.dump({'time':times, 'data':data}, open(json_file, 'w'))

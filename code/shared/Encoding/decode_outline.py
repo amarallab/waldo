@@ -83,10 +83,80 @@ def encode_outline(points):
         letter = chr(num)
         encoded_outline += letter
 
-    return (start_xy, length, encoded_outline)
-
+    x, y = start_xy
+    return (x, y, length, encoded_outline)
 
 def decode_outline(outline_parts):
+    # broken input if there are not three outline parts, return empty string
+    if len(outline_parts) != 4:
+        return []    
+    start_x, start_y, length, outline = outline_parts
+    x, y = int(start_x), int(start_y)
+    length = int(length)
+    pts = []
+    # go through each character in the outline string
+    for o in outline:
+        # convert character into integer.
+        steps = ord(o)
+        steps = steps - ARBIRARY_CONVERSION_FACTOR
+        assert steps <= 63, 'error:(%s) is not in encoding range' % o
+        assert steps >= 0, 'error:(%s) is not in encoding range' % o
+        # convert intager into a binary string
+        bit = str(bin1(steps))
+        # remove the first two characters which 
+        bit = bit[2:]
+        # if the binary string is less than 6 digits long,
+        # add zeros to the front to make it 6 digits.
+        desired_length = 6
+        for i in xrange(desired_length):
+            if len(bit) < desired_length:
+                bit = '0' + bit
+        #print o, ord(o)-ARBIRARY_CONVERSION_FACTOR, bit, len(bit)
+        def increment_loc(x, y, b):
+            ''' need to use this to increment my xy coords... '''
+            format_error = 'Error: boolean format is wrong:%s' % b
+            unkown_error = 'Error: something unexpeted:%s' % b
+            assert len(b) == 2, format_error
+            assert b[0] == '0' or b[0] == '1', format_error
+            assert b[1] == '0' or b[1] == '1', format_error
+            if b == '00':
+                x -= 1
+            elif b == '01':
+                x += 1
+            elif b == '10':
+                y -= 1
+            elif b == '11':
+                y += 1
+            else:
+                print unkown_error
+            return x, y
+
+        # there are three steps encoded in one character,
+        # sometimes the last one or two steps are blank, hence the breaks
+        if len(pts) > length: break
+        pts.append((x, y))
+        x, y = increment_loc(x, y, bit[:2]) # first two bits
+        if len(pts) > length: break
+        pts.append((x, y))
+        x, y = increment_loc(x, y, bit[2:4]) # second two bits
+        if len(pts) > length: break
+        pts.append((x, y))
+        x, y = increment_loc(x, y, bit[4:6]) # third two bits
+
+    f = pts[0]
+    l = pts[-1]
+    firstlast = str(f) + str(l)
+
+    fl_distance = math.sqrt((f[0] - l[0]) ** 2 + (f[1] - l[1]) ** 2)
+    fl_error = 'first and last points not close enough to complete outline:%s' % firstlast
+    len_error = 'lengths dont aggree num pts = %i, len = %i' % (len(pts), length)
+    #print 'distance from first to last = %f' %fl_distance
+    #assert fl_distance <= 1.5, fl_error
+    #assert abs(len(pts) - length) <= 1, len_error
+    return pts
+
+
+def decode_outline_old(outline_parts):
     # broken input if there are not three outline parts, return empty string
     if len(outline_parts) != 3:
         return []    
