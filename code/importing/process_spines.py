@@ -127,7 +127,8 @@ def process_ex_id(ex_id, debug=False,**kwargs):
         '''
         if debug:
             break
-    write_plate_timeseries_set(ex_id, blob_ids=blob_ids, **kwargs)
+    else:
+        write_plate_timeseries_set(ex_id, blob_ids=blob_ids, **kwargs)
 
 def all_unprocessed_blob_ids(**kwargs):
     all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)

@@ -17,6 +17,7 @@ import os
 import sys
 from glob import glob
 from itertools import izip
+import numpy as np
  
 # path definitions
 PROJECT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
@@ -62,7 +63,8 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
     blob_files = sorted(glob(path+'/*.blobs'))    
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
     
-    BR = Blob_Reader(path=path, min_body_lengths=min_body_lengths, min_duration=min_duration, min_size=min_size)    
+    BR = Blob_Reader(path=path, min_body_lengths=min_body_lengths,
+                     min_duration=min_duration, min_size=min_size)    
     
     raw_blobs = BR.pull_worthy_blobs()
     print len(raw_blobs), 'blobs found worthy'
@@ -78,29 +80,40 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
                                   times=blob['time'], data=blob['xy'])
             write_timeseries_file(blob_id=blob_id, data_type='encoded_outline',
                                   times=blob['time'], data=blob['outline'])
+            #print zip(*blob['outline'][:10])
+            #ox, oy = reformat_outline(blob['outline'])
+            #write_timeseries_file(blob_id=blob_id, data_type='outline_x',
+            #                      times=blob['time'], data=ox)
+            #write_timeseries_file(blob_id=blob_id, data_type='outline_y',
+            #                      times=blob['time'], data=oy)
             write_timeseries_file(blob_id=blob_id, data_type='aspect_ratio',
                                   times=blob['time'], data=blob['aspect_ratio'])
 
     # return a list of blob_ids
     blob_ids = [m['blob_id'] for m in metadata_docs.values()]
     return blob_ids
-'''
-def convert_lists_to_timedicts(blob_lists, types_to_convert=['xy', 'size', 'aspect_ratio', 'outline']):
 
-    this function became necessary when I switched blob reader to no longer return blobs as timedicts.
+def reformat_outline(outlines):
+    # turns outlines in point format with variable length
+    # into two matricies, one with x values, one with y values
+    # 
+    xs, ys, N = [], [], []
+    for o in outlines:
+        x, y = zip(*o)
+        xs.append(x)
+        ys.append(y)
+        N.append(len(x))
 
-    assert 'time' in blob_lists
-    times = blob_lists['time']
-    timekeys = [('%.3f' % float(f)).replace('.', '?') for f in times]
-    new_blob = {'attributes': blob_lists['attributes']}
-    for dtype in types_to_convert:
-        timedict = {}
-        for tk, datum in izip(timekeys, blob_lists[dtype]):
-            if datum not in [None, '']:
-                timedict[tk] = datum
-        new_blob[dtype] = timedict
-    return new_blob
-'''
+    N_max = max(N)
+    
+    ox = np.zeros(shape=[len(N), N_max])
+    oy = np.zeros(shape=[len(N), N_max])    
+    for i, (x, y) in enumerate(izip(xs, ys)):        
+        ox[i][:len(x)] = np.array(x)
+        oy[i][:len(x)] = np.array(y)        
+    return ox, oy
+    
+
 def create_metadata_docs(ex_id, raw_blobs):
 
     # read experiment attributes from experiment attribute index
@@ -134,48 +147,7 @@ def create_metadata_docs(ex_id, raw_blobs):
             metadata_entry[k.strip()] = blob['attributes'][k]
         metadata_docs[local_id] = metadata_entry
     return metadata_docs
-'''
-def write_raw_blobs_to_db(raw_blobs, metadata_docs, **kwargs):
-    new_entries = []
-    for local_id, blob_with_lists in raw_blobs.iteritems():        
-        assert local_id in metadata_docs, '{id} not in metadata docs!'.format(id=local_id)
-        metadata_entry = metadata_docs[local_id]
-        blob = convert_lists_to_timedicts(blob_with_lists)
 
-        # store metadata_entry
-        new_entries.append(metadata_entry)
-
-        # Add in the data entries for insertion
-        assert type(blob['size']) == dict
-        data_type = 'size_raw'
-        description = 'raw size data from mwt blobs file.'
-        new_entry = timedict_to_entry(blob['size'], metadata_entry, data_type, description)
-        #new_entry['part'] = '1of1'
-        new_entries.append(new_entry)
-
-        assert type(blob['xy']) == dict
-        data_type = 'xy_raw'
-        description = 'raw position data from mwt blobs file.'
-        new_entry = timedict_to_entry(blob['xy'], metadata_entry, data_type, description)
-        #new_entry['part'] = '1of1'
-        new_entries.append(new_entry)
-
-        assert type(blob['outline']) == dict
-        data_type = 'encoded_outline'
-        description = 'encoded outline data from mwt blobs file.'
-        new_entry = timedict_to_entry(blob['outline'], metadata_entry, data_type, description)
-        #new_entry['part'] = '1of1'
-        new_entries.append(new_entry)
-
-        assert type(blob['aspect_ratio']) == dict
-        data_type = 'aspect_ratio'
-        description = 'raw aspect_ratio from mwt blobs file.'
-        new_entry = timedict_to_entry(blob['aspect_ratio'], metadata_entry, data_type, description)
-        #new_entry['part'] = '1of1'
-        new_entries.append(new_entry)
-    # after every blobs file is processed 
-    insert_blob_entries(new_entries, verbose=False, **kwargs)
-'''
 def import_ex_id(ex_id, min_body_lengths=FILTER['min_body_lengths'],
                  min_duration=FILTER['min_duration'], min_size=FILTER['min_size'],
                  overwrite=True, **kwargs):

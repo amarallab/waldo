@@ -150,7 +150,7 @@ def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
             flags.append(flag_criterion(k))
     return map(bool, flags)
 
-def flag_blob_data(blob_id, data_type, options='both', show_plot=True, verbose=True, **kwargs):
+def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=True, **kwargs):
     '''
     inputs:
     blob_id - 
@@ -170,7 +170,7 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=True, verbose=T
     zeros = len([x for x in data if x == 0.0])
     if N ==0:
         return []
-    if zeros / float(N):
+    if zeros / float(N) > 0.5:
         print '\t{dt} {p} % of N = {N} points are 0.0 | flag all'.format(p=round(100*zeros/float(N), ndigits=2),
                                                                          dt=data_type, N=N)
         return [False] * N

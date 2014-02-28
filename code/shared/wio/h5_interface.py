@@ -30,13 +30,17 @@ sys.path.append(SHARED_DIR)
 
 OPTIONS = {}
 
+def write_h5_outlines(h5_file, h5_path, times, data):
+    pass
+    
 def write_h5_timeseries_base(h5_file, h5_path, times, data):
     times = np.array(times) 
     data = np.array(data)
-    
+    #print data
     with h5py.File(h5_file, 'w') as f:
-        grp = f.create_group(h5_path)
-        #print times.shape
+        grp = f.create_group(h5_path)        
+        print 'times', times.shape
+        print 'data', data.shape        
         grp.create_dataset(name='time',                           
                            shape=times.shape,
                            dtype=float,

@@ -31,7 +31,7 @@ from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
 
-if False:
+if True:
     from h5_interface import write_h5_timeseries_base, read_h5_timeseries_base
 
 INDEX_DIR = LOGISTICS['annotation']
@@ -87,30 +87,37 @@ def format_json_filename(blob_id, data_type, json_dir):
                                                dt=data_type)
     return json_file
 
-
 def format_h5_path(blob_id, data_type, h5_dir):
     errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
     assert isinstance(blob_id, basestring), errmsg    
     ex_id = '_'.join(blob_id.split('_')[:2])
-    file_path = '{path}/{eID}'.format(path=json_dir, eID=ex_id)
+    h5_dir = h5_dir.rstrip('/')
+    file_path = '{path}/{eID}'.format(path=h5_dir, eID=ex_id)
     ensure_dir_exists(file_path)
-    h5_file = '{path}.h5'.format(path=blob_path)
-    h5_dataset = '{bID}/{dt}'.format(path=blob_path, bID=blob_id)
+    h5_file = '{path}.h5'.format(path=file_path)
+    h5_dataset = '{bID}/{dt}'.format(bID=blob_id, dt=data_type)
+    print h5_file
+    print h5_dataset
     return h5_file, h5_dataset
+
+def write_outlines(blob_id, data_type, times, data, h5_dir=H5_DIR):
+    h5_file, h5_path = format_h5_path(blob_id, data_type, h5_dir)
+    write_h5_outlines(h5_file, h5_path, times, data)
     
 def write_h5_timeseries(blob_id, data_type, times, data, h5_dir=H5_DIR):
-    h5_file, h5_dset = format_h5_path(blob_id, data_type, h5_dir)
+    h5_file, h5_path = format_h5_path(blob_id, data_type, h5_dir)
     write_h5_timeseries_base(h5_file, h5_path, times, data)
     
-def read_h5_timeseries(blob_id, data_type, times, data, h5_dir=H5_DIR):
-    h5_file, h5_dset = format_h5_path(blob_id, data_type, h5_dir)
+def read_h5_timeseries(blob_id, data_type, h5_dir=H5_DIR):
+    h5_file, h5_path = format_h5_path(blob_id, data_type, h5_dir)
     times, data = read_h5_timeseries_base(h5_file, h5_path)
+    print data
     return times, data
     
 def write_timeseries_file(blob_id, data_type, times, data, json_dir=JSON_DIR):
     json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
     json.dump({'time':times, 'data':data}, open(json_file, 'w'))
-
+    #write_h5_timeseries(blob_id, data_type, times, data)    
         
 def write_metadata_file(blob_id, data_type, data, json_dir=JSON_DIR):
     json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
@@ -129,43 +136,8 @@ def clear_json_file(blob_id, data_type='all'):
     if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
         os.rmdir(blob_path)
                                   
-'''
-def get_data(blob_id, data_type, split_time_and_data=True, 
-             search_db=True, **kwargs):
-    json_data = read_json_file(blob_id=blob_id, data_type=data_type)
-    # default: look in json file and split into 'time' and 'data'
-    found_it = False
-    if json_data != None and split_time_and_data:
-        times = json_data.get('time', [])
-        data = json_data.get('data', [])
-        if not times:
-            print 'No Times Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
-        if not data:
-            print 'No Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
-        return times, data, None
-    # look in temp file but do not split results
-    elif json_data != None:
-        return json_data, None
-    # temp file not located, and search_db=True, attempt to find data in database.
-    elif search_db:
-        db_doc = search_db_for_data(blob_id, data_type=data_type, **kwargs)
-        if db_doc:
-            found_it = True
-    # if found from db
-    if split_time_and_data and found_it:
-        times, data = timedict_to_list(db_doc['data'])
-        return times, data, db_doc
-    elif found_it:
-        return db_doc['data'], db_doc
-    # if nothing is found.
-    elif split_time_and_data:
-        return False, False, None
-    else:
-        return False, None            
-'''
-
 def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
-
+    #return read_h5_timeseries(blob_id, data_type)
     # default: look in json file and split into 'time' and 'data'
     data_dict = read_json_file(blob_id=blob_id, data_type=data_type)
     # temp file not located, and search_db=True, attempt to find data in database.

@@ -17,6 +17,7 @@ import numpy as np
 import math
 import glob
 from itertools import izip
+from Encoding.decode_outline import decode_outline
 
 # TODO. move this into the testing dir.
 def sample_function(ex_dir):
@@ -214,8 +215,7 @@ class Blob_Reader(object):
                     lines.append(line)
         return lines
 
-
-def parse_outline_from_line(line):
+def parse_outline_from_line(line, decode=False):
     ''' accepts a single line from a blobs file and returns a parsed outline 
     or None.
     '''    
@@ -230,7 +230,10 @@ def parse_outline_from_line(line):
         xy = (int(cols[0]),int(cols[1]))
         p_num = int(cols[2])
         outline_code = cols[3]
-        return (xy, p_num, outline_code)
+        if decode:
+            return decode_outline((xy, p_num, outline_code))
+        else:
+            return xy, p_num, outline_code
     except Exception as e:
         print e
         return None
@@ -349,87 +352,6 @@ def compute_basic_properties(blob, distance_metric='box_diagonal'):
                              'duration': times[-1] - times[0],
                              'bl_dist': bl_dist}
     return timeseries_properties
-
-def pull_worthy_blobs_from_blobs_file(filename, min_body_lengths, min_duration, min_size):
-    '''
-    Reads a blobs file and returns a dictionary of blobs that match criterion.
-    used in mongo_populate_from_blob_files.
-
-    inputs:    
-    min_body_lengths - number. blob must have traveled further than this number of it's own (median) body lengths.
-    min_duration - number. blob must be tracked for longer than this duration.
-    min_size - number. blob must have median size of more than this many pixels.
-    '''
-    #print 'reading blobs from:', filename.split('/')[-1]
-
-    def make_temp_blob():
-        return {'time_list': [], 'xy_list': [], 'aspect_ratio': {},
-                 'xy': {}, 'size': {}, 'outline': {}, 'midline': {}}
-
-    def make_local_id(local_id):
-        # local blob ids in the database are always length 5.
-        #if this one is short, pad front with '0's
-        for i in range(5):
-            if len(local_id) < 5:
-                local_id = '0' + local_id
-        return local_id
-
-    def process_blob(temp_blob, blobs, local_id):
-        # to save calculation time, first check if blob meets duration requirement
-        if len(temp_blob['time_list']) > 0:
-            duration = temp_blob['time_list'][-1] - temp_blob['time_list'][0]
-        else:
-            duration = 0
-        if duration >= min_duration:
-            aggregate_attributes = compute_basic_properties(temp_blob)
-            if is_blob_worthy(aggregate_attributes, min_body_lengths,
-                                min_duration, min_size):
-                temp_blob['attributes'] = aggregate_attributes
-                blobs[local_id] = temp_blob
-        return blobs
-
-    blobs = {}
-    total_count = 0
-    local_id = ''
-    with open(filename, 'r') as f:
-        # initialize first temporary blob.
-        temp_blob = make_temp_blob()
-        for line in f:
-            line = line.rstrip('\n\r')
-            # '%' always starts ID row.
-            # if blob id line (starts with '%'), check if a desired blob
-            if line[0] == '%':
-                # increment total count
-                total_count += 1
-                # process the last temporary blob (since all data for last blob has been collected)
-                blobs = process_blob(temp_blob, blobs, local_id)
-                # initialize a new temp_blob
-                temp_blob = make_temp_blob()
-                local_id = make_local_id(line[1:].strip())
-
-            else:
-                # store all relevant data for the current blob row to evaluate later
-                cols = line.split()
-                time_key = str(cols[1]).replace('.', '?')
-                temp_blob['time_list'].append(float(cols[1]))
-                temp_blob['xy_list'].append((float(cols[2]), float(cols[3])))
-                temp_blob['xy'][time_key] = (float(cols[2]), float(cols[3]))
-                temp_blob['size'][time_key] = int(cols[4])
-                try:
-                    temp_blob['aspect_ratio'][time_key] = float(cols[8]) / float(cols[9])
-                except: 
-                    # add in a -1 if the ratio gets too big.
-                    temp_blob['aspect_ratio'][time_key] = -1.0
-                outline = parse_outline_from_line(line)
-                if outline != None: temp_blob['outline'][time_key] = outline
-                midline = calculate_midline_from_line(line)
-                if midline != None: temp_blob['midline'][time_key] = midline
-
-            # need to check if last blob should be saved.
-            blobs = process_blob(temp_blob, blobs, local_id)
-
-    print len(blobs), 'out of', total_count, 'blobs found worthy'
-    return blobs
 
 
 def main():
