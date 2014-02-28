@@ -31,11 +31,8 @@ from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
 
-try:
+if False:
     from h5_interface import write_h5_timeseries_base, read_h5_timeseries_base
-except Exception as e:
-    print 'h5 interface error'
-    print e
     
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
@@ -79,6 +76,14 @@ def get_ex_ids(query, **kwargs):
 def get_blob_ids(query, **kwargs):
     ''' return a list of unique blob_id names for a query'''
     return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
+
+def get_ex_id_metadata(ex_id, json_dir=JSON_DIR):
+    search_path = '{path}/{eID}/*metadata.json'.format(path=json_dir.rstrip('/'), 
+                                                       eID=ex_id.rstrip('/'))
+    #print search_path
+    json_files = glob(search_path)
+    #print json_files
+    return json.load(open(json_files[0], 'r'))
     
 def format_json_filename(blob_id, data_type, json_dir):
     errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)

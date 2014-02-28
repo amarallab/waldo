@@ -34,13 +34,13 @@ from wio.file_manager import ensure_dir_exists
 
 # Globals
 PLATE_DIR = os.path.abspath(LOGISTICS['data'] + 'plate_summary')
+DSET_DIR = os.path.abspath(LOGISTICS['data'] + 'dsets')
 TIME_SERIES_DIR = os.path.abspath(LOGISTICS['export'])
 
 ensure_dir_exists(PLATE_DIR)
 ensure_dir_exists(TIME_SERIES_DIR)
 
 def show_timeseries_options(timeseries_dir=TIME_SERIES_DIR):
-
     print '\ndata_set\tdata_type\n'
     data_dirs = glob.glob('{path}/*'.format(path=timeseries_dir.rstrip('/')))
     for d in sorted(data_dirs):
@@ -61,6 +61,25 @@ def get_ex_id_files(dataset, data_type, path=TIME_SERIES_DIR):
                 ex_ids.append(ex_id)
                 file_paths.append(file_path)
     return ex_ids, file_paths
+    
+def format_dset_summary_name(data_type, dataset, sum_type, dset_dir):
+    ensure_dir_exists(dset_dir)
+    path = '{setdir}/{dset}-{dtype}-{stype}.json'.format(setdir=dset_dir,
+                                                         dset=dataset,
+                                                         dtype=data_type,
+                                                         stype=sum_type)
+    print path
+    return path
+
+
+def write_dset_summary(data, data_type, dataset, sum_type, dset_dir=DSET_DIR):
+    filename = format_dset_summary_name(data_type, dataset, sum_type, dset_dir)
+    json.dump(data, open(filename, 'w'))
+
+def read_dset_summary(data_type, dataset, sum_type='basic', dset_dir=DSET_DIR):
+    filename = format_dset_summary_name(data_type, dataset, sum_type, dset_dir)
+    return json.load(open(filename, 'r'))
+
 
 def format_plate_summary_name(ex_id, sum_type, dataset, data_type, path):
     savedir = '{path}/{dset}-{dtype}'.format(path=path, dset=dataset, 
