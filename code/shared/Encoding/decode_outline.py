@@ -293,9 +293,9 @@ def show_worm_video(outline_timedict, window_size=20):
 def test_encode_decode():
     x, y = make_square()
     points = zip(x, y)
-    (start_xy, length, encoded_outline) = encode_outline(points)
-    print 'outline encoded', (start_xy, length, encoded_outline)
-    points2 = decode_outline((start_xy, length, encoded_outline))
+    (start_x, start_y, length, encoded_outline) = encode_outline(points)
+    print 'outline encoded', (start_x, start_y, length, encoded_outline)
+    points2 = decode_outline((start_x, start_y, length, encoded_outline))
     for i, (pt1, pt2) in enumerate(zip(points, points2)):
         assert pt1 == pt2, 'point %i was mismatched' %i
         print i, pt1, pt2
