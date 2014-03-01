@@ -32,7 +32,9 @@ from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
 
 try:
-    from h5_interface import write_h5_timeseries_base, read_h5_timeseries_base
+    from h5_interface import write_h5_timeseries_base1 as write_h5_timeseries_base
+    from h5_interface import read_h5_timeseries_base1 as write_h5_timeseries_base
+    
 except Exception as e:
     print 'h5 interface error'
     print e
@@ -97,14 +99,12 @@ def format_h5_path(blob_id, data_type, h5_dir):
     h5_dir = h5_dir.rstrip('/')
     file_path = '{path}/{eID}'.format(path=h5_dir, eID=ex_id)
     ensure_dir_exists(file_path)
-    #h5_file = '{path}.h5'.format(path=file_path)
-    #h5_dataset = '{bID}/{dt}'.format(bID=blob_id, dt=data_type)
-    h5_file = '{path}/{bID}-{dt}.json'.format(path=file_path, bID=blob_id,
-                                              dt=data_type)
-    
-    #print h5_file
-    #print h5_dataset
-    return h5_file #, h5_dataset
+    h5_file = '{path}.h5'.format(path=file_path)
+    h5_dataset = '{bID}/{dt}'.format(bID=blob_id, dt=data_type)
+    return h5_file, h5_dataset    
+    #h5_file = '{path}/{bID}-{dt}.json'.format(path=file_path, bID=blob_id,
+    #                                          dt=data_type)
+    #return h5_file #, h5_dataset
 
 #def write_outlines(blob_id, data_type, times, data, h5_dir=H5_DIR):
 #    h5_file = format_h5_path(blob_id, data_type, h5_dir)

@@ -100,10 +100,13 @@ def process_ex_id(ex_id, debug=False,**kwargs):
     N = len(blob_ids)
     if N ==0:
         return None
+    good_blobs = []
     for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
         process_centroid(blob_id, **kwargs)
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
+        if len(spines) > 0:
+            good_blobs.append(blob_id)
         measure_all(blob_id, **kwargs)
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
@@ -129,7 +132,7 @@ def process_ex_id(ex_id, debug=False,**kwargs):
         if debug:
             break
     else:
-        write_plate_timeseries_set(ex_id, blob_ids=blob_ids, **kwargs)
+        write_plate_timeseries_set(ex_id, blob_ids=good_blobs, **kwargs)
 
 def all_unprocessed_blob_ids(**kwargs):
     all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)
