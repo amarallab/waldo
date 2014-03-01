@@ -33,6 +33,10 @@ from wio.file_manager import get_timeseries, insert_data_into_db, write_timeseri
 # set defaults from settings file
 DEFAULT_ORDER = SMOOTHING['spine_order']
 DEFAULT_WINDOW = SMOOTHING['spine_window']
+N_spine_pts = 50
+
+#NA = np.nan
+#NA_spine = [np.nan, np.nan] * N_spine_pts 
 
 def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     '''
@@ -50,12 +54,14 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     spines = []
     flagged_timepoints = []
     num_short_spines = 0
+
     for t, encoded_outline in izip(times, encoded_outlines):
         outline = decode_outline(encoded_outline)
         # if error in decoding outline
         if len(outline) == 0:
             outlines.append([])
             spines.append([])
+            #spines.append(NA_spine)
             flagged_timepoints.append(t)
             continue
         '''
@@ -73,24 +79,36 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
         outlines.append(outline)
         try:
             spine = compute_skeleton_from_outline(outline)
-            spines.append(spine)
             if len(spine) == 0:
                 num_short_spines += 1
+            spines.append(spine)            
+                
         except Exception as e:
             print e
             print 'Warning: skeleton reconstruction failed for time {t}'.format(t=t)
             spines.append([])
+            #spines.append(NA_spine)            
             flagged_timepoints.append(t)
     print '\tN flags during spine creation: {N}'.format(N=len(flagged_timepoints))
     print '\tN spines too short: {N}'.format(N=num_short_spines)
     # equally spaces points and removes reversals of head and tail in the worm spines
     treated_spines = treat_spine(times, spines)
+    
     #show_worm_video(treated_spine_timedict)
     # insert it back into the database
     data_type = 'spine_rough'
-    if store_tmp:        
+    if store_tmp:
+        NA_spine = [[np.NaN, np.NaN]] * 50    
+        dat = []    
+        for i, d in enumerate(treated_spines):
+            if len(d) > 5:
+                dat.append(d)
+            else:
+                dat.append(NA_spine)        
         write_timeseries_file(blob_id=blob_id, data_type=data_type,
-                              times=times, data=treated_spines)
+                              times=times, data=dat)
+        #write_timeseries_file(blob_id=blob_id, data_type=data_type,
+        #                      times=times, data=treated_spines)
     return times, treated_spines, flagged_timepoints
 
 def show_worm_video(spine_timedict):
@@ -122,7 +140,8 @@ def smooth_and_space_xy_points(points, poly_order=DEFAULT_ORDER, window_size=DEF
     return equally_space(zip(filtered_xs, filtered_ys), points=point_num)
 
 
-def treat_spine(times, spines, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WINDOW, verbose=True):
+def treat_spine(times, spines, poly_order=DEFAULT_ORDER,
+                window_size=DEFAULT_WINDOW, verbose=True):
     """
     this function returns a recalculated spine_timedict that has been polynomially smoothed and now contains 50 points
     along it's centerline. Each spines now faces in the same direction as the spine one timestep earlier.

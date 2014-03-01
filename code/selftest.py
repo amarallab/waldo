@@ -33,6 +33,7 @@ print os.path.abspath(TEST_DATA_DIR)
 assert os.path.isdir(TEST_DATA_DIR)
 
 def run_everything(**kwargs):
+
     ''' imports and processes test data. '''
     # get all ex_ids denoted as 'test'
     ei = Experiment_Attribute_Index()

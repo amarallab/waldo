@@ -75,17 +75,13 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
         for local_id, blob in raw_blobs.iteritems():
             metadata = metadata_docs[local_id]
             blob_id = metadata['blob_id']
+            #print blob_id            
             write_metadata_file(data=metadata, blob_id=blob_id, data_type='metadata')
             write_timeseries_file(blob_id=blob_id, data_type='xy_raw',
                                   times=blob['time'], data=blob['xy'])
-                        
+            outlines = np.array(blob['outline'], dtype=str)
             write_timeseries_file(blob_id=blob_id, data_type='encoded_outline',
                                   times=blob['time'], data=blob['outline'])
-            
-            #outlines = np.array(blob['outline'], dtype=str)
-            #write_timeseries_file(blob_id=blob_id, data_type='encoded_outline',
-            #                      times=blob['time'], data=blob['outline'])
-            
             write_timeseries_file(blob_id=blob_id, data_type='aspect_ratio',
                                   times=blob['time'], data=blob['aspect_ratio'])
 

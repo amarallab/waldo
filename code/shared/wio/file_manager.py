@@ -69,7 +69,7 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
     #now_string = time.ctime().replace('  ', '_').replace(' ', '_')
     #now_string = now_string.replace(':', '.').strip()
     save_name = '{path}/{ID}-{dt}'.format(path=out_dir, ID=ID, dt=data_type)
-    print save_name
+    #print save_name
     return save_name
 
 def get_ex_ids(query, **kwargs):
@@ -97,27 +97,45 @@ def format_h5_path(blob_id, data_type, h5_dir):
     h5_dir = h5_dir.rstrip('/')
     file_path = '{path}/{eID}'.format(path=h5_dir, eID=ex_id)
     ensure_dir_exists(file_path)
-    h5_file = '{path}.h5'.format(path=file_path)
-    h5_dataset = '{bID}/{dt}'.format(bID=blob_id, dt=data_type)
-    print h5_file
-    print h5_dataset
-    return h5_file, h5_dataset
-'''
-def write_outlines(blob_id, data_type, times, data, h5_dir=H5_DIR):
-    h5_file, h5_path = format_h5_path(blob_id, data_type, h5_dir)
-    write_h5_outlines(h5_file, h5_path, times, data)
+    #h5_file = '{path}.h5'.format(path=file_path)
+    #h5_dataset = '{bID}/{dt}'.format(bID=blob_id, dt=data_type)
+    h5_file = '{path}/{bID}-{dt}.json'.format(path=file_path, bID=blob_id,
+                                              dt=data_type)
+    
+    #print h5_file
+    #print h5_dataset
+    return h5_file #, h5_dataset
+
+#def write_outlines(blob_id, data_type, times, data, h5_dir=H5_DIR):
+#    h5_file = format_h5_path(blob_id, data_type, h5_dir)
+#    write_h5_outlines(h5_file, times, data)
     
 def write_h5_timeseries(blob_id, data_type, times, data, h5_dir=H5_DIR):
-    h5_file, h5_path = format_h5_path(blob_id, data_type, h5_dir)
-    write_h5_timeseries_base(h5_file, h5_path, times, data)
+    h5_file = format_h5_path(blob_id, data_type, h5_dir)
+    write_h5_timeseries_base(h5_file, times, data)
     
 def read_h5_timeseries(blob_id, data_type, h5_dir=H5_DIR):
-    h5_file, h5_path = format_h5_path(blob_id, data_type, h5_dir)
-    times, data = read_h5_timeseries_base(h5_file, h5_path)
-    print data
+    h5_file = format_h5_path(blob_id, data_type, h5_dir)
+    times, data = read_h5_timeseries_base(h5_file)
+    #print data
     return times, data
-'''    
+
 def write_timeseries_file(blob_id, data_type, times, data, json_dir=JSON_DIR):
+    '''
+    types = []
+    for t in data:
+        try:
+            for i in t:
+                if type(i) not in types:
+                    types.append(type(i))
+
+        except:
+            pass
+        if type(t) not in types:
+            types.append(type(t))
+    print types                                        
+    print data_type
+    '''
     json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
     json.dump({'time':times, 'data':data}, open(json_file, 'w'))
     #write_h5_timeseries(blob_id, data_type, times, data)    

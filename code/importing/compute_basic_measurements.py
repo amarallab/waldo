@@ -75,7 +75,10 @@ def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
     times, spines = get_timeseries(blob_id=blob_id, data_type='spine_rough', **kwargs)
     lengths = []
     for spine in spines:
-        lengths.append(calculate_length_for_timepoint(spine))
+        l = 0
+        if len(spine) > 0 and not np.isnan(spine[0][0]):
+            l =calculate_length_for_timepoint(spine)
+        lengths.append(l)
     data_type = 'length_rough'
     if store_tmp:
         write_timeseries_file(blob_id=blob_id, data_type=data_type,
@@ -94,10 +97,12 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
     """
     # if temp data is cached, use that instead of querying database
     times, spines = get_timeseries(blob_id=blob_id, data_type='spine_rough')
-    times, encoded_outlines = get_timeseries(blob_id=blob_id, data_type='encoded_outline')
-    
+    times, encoded_outlines = get_timeseries(blob_id=blob_id, data_type='encoded_outline')    
     width20, width50, width80 = [], [], []
     for spine, en_outline in izip(spines, encoded_outlines):
+        # make sure to catch not a number. not sure if necessary.
+        if len(spine) > 0 and np.isnan(spine[0][0]):
+            spine = []
         outline = decode_outline(en_outline)
         if len(spine) == 50:
             p1, p2, flag1, w20 = calculate_width_for_timepoint(spine, outline, index_along_spine=10)

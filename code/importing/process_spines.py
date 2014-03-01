@@ -78,7 +78,6 @@ def process_ex_id(ex_id, debug=False,**kwargs):
     '''
 
     min_body_lengths = kwargs.pop('min_body_lengths', FILTER['min_body_lengths'])
-                                  
     min_duration = kwargs.pop('min_duration', FILTER['min_duration'])
     min_size = kwargs.pop('min_size', FILTER['min_size'])
     overwrite = kwargs.pop('overwrite', True)
