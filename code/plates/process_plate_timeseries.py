@@ -33,29 +33,22 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from exponential_fitting import fit_exponential_decay_robustly, rebin_data, exponential_decay, fit_constrained_decay_in_range
-from wio.file_manager import ensure_dir_exists
-from plate_utilities import get_ex_id_files, TIME_SERIES_DIR, PLATE_DIR, write_plate_summary
+from wio.file_manager import ensure_dir_exists#, get_ex_id_metadata
+from plate_utilities import get_ex_id_files, TIME_SERIES_DIR, PLATE_DIR, write_dset_summary
+from plate_utilities import return_flattened_plate_timeseries, organize_plate_metadata
 
 FITS_DIR = PLATE_DIR + '/Fits/'
 print PLATE_DIR
 print FITS_DIR
 print TIME_SERIES_DIR
 
-def parse_plate_timeseries_txt_file(dfile):
-    times, data = [], []
-    with open(dfile) as f:
-        for line in f:
-            line = line.strip().split(',')
-            times.append(float(line[0]))
-            data.append(map(float, line[1:]))
-    return times, data
-
+'''
 def read_plate_timeseries(dataset, data_type, is_json=None):
     ex_ids, dfiles = get_ex_id_files(dataset, data_type)
     for ex_id, dfile in izip(ex_ids, dfiles):            
         times, data = parse_plate_timeseries_txt_file(dfile)
         yield times, data, ex_id
-
+ 
 def fit_function_plot(x, y, xfit, yfit, residuals, n, ex_id, 
                       ylabel='centroid speed (mm/s)', show=False, plot_dir=None):
     # plot 1 shows N/bin over time
@@ -84,7 +77,7 @@ def fit_function_plot(x, y, xfit, yfit, residuals, n, ex_id,
     plt.clf()
 
 def basic_plot(x, y, n, ex_id, ylabel='', show=False, plot_dir=None):
-    ''' no function is fit to data, shows N/bin and values over time. '''    
+    # no function is fit to data, shows N/bin and values over time.
     num_plots = 2        
     ax1 = plt.subplot(num_plots, 1, 1)
     plt.plot(x, n)
@@ -172,22 +165,68 @@ def process_basic_plate_timeseries(times, data, ex_id, plot_dir=None, fit_to_fun
         print e
         return None
     return summary
+'''
+
+def process_basic_plate_timeseries(dataset, data_type, verbose=True):
+    ex_ids, dfiles = get_ex_id_files(dataset, data_type)
+    means, stds = [], []
+    quartiles = []
+    hours = []
+    days = []
+    #labels, sublabels, plate_ids = {}, {}, {}
+    labels, sublabels, plate_ids = [], [], []
+
+    for i, (ex_id, dfile) in enumerate(izip(ex_ids, dfiles)):
+        hour, label, sub_label, pID, day = organize_plate_metadata(ex_id)
+        hours.append(hour)
+        labels.append(label)
+        sublabels.append(sub_label)
+        plate_ids.append(pID)
+        days.append(day)
+
+        flat_data = return_flattened_plate_timeseries(dfile)
+        if not len(flat_data):
+            continue
+        means.append(np.mean(flat_data))
+        stds.append(np.std(flat_data))
+        men = float(np.mean(flat_data))
+        #print men, type(men), men<0
+        #print flat_data[:5]
+        quartiles.append([stats.scoreatpercentile(flat_data, 25),
+                          stats.scoreatpercentile(flat_data, 50),
+                          stats.scoreatpercentile(flat_data, 75)])
+        if verbose:
+            print '{i} {eID} | N: {N} | hour: {h} | label: {l}'.format(i=i, eID=ex_id, N=len(times),
+                                                                       h=round(hour, ndigits=1), l=label)                                      
+
+    #for i in zip(ex_ids, means, stds, quartiles):
+    #    print i
+    data={'ex_ids':ex_ids,
+          'hours':hours,
+          'mean':means,
+          'std':stds,
+          'quartiles':quartiles,
+          'labels':labels,
+          'sub':sublabels,
+          'plate_ids':plate_ids,
+          'days':days,
+          }
+
+    return data
 
 if __name__ == '__main__':
     dataset = 'disease_models'
-    data_type = 'cent_speed_bl'
-
+    #data_type = 'cent_speed_bl'
+    #data_type = 'length_mm'
+    data_type = 'curve_bl'
     fit_tag = 'exponential_decay' #+ '-constrained'
     calculate_fit = False
     calculate_basics = True
-    
-    for i, (times, data, ex_id) in enumerate(read_plate_timeseries(dataset, data_type)):        
-        if calculate_basics:
-            basic_summary = process_basic_plate_timeseries(times, data, ex_id)
-            write_plate_summary(data=basic_summary, ex_id=ex_id, sum_type='basic', 
-                                data_type=data_type, dataset=dataset)
-        if calculate_fit:
-            fitting_summary = process_plate_timeseries(times, data, ex_id)
-            write_plate_summary(data=fitting_summary, ex_id=ex_id, sum_type=fit_tag, 
-                                data_type=data_type, dataset=dataset)
+
+
+    if calculate_basics:
+        print dataset, data_type,
+        data = process_basic_plate_timeseries(dataset, data_type)
+        write_dset_summary(data=data, sum_type='basic', 
+                           data_type=data_type, dataset=dataset)
 

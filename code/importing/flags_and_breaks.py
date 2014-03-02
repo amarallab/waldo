@@ -160,22 +160,29 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=
     times, data = get_timeseries(blob_id=blob_id, data_type=data_type, **kwargs)
     # check to see if all data is correct type
     err_msg = lambda x: 'Error: {bi} {dt} has a {t} ' \
-                        'type value in data'.format(bi=blob_id, dt=data_type, t=type(x))
+                        'type value in data'.format(bi=blob_id, dt=data_type,
+                                                    t=type(x))
+        
+    #for d in data:
+    #    if type(d) not in [int, float, np.float, np.int]:
+    #        print d, type(d)
     def check(x):
-        assert type(x) in [int, float], err_msg
+        assert type(x) in [int, float, np.float64, np.int], err_msg    
     map(check, data)
-
     # if more than half of points are zero, flag everything.
     N = len(data)
     zeros = len([x for x in data if x == 0.0])
+    zeros += len([x for x in data if np.isnan(x)])
     if N ==0:
         return []
     if zeros / float(N) > 0.5:
-        print '\t{dt} {p} % of N = {N} points are 0.0 | flag all'.format(p=round(100*zeros/float(N), ndigits=2),
-                                                                         dt=data_type, N=N)
-        return [False] * N
-    
-        
+        msg = '\t{dt} {p} % of N = {N}'
+        msg += 'points are 0.0 | flag all'.format(p=round(100*zeros/float(N),
+                                                          ndigits=2),
+                                                          dt=data_type, N=N)
+        print msg
+        return [False] * N    
+    data = [d for d in data if not np.isnan(d)]
     flags = flag_outliers(data, options=options)
     if show_plot:
         plot_fit_hists(data, xlabel=data_type)
@@ -213,6 +220,8 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     if store_tmp:
         write_timeseries_file(blob_id=blob_id, data_type=data_type,
                               data=all_flags, times=times)
+        #write_metadata_file(blob_id=blob_id, data_type=data_type,
+        #                    data=all_flags, times=times)
     if verbose:
         flags = consolidate_flags(all_flags)
         N = len(flags)
@@ -279,6 +288,7 @@ def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     :param verbose: toggle to turn on/off messages while running
     :param insert: toggle to turn on/off the import of resulting break_list into the database.
     """
+    #times, all_flags = get_timeseries(blob_id, data_type='flags')
     times, all_flags = get_timeseries(blob_id, data_type='flags')    
     # find general breakpoints
     flags = consolidate_flags(all_flags)

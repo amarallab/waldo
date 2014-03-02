@@ -39,6 +39,8 @@ def run_everything(**kwargs):
     ei = Experiment_Attribute_Index()
     target_ex_ids = set(ei.return_ex_ids_with_attribute(key_attribute='dataset', attribute_value='test'))
     print '{N} test ids found: {l}'.format(N=len(target_ex_ids), l=target_ex_ids)
+    if len(target_ex_ids) ==0:
+        target_ex_ids = ['00000000_000001']
     # process all ex_ids
     for ex_id in sorted(target_ex_ids):
         print 'testing', ex_id

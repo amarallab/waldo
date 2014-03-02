@@ -27,11 +27,9 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from wormmetrics.measurement_switchboard import pull_blob_data
 from database.mongo_retrieve import mongo_query
-from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids
-from settings.local import LOGISTICS
-
-PLATE_DIR = LOGISTICS['data'] + 'plate_timeseries'
-
+from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids, PLATE_DIR
+#from settings.local import LOGISTICS
+#PLATE_DIR = LOGISTICS['data'] + 'plate_timeseries'
 #from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
 
 '''
@@ -96,7 +94,6 @@ def export_index_files(props=['age', 'source-camera', 'label'], dataset='N2_agin
 def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='', 
                                 out_dir=PLATE_DIR, save_name=None, 
                                 as_json=False, blob_ids=[], **kwargs):
-                                
     # manage save path + name
     if not save_name:
         save_name = manage_save_path(out_dir=out_dir, path_tag=path_tag, 
@@ -117,7 +114,6 @@ def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='',
             if new_key not in data_dict:
                 data_dict[new_key] = []
             data_dict[new_key].append(value)
-
     # if empty, write anyway, but print warning
     if len(data_dict) == 0:
         print ex_id, 'has no data'
@@ -134,22 +130,23 @@ def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='',
 def pull_blob_timeseires_for_ex_id(ex_id, data_type, out_dir=EXPORT_PATH, path_tag='',
                                    **kwargs):
     ''' saves a json with dictionary of all blobs for an ex_id.
-    each blob is a dict with two lists: 'time' and 'data' that contain the time series.
-    this function will create a unique name to identify data.
-
+    each blob is a dict with two lists: 'time' and 'data' that
+    contain the time series. this function will create a unique
+    name to identify data.
+    
     blob_id - blob identifyer (str)
     data_type - type of data to save (str)
     out_dir - path to the directory to save the file (subdirectires will be created)
     path_tag - used to extend the name of the path, if desired.
     '''
-
     # manage save path + name
     if not save_name:
-        save_name = mangage_save_path(out_dir=out_dir, path_tag=path_tag, ID=ex_id, data_type=data_type)
+        save_name = mangage_save_path(out_dir=out_dir, path_tag=path_tag,
+                                      ID=ex_id, data_type=data_type)
     # get all blob ids
-    blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type': 'smoothed_spine'}, **kwargs)
+    blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type': 'smoothed_spine'},
+                             **kwargs)
     print len(blob_ids), 'blob ids found'
-
     blob_data = {}
     for blob_id in blob_ids:
         blob_data[blob_id] = {}
@@ -161,9 +158,10 @@ def pull_blob_timeseires_for_ex_id(ex_id, data_type, out_dir=EXPORT_PATH, path_t
             print e
     json.dump(blob_data, open(save_name, 'w'), indent=4, sort_keys=True)
 
-
-def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH, path_tag='', savename=None, **kwargs):
-    ''' saves a json with two lists (time and data) for a particular blob_id and data type
+def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH,
+                                path_tag='', savename=None, **kwargs):
+    ''' saves a json with two lists (time and data) for a particular
+    blob_id and data type
 
     blob_id - blob identifyer (str)
     data_type - type of data to save (str)
@@ -173,22 +171,25 @@ def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH, path_ta
     '''
     times, data = pull_blob_data(blob_id, metric=data_type, **kwargs)
     if not savename:
-        save_name = mangage_save_path(out_dir=out_dir, path_tag=path_tag, ID=blob_id, data_type=data_type)
-    json.dump({'time':times, 'data':data}, open(savename, 'w'), indent=4, sort_keys=True)
-
+        save_name = mangage_save_path(out_dir=out_dir, path_tag=path_tag,
+                                      ID=blob_id, data_type=data_type)
+    json.dump({'time':times, 'data':data}, open(savename, 'w'),
+              indent=4, sort_keys=True)
 
 if __name__ == '__main__':
     # INDEX FILE EXAMPLES
     #export_index_files(props=['label', 'age'], tag='_')
     #export_index_files(props=['age'], tag='_N2ages', store_blobs=False)
-    export_index_files(props=['midline_median'], tag='_N2ages_midlinemedian', store_blobs=True)
+    export_index_files(props=['midline_median'], tag='_N2ages_midlinemedian',
+                       store_blobs=True)
     #export_index_files(props=['duration'], tag='_duration')
     #export_ex_id_index(prop='age')
     #export_ex_id_index(prop='source-camera')
 
     # WRITE FULL PLATE TIMESERIES EXAMPLE
     ex_id = '20130320_102312'
-    write_full_plate_timeseries(ex_id, save_name='test{id}.txt'.format(id=ex_id), **kwargs)
+    write_full_plate_timeseries(ex_id, save_name='test{id}.txt'.format(id=ex_id),
+                                **kwargs)
 
     # WORM TIME-SERIES EXAMPLES
     # data toggles
@@ -198,14 +199,13 @@ if __name__ == '__main__':
     #data_type = 'speed_along_bl'
     #data_type = 'centroid_speed_bl'
     data_type = 'smooth_length'
-
     # save toggles
     dataset = 'segment_test'
     dataset = 'length'
-    out_dir = '{path}{dset}-{dt}/'.format(path=EXPORT_PATH, dset=dataset, dt=data_type)
+    out_dir = '{path}{dset}-{dt}/'.format(path=EXPORT_PATH, dset=dataset,
+                                          dt=data_type)
     for ex_id in ex_ids:
         pull_data_for_ex_id(ex_id, data_type, out_dir=out_dir)
-
     # to export percentiles
     ex_id = '00000000_000001'
     #export_blob_percentiles_by_ex_id(ex_id)
