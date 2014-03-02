@@ -83,7 +83,7 @@ def get_blob_ids(query, **kwargs):
     ''' return a list of unique blob_id names for a query'''
     return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
 
-def get_ex_id_metadata(ex_id, json_dir=JSON_DIR):
+def get_ex_id_metadata(ex_id, json_dir=WORM_DIR):
     search_path = '{path}/{eID}/*metadata.json'.format(path=json_dir.rstrip('/'), 
                                                        eID=ex_id.rstrip('/'))
     #print search_path
@@ -129,7 +129,7 @@ def read_h5_timeseries(blob_id, data_type, h5_dir=H5_DIR):
     #print data
     return times, data
 
-def write_timeseries_file(blob_id, data_type, times, data, json_dir=JSON_DIR):
+def write_timeseries_file(blob_id, data_type, times, data, json_dir=WORM_DIR):
     '''
     types = []
     for t in data:
@@ -149,11 +149,11 @@ def write_timeseries_file(blob_id, data_type, times, data, json_dir=JSON_DIR):
     json.dump({'time':times, 'data':data}, open(json_file, 'w'))
     #write_h5_timeseries(blob_id, data_type, times, data)    
         
-def write_metadata_file(blob_id, data_type, data, json_dir=JSON_DIR):
+def write_metadata_file(blob_id, data_type, data, json_dir=WORM_DIR):
     json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
     json.dump(data, open(json_file, 'w'))
 
-def read_json_file(blob_id, data_type, json_dir=JSON_DIR):
+def read_json_file(blob_id, data_type, json_dir=WORM_DIR):
     json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
     if os.path.isfile(json_file):
         return json.load(open(json_file, 'r'))    
@@ -235,6 +235,6 @@ def store_data_in_db(blob_id, data_type, times, data, description, db_doc=None, 
     store_timedict_in_db(blob_id, data_type, timedict, description, db_doc, **kwargs)
 '''    
        
-ensure_dir_exists(JSON_DIR)
+ensure_dir_exists(WORM_DIR)
         
     
