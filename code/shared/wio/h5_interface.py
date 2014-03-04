@@ -34,8 +34,12 @@ def write_h5_outlines(h5_file, h5_path, times, data):
     pass
     
 def write_h5_timeseries_base(h5_file, times, data):
-    times = np.array(times) 
-    data = np.array(data)
+    #print h5_file.split('/')[-1]
+    #print type(times), type(data)
+    if type(times) != np.ndarray:
+        times = np.array(times) 
+    if type(data) != np.ndarray:
+        data = np.array(data)
     with h5py.File(h5_file, 'w') as f:
         f.create_dataset(name='time',                           
                            shape=times.shape,

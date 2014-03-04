@@ -79,9 +79,18 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
             write_metadata_file(data=metadata, ID=blob_id, data_type='metadata')
             write_timeseries_file(ID=blob_id, data_type='xy_raw',
                                   times=blob['time'], data=blob['xy'])
-            outlines = np.array(blob['outline'], dtype=str)
+
+            #print len(blob['outline'])
+            #outlines = np.zeros(shape=(len(blob['outline']), 4), dtype=str)            
+            #for i, o in enumerate(blob['outline']):                
+            #    #print i, o
+            #    if len(o) == 4:
+            #        outlines[i] = np.array(o, dtype=str)
+            outlines = np.array(blob['outline'], ndmin=2, dtype='str')
             write_timeseries_file(ID=blob_id, data_type='encoded_outline',
-                                  times=blob['time'], data=blob['outline'])
+                                  times=blob['time'], data=outlines)
+            #write_timeseries_file(ID=blob_id, data_type='encoded_outline',
+            #                      times=blob['time'], data=blob['outline'])
             write_timeseries_file(ID=blob_id, data_type='aspect_ratio',
                                   times=blob['time'], data=blob['aspect_ratio'])
 

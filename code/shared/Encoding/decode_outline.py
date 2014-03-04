@@ -90,9 +90,13 @@ def decode_outline(outline_parts):
     # broken input if there are not three outline parts, return empty string
     if len(outline_parts) != 4:
         return []    
-    start_x, start_y, length, outline = outline_parts
+    start_x, start_y, length, outline = outline_parts    
+    # check if outline parts is empty
+    if start_x == '' or start_y =='':
+        return []
     x, y = int(start_x), int(start_y)
     length = int(length)
+
     pts = []
     # go through each character in the outline string
     for o in outline:
