@@ -68,7 +68,7 @@ def equally_space_N_xy_points(x, y, N=50, kind='linear'):
     new_y = interp_y(range(N))
     return new_x, new_y
     
-def equally_space_xy_for_stepsize(x, y, step=0.5, kind='linear', n_interp_pts=50):
+def equally_space_xy_for_stepsize(t, x, y, step=0.5, kind='linear', n_interp_pts=50):
     """ returns a x and a y list with points that are equal distance
     from one another in space. The number of points depends on step size.
     
@@ -84,18 +84,21 @@ def equally_space_xy_for_stepsize(x, y, step=0.5, kind='linear', n_interp_pts=50
     N = len(x)
     interp_x = interpolate.interp1d(range(N), x, kind=kind)
     interp_y = interpolate.interp1d(range(N), y, kind=kind)
+    interp_t = interpolate.interp1d(range(N), t, kind=kind)
     # create an excess of xy points using interpolation
     N2 = int((N - 1) * n_interp_pts)
     pseudo_t = [i/float(n_interp_pts) for i in xrange(N2)]
-    x, y = interp_x(pseudo_t), interp_y(pseudo_t)
+    t, x, y = interp_t(pseudo_t), interp_x(pseudo_t), interp_y(pseudo_t)    
+    # initialize new lists with first point
+    new_t, new_x, new_y = [t[0]], [x[0]], [y[0]]       
     # only keep xy points if they are at further from last point by step dist.
-    new_x, new_y = list(x[:1]), list(y[:1])   
-    for xp, yp in izip(x, y):
+    for tp, xp, yp in izip(t, x, y):
         if step <= euclidean([new_x[-1], new_y[-1]], [xp, yp]):
+            new_t.append(tp)
             new_x.append(xp)
             new_y.append(yp)
     #print 'from t to s we go from {N} to {n} points'.format(N=N, n=len(new_x))      
-    return new_x, new_y
+    return new_t, new_x, new_y
 
 def create_spine_matricies(times, spines):
     # find the longest spine, if no spines have lenght, return False
@@ -179,8 +182,7 @@ def set_matrix_orientation(x_mat, y_mat, verbose=True):
         x_mat, y_mat = x_mat[:,::-1], y_mat[:, ::-1]
     return x_mat, y_mat
     
-def equally_space_matrix_distances(x_mat, y_mat):
-    
+def equally_space_matrix_distances(x_mat, y_mat):    
     kind = 'linear'
     # get distance traveled between each point
     N_rows, N_cols = len(x_mat), len(x_mat[0]) 

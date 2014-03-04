@@ -34,13 +34,16 @@ from wio.blob_reader import Blob_Reader
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
 
-WORM_DIR = PROJECT_HOME + '/data/worms/json/'
+#WORM_DIR = PROJECT_HOME + '/data/worms/json/'
+WORM_DIR = PROJECT_HOME + '/data/processing/'
 PLATE_DIR = PROJECT_HOME + '/data/plates/'
 DSET_DIR = PROJECT_HOME + '/data/dsets/'
 H5_DIR = PROJECT_HOME + '/data/worms/h5/'
-
+TIME_SERIES_FILE_TYPE = 'json'
 USE_JSON = True
+
 if not USE_JSON:
+    TIME_SERIES_FILE_TYPE = 'h5'
     from h5_interface import write_h5_timeseries_base
     from h5_interface import read_h5_timeseries_base
 
@@ -90,7 +93,145 @@ def get_ex_id_metadata(ex_id, json_dir=WORM_DIR):
     json_files = glob(search_path)
     #print json_files
     return json.load(open(json_files[0], 'r'))
+
+def format_filename(ID, ID_type='worm', data_type='cent_speed', 
+                    ensure_path=True, file_type='json',
+                    file_dir = None,
+                    worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
+
+    errmsg = 'id must be string, not {i}'.format(i=ID)
+    assert isinstance(ID, basestring), errmsg
+
+    # if no file_directory specified, 
+    #choose the standard directory to save data based on ID and ID_type
+    if not file_dir:
+        if str(ID_type) in ['worm', 'w']:
+            ex_id = '_'.join(ID.split('_')[:2])
+            file_dir = '{path}/{eID}'.format(path=worm_dir, eID=ex_id)
+        # TODO make plates functional
+        elif str(ID_type) in ['plate', 'p']:
+            ex_id = '_'.join(ID.split('_')[:2])
+            file_dir = '{path}'.format(path=plate_dir)
+        # TODO make dsets functional
+        elif str(ID_type) in['dset', 's']:
+            ex_id = '_'.join(ID.split('_')[:2])
+            file_dir = '{path}'.format(path=dset_dir)
+        else:
+            assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type) 
+
+    # make sure entire directory exists, if not, create it.
+    if ensure_path and file_dir:
+        ensure_dir_exists(file_dir)
+
+    # currently in worm format.
+    file_name = '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, 
+                                               ID=ID,
+                                               dt=data_type, 
+                                               ft=file_type)
+    return file_name
     
+def write_timeseries_file(ID, data_type, times, data, 
+                          ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
+                          file_dir=None):
+
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type, 
+                               file_type=file_type,
+                               file_dir=file_dir)
+    # save method depends on file_type
+    if file_type == 'json':
+        json.dump({'time':times, 'data':data}, open(json_file, 'w'))
+    if file_type == 'h5':        
+        write_h5_timeseries_base(file_name, times, data)
+
+def get_timeseries(ID, data_type, 
+                   ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
+                   file_dir=None):
+                   
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type, 
+                               file_type=file_type,
+                               file_dir=file_dir)
+
+    if os.path.isfile(filename):
+        # retrval method depends on file_type
+        if file_type == 'json':
+            data_dict = json.load(open(filename, 'r'))
+            times, data = data_dict.get('time', []), data_dict.get('data', [])                    
+        elif file_type == 'h5':        
+            times, data = read_h5_timeseries_base(h5_file)
+        # print warning if file is empty
+        if not times and not data:
+            print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
+        return times, data
+    return None, None
+
+
+def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None):                          
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type,
+                               file_type='json',
+                               file_dir=file_dir)
+    json.dump(data, open(filename, 'w'))
+
+        
+def get_metadata(ID, data_type='metadata', ID_type='w', file_dir=None):
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type,
+                               file_type='json',
+                               file_dir=file_dir)
+    
+    if os.path.isfile(filename):
+        return json.load(open(filename), 'r')
+    return None
+
+'''
+def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
+    #return read_h5_timeseries(blob_id, data_type)
+    # default: look in json file and split into 'time' and 'data'
+    data_dict = read_json_file(blob_id=blob_id, data_type=data_type)
+    # temp file not located, and search_db=True, attempt to find data in database.
+    if search_db and not isinstance(data_dict, dict):
+        data_dict = search_db_for_data(blob_id, data_type=data_type, **kwargs)
+
+    # if data source found
+    if isinstance(data_dict, dict):
+        times, data = data_dict.get('time', []), data_dict.get('data', [])        
+
+        if not times and not data:
+            print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
+        return times, data
+    # if data source not found
+    return None, None
+
+
+def get_metadata(blob_id, data_type='metadata', search_db=True, **kwargs):
+    
+    metadata = read_json_file(blob_id=blob_id, data_type=data_type)
+    # default: look in json file and split into 'time' and 'data'
+    found_it = False
+    # look in temp file but do not split results
+    if metadata != None:
+        return metadata
+    # temp file not located, and search_db=True, attempt to find data in database.
+    elif search_db:
+        metadata = search_db_for_data(blob_id, data_type='metadata')
+    return metadata
+
+
+def write_metadata_file(blob_id, data_type, data, json_dir=WORM_DIR):
+    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
+    json.dump(data, open(json_file, 'w'))
+
+
+
 def format_json_filename(blob_id, data_type, json_dir):
     errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
     assert isinstance(blob_id, basestring), errmsg
@@ -100,6 +241,7 @@ def format_json_filename(blob_id, data_type, json_dir):
     json_file = '{path}/{bID}-{dt}.json'.format(path=blob_path, bID=blob_id,
                                                dt=data_type)
     return json_file
+
 
 def format_h5_path(blob_id, data_type, h5_dir):
     errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
@@ -118,7 +260,7 @@ def format_h5_path(blob_id, data_type, h5_dir):
 #def write_outlines(blob_id, data_type, times, data, h5_dir=H5_DIR):
 #    h5_file = format_h5_path(blob_id, data_type, h5_dir)
 #    write_h5_outlines(h5_file, times, data)
-    
+
 def write_h5_timeseries(blob_id, data_type, times, data, h5_dir=H5_DIR):
     h5_file = format_h5_path(blob_id, data_type, h5_dir)
     write_h5_timeseries_base(h5_file, times, data)
@@ -129,74 +271,20 @@ def read_h5_timeseries(blob_id, data_type, h5_dir=H5_DIR):
     #print data
     return times, data
 
-def write_timeseries_file(blob_id, data_type, times, data, json_dir=WORM_DIR):
-    '''
-    types = []
-    for t in data:
-        try:
-            for i in t:
-                if type(i) not in types:
-                    types.append(type(i))
-
-        except:
-            pass
-        if type(t) not in types:
-            types.append(type(t))
-    print types                                        
-    print data_type
-    '''
-    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
-    json.dump({'time':times, 'data':data}, open(json_file, 'w'))
-    #write_h5_timeseries(blob_id, data_type, times, data)    
-        
-def write_metadata_file(blob_id, data_type, data, json_dir=WORM_DIR):
-    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
-    json.dump(data, open(json_file, 'w'))
-
-def read_json_file(blob_id, data_type, json_dir=WORM_DIR):
-    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
-    if os.path.isfile(json_file):
-        return json.load(open(json_file, 'r'))    
-    return None
-
 def clear_json_file(blob_id, data_type='all'):
     blob_path = '{path}/{bID}'.format(path=json_dir, bID=blob_id)
     json_file = '{path}/{dt}.json'.format(path=blob_path, dt=data_type)
     silent_remove(json_file)
     if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
         os.rmdir(blob_path)
-                                  
-def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
-    #return read_h5_timeseries(blob_id, data_type)
-    # default: look in json file and split into 'time' and 'data'
-    data_dict = read_json_file(blob_id=blob_id, data_type=data_type)
-    # temp file not located, and search_db=True, attempt to find data in database.
-    if search_db and not isinstance(data_dict, dict):
-        data_dict = search_db_for_data(blob_id, data_type=data_type, **kwargs)
-
-    # if data source found
-    if isinstance(data_dict, dict):
-        times, data = data_dict.get('time', []), data_dict.get('data', [])        
-
-        if not times and not data:
-            print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
-        return times, data
-    # if data source not found
-    return None, None
+'''    
         
-def get_metadata(blob_id, data_type='metadata', search_db=True, **kwargs):
-    
-    metadata = read_json_file(blob_id=blob_id, data_type=data_type)
-    # default: look in json file and split into 'time' and 'data'
-    found_it = False
-    # look in temp file but do not split results
-    if metadata != None:
-        return metadata
-    # temp file not located, and search_db=True, attempt to find data in database.
-    elif search_db:
-        metadata = search_db_for_data(blob_id, data_type='metadata')
-    return metadata
-    
+def read_json_file(blob_id, data_type, json_dir=WORM_DIR):
+    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
+    if os.path.isfile(json_file):
+        return json.load(open(json_file, 'r'))    
+    return None
+                                      
 def search_db_for_data(blob_id, data_type, **kwargs):
     try:
         db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)

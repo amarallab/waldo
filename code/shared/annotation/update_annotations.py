@@ -273,5 +273,10 @@ if __name__ == '__main__':
     #update_main(update_all=False)
     #find_ex_ids_to_update(update_list=['2012-10', '2012-11', '2012-12'])
     #find_ex_ids_to_update(update_list=['2013-01', '2013-02', '2013-03', '2013-04', '2013-05', '2013-06', '2013-07', '2013-08'])
+
+
+    # disease models
     update_main(update_list=['2013-06', '2013-07'] )
+    # copas lifespan
+    #update_main(update_list=['2013-12'] )
     #test_scaling_factors()

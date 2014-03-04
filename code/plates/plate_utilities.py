@@ -37,7 +37,7 @@ from annotation.experiment_index import Experiment_Attribute_Index
 TIME_SERIES_DIR = os.path.abspath(LOGISTICS['export'])
 
 ensure_dir_exists(PLATE_DIR)
-ensure_dir_exists(DSET_DIR_DIR)
+ensure_dir_exists(DSET_DIR)
 ensure_dir_exists(TIME_SERIES_DIR)
 
 def show_timeseries_options(timeseries_dir=TIME_SERIES_DIR):

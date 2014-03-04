@@ -198,11 +198,11 @@ def main(args, db_attribute):
 
 if __name__ == '__main__':
     # Toggles
-    #db_attribute = ('purpose', 'N2_aging')
+    #db_attribute = ('dataset', 'N2_aging')
     db_attribute = ('dataset', 'disease_models')
-    #db_attribute = ('purpose', 'thermo_recovery')
-    #db_attribute = ('purpose', 'zoom_test')
-    #db_attribute = ('purpose', 'copas_TJ3001')
+    #db_attribute = ('dataset', 'thermo_recovery')
+    #db_attribute = ('dataset', 'zoom_test')
+    db_attribute = ('dataset', 'copas_TJ3001_lifespan')
 
     parser = argparse.ArgumentParser(prefix_chars='-',
                                      description='by default it does nothing. but you can specify if it should import, '

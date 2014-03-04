@@ -196,7 +196,7 @@ def process_basic_plate_timeseries(dataset, data_type, verbose=True):
                           stats.scoreatpercentile(flat_data, 50),
                           stats.scoreatpercentile(flat_data, 75)])
         if verbose:
-            print '{i} {eID} | N: {N} | hour: {h} | label: {l}'.format(i=i, eID=ex_id, N=len(times),
+            print '{i} {eID} | N: {N} | hour: {h} | label: {l}'.format(i=i, eID=ex_id, N=len(flat_data),
                                                                        h=round(hour, ndigits=1), l=label)                                      
 
     #for i in zip(ex_ids, means, stds, quartiles):
@@ -214,11 +214,24 @@ def process_basic_plate_timeseries(dataset, data_type, verbose=True):
 
     return data
 
+def process_basics_for_standard_set(dataset):
+    standard_set = ['cent_speed_bl', 'length_mm', 'curve_bl']
+
+    for data_type in standard_set:
+        print dataset, data_type,
+        data = process_basic_plate_timeseries(dataset, data_type)
+        write_dset_summary(data=data, sum_type='basic', 
+                           data_type=data_type, dataset=dataset)
+
+
+
 if __name__ == '__main__':
     dataset = 'disease_models'
     #data_type = 'cent_speed_bl'
     #data_type = 'length_mm'
-    data_type = 'curve_bl'
+    #data_type = 'curve_bl'
+    process_basics_for_standard_set(dataset)
+    '''
     fit_tag = 'exponential_decay' #+ '-constrained'
     calculate_fit = False
     calculate_basics = True
@@ -229,4 +242,4 @@ if __name__ == '__main__':
         data = process_basic_plate_timeseries(dataset, data_type)
         write_dset_summary(data=data, sum_type='basic', 
                            data_type=data_type, dataset=dataset)
-
+   '''

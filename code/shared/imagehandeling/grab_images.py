@@ -26,7 +26,7 @@ sys.path.append(CODE_DIR)
 
 # nonstandard imports
 from settings.local import LOGISTICS
-grab_outlines import find_frame_for_time
+from grab_outlines import find_frame_for_time
 
 # Globals
 DATA_DIR = LOGISTICS['filesystem_data']
@@ -49,11 +49,18 @@ def create_image_directory(ex_id, data_dir=DATA_DIR):
         if len(i) < len(basename):
             basename = i
     basename = basename.split('.png')[0]
+
     time_to_image = {}
     for i in images:
         time = i.split(basename)[-1].split('.png')[0]
         if time:
-            time = '%.3f' % (int(time) / 1000.0)
+            if time + '.png' == i:
+                print 'i', i
+                print 'base', basename
+                print 'time', time
+                continue            
+            #time = '%.3f' % (int(time) / 1000.0)
+            time = '{t}'.format(t=round(int(time) / 1000.0), ndigits=3)
         else:
             time = '0.000'
         time_to_image[time] = i
@@ -79,9 +86,6 @@ def crop_image_around_worm(image_file, xy_shift, xy_size, margin=0):
     region = im.crop((y0 - margin, x0 - margin, y1 + margin, x1 + margin))
     return np.asarray(region)
 
-
-
-
 def get_closest_image(target_time, image_dict):
     closest_image_time = 0
     closest_image = ''
@@ -91,6 +95,14 @@ def get_closest_image(target_time, image_dict):
             closest_image = image_dict[t]
     return closest_image_time, closest_image
 
+def grab_images_in_time_range(ex_id, start_time, end_time=3600.0):
+    time_to_image = create_image_directory(ex_id)
+    image_times, image_paths = [], []
+    for im_time, im_path in time_to_image.iteritems():        
+        if start_time <= float(im_time) <= end_time:
+            image_times.append(im_time)
+            image_paths.append(im_path)
+    return image_times, image_paths
 
 if __name__ == '__main__':
     ex_id = '20130323_170511'

@@ -49,7 +49,7 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
     '''
     # get the data before skips removed, scaled to units
     times, data, args = find_data(blob_id, metric, **kwargs)    
-    # skips are a nuscence. for now, remove them permenantly
+    # skips are a nuscence. for now, remove them permenantly    
     remove_skips = True
     if remove_skips:
         ntimes, ndata = [], []
