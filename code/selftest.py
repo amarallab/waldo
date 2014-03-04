@@ -23,6 +23,7 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from annotation.experiment_index import Experiment_Attribute_Index
 from settings.local import MONGO as mongo_settings
+from tests.importing.tests.create_testfiles import write_index_file
 #from waldo import import_ex_id
 #from waldo import process_ex_id
 from importing.process_spines import process_ex_id
@@ -40,6 +41,7 @@ def run_everything(**kwargs):
     target_ex_ids = set(ei.return_ex_ids_with_attribute(key_attribute='dataset', attribute_value='test'))
     print '{N} test ids found: {l}'.format(N=len(target_ex_ids), l=target_ex_ids)
     if len(target_ex_ids) ==0:
+        write_index_file()
         target_ex_ids = ['00000000_000001']
     # process all ex_ids
     for ex_id in sorted(target_ex_ids):

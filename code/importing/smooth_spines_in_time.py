@@ -112,7 +112,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         map(smoothed_times.append, eq_times)
     data_type = 'spine'
     if store_tmp:
-        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+        write_timeseries_file(ID=blob_id, data_type=data_type,
                               times=smoothed_times, data=smoothed_spines)
     return smoothed_times, smoothed_spines
 

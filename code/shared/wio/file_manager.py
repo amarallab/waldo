@@ -34,13 +34,13 @@ from wio.blob_reader import Blob_Reader
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
 
-#WORM_DIR = PROJECT_HOME + '/data/worms/json/'
-WORM_DIR = PROJECT_HOME + '/data/processing/'
+WORM_DIR = PROJECT_HOME + '/data/worms/'
+#WORM_DIR = PROJECT_HOME + '/data/processing/'
 PLATE_DIR = PROJECT_HOME + '/data/plates/'
 DSET_DIR = PROJECT_HOME + '/data/dsets/'
-H5_DIR = PROJECT_HOME + '/data/worms/h5/'
+#H5_DIR = PROJECT_HOME + '/data/worms/h5/'
 TIME_SERIES_FILE_TYPE = 'json'
-USE_JSON = True
+USE_JSON = False
 
 if not USE_JSON:
     TIME_SERIES_FILE_TYPE = 'h5'
@@ -78,22 +78,10 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
     #print save_name
     return save_name
 
-def get_ex_ids(query, **kwargs):
-    ''' return a list of unique ex_id names for a query'''
-    return list(set([e['ex_id'] for e in mongo_query(query=query, projection={'ex_id':1}, **kwargs)]))
 
-def get_blob_ids(query, **kwargs):
-    ''' return a list of unique blob_id names for a query'''
-    return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
 
-def get_ex_id_metadata(ex_id, json_dir=WORM_DIR):
-    search_path = '{path}/{eID}/*metadata.json'.format(path=json_dir.rstrip('/'), 
-                                                       eID=ex_id.rstrip('/'))
-    #print search_path
-    json_files = glob(search_path)
-    #print json_files
-    return json.load(open(json_files[0], 'r'))
-
+# TODO: This is setup to accept
+#
 def format_filename(ID, ID_type='worm', data_type='cent_speed', 
                     ensure_path=True, file_type='json',
                     file_dir = None,
@@ -132,7 +120,7 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
     
 def write_timeseries_file(ID, data_type, times, data, 
                           ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
-                          file_dir=None):
+                          file_dir=None, **kwargs):
 
     # universal file formatting
     filename = format_filename(ID=ID, 
@@ -142,55 +130,65 @@ def write_timeseries_file(ID, data_type, times, data,
                                file_dir=file_dir)
     # save method depends on file_type
     if file_type == 'json':
-        json.dump({'time':times, 'data':data}, open(json_file, 'w'))
+        json.dump({'time':times, 'data':data}, open(filename, 'w'))
     if file_type == 'h5':        
-        write_h5_timeseries_base(file_name, times, data)
+        write_h5_timeseries_base(filename, times, data)
 
 def get_timeseries(ID, data_type, 
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
-                   file_dir=None):
-                   
+                   file_dir=None, **kwargs):                   
     # universal file formatting
-    filename = format_filename(ID=ID, 
-                               ID_type=ID_type,
-                               data_type=data_type, 
-                               file_type=file_type,
-                               file_dir=file_dir)
-
+    filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,                               
+                               file_type=file_type, file_dir=file_dir)
     if os.path.isfile(filename):
         # retrval method depends on file_type
         if file_type == 'json':
             data_dict = json.load(open(filename, 'r'))
             times, data = data_dict.get('time', []), data_dict.get('data', [])                    
         elif file_type == 'h5':        
-            times, data = read_h5_timeseries_base(h5_file)
+            times, data = read_h5_timeseries_base(filename)
         # print warning if file is empty
-        if not times and not data:
+        if len(times)==0 and len(data)==0:
             print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
         return times, data
     return None, None
 
-
-def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None):                          
+def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None, **kwargs):
     # universal file formatting
-    filename = format_filename(ID=ID, 
-                               ID_type=ID_type,
-                               data_type=data_type,
-                               file_type='json',
-                               file_dir=file_dir)
+    filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,                                                              
+                               file_type='json', file_dir=file_dir)                               
     json.dump(data, open(filename, 'w'))
-
         
-def get_metadata(ID, data_type='metadata', ID_type='w', file_dir=None):
-    filename = format_filename(ID=ID, 
-                               ID_type=ID_type,
-                               data_type=data_type,
-                               file_type='json',
-                               file_dir=file_dir)
+def get_metadata(ID, data_type='metadata', ID_type='w', file_dir=None, **kwargs):
+    filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,
+                               file_type='json', file_dir=file_dir)
     
     if os.path.isfile(filename):
-        return json.load(open(filename), 'r')
+        return json.load(open(filename, 'r'))
     return None
+
+
+def search_db_for_data(blob_id, data_type, **kwargs):
+    try:
+        db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
+        print 'warning: could not find json file for', blob_id, data_type
+        # either split data into times and data or leave alone
+        # Stop everything if no to temp file or database doc.
+        return db_doc
+    except Exception as e:
+        print '\nFailure! could not locate data'
+        print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt=data_type)
+        print e
+        return None
+
+
+def get_ex_ids(query, **kwargs):
+    # return a list of unique ex_id names for a query
+    return list(set([e['ex_id'] for e in mongo_query(query=query, projection={'ex_id':1}, **kwargs)]))
+
+def get_blob_ids(query, **kwargs):
+    # return a list of unique blob_id names for a query
+    return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
 
 '''
 def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
@@ -277,26 +275,15 @@ def clear_json_file(blob_id, data_type='all'):
     silent_remove(json_file)
     if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
         os.rmdir(blob_path)
-'''    
-        
+
 def read_json_file(blob_id, data_type, json_dir=WORM_DIR):
     json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
     if os.path.isfile(json_file):
         return json.load(open(json_file, 'r'))    
     return None
-                                      
-def search_db_for_data(blob_id, data_type, **kwargs):
-    try:
-        db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
-        print 'warning: could not find json file for', blob_id, data_type
-        # either split data into times and data or leave alone
-        # Stop everything if no to temp file or database doc.
-        return db_doc
-    except Exception as e:
-        print '\nFailure! could not locate data'
-        print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt=data_type)
-        print e
-        return None
+
+'''    
+        
 
 '''                             
 def store_data_in_db(blob_id, data_type, data, description, db_doc=None, **kwargs):

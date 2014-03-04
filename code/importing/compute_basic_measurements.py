@@ -72,7 +72,7 @@ def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
     :param spine_entry: database document containing the list of spines.
     :return: timedict of lengths.
     """
-    times, spines = get_timeseries(blob_id=blob_id, data_type='spine_rough', **kwargs)
+    times, spines = get_timeseries(ID=blob_id, data_type='spine_rough', **kwargs)
     lengths = []
     for spine in spines:
         l = 0
@@ -81,7 +81,7 @@ def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
         lengths.append(l)
     data_type = 'length_rough'
     if store_tmp:
-        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+        write_timeseries_file(ID=blob_id, data_type=data_type,
                               times=times, data=lengths)
     return lengths
 
@@ -96,8 +96,8 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
     :return: a tuple of three width timedicts.
     """
     # if temp data is cached, use that instead of querying database
-    times, spines = get_timeseries(blob_id=blob_id, data_type='spine_rough')
-    times, encoded_outlines = get_timeseries(blob_id=blob_id, data_type='encoded_outline')    
+    times, spines = get_timeseries(ID=blob_id, data_type='spine_rough')
+    times, encoded_outlines = get_timeseries(ID=blob_id, data_type='encoded_outline')    
     width20, width50, width80 = [], [], []
     for spine, en_outline in izip(spines, encoded_outlines):
         # make sure to catch not a number. not sure if necessary.
@@ -116,11 +116,11 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
         width80.append(w80)
 
     if store_tmp:
-        write_timeseries_file(blob_id=blob_id, data_type='width20',
+        write_timeseries_file(ID=blob_id, data_type='width20',
                               times=times, data=width20)
-        write_timeseries_file(blob_id=blob_id, data_type='width50',
+        write_timeseries_file(ID=blob_id, data_type='width50',
                               times=times, data=width50)
-        write_timeseries_file(blob_id=blob_id, data_type='width80',
+        write_timeseries_file(ID=blob_id, data_type='width80',
                               times=times, data=width80)
 
     return width20, width50, width80

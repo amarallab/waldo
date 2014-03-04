@@ -37,9 +37,11 @@ def consolidate_flags(all_flags):
     takes a dictionary of flag dictionaries and consolidates them into one
     flag dictionary. if any timepoint is false, the consolidated entry will read as false.
     '''
-    assert type(all_flags) == dict
-    flag_lists = [all_flags[i] for i in all_flags]
-    return [all(i) for i in izip(*flag_lists)]
+    if isinstance(all_flags, dict):
+        flag_lists = [all_flags[i] for i in all_flags]
+        return [all(i) for i in izip(*flag_lists)]
+    else:
+        return [all(i) for i in all_flags] 
 
 def fit_gaussian(x, num_bins=200):
     # some testdata has no variance whatsoever, this is escape clause
@@ -157,7 +159,7 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=
     data_type - 
     show_plot -
     '''
-    times, data = get_timeseries(blob_id=blob_id, data_type=data_type, **kwargs)
+    times, data = get_timeseries(ID=blob_id, data_type=data_type, **kwargs)
     # check to see if all data is correct type
     err_msg = lambda x: 'Error: {bi} {dt} has a {t} ' \
                         'type value in data'.format(bi=blob_id, dt=data_type,
@@ -207,6 +209,7 @@ def flag_report(blob_id):
 
 def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     times, _ = get_timeseries(blob_id, data_type='width20')
+    '''
     all_flags = {'width20_flags': flag_blob_data(blob_id, 'width20', options='long', **kwargs),
                  'width50_flags': flag_blob_data(blob_id, 'width50', options='long', **kwargs),
                  'width80_flags': flag_blob_data(blob_id, 'width80', options='long', **kwargs),
@@ -215,13 +218,20 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
                  'length_flags_long': flag_blob_data(blob_id, 'length_rough', options='long', 
                                                      **kwargs),
                 }
+    '''
+
+    flag_types = [('width20','long'), ('width50', 'long'), ('width80', 'long'),    
+                  ('length_rough', 'short'), ('length_rough', 'long')]
+                  
+    N_rows = len(times)
+    N_cols = len(flag_types)
+    all_flags = np.zeros(shape=(N_rows, N_cols), dtype=bool)
+    for i, (data_type, options)  in enumerate(flag_types):
+        all_flags[:, i] = np.array(flag_blob_data(blob_id, data_type, options=options), dtype=bool)
     
-    data_type = 'flags'
     if store_tmp:
-        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+        write_timeseries_file(ID=blob_id, data_type='flags',
                               data=all_flags, times=times)
-        #write_metadata_file(blob_id=blob_id, data_type=data_type,
-        #                    data=all_flags, times=times)
     if verbose:
         flags = consolidate_flags(all_flags)
         N = len(flags)
@@ -289,7 +299,7 @@ def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     :param insert: toggle to turn on/off the import of resulting break_list into the database.
     """
     #times, all_flags = get_timeseries(blob_id, data_type='flags')
-    times, all_flags = get_timeseries(blob_id, data_type='flags')    
+    times, all_flags = get_timeseries(ID=blob_id, data_type='flags')    
     # find general breakpoints
     flags = consolidate_flags(all_flags)
     break_list = create_break_list(times, flags)
@@ -376,7 +386,7 @@ def create_break_list(times, flags, verbose=False):
     return break_list
 
 def get_flagged_times(blob_id):
-    times, all_flags = get_timeseries(blob_id, data_type='flags')    
+    times, all_flags = get_timeseries(ID=blob_id, data_type='flags')    
     flags = consolidate_flags(all_flags)
     #flagged_times1 = []
     #for (t, f) in zip(times, flags):
@@ -400,7 +410,12 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
             for tf in flagged_times:
                 if math.fabs(tf - t) < 0.05:
                     is_good = False
-                if d in null_flags:
+                # TODO: make this section a bit more robust.
+                if type(d) == np.ndarray:
+                    if d.any() in null_flags:
+                        print d.shape
+                        is_good = False
+                elif d in null_flags:
                     is_good = False
             if is_good:
                 filtered_region.append((t,d))
@@ -480,7 +495,7 @@ if __name__ == '__main__':
     
     breaks = create_breaks_for_blob_id(blob_id, insert=False)
     print breaks
-    times, all_flags = get_timeseries(blob_id, data_type='flags')
+    times, all_flags = get_timeseries(ID=blob_id, data_type='flags')
     flags = consolidate_flags(all_flags)
     flagged_times = get_flagged_times(blob_id)
     good_segments = good_segments_from_data(break_list=breaks, times=times, data=flags, 

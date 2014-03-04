@@ -58,6 +58,7 @@ def read_h5_timeseries_base(h5_file):
         data = np.array(f['data'])
     return times, data
 
+'''
 def write_h5_timeseries_base1(h5_file, h5_path, times, data):
     times = np.array(times) 
     data = np.array(data)
@@ -93,7 +94,7 @@ def read_h5_timeseries_base1(h5_file, h5_path):
             data = np.array(grp['data'])
     print len(times), len(data)
     return times, data
-
+'''
 def delete_h5_dataset(h5_file, h5_path, times, data):
     pass
 

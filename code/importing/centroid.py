@@ -55,7 +55,7 @@ def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwar
     # store as cached file
     if store_tmp:
         #data ={'time':eq_times, 'data':xy}
-        write_timeseries_file(blob_id=blob_id, data_type='xy',
+        write_timeseries_file(ID=blob_id, data_type='xy',
                               times=eq_times, data=xy)
     return eq_times, xy
 

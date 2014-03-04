@@ -82,7 +82,7 @@ def find_data(blob_id, metric, **kwargs):
     # check if result already cached locally
     times, data = get_timeseries(blob_id, data_type=metric, search_db=False)
     #print 'not already cached'
-    if times and data:
+    if times != None and data != None:
         return times, data, {}
     # check if it can be calculated
     metric_computation_function, args = switchboard(metric)

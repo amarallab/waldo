@@ -135,12 +135,10 @@ def organize_plate_metadata(ex_id):
         t1 = ex_id_to_datetime(recording_time) 
         hours = (t1 - t0).total_seconds()/3600.
 
-
     #age = '{et} - {pt}'.format(et=recording_time, pt=plating_time)
     #for i in m:
     #    print i
     return hours, label, sub_label, pID, day
-
 
 def return_flattened_plate_timeseries(dfile):
     """

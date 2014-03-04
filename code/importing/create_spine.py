@@ -49,7 +49,7 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
 
     '''
     # if temp data is cached, use that instead of querying database
-    times, encoded_outlines = get_timeseries(blob_id=blob_id, data_type='encoded_outline')
+    times, encoded_outlines = get_timeseries(ID=blob_id, data_type='encoded_outline')
     outlines = []
     spines = []
     flagged_timepoints = []
@@ -105,7 +105,7 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
                 dat.append(d)
             else:
                 dat.append(NA_spine)        
-        write_timeseries_file(blob_id=blob_id, data_type=data_type,
+        write_timeseries_file(ID=blob_id, data_type=data_type,
                               times=times, data=dat)
         #write_timeseries_file(blob_id=blob_id, data_type=data_type,
         #                      times=times, data=treated_spines)
