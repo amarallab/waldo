@@ -164,13 +164,12 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=
     err_msg = lambda x: 'Error: {bi} {dt} has a {t} ' \
                         'type value in data'.format(bi=blob_id, dt=data_type,
                                                     t=type(x))
-        
-    #for d in data:
-    #    if type(d) not in [int, float, np.float, np.int]:
-    #        print d, type(d)
-    def check(x):
-        assert type(x) in [int, float, np.float64, np.int], err_msg    
-    map(check, data)
+    for d in data:
+        if type(d) not in [int, float, np.float64, np.int32]:
+            print 'print weird datatype:', d, type(d)
+    #def check(x):
+    #    assert type(x) in [int, float, np.float64, np.int], err_msg    
+    #map(check, data)
     # if more than half of points are zero, flag everything.
     N = len(data)
     zeros = len([x for x in data if x == 0.0])

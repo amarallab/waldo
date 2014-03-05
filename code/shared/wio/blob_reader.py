@@ -117,15 +117,13 @@ class Blob_Reader(object):
                     aspect_ratio = -1.0
                 temp_blob['aspect_ratio'].append(aspect_ratio)
                 outline = parse_outline_from_line(line)
-                if outline != None: 
-                    temp_blob['outline'].append(outline)
-                else:
-                    temp_blob['outline'].append('')
+                if outline == None: 
+                    outline = ['', '', '', '']
+                temp_blob['outline'].append(outline)
                 midline = calculate_midline_from_line(line)
-                if midline != None: 
-                    temp_blob['midline'].append(midline)
-                else:
-                    temp_blob['midline'].append('')
+                if midline == None: 
+                    midline = ''
+                temp_blob['midline'].append(midline)
             # need to check if last blob should be saved.
             blobs = process_blob(temp_blob, blobs, local_id)
         return blobs
