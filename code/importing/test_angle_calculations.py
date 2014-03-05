@@ -61,7 +61,7 @@ class TestAngleCalculations(unittest.TestCase):
         y = r * np.sin(t)
         x = r * np.cos(t)
         # why is this the solution?
-        soln = [0.540540540] * (len(x) -1)
+        soln = [-0.540540540] * (len(x) -1)
         for i, j in zip(soln, angle_change_for_xy(x ,y)):
             self.assertAlmostEqual(i, j)
                         

@@ -20,11 +20,13 @@ def angle_change_for_xy(x, y, allow_negatives=True):
         angle = np.arccos(np.dot(v1, v2)) * 180.0 / np.pi
         # if allow negatives, see if direction of 3d cross product + or -
         if allow_negatives:
+            # make sure vectors are 3D
             va = np.array([v1[0], v1[1], 0])
-            vb = np.array([v2[0], v2[1], 0])
-            cross = int(np.cross(va, vb)[2])
+            vb = np.array([v2[0], v2[1], 0])            
+            cross = np.cross(va, vb)[2]
+            # take sign of angle change
             if cross != 0:
-                angle = cross * angle
+                angle = math.copysign(1.0, cross) * angle
         # catch any right angle exceptions
         if np.isnan(angle):
             if (v1 == v2).all():
