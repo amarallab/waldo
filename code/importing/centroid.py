@@ -1,3 +1,4 @@
+
 '''
 Date:
 Description:
@@ -59,24 +60,6 @@ def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwar
                               times=eq_times, data=xy)
     return eq_times, xy
 
-def angle_change_for_xy(x, y):
-    vectors = zip(np.diff(x), np.diff(y))
-    vectors = vectors / np.linalg.norm(vectors)
-    angles = np.arccos(np.dot(vectors[1:], vectors[:-1]))
-    for i, (angle, v1, v2) in enumerate(zip(angles, vectors[1:], vectors[:-1])):
-        if np.isnan(angle):
-            if (v1 == v2).all():
-                angles[i] ==  0.0
-            else:
-                angles[i] ==  np.pi
-    return angles
-
-def angle_change_over_distance(blob_id, store_tmp=True, step=0.1, **kwargs):
-    times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)
-    times = np.array(times)
-    x, y = map(np.array, zip(*xy))
-    t, x, y = equally_space_xy_for_stepsize(times, x, y, step=step)
-    angles = angle_change_for_xy(x, y)        
 
 # defunct.
 def show_centroid_processing(blob_id):
