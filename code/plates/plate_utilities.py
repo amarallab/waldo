@@ -30,15 +30,15 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from settings.local import LOGISTICS
-from wio.file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR
+from wio.file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, format_filename
 from annotation.experiment_index import Experiment_Attribute_Index
 
 # Globals
 TIME_SERIES_DIR = os.path.abspath(LOGISTICS['export'])
 
-ensure_dir_exists(PLATE_DIR)
-ensure_dir_exists(DSET_DIR)
-ensure_dir_exists(TIME_SERIES_DIR)
+#ensure_dir_exists(PLATE_DIR)
+#ensure_dir_exists(DSET_DIR)
+#ensure_dir_exists(TIME_SERIES_DIR)
 
 def show_timeseries_options(timeseries_dir=TIME_SERIES_DIR):
     print '\ndata_set\tdata_type\n'
@@ -61,39 +61,6 @@ def get_ex_id_files(dataset, data_type, path=TIME_SERIES_DIR):
                 ex_ids.append(ex_id)
                 file_paths.append(file_path)
     return ex_ids, file_paths
-    
-def format_dset_summary_name(data_type, dataset, sum_type, dset_dir):
-    ensure_dir_exists(dset_dir)
-    path = '{setdir}/{dset}-{dtype}-{stype}.json'.format(setdir=dset_dir,
-                                                         dset=dataset,
-                                                         dtype=data_type,
-                                                         stype=sum_type)
-    return path
-
-def write_dset_summary(data, data_type, dataset, sum_type, dset_dir=DSET_DIR):
-    filename = format_dset_summary_name(data_type, dataset, sum_type, dset_dir)
-    json.dump(data, open(filename, 'w'))
-
-def read_dset_summary(data_type, dataset, sum_type='basic', dset_dir=DSET_DIR):
-    filename = format_dset_summary_name(data_type, dataset, sum_type, dset_dir)
-    return json.load(open(filename, 'r'))
-
-def format_plate_summary_name(ex_id, sum_type, dataset, data_type, path):
-    savedir = '{path}/{dset}-{dtype}'.format(path=path, dset=dataset,
-                                             dtype=data_type)
-    ensure_dir_exists(savedir)
-    filename = '{savedir}/{eID}.json'.format(savedir=savedir, eID=ex_id)
-    return filename
-
-def write_plate_summary(data, ex_id, sum_type, dataset, data_type, path=PLATE_DIR):
-    filename = format_plate_summary_name(ex_id, sum_type, dataset, data_type, path)
-    json.dump(data, open(filename, 'w'))
-
-def read_plate_summaryo(sum_type, dataset, data_type, path=PLATE_DIR):
-    filename = format_plate_summary_name(ex_id, sum_type, dataset, data_type, path)
-    if os.path.isfile(filename):
-        return json.load(open(filename, 'r'))
-    return None
 
 def ex_id_to_datetime(ex_id):
     ''' converts an experiment id to a datetime object '''     
@@ -106,6 +73,44 @@ def ex_id_to_datetime(ex_id):
     h, m, s = map(int, [hms[:2], hms[2:-2], hms[-2:]])
     return datetime.datetime(year, month, day, h, m, s)
 
+    
+def format_plate_summary_name(ex_id, sum_type, dataset, data_type, path):
+    filename = format_filename(ID=ex_id, ID_type='plate',
+                               file_tag=sum_type,
+                               dset=dataset,
+                               data_type=data_type,
+                               file_dir=path,
+                               file_type='json')
+    return filename
+
+def format_dset_summary_name(data_type, dataset, sum_type, dset_dir=None):
+    filename = format_filename(ID=dataset, ID_type='dset',
+                               data_type=data_type,
+                               file_tag=sum_type,
+                               file_dir=dset_dir,
+                               file_type='json')
+    return filename
+
+def write_dset_summary(data, data_type, dataset, sum_type, dset_dir=None):
+    filename = format_dset_summary_name(data_type, dataset, sum_type, dset_dir)
+    print filename
+    json.dump(data, open(filename, 'w'))
+
+def read_dset_summary(data_type, dataset, sum_type='basic', dset_dir=None):
+    filename = format_dset_summary_name(data_type, dataset, sum_type, dset_dir)
+    return json.load(open(filename, 'r'))
+
+
+def write_plate_summary(data, ex_id, sum_type, dataset, data_type, path=None):
+    filename = format_plate_summary_name(ex_id, sum_type, dataset, data_type, path)
+    json.dump(data, open(filename, 'w'))
+
+def read_plate_summary(sum_type, dataset, data_type, path=None):
+    filename = format_plate_summary_name(ex_id, sum_type, dataset, data_type, path)
+    if os.path.isfile(filename):
+        return json.load(open(filename, 'r'))
+    return None
+
 def parse_plate_timeseries_txt_file(dfile):
     times, data = [], []
     with open(dfile) as f:
@@ -114,6 +119,7 @@ def parse_plate_timeseries_txt_file(dfile):
             times.append(float(line[0]))
             data.append(map(float, line[1:]))
     return times, data
+
 
 def organize_plate_metadata(ex_id):
     ei = Experiment_Attribute_Index()
