@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#TEST
+
 '''
 Filename: waldo.py
 Description: provides a command line user interface with which to process data.
