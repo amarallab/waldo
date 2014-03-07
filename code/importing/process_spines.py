@@ -167,5 +167,6 @@ if __name__ == '__main__':
         #for blob_id in all_unprocessed_blob_ids():
         #    basic_data_to_smoothspine(blob_id)
     else:
-        for ex_id in sys.argv[1:]: process_ex_id(ex_id)
-
+        for ex_id in sys.argv[1:]: 
+            process_ex_id(ex_id)
+            #write_plate_timeseries_set(ex_id, blob_ids=['20131213_140440_06928'])

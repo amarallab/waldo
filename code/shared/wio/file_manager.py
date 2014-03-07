@@ -79,44 +79,66 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
     return save_name
 
 
+# TODO actually get dset.
+def get_dset(ex_id):
+    return 'some_dset'
 
-# TODO: This is setup to accept
-#
 def format_filename(ID, ID_type='worm', data_type='cent_speed', 
-                    ensure_path=True, file_type='json',
+                    file_type='json',
                     file_dir = None,
+                    dset=None, file_tag='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
 
     errmsg = 'id must be string, not {i}'.format(i=ID)
     assert isinstance(ID, basestring), errmsg
 
+    # adding the dash here allows us to gracefully ignore file_tag when not present.
+    if file_tag != '':
+        file_tag = '{ft}-'.format(ft=file_tag)
+
     # if no file_directory specified, 
     #choose the standard directory to save data based on ID and ID_type
     if not file_dir:
+        # for worm data.
         if str(ID_type) in ['worm', 'w']:
             ex_id = '_'.join(ID.split('_')[:2])
             file_dir = '{path}/{eID}'.format(path=worm_dir, eID=ex_id)
-        # TODO make plates functional
+
         elif str(ID_type) in ['plate', 'p']:
-            ex_id = '_'.join(ID.split('_')[:2])
-            file_dir = '{path}'.format(path=plate_dir)
-        # TODO make dsets functional
-        elif str(ID_type) in['dset', 's']:
-            ex_id = '_'.join(ID.split('_')[:2])
-            file_dir = '{path}'.format(path=dset_dir)
+            # make sure we know which dset this plate belongs too
+            if dset == None:
+                dset = get_dset(ex_id=ID)
+            file_dir = '{path}/{dset}'.format(path=plate_dir.rstrip('/'),
+                                                dset=dset.rstrip('/'))
+
+        elif str(ID_type) in['dset', 's']:            
+            file_dir = '{path}/{dset}'.format(path=dset_dir.rstrip('/'),
+                                              dset=ID.rstrip('/'))
         else:
             assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type) 
 
-    # make sure entire directory exists, if not, create it.
-    if ensure_path and file_dir:
-        ensure_dir_exists(file_dir)
+    ensure_dir_exists(file_dir)
 
-    # currently in worm format.
-    file_name = '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, 
-                                               ID=ID,
+    # Format the name of the file
+    if str(ID_type) in ['worm', 'w']:
+        return '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, 
+                                              ID=ID,
+                                              dt=data_type, 
+                                              ft=file_type)
+
+    elif str(ID_type) in ['plate', 'p']:
+        # make sure we know which dset this plate belongs too
+        return '{path}/{ID}-{tag}{dt}.{ft}'.format(path=file_dir, 
+                                                   ID=ID,
+                                                   tag=file_tag,
+                                                   dt=data_type, 
+                                                   ft=file_type)
+
+    elif str(ID_type) in['dset', 's']:
+        return  '{path}/{tag}{dt}.{ft}'.format(path=file_dir,
+                                               tag=file_tag,
                                                dt=data_type, 
                                                ft=file_type)
-    return file_name
     
 def write_timeseries_file(ID, data_type, times, data, 
                           ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 

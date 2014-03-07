@@ -63,6 +63,7 @@ def organize_plates_by_day(ex_ids, dfiles, days, verbose=False):
 
 def plot_data_by_days(data_by_days, xlim=[0.0, 0.2]):
     day_distributions = {}
+    day_quartiles = {}
     for day in sorted(data_by_days)[:]:
         print day
         all_data = []
@@ -77,7 +78,11 @@ def plot_data_by_days(data_by_days, xlim=[0.0, 0.2]):
         x = x[1:]
         y = np.array(y, dtype=float) / sum(y)
         day_distributions[day] = {'x':list(x), 'y':list(y)}
-    return day_distributions
+        day_quartiles[day] = [stats.scoreatpercentile(all_data, 25),
+                                stats.scoreatpercentile(all_data, 50),
+                                stats.scoreatpercentile(all_data, 75)]
+                               
+    return day_distributions, day_quartiles
 
 def preprocess_distribution_data(dataset, data_type, label, xlim):
     ex_ids, days, dfiles = get_annotations(dataset=dataset, data_type=data_type, label=label)

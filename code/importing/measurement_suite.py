@@ -65,7 +65,7 @@ def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASURE
     if not blob_ids:
         blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)
     
-    metadata = get_metadata(blob_id=blob_ids[0], **kwargs)    
+    metadata = get_metadata(ID=blob_ids[0], **kwargs)    
     dataset = metadata.get('dataset', 'none')
     for metric in measurements:
         path_tag = '{ds}-{m}'.format(ds=dataset, m=metric)
