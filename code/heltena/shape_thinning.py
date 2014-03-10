@@ -1,27 +1,18 @@
 import numpy as np
 
-# def add_border(im):
-#     new_image = np.zeros([len(im) + 2, len(im[0]) + 2], dtype=int)
-#     for i, im_row in enumerate(im):
-#         for j, _ in enumerate(im_row):
-#             new_image[i + 1][j + 1] = im[i][j]
-#     return new_image
-#
-# def remove_border(im):
-#     new_image = np.zeros([len(im) - 2, len(im[0]) - 2], dtype=int)
-#     for i, im_row in enumerate(im[1:-1], start=1):
-#         for j, _ in enumerate(im_row[1:-1], start=1):
-#             new_image[i - 1][j - 1] = im[i][j]
-#     return new_image
-
-
 def add_border(im):
     new_image = np.zeros([len(im) + 2, len(im[0]) + 2], dtype=int)
-    new_image[1:len(im)+1,1:len(im[0])+1] = im
+    for i, im_row in enumerate(im):
+        for j, _ in enumerate(im_row):
+            new_image[i + 1][j + 1] = im[i][j]
     return new_image
 
 def remove_border(im):
-    return im[1:len(im)-1,1:len(im[0])-1]
+    new_image = np.zeros([len(im) - 2, len(im[0]) - 2], dtype=int)
+    for i, im_row in enumerate(im[1:-1], start=1):
+        for j, _ in enumerate(im_row[1:-1], start=1):
+            new_image[i - 1][j - 1] = im[i][j]
+    return new_image
 
 def iterate_z(Z, subiteration=0):
     # count neighbors
@@ -76,8 +67,7 @@ def skeletonize(im_array):
     """
     :param image_array:
     :return:
-    """
-
+    """    
     Z = add_border(im_array)
     for i in range(1000):
         Z, points_removed1 = iterate_z(Z, subiteration=0)
@@ -97,7 +87,6 @@ if __name__ == '__main__':
                          [0, 0, 1, 1, 1, 1, 1, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
-    '''
     im_array = np.array([[0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
@@ -106,10 +95,38 @@ if __name__ == '__main__':
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 0, 1, 1, 1, 0, 0, 0]])
+    '''
 
-
+    im_array = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+						 [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+						 [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+						 [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+						 [0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+						 [0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
+						 [0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+						 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+    
     #print im_array
-    skim = skeletonize(im_array)
+    for i in range(1000):
+        skim = skeletonize(im_array)
     #print 'final'
     print skim
     #calculate_M(im_array, 'first')
