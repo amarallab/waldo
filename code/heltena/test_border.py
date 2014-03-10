@@ -24,7 +24,7 @@ def heltena_add_border(im):
     return new_image
 
 def heltena_remove_border(im):
-    return im[1:len(im)-1,1:len(im[0])-1]
+    return im[1:-1,1:-1]
 
 def run_test(name, im, ab, rb):
     x = ab(im)
