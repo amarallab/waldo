@@ -7,31 +7,45 @@ def intersection_point_between_lines(p1, p2, m, q1):
         and one point q1
     '''
     
-    p1=list(p1)
-    p2=list(p2)
-    if p1[0]==p2[0]:
-        p1[0]+=1e-6
-    
-    n = (p2[1]-p1[1])/(p2[0]-p1[0])
-    
-    if n==m:
-        n+=1e-6
-    
-    intersection_x= (p1[1]- q1[1] + m * q1[0] -n * p1[0]) / (m-n)
-    intersection_y= q1[1] + m * (intersection_x - q1[0])
+    # p1=list(p1)
+    # p2=list(p2)
+    # if p1[0] == p2[0]:
+    #     p1[0] += 1e-6
+    #
+    # n = (p2[1]-p1[1]) / (p2[0]-p1[0])
+    #
+    # if n == m:
+    #     n += 1e-6
+    #
+    # intersection_x = (p1[1] - q1[1] + m * q1[0] -n * p1[0]) / (m-n)
+    # intersection_y = q1[1] + m * (intersection_x - q1[0])
+    # return intersection_x, intersection_y
+
+    x1, y1 = p1
+    x2, y2 = p2
+    xq, yq = q1
+    if x1 == x2:
+        x1 += 1e-6
+    n = (y2-y1) / (x2-x1)
+    if n == m:
+        n += 1e-6
+    intersection_x = (y1 - yq + m * xq - n * x1) / (m - n)
+    intersection_y = yq + m * (intersection_x - xq)
     return intersection_x, intersection_y
-    
 
-def points_along_straight_line(m,p1):
+# def peter_points_along_straight_line(m, p1):
+#     xs = []
+#     ys = []
+#     for k in [-0.2, 0.2]:
+#         xs.append(p1[0] + k)
+#         ys.append(p1[1] + m * (xs[-1]-p1[0]))
+#     return xs, ys
     
-    xs=[]
-    ys=[]
-    for k in [-0.2, 0.2]:
-        xs.append( p1[0] + k )
-        ys.append( p1[1]+ m * ( xs[-1]-p1[0]) )
+def points_along_straight_line(m, p1):
+    x, y = p1
+    xs = [x - 0.2, x + 0.2]
+    ys = [y - m * 0.2, y + m * 0.2]
     return xs, ys
-    
-
 
 def get_ortogonal_to_spine(spine, index):
     '''

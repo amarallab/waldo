@@ -418,7 +418,6 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
                 for tf in flagged_times:
                     if math.fabs(tf - t) < 0.05:
                         is_good = False
-                    if not is_good:
                         break
 
             if is_good:
