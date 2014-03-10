@@ -416,6 +416,8 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
                         is_good = False
                 elif d in null_flags:
                     is_good = False
+                if not is_good:
+                    break
             if is_good:
                 filtered_region.append((t,d))
         return filtered_region
