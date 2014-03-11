@@ -108,6 +108,8 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
     target_ex_ids = set(ei.return_ex_ids_with_attribute(key_attribute=key, attribute_value=value))
     print '{N} ex_ids have metadata matching ({Y}:{Z})'.format(N=len(target_ex_ids), Y=db_attribute[0], Z=db_attribute[1])
 
+    # all of these calls use an outdated model (checking mongo database) as to see if an ex_id has been processed or not.
+    '''
     # Check whether or not raw data directory is present for ex_ids and modify list of target ex_ids
     if blobfiles is not None:
         ex_ids_with_blobfiles = set(list_ex_ids_with_raw_data(inventory_directory=LOGISTICS['cluster_data']))
@@ -142,6 +144,7 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
             target_ex_ids = target_ex_ids - ex_ids_with_spines_in_db
         print 'Of these, {N} ex_ids have worm spines in database. {Y} considered further.'.format(N=len(ex_ids_with_spines_in_db),
                                                                                                   Y=len(target_ex_ids))
+    '''
     if exported is not None:
         exported_ex_ids = set(list_ex_ids_with_exported_data(export_directory=LOGISTICS['export']))
         if exported:
@@ -200,9 +203,9 @@ if __name__ == '__main__':
     # Toggles
     #db_attribute = ('dataset', 'N2_aging')
     #db_attribute = ('dataset', 'disease_models')
-    #db_attribute = ('dataset', 'thermo_recovery')
+    db_attribute = ('dataset', 'thermo_recovery')
     #db_attribute = ('dataset', 'zoom_test')
-    db_attribute = ('dataset', 'copas_TJ3001')
+    #db_attribute = ('dataset', 'copas_TJ3001')
 
     parser = argparse.ArgumentParser(prefix_chars='-',
                                      description='by default it does nothing. but you can specify if it should import, '

@@ -40,7 +40,7 @@ MONGO_SETTINGS = {'ip':MONGO['ip'], 'port':MONGO['port'],
                   'database_name':MONGO['database'],
                   'collection_name':MONGO['blobs']}
 
-def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
+def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR, no_mongo=True,
                             profile_dir=PROFILE_DIR):
     """ repeatedly runs a function on each ex_id in a list.
     For each run, it stores timing data and a profiler binary file.
@@ -54,6 +54,27 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
     ensure_dir_exists(timing_dir)
     time_file = '{dir}/{type}_{now}_x{N}.json'.format(dir=timing_dir, type=name,
                                                       now=now_string, N=len(ex_ids))
+
+    if no_mongo:
+        time_storage = {}
+        ensure_dir_exists(profile_dir)        
+        for ex_id in ex_ids:
+            print '{fun}ing {ei} starting at: {t}'.format(fun=name, ei=ex_id,
+                                                          t=time.clock())
+            profile_file = '{dir}/{type}_{id}_{now}.profile'.format(dir=profile_dir,
+                                                                    type=name,
+                                                                    now=now_string,
+                                                                    id=ex_id)
+            time_storage[ex_id] = {'start': time.clock()}
+            try:
+                profile.runctx('f(ex_id)', globals(), locals(), filename=profile_file)                           
+                time_storage[ex_id]['finish'] = time.clock()
+                json.dump(time_storage, open(time_file, 'w'))
+            except Exception as e:
+                print 'Error with {name} at time {t}\n{err}'.format(name=name, t=time.clock(), err=e)
+        return True
+
+    # if mongo is being used... run this version.
     mongo_client = None
     try:
         # initialize the connection to the mongo client
