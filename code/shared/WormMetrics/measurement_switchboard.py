@@ -58,6 +58,8 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
                 ntimes.append(t)
                 ndata.append(v)
         times, data = ntimes, ndata
+    if len(data) ==0:
+        return [], []    
     # this block of code handles all scaling factor operations
     scaling_factor_type = args.get('units', '')
     # make sure we have appropriate scaling factor

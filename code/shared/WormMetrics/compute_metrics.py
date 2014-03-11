@@ -54,7 +54,9 @@ def compute_width(blob_id, **kwargs):
 
 def compute_centroid_speed(blob_id, **kwargs):
     # speed is not a body shape.
-    times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)    
+    times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)
+    if len(times) ==0 or len(xy) ==0:
+        return [], []
     x, y = zip(*xy)
     dt = np.diff(np.array(times))
     dx = np.diff(np.array(x))
@@ -66,7 +68,6 @@ def compute_centroid_speed(blob_id, **kwargs):
     speeds = np.sqrt(dx**2 + dy**2) / dt
     return times[1:], speeds
     
-
 def length_of_spine(spine):
         dx, dy = map(np.diff, map(np.array, zip(*spine)))
         return np.sqrt(dx**2 + dy**2).sum()
@@ -111,7 +112,6 @@ def displacement_along_curve(curve1, curve2, perpendicular=False):
                 sin_[i] = 0.
         perp_projection = np.fabs(norm2 * sin_)
         return sum(perp_projection)
-
 
 # andrea's old code.
 '''
@@ -198,6 +198,8 @@ def get_direction_and_distance(p1, p2, m1, m2, perpendicular=False):
 
 def compute_length(blob_id, **kwargs):
     times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+    if spines==None or len(spines) ==0:
+        return [], []
     na_values = ['', -1, 'NA', 'NaN', None, []]
     ltimes, lengths = [], []
     for t, spine in izip(times, spines):        
@@ -208,6 +210,8 @@ def compute_length(blob_id, **kwargs):
 
 def compute_speed_along(blob_id, **kwargs):
     times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+    if spines==None or len(spines) ==0:
+        return [], []
     stimes, speeds = [], []
     for i in range(len(times)):
         if i + 1 < len(spines) and len(spines[i]) > 0 and len(spines[i + 1]) > 0:
@@ -219,6 +223,8 @@ def compute_speed_along(blob_id, **kwargs):
 
 def compute_speed_perp(blob_id, **kwargs):
     times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+    if spines==None or len(spines) ==0:
+        return [], []
     stimes, speeds = [], []
     perpendicular = True
     for i in range(len(times)):
@@ -231,6 +237,8 @@ def compute_speed_perp(blob_id, **kwargs):
 
 def compute_curvature(blob_id, **kwargs):
     times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+    if spines==None or len(spines) ==0:
+        return [], []
     ctimes, curvatures = [], []
     for t, spine in izip(times, spines):
         if len(spine) > 0:
