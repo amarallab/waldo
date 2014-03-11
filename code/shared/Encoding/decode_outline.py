@@ -61,7 +61,7 @@ def points_to_dir(pt1, pt2):
     return bit1 + bit2
 
 
-def encode_outline(points):
+def encode_outline_peter(points):
     assert type(points) in [list, tuple]
     assert (type(points[0][0]) == int) and (type(points[0][1]) == int)
     start_xy = points[0]
@@ -86,7 +86,7 @@ def encode_outline(points):
     x, y = start_xy
     return (x, y, length, encoded_outline)
 
-def decode_outline(outline_parts):
+def decode_outline_peter(outline_parts):
     # broken input if there are not three outline parts, return empty string
     if len(outline_parts) != 4:
         return []    
@@ -228,6 +228,76 @@ def decode_outline_old(outline_parts):
     #assert fl_distance <= 1.5, fl_error
     #assert abs(len(pts) - length) <= 1, len_error
     return pts
+
+def encode_outline(points):
+    assert type(points) in [list, tuple]
+    assert (type(points[0][0]) == int) and (type(points[0][1]) == int)
+    outline = ''
+    sx, sy = points[0] # start point
+    value = 0
+    cur_steps = 0
+    px, py = points[0] # previous points
+    for p in points[1:]:
+        dx = p[0] - px
+        dy = p[1] - py
+        px, py = p
+        if dx == -1 and dy == 0:
+            next_value = 0
+        elif dx == 1 and dy == 0:
+            next_value = 1
+        elif dx == 0 and dy == -1:
+            next_value = 2
+        elif dx == 0 and dy == 1:
+            next_value = 3
+        else:
+            print "E: dx=%d dy=%d" % (dx, dy)
+            return (0, 0, 0, [])
+        value |= next_value << (2 - cur_steps) * 2
+        cur_steps += 1
+        if cur_steps == 3:
+            outline += chr(ARBIRARY_CONVERSION_FACTOR + value)
+            value = 0
+            cur_steps = 0
+    if cur_steps != 0:
+        outline += chr(ARBIRARY_CONVERSION_FACTOR + value)
+    return (sx, sy, len(points)-1, outline)
+
+def decode_outline(params):
+    # broken input if there are not three outline parts, return empty string
+    if len(params) != 4:
+        return []
+    start_x, start_y, length, outline = params
+    # check if outline parts is empty
+    if start_x == '' or start_y =='':
+        return []
+    x, y = int(start_x), int(start_y)
+    length = int(length)
+
+    points = [ (x, y) ]
+    for ch in outline:
+        byte = ord(ch) - ARBIRARY_CONVERSION_FACTOR
+        assert byte <= 63, 'error:(%s) is not in encoding range' % ch
+        assert byte >= 0, 'error:(%s) is not in encoding range' % ch
+
+        for count in range(3):
+            if length == 0:
+                return points
+
+            value = (byte >> 4) & 3
+            if value == 0:
+                x -= 1
+            elif value == 1:
+                x += 1
+            elif value == 2:
+                y -= 1
+            elif value == 3:
+                y += 1
+
+            points.append( (x, y) )
+            length -= 1
+
+            byte <<= 2
+    return points
 
 
 def pull_outline(blob_id, **kwargs):

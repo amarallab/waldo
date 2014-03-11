@@ -404,18 +404,22 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
         flagged timepoints removed and all the timepoints with
         null data values removed. '''
         filtered_region = []
-        for (t,d) in region:
+        for t, d in region:
             is_good = True
-            for tf in flagged_times:
-                if math.fabs(tf - t) < 0.05:
+
+            if type(d) == np.ndarray:
+                if d.any() in null_flags:
+                    print d.shape
                     is_good = False
-                # TODO: make this section a bit more robust.
-                if type(d) == np.ndarray:
-                    if d.any() in null_flags:
-                        print d.shape
+            elif d in null_flags:
+                is_good = False
+
+            if is_good:
+                for tf in flagged_times:
+                    if math.fabs(tf - t) < 0.05:
                         is_good = False
-                elif d in null_flags:
-                    is_good = False
+                        break
+
             if is_good:
                 filtered_region.append((t,d))
         return filtered_region
