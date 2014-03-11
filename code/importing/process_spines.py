@@ -37,7 +37,7 @@ from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
 from import_rawdata_into_db import create_entries_from_blobs_files
 #import wio.file_manager import get_metadata, get_timeseries
-from measurement_suite import measure_all, write_plate_timeseries_set
+from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set
 from centroid import process_centroid
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):

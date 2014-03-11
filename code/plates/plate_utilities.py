@@ -30,28 +30,22 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from settings.local import LOGISTICS
-from wio.file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, format_filename
+from wio.file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, format_filename, format_dirctory, get_timeseries
 from annotation.experiment_index import Experiment_Attribute_Index
 
 # Globals
 TIME_SERIES_DIR = os.path.abspath(LOGISTICS['export'])
 
-#ensure_dir_exists(PLATE_DIR)
-#ensure_dir_exists(DSET_DIR)
-#ensure_dir_exists(TIME_SERIES_DIR)
-
-def show_timeseries_options(timeseries_dir=TIME_SERIES_DIR):
-    print '\ndata_set\tdata_type\n'
-    data_dirs = glob.glob('{path}/*'.format(path=timeseries_dir.rstrip('/')))
-    for d in sorted(data_dirs):
-        if os.path.isdir:
-            d = d.split('/')[-1]
-            data_set, data_type = d.split('-')
-            print data_set,'\t',  data_type
-
-def get_ex_id_files(dataset, data_type, path=TIME_SERIES_DIR):
-    search = '{path}/{ds}-{dt}/*'.format(path=path.rstrip('/'),
-                                         ds=dataset, dt=data_type)
+def get_ex_id_files(dataset, data_type, path=None):
+    if not path:
+        path = format_dirctory(ID_type='plate',
+                               dataset=dataset,
+                               data_type=data_type,
+                               tag='timeseries')
+        print path
+    #search = '{path}/{ds}/{dt}/*'.format(path=path.rstrip('/'),
+    #                                     ds=dataset, dt=data_type)
+    search = '{path}/*'.format(path=path.rstrip('/'))
     ex_ids, file_paths = [], []
     for file_path in glob.glob(search):
         if os.path.isfile(file_path):
@@ -111,6 +105,16 @@ def read_plate_summary(sum_type, dataset, data_type, path=None):
         return json.load(open(filename, 'r'))
     return None
 
+def read_plate_timeseries(ex_id, dataset, tag='timeseries'):
+    times, data = get_timeseries(ID=ex_id, 
+                                 ID_type='p',                                  
+                                 data_type, 
+                                 dset=dataset,
+                                 file_tag=tag)
+    print len(times), len(data)
+    return times, data
+
+'''
 def parse_plate_timeseries_txt_file(dfile):
     times, data = [], []
     with open(dfile) as f:
@@ -119,7 +123,7 @@ def parse_plate_timeseries_txt_file(dfile):
             times.append(float(line[0]))
             data.append(map(float, line[1:]))
     return times, data
-
+'''
 
 def organize_plate_metadata(ex_id):
     ei = Experiment_Attribute_Index()
@@ -148,8 +152,8 @@ def organize_plate_metadata(ex_id):
 
 def return_flattened_plate_timeseries(dfile):
     """
-    """
-    
+    """    
+    times, data = parse_plate_timeseries_txt_file(dfile)
     times, data = parse_plate_timeseries_txt_file(dfile)
     flat_data = []
     if not len(times):

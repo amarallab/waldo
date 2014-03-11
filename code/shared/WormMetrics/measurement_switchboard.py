@@ -31,7 +31,7 @@ from compute_metrics import *
 SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
              'size': {'func': compute_size, 'units': ['mm2']},
              'length': {'func': compute_length, 'units': ['mm']},
-             'curve': {'func': compute_curvature, 'units': ['mm', 'bl'], 
+             'curve': {'func': compute_curvature, 'units': ['mm', 'bl', 'w'], 
                       'position':['head', 'mid', 'tail']},
              'speed_along': {'func': compute_speed_along, 'units':['mm', 'bl'], 
                              'position':['head', 'mid', 'tail']},
@@ -41,7 +41,8 @@ SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
                             'units': ['bl', 'mm']}}        
 
 # **** main function of the module. 
-def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
+def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, 
+                   pixels_per_w=0, **kwargs):
     ''' returns a list of times and a list of data for a given blob_id and metric.
 
     This function chooses which program to call in order to calculate or retrieve
@@ -71,11 +72,22 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, **kwargs):
     if not pixels_per_bl and scaling_factor_type=='bl':        
         _, lengths = compute_length(blob_id, **kwargs)
         pixels_per_bl = np.median(lengths)
+    if not pixels_per_w and scaling_factor_type=='bl':        
+        _, widths = compute_width(blob_id, **kwargs)
+        pixels_per_w = np.median(widths)
+
     # implement that scaling factor.
     if scaling_factor_type == 'mm':
         data = np.array(data)  / pixels_per_mm        
+    if scaling_factor_type == 'mm2':
+        data = np.array(data)  / (pixels_per_mm ** 2)        
     if scaling_factor_type == 'bl':
         data = np.array(data)  / pixels_per_bl        
+    if scaling_factor_type == 'w':
+        if pixels_per_w != 0.0:
+            data = np.array(data)  / pixels_per_w        
+        else:
+            return [], []
     return times, data
 
 def find_data(blob_id, metric, **kwargs):

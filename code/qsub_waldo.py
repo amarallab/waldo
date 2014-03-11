@@ -24,7 +24,7 @@ sys.path.append(SHARED_DIR)
 from database.mongo_retrieve import mongo_query
 from settings.local import LOGISTICS
 from annotation.experiment_index import Experiment_Attribute_Index
-from wio.file_manager import ensure_dir_exists
+from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
 
 def qsub_run_script(python_script='waldo.py', args='', job_name='job',
                     number_of_jobs=25):
@@ -109,7 +109,7 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
     print '{N} ex_ids have metadata matching ({Y}:{Z})'.format(N=len(target_ex_ids), Y=db_attribute[0], Z=db_attribute[1])
 
     # all of these calls use an outdated model (checking mongo database) as to see if an ex_id has been processed or not.
-    '''
+
     # Check whether or not raw data directory is present for ex_ids and modify list of target ex_ids
     if blobfiles is not None:
         ex_ids_with_blobfiles = set(list_ex_ids_with_raw_data(inventory_directory=LOGISTICS['cluster_data']))
@@ -124,35 +124,13 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
     if stage1 is not None:
         #ex_ids_in_db = set([ex_id for ex_id in target_ex_ids
         #                    if mongo_query({'ex_id': ex_id}, {'ex_id':1}, find_one=True, **kwargs)])
-        ex_ids_in_db = set([e['ex_id'] for e in mongo_query({key: value, 'data_type':'metadata'},
-                                                            {'ex_id':1}, **kwargs)])
-
+        plates_with_worms = set(get_ex_ids_in_worms())
         if stage1:
-            target_ex_ids = target_ex_ids & ex_ids_in_db
+            target_ex_ids = target_ex_ids & plates_with_worms
         else:
-            target_ex_ids = target_ex_ids - ex_ids_in_db
-        print 'Of these, {N} ex_ids are in the database. {Y} considered further.'.format(N=len(ex_ids_in_db),
+            target_ex_ids = target_ex_ids - plates_with_worms
+        print 'Of these, {N} ex_ids are in the database. {Y} considered further.'.format(N=len(plates_with_worms),
                                                                                          Y=len(target_ex_ids))
-
-    # Check whether or not ex_ids already have computed spines in database and modify list of target ex_ids
-    if stage2 is not None:
-        ex_ids_with_spines_in_db = set([e['ex_id'] for e in mongo_query({key:value, 'data_type':'smoothed_spine'},
-                                                                        {'ex_id': 1}, **kwargs)])
-        if stage2:
-            target_ex_ids = target_ex_ids & ex_ids_with_spines_in_db
-        else:
-            target_ex_ids = target_ex_ids - ex_ids_with_spines_in_db
-        print 'Of these, {N} ex_ids have worm spines in database. {Y} considered further.'.format(N=len(ex_ids_with_spines_in_db),
-                                                                                                  Y=len(target_ex_ids))
-    '''
-    if exported is not None:
-        exported_ex_ids = set(list_ex_ids_with_exported_data(export_directory=LOGISTICS['export']))
-        if exported:
-            target_ex_ids = target_ex_ids & exported_ex_ids
-        else:
-            target_ex_ids = target_ex_ids - exported_ex_ids
-        print 'Of these, {N} ex_ids have already been exported. {Y} considered further.'.format(N=len(exported_ex_ids),
-                                                                                                Y=len(target_ex_ids))
 
     print '{a} ex_ids available for job'.format(a=len(target_ex_ids))
     return list(target_ex_ids)
@@ -164,40 +142,20 @@ def main(args, db_attribute):
     :param args: arguments from command line.
     :param db_attribute: tuple to toggle behavior of script.
     """
-    '''
-    if args.i:
-        if args.o:
-            print 'batch importing with overwrite'
-            ex_ids = choose_ex_ids(db_attribute=db_attribute, blobfiles=True)
-        else:
-            print 'batch importing'
-            ex_ids = choose_ex_ids(db_attribute=db_attribute, blobfiles=True, stage1=False)
-        print ex_ids
-        qsub_run_script(python_script='waldo.py -ti', job_name='import', args=ex_ids, number_of_jobs=30)
-    '''
     dataset = str(db_attribute[1])
+    if args.w:
+        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
+        name = '{ds}-w'.format(ds=dataset)
+        qsub_run_script(python_script='waldo.py -tw', job_name=name, args=ex_ids, number_of_jobs=20)
     if args.p:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
-        qsub_run_script(python_script='waldo.py -tp', job_name=dataset, args=ex_ids, number_of_jobs=20)
-        '''
-        if args.o:
-            print 'batch processing with overwrite'
-            ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True)
-        else:
-            print 'batch processing'
-            ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True, stage2=False)
-        qsub_run_script(python_script='waldo.py -tp', job_name='process', args=ex_ids, number_of_jobs=20)
-        '''
-    '''
-    if args.m:
-        print 'batch measurments'
-        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage2=True)
-        qsub_run_script(python_script='waldo.py -tm', job_name='measure', args=ex_ids, number_of_jobs=20)
-    '''
-    if args.e:
-        print 'batch export'
-        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage2=True, exported=False)
-        qsub_run_script(python_script='waldo.py -e', job_name='export', args=ex_ids, number_of_jobs=20)
+        name = '{ds}-p'.format(ds=dataset)
+        qsub_run_script(python_script='waldo.py -tp', job_name=name, args=ex_ids, number_of_jobs=20)
+
+    #if args.e:
+    #    print 'batch export'
+    #    ex_ids = choose_ex_ids(db_attribute=db_attribute, stage2=True, exported=False)
+    #    qsub_run_script(python_script='waldo.py -e', job_name='export', args=ex_ids, number_of_jobs=20)
 
 if __name__ == '__main__':
     # Toggles
@@ -210,10 +168,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prefix_chars='-',
                                      description='by default it does nothing. but you can specify if it should import, '
                                                  'processes, or aggregate your data.')
-    parser.add_argument('-i', action='store_true', help='import data')
-    parser.add_argument('-p', action='store_true', help='process data')
-    parser.add_argument('-m', action='store_true', help='measurements')
-    parser.add_argument('-e', action='store_true', help='export')
+    parser.add_argument('-w', action='store_true', help='worms')
+    parser.add_argument('-p', action='store_true', help='plates')
+    parser.add_argument('-s', action='store_true', help='datasets')
     parser.add_argument('-o', action='store_true', help='overwrite')
     main(args=parser.parse_args(), db_attribute=db_attribute)
 
