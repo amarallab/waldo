@@ -58,8 +58,10 @@ def write_h5_timeseries_base(h5_file, times, data):
 def read_h5_timeseries_base(h5_file):
     times, data = [], []    
     with h5py.File(h5_file, 'r') as f:
-        times = np.array(f['time'])
-        data = np.array(f['data'])
+        if u'time' in f.keys():
+            times = np.array(f['time'])
+        if u'data' in f.keys():
+            data = np.array(f['data'])
     return times, data
 
 '''

@@ -143,6 +143,9 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
 def write_timeseries_file(ID, data_type, times, data, 
                           ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
                           file_dir=None, **kwargs):
+    # if data not provided. write will fail. return False.
+    if len(data) == 0:
+        return False
 
     # universal file formatting
     filename = format_filename(ID=ID, 
@@ -155,6 +158,7 @@ def write_timeseries_file(ID, data_type, times, data,
         json.dump({'time':times, 'data':data}, open(filename, 'w'))
     if file_type == 'h5':        
         write_h5_timeseries_base(filename, times, data)
+    return True
 
 def get_timeseries(ID, data_type, 
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
@@ -171,7 +175,7 @@ def get_timeseries(ID, data_type,
             times, data = read_h5_timeseries_base(filename)
         # print warning if file is empty
         if len(times)==0 and len(data)==0:
-            print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
+            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
         return times, data
     return None, None
 

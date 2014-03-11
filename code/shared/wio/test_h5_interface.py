@@ -10,8 +10,8 @@ class TestH5Interface(unittest.TestCase):
         data = [2, 3, 4, 5]
         h5_file = 'test.h5'
         h5_path = 'test_A'
-        write_h5_timeseries_base1(h5_file, h5_path, times, data)
-        stimes, sdata = read_h5_timeseries_base1(h5_file, h5_path)
+        write_h5_timeseries_base(h5_file, h5_path, times, data)
+        stimes, sdata = read_h5_timeseries_base(h5_file, h5_path)
         for t1, t2 in zip(times, stimes):
             self.assertEqual(t1, t2)
         for d1, d2 in zip(data, sdata):
@@ -22,8 +22,8 @@ class TestH5Interface(unittest.TestCase):
         data = [2, 3, 4, 5]
         h5_file = 'test.h5'
         h5_path = 'A/B/C'
-        write_h5_timeseries_base1(h5_file, h5_path, times, data)
-        stimes, sdata = read_h5_timeseries_base1(h5_file, h5_path)
+        write_h5_timeseries_base(h5_file, h5_path, times, data)
+        stimes, sdata = read_h5_timeseries_base(h5_file, h5_path)
         for t1, t2 in zip(times, stimes):
             self.assertEqual(t1, t2)
         for d1, d2 in zip(data, sdata):
@@ -35,8 +35,8 @@ class TestH5Interface(unittest.TestCase):
         for i in range(5):
             times = np.arange(1.1, 1.5, 0.1)
             data = np.random.randn(4)       
-            write_h5_timeseries_base1(h5_file, h5_path, times, data)
-            stimes, sdata = read_h5_timeseries_base1(h5_file, h5_path)
+            write_h5_timeseries_base(h5_file, h5_path, times, data)
+            stimes, sdata = read_h5_timeseries_base(h5_file, h5_path)
             for t1, t2 in zip(times, stimes):
                 self.assertEqual(t1, t2)
             for d1, d2 in zip(data, sdata):
@@ -48,7 +48,7 @@ class TestH5Interface(unittest.TestCase):
         times = [1.2, 1.3, 1.4, 1.5]
         data = [2, 3, 4, 5]
         sol_times, sol_data = [], []
-        stimes, sdata = read_h5_timeseries_base1(h5_file, h5_path)
+        stimes, sdata = read_h5_timeseries_base(h5_file, h5_path)
         for t1, t2 in zip(sol_times, stimes):
             self.assertEqual(t1, t2)
         for d1, d2 in zip(sol_data, sdata):
@@ -59,10 +59,10 @@ class TestH5Interface(unittest.TestCase):
         h5_path = 'first_path'
         times = [1.2, 1.3, 1.4, 1.5]
         data = [2, 3, 4, 5]
-        write_h5_timeseries_base1(h5_file, h5_path, times, data)
+        write_h5_timeseries_base(h5_file, h5_path, times, data)
         h5_path = 'some_other_path'
         sol_times, sol_data = [], []
-        stimes, sdata = read_h5_timeseries_base1(h5_file, h5_path)
+        stimes, sdata = read_h5_timeseries_base(h5_file, h5_path)
         for t1, t2 in zip(sol_times, stimes):
             self.assertEqual(t1, t2)
         for d1, d2 in zip(sol_data, sdata):
