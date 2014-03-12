@@ -15,6 +15,7 @@ import sys
 import math
 import numpy as np
 from itertools import izip
+import scipy.stats as stats
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -26,15 +27,28 @@ sys.path.append(SHARED_DIR)
 
 from GeometricCalculations.distance import euclidean
 from wio.file_manager import get_blob_ids, get_timeseries
+from importing.flags_and_breaks import consolidate_flags
 
 # TODO? move remove flag functionality further upstream?
 def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
     ''' default option to remove flagged timepoints!'''
     times, data = get_timeseries(blob_id, data_type=data_type, **kwargs)
+
+    # make sure things don't crash
+    if type(times) == None or type(data) == None:
+        return [], []
+    if len(times) == 0 or len(data) == 0:
+        return [], []
+
     if remove_flags:
         times_f, all_flags = get_timeseries(blob_id, data_type='flags', **kwargs)
         flags = consolidate_flags(all_flags)
+        #print data_type
+        #print type(times), type(data), type(flags)
+        #print len(times), len(data), len(flags)
         unflagged_timeseries = [(t, s) for (t, s, f) in izip(times, data, flags) if f]
+        if type(unflagged_timeseries) == None or len(unflagged_timeseries) == 0:
+            return [], []
         times, data = zip(*unflagged_timeseries)
     return times, data
 
@@ -42,9 +56,14 @@ def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
 def space_basic_data_type_linearly(times, values):
     return times, values
 
+
+def quantiles_for_data(data, quantiles=range(10,91, 10)):
+    data = [d for d in data if not np.isnan(d)]
+    return [stats.scoreatpercentile(data, q) for q in quantiles]
+
 def compute_size(blob_id, **kwargs):    
     # size is a body shape property. if we've flagged the shape, don't measure size.
-    return pull_basic_data_type(blob_id, data_type='size_raw',
+    return pull_basic_data_type(blob_id, data_type='size',
                                 remove_flags=True, **kwargs)
 
 def compute_width(blob_id, **kwargs):

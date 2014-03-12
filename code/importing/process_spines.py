@@ -37,7 +37,7 @@ from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
 from import_rawdata_into_db import create_entries_from_blobs_files
 #import wio.file_manager import get_metadata, get_timeseries
-from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set
+from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set, write_plate_percentiles
 from centroid import process_centroid
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
@@ -133,6 +133,7 @@ def process_ex_id(ex_id, debug=False,**kwargs):
             break
     else:
         write_plate_timeseries_set(ex_id, blob_ids=good_blobs, **kwargs)
+        write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 
 def all_unprocessed_blob_ids(**kwargs):
     all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)

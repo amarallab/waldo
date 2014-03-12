@@ -21,15 +21,17 @@ SHARED_DIR = os.path.abspath(HERE + '/../')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from measurement_switchboard import pull_blob_data
+from measurement_switchboard import pull_blob_data, quantiles_for_data
 from wio.file_manager import write_timeseries_file, get_metadata, get_blob_ids
+from wio.file_manager import get_timeseries
+
 #from wio.export_data import write_full_plate_timeseries
 # add angle over distance
 
 STANDARD_MEASUREMENTS = ['length_mm', 'curve_w', 'cent_speed_bl']
-FULL_SET = ['length_mm', 'size_mm2', 'width_mm', 'curve_w', 'cent_speed_bl']
+FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl']
 
-def measure_all(blob_id, store_tmp=True,  measurements=STANDARD_MEASUREMENTS, **kwargs):
+def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
     """
     Arguments:
     - `blob_id`:
@@ -103,6 +105,61 @@ def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     else:
         return data_dict        
 
+def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
+    if not blob_ids:
+        blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
+    metadata = get_metadata(ID=blob_ids[0], **kwargs)    
+    dataset = metadata.get('dataset', 'none')
+    plate_dataset = {}
+    bad_blobs = []
+    for bID in blob_ids:
+        blob_data = []
+        blob_is_good = True
+        for metric in metrics:
+            times, data = pull_blob_data(bID, metric=metric)
+            if type(data) == None or len(data) == 0:
+                print bID, metric, 'not found'
+                blob_is_good = False
+                break
+            quantiles = quantiles_for_data(data)
+            if any(np.isnan(quantiles)):
+                blob_is_good = False
+                print bID, metric, 'quantiles bad'
+                break
+            blob_data += quantiles
+        if blob_is_good:
+            plate_dataset[bID] = blob_data
+        else:
+            bad_blobs.append(bID)
+
+    print len(blob_ids), 'all'
+    print len(bad_blobs), 'bad'
+            
+    ids, data = plate_dataset.keys(), plate_dataset.values()
+    write_timeseries_file(ID=ex_id,
+                          ID_type='plate',
+                          times=ids,
+                          data=data,
+                          data_type='percentiles',
+                          dset=dataset,
+                          file_tag='worm_percentiles')
+    # check to see if ids get written ok
+    '''
+    ids2, data2 = get_timeseries(ID=ex_id,
+                                 ID_type='plate',
+                                 times=ids,
+                                 data=data,
+                                 data_type='percentiles',
+                                 dset=dataset,
+                                 file_tag='worm_percentiles')                              
+
+    print ids2
+    #for i1, i2 in zip(ids, ids2):
+    #    print i1, i2
+    for d1, d2 in zip(data, data2):
+        print d1, d2
+    '''
+
 def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
     if not blob_ids:
         blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
@@ -127,12 +184,22 @@ def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASURE
                               dset=dataset,
                               file_tag='timeseries')                              
 
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         #bi = '00000000_000001_00001'
         #bi = '00000000_000001_00008'
         #measure_all(blob_id=bi)
-        write_plate_timeseries_set(ex_id='00000000_000001')
+        #write_plate_timeseries_set(ex_id='00000000_000001')
+        write_plate_percentiles(ex_id='00000000_000001', blob_ids=['00000000_000001_00001', 
+                                                                   '00000000_000001_00002', 
+                                                                   '00000000_000001_00003', 
+                                                                   '00000000_000001_00004', 
+                                                                   '00000000_000001_00005', 
+                                                                   '00000000_000001_00006', 
+                                                                   '00000000_000001_00007', 
+                                                                   '00000000_000001_00008'])
+
     else:
         ex_ids = sys.argv[1:]
         for ex_id in ex_ids[:]:

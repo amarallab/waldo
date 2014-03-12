@@ -25,12 +25,15 @@ import os
 import sys
 
 # path definitions
+# path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
-SHARED_DIR = os.path.abspath(HERE + '/../')
-sys.path.append(SHARED_DIR)
+CODE_DIR = os.path.abspath(HERE + '/../../')
+sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from wio.file_manager import ensure_dir_exists, INDEX_DIR
+#from wio.file_manager import ensure_dir_exists, INDEX_DIR
+from settings.local import LOGISTICS
+INDEX_DIR = LOGISTICS['annotation']
 
 # global default value
 class Experiment_Attribute_Index(object):
@@ -42,7 +45,7 @@ class Experiment_Attribute_Index(object):
         """
         # make sure there is a backslash at the end of the directory name
         self.dir = '{dir}/'.format(dir=index_tsv_directory.rstrip('/'))
-        ensure_dir_exists(self.dir)
+        #ensure_dir_exists(self.dir)
         self.files = glob(self.dir + '*.tsv')
         self.attribute_index = {}
         self.ex_ids = []

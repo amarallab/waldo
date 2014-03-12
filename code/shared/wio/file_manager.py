@@ -30,6 +30,7 @@ from database.mongo_retrieve import pull_data_type_for_blob, timedict_to_list, m
 from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
+from annotation.experiment_index import Experiment_Attribute_Index
     
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
@@ -81,14 +82,16 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
 
 # TODO actually get dset.
 def get_dset(ex_id):
-    return 'some_dset'
+    ei = Experiment_Attribute_Index()
+    return ei.attribute_index.get(ex_id, {}).get('dataset', 'something')
+
 
 
 def format_dirctory(ID_type, dataset, tag, ID='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
     if str(ID_type) in ['worm', 'w']:
         ex_id = '_'.join(ID.split('_')[:2])
-        file_dir = '{path}/{eID}'.format(path=worm_dir, eID=ex_id)
+        file_dir = '{path}/{eID}'.format(path=worm_dir.rstrip('/'), eID=ex_id)
 
     elif str(ID_type) in ['plate', 'p']:
         # make sure we know which dset this plate belongs too
@@ -104,6 +107,7 @@ def format_dirctory(ID_type, dataset, tag, ID='',
                                                 tag=tag.rstrip('/'))
     else:
         assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type) 
+
     return file_dir
 
 def format_filename(ID, ID_type='worm', data_type='cent_speed', 
@@ -174,7 +178,10 @@ def get_timeseries(ID, data_type,
                    file_dir=None, **kwargs):                   
     # universal file formatting
     filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,                               
+                               dset=dset, file_tag=file_tag,
                                file_type=file_type, file_dir=file_dir)
+    #print 'tag', file_tag
+    #print filename, os.path.isfile(filename)
     if os.path.isfile(filename):
         # retrval method depends on file_type
         if file_type == 'json':

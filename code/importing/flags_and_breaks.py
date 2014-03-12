@@ -177,10 +177,10 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=
     if N ==0:
         return []
     if zeros / float(N) > 0.5:
-        msg = '\t{dt} {p} % of N = {N}'
-        msg += 'points are 0.0 | flag all'.format(p=round(100*zeros/float(N),
-                                                          ndigits=2),
-                                                          dt=data_type, N=N)
+        msg = '\t{dt} {p} % of N = {N}'.format(p=round(100*zeros/float(N),
+                                                       ndigits=2),
+                                               dt=data_type, N=N)
+        msg += 'points are 0.0 | flag all'     
         print msg
         return [False] * N    
     data = [d for d in data if not np.isnan(d)]
