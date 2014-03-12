@@ -10,7 +10,7 @@ import os
 import sys
 import math
 import time
-from itertools import izip
+from itertools import izip, combinations
 from pylab import *
 import numpy as np
 
@@ -24,7 +24,7 @@ sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
 from Encoding.decode_outline import pull_smoothed_outline, decode_outline
-from GeometricCalculations import get_ortogonal_to_spine, find_intersection_points, check_point_is_inside_box
+from GeometricCalculations import get_ortogonal_to_spine, find_intersection_points, check_point_is_inside_box, calculate_area_of_box
 from ExceptionHandling.record_exceptions import write_pathological_input
 from shared.wio.file_manager import get_timeseries, write_timeseries_file
 
@@ -53,12 +53,20 @@ def compute_basic_measurements(blob_id, verbose=True, **kwargs):
             print '\tcould not compute mean and std for widths'
 
 def calculate_length_for_timepoint(spine):
+    # length = 0.0
+    # for i, a in enumerate(spine[:-1]):
+    #     x1, y1 = spine[i]
+    #     x2, y2 = spine[i + 1]
+    #     d = (math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2))
+    #     length += d
+    # return length
     length = 0.0
-    for i, a in enumerate(spine[:-1]):
-        x1, y1 = spine[i]
-        x2, y2 = spine[i + 1]
-        d = (math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2))
+    px, py = spine[0] # previous
+    for a in spine[1:]:
+        cx, cy = a # current
+        d = (math.sqrt((cx - px) ** 2 + (cy - py) ** 2))
         length += d
+        px, py = cx, cy
     return length
 
 
@@ -77,7 +85,7 @@ def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
     for spine in spines:
         l = 0
         if len(spine) > 0 and not np.isnan(spine[0][0]):
-            l =calculate_length_for_timepoint(spine)
+            l = calculate_length_for_timepoint(spine)
         lengths.append(l)
     data_type = 'length_rough'
     if store_tmp:
@@ -207,15 +215,25 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
         #print intersection_xs, intersection_ys
         return (intersection_xs[0], intersection_ys[0]), (-1, -1), False, -1
 
-    points = sorted(zip(intersection_xs, intersection_ys))
+
+    #HELTENA changes... I think now it's look better
+    # for i, a in enumerate(points):
+    #     for j, b in enumerate(points[i + 1:], start=i + 1):
+    #         condition, area = check_point_is_inside_box(q1, points[i], points[j]) # function changed!!!
+    #         if condition and area < min_area:
+    #             min_area = area
+    #             point_pair = [points[i], points[j]]
+
+    #points = sorted(zip(intersection_xs, intersection_ys)) # Why are you sorting?
+    points = zip(intersection_xs, intersection_ys)
     min_area = 1e200
     point_pair = []
-    for i, a in enumerate(points):
-        for j, b in enumerate(points[i + 1:], start=i + 1):
-            condition, area = check_point_is_inside_box(q1, points[i], points[j])
-            if condition and area < min_area:
+    for a, b in combinations(points, 2):
+        area = calculate_area_of_box(a, b)
+        if area < min_area:
+            if check_point_is_inside_box(q1, a, b):
                 min_area = area
-                point_pair = [points[i], points[j]]
+                point_pair = [a, b]
 
     if len(point_pair) == 0:
         #print 'spine outside of outline'
@@ -223,8 +241,12 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
                                  savename='%sspine_outside_outline_%s.json' % (EXCEPTION_DIR, str(time.time())))
         return -1, -1, False, -1
     else:
-        width = math.sqrt((point_pair[0][0] - point_pair[1][0]) ** 2 + (point_pair[0][1] - point_pair[1][1]) ** 2)
-        return point_pair[0], point_pair[1], True, width
+        # width = math.sqrt((point_pair[0][0] - point_pair[1][0]) ** 2 + (point_pair[0][1] - point_pair[1][1]) ** 2)
+        # return point_pair[0], point_pair[1], True, width
+        a = point_pair[0]
+        b = point_pair[1]
+        width = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+        return a, b, True, width
 
 
 if __name__ == "__main__":

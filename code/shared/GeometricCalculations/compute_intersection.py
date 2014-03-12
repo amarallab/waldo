@@ -54,38 +54,42 @@ def get_ortogonal_to_spine(spine, index):
         perpendicular line to the midpoint
     '''
     p1 = spine[index]
-    if index +1 != len(spine):
-        p2=spine[index+1]
+    if index + 1 != len(spine):
+        p2 = spine[index+1]
     else:
-        p2=spine[index-1]
+        p2 = p1
+        p1 = spine[index-1]
     # this is simplify things - although it introduces a very small error -
     # but I believe it is negligible
     p1, p2 = list(p1), list(p2)
-    if p1[0]==p2[0]:
-        p1[0]+=1e-6
+    if p1[0] == p2[0]:
+        p1[0] += 1e-6
     m= (p2[1]-p1[1])/(p2[0]-p1[0])
     #print m, 'angular coefficient'
-    if m==0:
-        m=1e-6
+    if m == 0:
+        m = 1e-6
     return -1./m, p1
     
 def find_intersection_points(q1, m, outline):
     xs, ys = [], []
-    for k, o in enumerate(outline[:-1]):
-        p1, p2 = outline[k], outline[k+1]
-        ip= intersection_point_between_lines(p1, p2, m, q1)
+    p1 = outline[0]
+    for p2 in outline[1:]:
+        ip = intersection_point_between_lines(p1, p2, m, q1)
         #acceptable_error = 1e-6
-        if  ip[0]+1e-6>=min(p1[0], p2[0]) and ip[0]-1e-6<=max(p1[0], p2[0]) and \
-            ip[1]+1e-6>=min(p1[1], p2[1]) and ip[1]-1e-6<=max(p1[1], p2[1]):
+        if  ip[0]+1e-6 >= min(p1[0], p2[0]) and ip[0]-1e-6 <= max(p1[0], p2[0]) and \
+            ip[1]+1e-6 >= min(p1[1], p2[1]) and ip[1]-1e-6 <= max(p1[1], p2[1]):
             xs.append(ip[0])
             ys.append(ip[1])
+        p1 = p2
     return xs, ys
 
+#HELTENA: this method doesn't return area. Use the next method.
 def check_point_is_inside_box(q1, p1, p2, acceptable_error=1e-6):
-    area= math.fabs((p2[1] - p1[1]) * (p2[0] - p1[0]))    
-    if (min(p1[0], p2[0])-acceptable_error) <= q1[0] <= (max(p1[0], p2[0])+acceptable_error) and \
-            (min(p1[1], p2[1]) - acceptable_error) <= q1[1] <= (max(p1[1], p2[1])+acceptable_error):
-        return True, area
-    else: return False, area
+    # area= math.fabs((p2[1] - p1[1]) * (p2[0] - p1[0]))
+    return (min(p1[0], p2[0])-acceptable_error) <= q1[0] <= (max(p1[0], p2[0])+acceptable_error) and \
+            (min(p1[1], p2[1]) - acceptable_error) <= q1[1] <= (max(p1[1], p2[1])+acceptable_error)
+
+def calculate_area_of_box(p1, p2):
+    return math.fabs((p2[1] - p1[1]) * (p2[0] - p1[0]))
 
 
