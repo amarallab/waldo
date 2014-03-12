@@ -1,1 +1,1 @@
-__all__ = ['shared']
+__author__ = 'peterwinter'
