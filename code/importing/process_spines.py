@@ -68,7 +68,7 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
         print '\tfinished smoothing spine | N: {N}'.format(N=len(smoothed_times))
     return smoothed_times, smoothed_spines
 
-def process_ex_id(ex_id, debug=False,**kwargs):
+def process_ex_id(ex_id, debug=True,**kwargs):
     '''
     processes all blobs in database from ex_id from raw data all the way to smoothspines.
     if ex_id does not have any blobs already in database, it reads the .blobs files and inserts
