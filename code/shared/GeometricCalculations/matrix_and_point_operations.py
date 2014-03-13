@@ -174,17 +174,27 @@ def calculate_branch_and_endpoints(spine_matrix):
         ''' circle point and count times pixels go from '0' to '1'.
         this gives
         '''
+        #counter = 0
+        #for i in range(1, 8):
+        #    if P[i] == 0 and P[i + 1] == 1:
+        #        counter += 1
+        #if P[8] == 0 and P[1] == 1:
+        #    counter += 1
         counter = 0
-        for i in range(1, 8):
-            if P[i] == 0 and P[i + 1] == 1:
+        prev = P[8]
+        for cur in P[1:9]:
+            if prev == 0 and cur == 1:
                 counter += 1
-        if P[8] == 0 and P[1] == 1:
-            counter += 1
+            prev = cur
         return counter
 
     # since we know no points are at edge of matrix (previous assertions) loop through all non-edge points.
-    for i, im_row in enumerate(im[1:-1], start=1):
-        for j, _ in enumerate(im_row[1:-1], start=1):
+    #for i, im_row in enumerate(im[1:-1], start=1):
+    #    for j, _ in enumerate(im_row[1:-1], start=1):
+    DIM_Y = len(im)
+    DIM_X = len(im[0])
+    for i in range(1, DIM_Y - 1):
+        for j in range(1, DIM_X - 1):
             # if the point is filled in, check neighbors
             if im[i][j] > 0:
                 P = [im[i][j],

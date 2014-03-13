@@ -18,6 +18,7 @@ import math
 import glob
 from itertools import izip
 from Encoding.decode_outline import decode_outline
+import sys
 
 # TODO. move this into the testing dir.
 def sample_function(ex_dir):
@@ -249,11 +250,17 @@ def calculate_midline_from_line(line):
         xs = [float(x) for x in cols[::2]]
         ys = [float(y) for y in cols[1::2]]
         midline = 0
-        for i in range(len(xs)-1):
-            midline += math.sqrt((ys[i] - ys[i+1])**2 + (xs[i] - xs[i+1])**2)
+        px, py = 0, 0
+        for i in range(1, len(xs)):
+            cx, cy = xs[i], ys[i]
+            midline += math.sqrt((cx - px)**2 + (cy - py)**2)
+            px, py = cx, cy
+        #for i in range(len(xs)-1):
+        #    midline += math.sqrt((ys[i] - ys[i+1])**2 + (xs[i] - xs[i+1])**2)
         return midline
     except Exception as e:
         print e
+        sys.exit(-1)
         return None
     
 def calculate_midline_from_line2(line):
