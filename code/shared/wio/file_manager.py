@@ -30,6 +30,7 @@ from database.mongo_retrieve import pull_data_type_for_blob, timedict_to_list, m
 from database.mongo_insert import insert_data_into_db, times_to_timedict
 from settings.local import LOGISTICS
 from wio.blob_reader import Blob_Reader
+from annotation.experiment_index import Experiment_Attribute_Index
     
 INDEX_DIR = LOGISTICS['annotation']
 EXPORT_PATH = LOGISTICS['export']
@@ -81,7 +82,33 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
 
 # TODO actually get dset.
 def get_dset(ex_id):
-    return 'some_dset'
+    ei = Experiment_Attribute_Index()
+    return ei.attribute_index.get(ex_id, {}).get('dataset', 'something')
+
+
+
+def format_dirctory(ID_type, dataset, tag, ID='',
+                    worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
+    if str(ID_type) in ['worm', 'w']:
+        ex_id = '_'.join(ID.split('_')[:2])
+        file_dir = '{path}/{eID}'.format(path=worm_dir.rstrip('/'), eID=ex_id)
+
+    elif str(ID_type) in ['plate', 'p']:
+        # make sure we know which dset this plate belongs too
+        if dataset == None:
+            dataset = get_dset(ex_id=ID)
+        file_dir = '{path}/{dset}/{tag}'.format(path=plate_dir.rstrip('/'),
+                                                    dset=dataset.rstrip('/'),
+                                                    tag=tag.rstrip('/'))
+
+    elif str(ID_type) in['dset', 's']:            
+        file_dir = '{path}/{dset}/{tag}'.format(path=dset_dir.rstrip('/'),
+                                                dset=ID.rstrip('/'),
+                                                tag=tag.rstrip('/'))
+    else:
+        assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type) 
+
+    return file_dir
 
 def format_filename(ID, ID_type='worm', data_type='cent_speed', 
                     file_type='json',
@@ -93,47 +120,29 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
     assert isinstance(ID, basestring), errmsg
 
     # adding the dash here allows us to gracefully ignore file_tag when not present.
-    if file_tag != '':
-        file_tag = '{ft}-'.format(ft=file_tag)
+    #if file_tag != '':
+    #    file_tag = '{ft}'.format(ft=file_tag)
 
     # if no file_directory specified, 
     #choose the standard directory to save data based on ID and ID_type
+
     if not file_dir:
-        # for worm data.
-        if str(ID_type) in ['worm', 'w']:
-            ex_id = '_'.join(ID.split('_')[:2])
-            file_dir = '{path}/{eID}'.format(path=worm_dir, eID=ex_id)
-
-        elif str(ID_type) in ['plate', 'p']:
-            # make sure we know which dset this plate belongs too
-            if dset == None:
-                dset = get_dset(ex_id=ID)
-            file_dir = '{path}/{dset}'.format(path=plate_dir.rstrip('/'),
-                                                dset=dset.rstrip('/'))
-
-        elif str(ID_type) in['dset', 's']:            
-            file_dir = '{path}/{dset}'.format(path=dset_dir.rstrip('/'),
-                                              dset=ID.rstrip('/'))
-        else:
-            assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type) 
+        file_dir = format_dirctory(ID_type, dataset=dset, tag=file_tag, ID=ID)
 
     ensure_dir_exists(file_dir)
-
     # Format the name of the file
     if str(ID_type) in ['worm', 'w']:
         return '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, 
                                               ID=ID,
                                               dt=data_type, 
                                               ft=file_type)
-
     elif str(ID_type) in ['plate', 'p']:
         # make sure we know which dset this plate belongs too
-        return '{path}/{ID}-{tag}{dt}.{ft}'.format(path=file_dir, 
-                                                   ID=ID,
-                                                   tag=file_tag,
-                                                   dt=data_type, 
-                                                   ft=file_type)
-
+        return '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, 
+                                              ID=ID,
+                                              #tag=file_tag,
+                                              dt=data_type, 
+                                              ft=file_type)
     elif str(ID_type) in['dset', 's']:
         return  '{path}/{tag}{dt}.{ft}'.format(path=file_dir,
                                                tag=file_tag,
@@ -141,27 +150,38 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
                                                ft=file_type)
     
 def write_timeseries_file(ID, data_type, times, data, 
-                          ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
+                          ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
+                          dset=None, file_tag='',
                           file_dir=None, **kwargs):
+    # if data not provided. write will fail. return False.
+    if len(data) == 0:
+        return False
 
     # universal file formatting
     filename = format_filename(ID=ID, 
                                ID_type=ID_type,
                                data_type=data_type, 
                                file_type=file_type,
+                               dset=dset, 
+                               file_tag=file_tag,
                                file_dir=file_dir)
     # save method depends on file_type
     if file_type == 'json':
         json.dump({'time':times, 'data':data}, open(filename, 'w'))
     if file_type == 'h5':        
         write_h5_timeseries_base(filename, times, data)
+    return True
 
 def get_timeseries(ID, data_type, 
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
+                   dset=None, file_tag='',
                    file_dir=None, **kwargs):                   
     # universal file formatting
     filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,                               
+                               dset=dset, file_tag=file_tag,
                                file_type=file_type, file_dir=file_dir)
+    #print 'tag', file_tag
+    #print filename, os.path.isfile(filename)
     if os.path.isfile(filename):
         # retrval method depends on file_type
         if file_type == 'json':
@@ -171,7 +191,7 @@ def get_timeseries(ID, data_type,
             times, data = read_h5_timeseries_base(filename)
         # print warning if file is empty
         if len(times)==0 and len(data)==0:
-            print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
+            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
         return times, data
     return None, None
 
@@ -203,6 +223,14 @@ def search_db_for_data(blob_id, data_type, **kwargs):
         print e
         return None
 
+def get_ex_ids_in_worms(directory=WORM_DIR):
+    search = '{path}/*'.format(path=directory.rstrip('/'))
+    ex_ids = []
+    for g in glob(search):
+        if os.path.isdir(g):
+            ex_id = g.split('/')[-1]
+            ex_ids.append(ex_id)
+    return ex_ids
 
 def get_ex_ids(query, **kwargs):
     # return a list of unique ex_id names for a query

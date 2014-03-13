@@ -37,7 +37,6 @@ from wio.file_manager import ensure_dir_exists
 from plate_utilities import get_ex_id_files,  write_dset_summary, parse_plate_timeseries_txt_file
 from plate_utilities import return_flattened_plate_timeseries, organize_plate_metadata
 
-
 ''' 
 def fit_function_plot(x, y, xfit, yfit, residuals, n, ex_id, 
                       ylabel='centroid speed (mm/s)', show=False, plot_dir=None):
