@@ -36,12 +36,12 @@ from annotation.experiment_index import Experiment_Attribute_Index
 # Globals
 TIME_SERIES_DIR = os.path.abspath(LOGISTICS['export'])
 
-def get_ex_id_files(dataset, data_type, path=None):
+def get_ex_id_files(dataset, data_type, tag='timeseries', path=None):
     if not path:
         path = format_dirctory(ID_type='plate',
                                dataset=dataset,
                                data_type=data_type,
-                               tag='timeseries')
+                               tag=tag)
         print path
     #search = '{path}/{ds}/{dt}/*'.format(path=path.rstrip('/'),
     #                                     ds=dataset, dt=data_type)

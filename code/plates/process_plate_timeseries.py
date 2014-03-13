@@ -33,7 +33,6 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from exponential_fitting import fit_exponential_decay_robustly, rebin_data, exponential_decay, fit_constrained_decay_in_range
-from wio.file_manager import ensure_dir_exists
 from plate_utilities import get_ex_id_files,  write_dset_summary, parse_plate_timeseries_txt_file
 from plate_utilities import return_flattened_plate_timeseries, organize_plate_metadata
 
