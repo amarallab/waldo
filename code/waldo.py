@@ -26,9 +26,6 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-#from worms.measurement_suite import measure_all_for_ex_id
-#from wio.export_data import write_full_plate_timeseries
-#from importing.measurement_suite import
 from wio.file_manager import ensure_dir_exists
 from importing.process_spines import process_ex_id
 import database.mongo_support_functions as mongo
@@ -40,10 +37,6 @@ PROFILE_DIR = PROJECT_DIR + '/data/diagnostics/profileing'
 MONGO_SETTINGS = {'ip':MONGO['ip'], 'port':MONGO['port'],
                   'database_name':MONGO['database'],
                   'collection_name':MONGO['blobs']}
-
-# MONGO_SETTINGS = {'ip':MONGO['ip'], 'port':MONGO['port'],
-#                        'database_name':MONGO['database'],
-#                        'collection_name':MONGO['blobs']}
 
 def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR, no_mongo=True,
                             profile_dir=PROFILE_DIR):
@@ -122,9 +115,7 @@ def main(args):
     if args.p:
         run_function_for_ex_ids(f=process_ex_id, name='plate', ex_ids=args.ex_ids)
     if args.s:
-        # TODO, nonfunctional
-        pass    
-        #run_function_for_ex_ids(f=process_ex_id, name='dataset', ex_ids=args.ex_ids)
+        run_function_for_ex_ids(f=process_ex_id, name='dataset', ex_ids=args.ex_ids)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prefix_chars='-',

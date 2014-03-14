@@ -38,16 +38,21 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
 
     qsub_directory = LOGISTICS['qsub_directory']
     ensure_dir_exists(qsub_directory)
+
+    # if there are more jobs than recordings. reduce the number of jobs.
+    if len(ex_ids) < number_of_jobs:
+        number_of_jobs = len(ex_ids)
+    
     for job_num in range(number_of_jobs):
         cmd = 'python {dir}/{py} {args}'.format(dir=CODE_DIR, py=python_script, args=args)
         for i, ex_id in enumerate(ex_ids):
             if i%number_of_jobs == job_num:
                 cmd += ' ' + str(ex_id)
+                
         job_id = job_name + '_' + str(job_num)
         qsub_filename = qsub_directory + job_id + '.sh'
         print qsub_filename
         print cmd
-        #write_sub_file(filename=qsub_filename, job_id=job_id, qsub_out_dir=qsub_directory, command_line=cmd)
         with open(qsub_filename, "w") as f:
             f.write("#! /bin/bash\n")
             f.write("#PBS -d .\n")
@@ -120,10 +125,8 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
         print '{N} ex_ids have available blob files. {Y} considered further.'.format(N=len(ex_ids_with_blobfiles),
                                                                                      Y=len(target_ex_ids))
 
-    # Check whether or not ex_ids are already in database and modify list of target ex_ids
+    # remove ex_ids from target ex_ids if already processed
     if stage1 is not None:
-        #ex_ids_in_db = set([ex_id for ex_id in target_ex_ids
-        #                    if mongo_query({'ex_id': ex_id}, {'ex_id':1}, find_one=True, **kwargs)])
         plates_with_worms = set(get_ex_ids_in_worms())
         if stage1:
             target_ex_ids = target_ex_ids & plates_with_worms
@@ -142,23 +145,32 @@ def main(args, db_attribute):
     :param args: arguments from command line.
     :param db_attribute: tuple to toggle behavior of script.
     """
-
+   
     new_args = '-c %s' % args.c if args.c is not None else ''
     dataset = str(db_attribute[1])
+
+    # initiallize recording selection to have no criterion.
+    blobfiles, stage1, stage2 =None, None, None
     if args.w:
-        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
+        # if not overwrite: do not process recordings with data present
+        if not args.o:
+            stage1 = False
+        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
-        qsub_run_script(python_script='waldo.py -tw', job_name=name, args=new_args, ex_ids=ex_ids, number_of_jobs=20)
+        qsub_run_script(python_script='waldo.py -tw', job_name=name,
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=50)
     if args.p:
-        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
+        ex_ids = choose_ex_ids(db_attribute=db_attribute)
         name = '{ds}-p'.format(ds=dataset)
-        qsub_run_script(python_script='waldo.py -tp', job_name=name, args=new_args, ex_ids=ex_ids, number_of_jobs=20)
-
-    #if args.e:
-    #    print 'batch export'
-    #    ex_ids = choose_ex_ids(db_attribute=db_attribute, stage2=True, exported=False)
-    #    qsub_run_script(python_script='waldo.py -e', job_name='export', args=ex_ids, number_of_jobs=20)
-
+        qsub_run_script(python_script='waldo.py -tp', job_name=name,
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=50)
+    if args.s:
+        ex_ids = choose_ex_ids(db_attribute=db_attribute)
+        name = '{ds}-s'.format(ds=dataset)
+        qsub_run_script(python_script='waldo.py -ts', job_name=name,
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=1)
+        
+        
 if __name__ == '__main__':
     # Toggles
     #db_attribute = ('dataset', 'N2_aging')

@@ -29,14 +29,10 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS
-from wio.file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, format_filename, format_dirctory, get_timeseries
+from file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, format_filename, format_dirctory, get_timeseries
 from annotation.experiment_index import Experiment_Attribute_Index
 
-# Globals
-TIME_SERIES_DIR = os.path.abspath(LOGISTICS['export'])
-
-def get_ex_id_files(dataset, data_type, tag='timeseries', path=None):
+def get_plate_files(dataset, data_type, tag='timeseries', path=None):
     if not path:
         path = format_dirctory(ID_type='plate',
                                dataset=dataset,
@@ -144,7 +140,6 @@ def organize_plate_metadata(ex_id):
         t0 = ex_id_to_datetime(plating_time)
         t1 = ex_id_to_datetime(recording_time) 
         hours = (t1 - t0).total_seconds()/3600.
-
     #age = '{et} - {pt}'.format(et=recording_time, pt=plating_time)
     #for i in m:
     #    print i
@@ -168,7 +163,6 @@ def return_flattened_plate_timeseries(dfile):
     if N_wo_nan != N_wo_nan:
         print '{N} nans removed'.format(N=N_w_nan-N_wo_nan)
     return flat_data
-
 
 if __name__ == '__main__':
     dataset = 'disease_models'
