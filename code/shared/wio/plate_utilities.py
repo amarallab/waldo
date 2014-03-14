@@ -36,9 +36,7 @@ def get_plate_files(dataset, data_type, tag='timeseries', path=None):
     if not path:
         path = format_dirctory(ID_type='plate',
                                dataset=dataset,
-                               data_type=data_type,
                                tag=tag)
-        print path
     #search = '{path}/{ds}/{dt}/*'.format(path=path.rstrip('/'),
     #                                     ds=dataset, dt=data_type)
     search = '{path}/*'.format(path=path.rstrip('/'))
@@ -101,13 +99,13 @@ def read_plate_summary(sum_type, dataset, data_type, path=None):
         return json.load(open(filename, 'r'))
     return None
 
-def read_plate_timeseries(ex_id, dataset, tag='timeseries'):
+def read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries'):
     times, data = get_timeseries(ID=ex_id, 
-                                 ID_type='p',                                  
-                                 data_type, 
+                                 data_type=data_type,
+                                 ID_type='p',                                   
                                  dset=dataset,
                                  file_tag=tag)
-    print len(times), len(data)
+    #print len(times), len(data)
     return times, data
 
 '''

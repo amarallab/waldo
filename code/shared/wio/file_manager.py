@@ -87,7 +87,7 @@ def get_dset(ex_id):
 
 
 
-def format_dirctory(ID_type, dataset, tag, ID='',
+def format_dirctory(ID_type, dataset='', tag='', ID='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
     if str(ID_type) in ['worm', 'w']:
         ex_id = '_'.join(ID.split('_')[:2])
@@ -101,7 +101,7 @@ def format_dirctory(ID_type, dataset, tag, ID='',
                                                     dset=dataset.rstrip('/'),
                                                     tag=tag.rstrip('/'))
 
-    elif str(ID_type) in['dset', 's']:            
+    elif str(ID_type) in['dataset', 'dset', 's']:
         file_dir = '{path}/{dset}/{tag}'.format(path=dset_dir.rstrip('/'),
                                                 dset=ID.rstrip('/'),
                                                 tag=tag.rstrip('/'))
