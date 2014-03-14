@@ -51,14 +51,30 @@ def get_combined_worm_percentiles(dataset):
         else:
             all_blob_ids += list(blob_ids)
             all_percentiles = np.concatenate((all_percentiles, percentiles))
-
         #print len(all_blob_ids), all_percentiles.shape
+
+    nan_count = 0
+    data_types = []
+    for i, row in enumerate(all_percentiles):
+        for i in row:
+            data_types.append(type(i))
+            if np.isnan(i):
+                nan_count += 1
+                print 'nan in row:', i
+
+    print 'total NaNs found:', nan_count
+    print 'types found:', list(set(data_types))
     return all_blob_ids, all_percentiles
 
 def write_combined_percentile_file(blob_ids, percentiles, savename='test.csv'):
     pf = pd.DataFrame(percentiles, index=blob_ids)
     print savename
     pf.to_csv(savename)
+
+def create_full_blob_index(blob_ids):
+    ex_id_data = {}
+    for blob_id in blob_ids:
+        pass
     
 def combine_worm_percentiles(dataset):
     blob_ids, percentiles = get_combined_worm_percentiles(dataset)
