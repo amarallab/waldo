@@ -1,4 +1,5 @@
 import math
+import sys
 
 def intersection_point_between_lines(p1, p2, m, q1):
     '''
@@ -71,23 +72,36 @@ def get_ortogonal_to_spine(spine, index):
     return -1./m, p1
     
 def find_intersection_points(q1, m, outline):
-    xs, ys = [], []
-    p1 = outline[0]
-    for p2 in outline[1:]:
-        ip = intersection_point_between_lines(p1, p2, m, q1)
-        #acceptable_error = 1e-6
-        if  ip[0]+1e-6 >= min(p1[0], p2[0]) and ip[0]-1e-6 <= max(p1[0], p2[0]) and \
-            ip[1]+1e-6 >= min(p1[1], p2[1]) and ip[1]-1e-6 <= max(p1[1], p2[1]):
-            xs.append(ip[0])
-            ys.append(ip[1])
-        p1 = p2
+    try:
+        xs, ys = [], []
+        p1 = outline[0]
+        for p2 in outline[1:]:
+            ip = intersection_point_between_lines(p1, p2, m, q1)
+            #acceptable_error = 1e-6
+            minx, maxx = (p1[0] - 1e-6, p2[0] + 1e-6) if p1[0] < p2[0] else (p2[0] - 1e-6, p1[0] + 1e-6)
+            miny, maxy = (p1[1] - 1e-6, p2[1] + 1e-6) if p1[1] < p2[1] else (p2[1] - 1e-6, p1[1] + 1e-6)
+            if minx <= ip[0] <= maxx and miny <= ip[1] <= maxy:
+                xs.append(ip[0])
+                ys.append(ip[1])
+
+            #if  ip[0]+1e-6 >= min(p1[0], p2[0]) and ip[0]-1e-6 <= max(p1[0], p2[0]) and \
+            #    ip[1]+1e-6 >= min(p1[1], p2[1]) and ip[1]-1e-6 <= max(p1[1], p2[1]):
+            #    xs.append(ip[0])
+            #    ys.append(ip[1])
+            p1 = p2
+    except Exception, e:
+        print "HELTENA: ", e.message
+        sys.exit(-1)
     return xs, ys
 
 #HELTENA: this method doesn't return area. Use the next method.
 def check_point_is_inside_box(q1, p1, p2, acceptable_error=1e-6):
     # area= math.fabs((p2[1] - p1[1]) * (p2[0] - p1[0]))
-    return (min(p1[0], p2[0])-acceptable_error) <= q1[0] <= (max(p1[0], p2[0])+acceptable_error) and \
-            (min(p1[1], p2[1]) - acceptable_error) <= q1[1] <= (max(p1[1], p2[1])+acceptable_error)
+    minx, maxx = (p1[0] - acceptable_error, p2[0] + acceptable_error) if p1[0] < p2[0] else (p2[0] - acceptable_error, p1[0] + acceptable_error)
+    miny, maxy = (p1[1] - acceptable_error, p2[1] + acceptable_error) if p1[1] < p2[1] else (p2[1] - acceptable_error, p1[1] + acceptable_error)
+    return minx <= q1[0] <= maxx and miny <= q1[1] <= maxy
+    #return (min(p1[0], p2[0])-acceptable_error) <= q1[0] <= (max(p1[0], p2[0])+acceptable_error) and \
+    #        (min(p1[1], p2[1]) - acceptable_error) <= q1[1] <= (max(p1[1], p2[1])+acceptable_error)
 
 def calculate_area_of_box(p1, p2):
     return math.fabs((p2[1] - p1[1]) * (p2[0] - p1[0]))

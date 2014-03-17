@@ -177,76 +177,154 @@ def show_worm_video(spine_timedict, outline_timedict):
         clf()
 '''
 
+def point_and_distance_intersect_line2_line2(Apx, Apy, Avx, Avy, Bpx, Bpy, Bvx, Bvy):
+    d = Bvy * Avx - Bvx * Avy
+    if d == 0:
+        return None # paralels...
+
+    dy = Apy - Bpy
+    dx = Apx - Bpx
+    ua = (Bvx * dy - Bvy * dx) / d
+
+    px, py = Apx + ua * Avx, Apy + ua * Avy
+    return px, py, ua   # if Av is normalized, ua is the distance and orientation!
+
 
 def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
-    '''
-        spine and ouline are list of [x,y]
-        index_along_spine is len(spine)/2 for the midpoint
-        returns:
-
-        (x1,y1) and (x2,y2) of the intersection points
-        True if everything is ok
-        width
-
-        if flag is False, function returns
-        (-1,-1), (-1,-1), False, -1
-    '''
-
     if index_along_spine == -1:
         index_along_spine = len(spine) / 2
 
+    s1 = spine[index_along_spine]
+    if index_along_spine + 1 != len(spine):
+        s2 = spine[index_along_spine+1]
+    else:
+        s2 = s1
+        s1 = spine[index_along_spine-1]
+
+    if np.array_equal(s1, s2):
+        s2[0] += 1e-6
+
+    s1x, s1y = s1[0], s1[1]
+    s2x, s2y = s2[0], s2[1]
+    mx, my = (s1x + s2x) * 0.5, (s1y + s2y) * 0.5
+    nx, ny = s2x - s1x, s2y - s1y
+    l = math.sqrt(nx**2 + ny**2)
+    # normalize and cross
+    nx, ny = ny / l, - nx / l
+
+    inter = set()
     outline.append(list(outline[0]))
-    orthogonal_m, q1 = get_ortogonal_to_spine(spine, index_along_spine)
+    p1x, p1y = outline[0][0], outline[0][1]
+    for cur in outline[1:]:
+        p2x, p2y = cur[0], cur[1]
+        if p1x != p2x and p1y != p2y:
+            lnx, lny = p2x - p1x, p2y - p1y
+            ipx, ipy, distance = point_and_distance_intersect_line2_line2(mx, my, nx, ny, p1x, p1y, lnx, lny)
+            if distance is not None:
+                minx, maxx = (p1x, p2x) if p1x < p2x else (p2x, p1x)
+                miny, maxy = (p1y, p2y) if p1y < p2y else (p2y, p1y)
+                if ipx+0.5 >= minx and ipx-0.5 <= maxx and \
+                   ipy+0.5 >= miny and ipy-0.5 <= maxy:
+                    inter.add((ipx, ipy, distance))
+            p1x, p1y = p2x, p2y
 
-    intersection_xs, intersection_ys = find_intersection_points(q1, orthogonal_m, outline)
-
-    if len(intersection_xs) == 0:
-        #print 'intersection points are zero!'
-        write_pathological_input((spine, outline), input_type='spine/outline', 
-                                 note='no intersection points',
-                                 savename='%sno_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
+    if len(inter) < 2:
         return (-1, -1), (-1, -1), False, -1
 
-    if len(intersection_xs) % 2 != 0:
-        #print 'intersection points are odd', len(intersection_xs)
-        write_pathological_input((spine, outline), input_type='spine/outline', 
-                                 note='num intersection points odd',
-                                 savename='%sodd_num_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
-        #print intersection_xs, intersection_ys
-        return (intersection_xs[0], intersection_ys[0]), (-1, -1), False, -1
+    less = []
+    more = []
+    for x, y, d in inter:
+        if d < 0:
+            less.append((x, y, -d))
+        else:
+            more.append((x, y, d))
 
+    less = sorted(list(less), key=lambda x: x[2])
+    more = sorted(list(more), key=lambda x: x[2])
 
-    #HELTENA changes... I think now it's look better
-    # for i, a in enumerate(points):
-    #     for j, b in enumerate(points[i + 1:], start=i + 1):
-    #         condition, area = check_point_is_inside_box(q1, points[i], points[j]) # function changed!!!
-    #         if condition and area < min_area:
-    #             min_area = area
-    #             point_pair = [points[i], points[j]]
-
-    #points = sorted(zip(intersection_xs, intersection_ys)) # Why are you sorting?
-    points = zip(intersection_xs, intersection_ys)
-    min_area = 1e200
-    point_pair = []
-    for a, b in combinations(points, 2):
-        area = calculate_area_of_box(a, b)
-        if area < min_area:
-            if check_point_is_inside_box(q1, a, b):
-                min_area = area
-                point_pair = [a, b]
-
-    if len(point_pair) == 0:
-        #print 'spine outside of outline'
-        write_pathological_input((spine, outline), input_type='spine/outline', note='spine outside outline',
-                                 savename='%sspine_outside_outline_%s.json' % (EXCEPTION_DIR, str(time.time())))
-        return -1, -1, False, -1
+    if len(less) < 1:
+        a = more[0]
+        b = more[1]
+    elif len(more) < 1:
+        a = less[0]
+        b = less[1]
     else:
-        # width = math.sqrt((point_pair[0][0] - point_pair[1][0]) ** 2 + (point_pair[0][1] - point_pair[1][1]) ** 2)
-        # return point_pair[0], point_pair[1], True, width
-        a = point_pair[0]
-        b = point_pair[1]
-        width = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-        return a, b, True, width
+        a = less[0]
+        b = more[0]
+
+    l = math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2)
+    return (a[0], a[1]), (b[0], b[1]), True, l
+
+
+# def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
+#     '''
+#         spine and ouline are list of [x,y]
+#         index_along_spine is len(spine)/2 for the midpoint
+#         returns:
+#
+#         (x1,y1) and (x2,y2) of the intersection points
+#         True if everything is ok
+#         width
+#
+#         if flag is False, function returns
+#         (-1,-1), (-1,-1), False, -1
+#     '''
+#
+#     if index_along_spine == -1:
+#         index_along_spine = len(spine) / 2
+#
+#     outline.append(list(outline[0]))
+#     orthogonal_m, q1 = get_ortogonal_to_spine(spine, index_along_spine)
+#
+#     intersection_xs, intersection_ys = find_intersection_points(q1, orthogonal_m, outline)
+#
+#     if len(intersection_xs) == 0:
+#         #print 'intersection points are zero!'
+#         write_pathological_input((spine, outline), input_type='spine/outline',
+#                                  note='no intersection points',
+#                                  savename='%sno_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
+#         return (-1, -1), (-1, -1), False, -1
+#
+#     # if len(intersection_xs) % 2 != 0:
+#     #     #print 'intersection points are odd', len(intersection_xs)
+#     #     write_pathological_input((spine, outline), input_type='spine/outline',
+#     #                              note='num intersection points odd',
+#     #                              savename='%sodd_num_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
+#     #     #print intersection_xs, intersection_ys
+#     #     return (intersection_xs[0], intersection_ys[0]), (-1, -1), False, -1
+#
+#
+#     #HELTENA changes... I think now it's look better
+#     # for i, a in enumerate(points):
+#     #     for j, b in enumerate(points[i + 1:], start=i + 1):
+#     #         condition, area = check_point_is_inside_box(q1, points[i], points[j]) # function changed!!!
+#     #         if condition and area < min_area:
+#     #             min_area = area
+#     #             point_pair = [points[i], points[j]]
+#
+#     #points = sorted(zip(intersection_xs, intersection_ys)) # Why are you sorting?
+#     points = zip(intersection_xs, intersection_ys)
+#     min_area = 1e200
+#     point_pair = []
+#     for a, b in combinations(points, 2):
+#         area = calculate_area_of_box(a, b)
+#         if area < min_area:
+#             if check_point_is_inside_box(q1, a, b):
+#                 min_area = area
+#                 point_pair = [a, b]
+#
+#     if len(point_pair) == 0:
+#         #print 'spine outside of outline'
+#         write_pathological_input((spine, outline), input_type='spine/outline', note='spine outside outline',
+#                                  savename='%sspine_outside_outline_%s.json' % (EXCEPTION_DIR, str(time.time())))
+#         return -1, -1, False, -1
+#     else:
+#         # width = math.sqrt((point_pair[0][0] - point_pair[1][0]) ** 2 + (point_pair[0][1] - point_pair[1][1]) ** 2)
+#         # return point_pair[0], point_pair[1], True, width
+#         a = point_pair[0]
+#         b = point_pair[1]
+#         width = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+#         return a, b, True, width
 
 
 if __name__ == "__main__":
