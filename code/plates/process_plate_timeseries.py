@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Filename: fit_plate_timeseries.py
+Filename: process_plate_timeseries.py
 Description:
 Pull one type of data out of database, and save it in jsons organized by ex_id.
 data pulled is broken into 15 minute segments. within each 15min segment data is pulled either
@@ -14,13 +14,9 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-import datetime
 from itertools import izip
 import numpy as np
 import matplotlib.pyplot as plt
-import random
-import json
-import glob
 import scipy.stats as stats
 
 # Path definitions
