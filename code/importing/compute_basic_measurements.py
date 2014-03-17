@@ -177,17 +177,24 @@ def show_worm_video(spine_timedict, outline_timedict):
         clf()
 '''
 
+# Ap[xy] point of the first line
+# Av[xy] vector director of the first line
+# Bp[xy] point of the second line
+# Bv[xy] vector director of the second line
 def point_and_distance_intersect_line2_line2(Apx, Apy, Avx, Avy, Bpx, Bpy, Bvx, Bvy):
+    # cross product for guess the angle between lines
     d = Bvy * Avx - Bvx * Avy
     if d == 0:
         return None # paralels...
 
+    # Calculate intersection
     dy = Apy - Bpy
     dx = Apx - Bpx
     ua = (Bvx * dy - Bvy * dx) / d
 
     px, py = Apx + ua * Avx, Apy + ua * Avy
     return px, py, ua   # if Av is normalized, ua is the distance and orientation!
+                        # intersection is Ap + ua * Av, so if ua > 0, the intersection is "up", else is "down"
 
 
 def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
@@ -204,6 +211,12 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
     if np.array_equal(s1, s2):
         s2[0] += 1e-6
 
+    # s1[xy] left middle spine point
+    # s2[xy] right middle spine point
+    # m[xy] middle point (between s1 and s2)
+    # n[xy] vector director of the test line, perpendicular to s1-s2, and normalized
+    # cross(vector) = cross(vx, vy) = (vy, -vx)
+
     s1x, s1y = s1[0], s1[1]
     s2x, s2y = s2[0], s2[1]
     mx, my = (s1x + s2x) * 0.5, (s1y + s2y) * 0.5
@@ -218,7 +231,11 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
     for cur in outline[1:]:
         p2x, p2y = cur[0], cur[1]
         if p1x != p2x and p1y != p2y:
+            # p1[xy] left point of the current outline segment
+            # p2[xy] right point of the current outline segment
             lnx, lny = p2x - p1x, p2y - p1y
+
+            # ip[xy] intersection point between perpendicular line (s1-s2) and p1-p2 line
             ipx, ipy, distance = point_and_distance_intersect_line2_line2(mx, my, nx, ny, p1x, p1y, lnx, lny)
             if distance is not None:
                 minx, maxx = (p1x, p2x) if p1x < p2x else (p2x, p1x)
@@ -239,9 +256,11 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
         else:
             more.append((x, y, d))
 
+    # sort by distance
     less = sorted(list(less), key=lambda x: x[2])
     more = sorted(list(more), key=lambda x: x[2])
 
+    # We can have problems with ua (is if 0?)
     if len(less) < 1:
         a = more[0]
         b = more[1]
@@ -252,7 +271,7 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
         a = less[0]
         b = more[0]
 
-    l = math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2)
+    l = math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2)  # distance between points
     return (a[0], a[1]), (b[0], b[1]), True, l
 
 
