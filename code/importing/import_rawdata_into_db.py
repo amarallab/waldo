@@ -35,13 +35,85 @@ from settings.local import LOGISTICS, FILTER
 
 from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
+from joining.tapeworm import Taper
 from wio.file_manager import write_timeseries_file, write_metadata_file
 
 DATA_DIR = LOGISTICS['filesystem_data']
+USE_TAPEWORM = True
 
 def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
                                     max_blob_files=10000,
                                     data_dir=DATA_DIR, store_tmp=True, **kwargs):
+    if USE_TAPEWORM:
+        return tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
+                                  max_blob_files,
+                                  data_dir=DATA_DIR, store_tmp=True)
+    else:
+        return blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
+                                    max_blob_files,
+                                    data_dir=DATA_DIR, store_tmp=True)
+        
+def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
+                         max_blob_files=10000,
+                         data_dir=DATA_DIR, store_tmp=True, **kwargs):
+    ''' creates a list of database documents out of all worthy blobs for a particular recording.
+
+    :param ex_id: the experiment index of the recording
+    :param min_body_lengths: the minimum number of body lengths a 'worthy' blob must travel in order to be stored.
+    :param min_duration: the minimum number of seconds a 'worthy' blob must be tracked in order to be stored.
+    :param min_size: the minimum number of pixels a 'worthy' blob must contain. (median pixels across all times)
+    :param max_blob_files: if experiment contains more than this number, it is skipped to avoid deadlock
+    '''
+    # check if inputs are correct types and data directory exists
+    assert type(min_body_lengths) in [int, float]
+    assert type(min_body_lengths) in [int, float]
+    assert type(min_duration) in [int, float]
+    assert type(min_size) in [int, float]
+    assert len(ex_id.split('_')) == 2
+    path = data_dir + ex_id
+    assert os.path.isdir(path)
+
+
+    blob_files = sorted(glob(path+'/*.blobs'))    
+    assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
+    
+    TW = Taper(directory=path, min_move=min_body_lengths,
+               min_time=min_duration)    
+    TW.load_data()
+    TW.find_candidates()
+    TW.score_candidates()
+    TW.judge_candidates()
+    raw_blobs = list(TW.yield_candidates())
+
+    print len(raw_blobs), 'blobs found worthy'
+    
+    metadata_docs = create_metadata_docs(ex_id=ex_id, raw_blobs=raw_blobs)    
+
+    if store_tmp:
+        for local_id, blob in raw_blobs.iteritems():
+            metadata = metadata_docs[local_id]
+            blob_id = metadata['blob_id']
+            #print blob_id            
+            write_metadata_file(data=metadata, ID=blob_id, data_type='metadata')
+            write_timeseries_file(ID=blob_id, data_type='xy_raw',
+                                  times=blob['time'], data=blob['xy'])
+
+            write_timeseries_file(ID=blob_id, data_type='encoded_outline',
+                                  times=blob['time'], data=outlines)
+            #write_timeseries_file(ID=blob_id, data_type='encoded_outline',
+            #                      times=blob['time'], data=blob['outline'])
+            write_timeseries_file(ID=blob_id, data_type='aspect_ratio',
+                                  times=blob['time'], data=blob['aspect_ratio'])
+
+    # return a list of blob_ids
+    blob_ids = [m['blob_id'] for m in metadata_docs.values()]
+    return blob_ids
+
+
+
+def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
+                         max_blob_files=10000,
+                         data_dir=DATA_DIR, store_tmp=True, **kwargs):
     ''' creates a list of database documents out of all worthy blobs for a particular recording.
 
     :param ex_id: the experiment index of the recording

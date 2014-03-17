@@ -31,7 +31,7 @@ SHARED_DIR = CODE_DIR + '/shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-from wio.plate_utilities import get_plate_files, read_plate_timeseries
+from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata
 from wio.file_manager import format_dirctory, ensure_dir_exists
 
 def get_combined_worm_percentiles(dataset):
@@ -75,7 +75,7 @@ def create_full_worm_index(blob_ids):
     ex_id_data, worm_rows = {}, []    
     for blob_id in blob_ids:
         ex_id = '_'.join(blob_id.split('_')[:2])
-        print ex_id
+        #print ex_id
         if ex_id not in ex_id_data:
             ex_id_data[ex_id] = organize_plate_metadata(ex_id)
         worm_rows.append(ex_id_data[ex_id])
@@ -101,6 +101,8 @@ def combine_worm_percentiles(dataset):
     
 if __name__ == '__main__':
     dataset = 'disease_models'
+    dataset = 'thermo_recovery'
+    #dataset = 'copas_TJ3001_lifespan'
     blob_ids = combine_worm_percentiles(dataset)
 
     
