@@ -17,6 +17,7 @@ import argparse
 import time
 import json
 import cProfile as profile
+import logging
 
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -70,6 +71,7 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR, no_mongo=Tru
                 json.dump(time_storage, open(time_file, 'w'))
             except Exception as e:
                 print 'Error with {name} at time {t}\n{err}'.format(name=name, t=time.clock(), err=e)
+                logging.exception("HELTENA")
         return True
 
     # if mongo is being used... run this version.

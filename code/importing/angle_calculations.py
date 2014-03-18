@@ -12,12 +12,14 @@ __status__ = 'prototype'
 import numpy as np
 import math
 
+rad_to_deg_factor = 180.0 / np.pi
+
 def angle_change_for_xy(x, y, allow_negatives=True):
     vectors = np.array(zip(np.diff(x), np.diff(y)))
     unit_vectors = [v / np.linalg.norm(v) for v in vectors]    
-    angles = []        
+    angles = []
     for v1, v2 in zip(unit_vectors[:-1], unit_vectors[1:]):
-        angle = np.arccos(np.dot(v1, v2)) * 180.0 / np.pi
+        angle = np.arccos(np.dot(v1, v2)) * rad_to_deg_factor
         # if allow negatives, see if direction of 3d cross product + or -
         if allow_negatives:
             # make sure vectors are 3D
@@ -38,14 +40,14 @@ def angle_change_for_xy(x, y, allow_negatives=True):
 
 def angle_change_for_xy2(x, y):
     dx, dy =np.diff(x), np.diff(y)
-    angles = np.arctan2(dy, dx) * 180 / np.pi
+    angles = np.arctan2(dy, dx) * rad_to_deg_factor
     print angles
     print 'done'
     #unit_vectors = [v / np.linalg.norm(v) for v in vectors]
     '''
     angles = []
     for v1, v2 in zip(unit_vectors[:-1], unit_vectors[1:]):
-        angle = np.arccos(np.dot(v1, v2)) * 180.0 / np.pi
+        angle = np.arccos(np.dot(v1, v2)) * rad_to_deg_factor
         print v1, v2, angle, np.cross(v1, v2)
         #if np.dot(v1, v2) < 0.0:
         #    angle = -1 * angle

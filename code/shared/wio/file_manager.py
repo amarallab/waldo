@@ -15,6 +15,7 @@ import os
 import sys
 import json
 from glob import glob
+import datetime
 #from itertools import izip
  
 # path definitions
@@ -33,13 +34,14 @@ from wio.blob_reader import Blob_Reader
 from annotation.experiment_index import Experiment_Attribute_Index
     
 INDEX_DIR = LOGISTICS['annotation']
+RESULT_DIR = os.path.abspath(LOGISTICS['results'])
 EXPORT_PATH = LOGISTICS['export']
 
 WORM_DIR = PROJECT_HOME + '/data/worms/'
-#WORM_DIR = PROJECT_HOME + '/data/processing/'
 PLATE_DIR = PROJECT_HOME + '/data/plates/'
 DSET_DIR = PROJECT_HOME + '/data/dsets/'
-#H5_DIR = PROJECT_HOME + '/data/worms/h5/'
+
+
 TIME_SERIES_FILE_TYPE = 'json'
 USE_JSON = False
 
@@ -86,7 +88,6 @@ def get_dset(ex_id):
     return ei.attribute_index.get(ex_id, {}).get('dataset', 'something')
 
 
-
 def format_dirctory(ID_type, dataset='', tag='', ID='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
     if str(ID_type) in ['worm', 'w']:
@@ -110,6 +111,50 @@ def format_dirctory(ID_type, dataset='', tag='', ID='',
 
     return file_dir
 
+def format_results_filename(ID, result_type, tag=None,
+                            dset=None, ID_type='dset',
+                            date_stamp=None,
+                            file_type='png',
+                            file_dir = RESULT_DIR,
+                            ensure=False):
+    # get fields in order before file creation
+    if date_stamp == None:
+        date_stamp = datetime.date.today()
+
+    # standardize ID_type to a few options: worm, plate, dset, unkown
+    ID_type = str(ID_type)
+    if ID_type in ['dataset', 'dset', 's']:
+        ID_type = 'dset'
+        if dset == None:
+            dset = ID        
+    elif ID_type in ['plate', 'plates', 'p']:
+        ID_type = 'plate'
+    elif ID_type in ['worm', 'worms', 'w']:
+        ID_type = 'worm'
+    else:
+        ID_type = 'unknown'
+        print 'warning: ID_type is unknown'
+
+    if dset == None:
+        dset = 'unknown'
+        print 'warning: data set is unknown'
+
+    if tag == None:
+        tag = ''
+    else:
+        tag = '-{t}'.format(t=tag)
+
+
+    p = map(str, [file_dir, dset, ID_type, date_stamp])
+    p = [i.rstrip('/') for i in p]
+    save_dir = '{path}/{dset}/{dtype}-{date}/'.format(path=p[0], dset=p[1], dtype=p[2], date=p[3]) 
+    if ensure:
+        ensure_dir_exists(save_dir)
+    filename = '{path}{ID}{tag}.{ft}'.format(path=save_dir, ID=ID, tag=tag, ft=file_type)
+    return filename
+
+
+
 def format_filename(ID, ID_type='worm', data_type='cent_speed', 
                     file_type='json',
                     file_dir = None,
@@ -118,13 +163,6 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
 
     errmsg = 'id must be string, not {i}'.format(i=ID)
     assert isinstance(ID, basestring), errmsg
-
-    # adding the dash here allows us to gracefully ignore file_tag when not present.
-    #if file_tag != '':
-    #    file_tag = '{ft}'.format(ft=file_tag)
-
-    # if no file_directory specified, 
-    #choose the standard directory to save data based on ID and ID_type
 
     if not file_dir:
         file_dir = format_dirctory(ID_type, dataset=dset, tag=file_tag, ID=ID)
@@ -140,7 +178,6 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
         # make sure we know which dset this plate belongs too
         return '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, 
                                               ID=ID,
-                                              #tag=file_tag,
                                               dt=data_type, 
                                               ft=file_type)
     elif str(ID_type) in['dset', 's']:

@@ -34,6 +34,7 @@ LOGISTICS = {
     # directories for annotation and organization
     'data': PROJECT_DIRECTORY + 'data/',
     'plates': PROJECT_DIRECTORY + 'data/plates/',
+    'results': PROJECT_DIRECTORY + 'results/',
     'inventory': PROJECT_DIRECTORY + 'data/annotation/inventory/',
     'annotation': PROJECT_DIRECTORY + 'data/annotation/experiment_index',
     'scaling-factors': PROJECT_DIRECTORY + 'data/annotation/scaling_factor_images',

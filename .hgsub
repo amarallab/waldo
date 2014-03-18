@@ -1,1 +1,2 @@
-data/annotation = https://peterbwinter@bitbucket.org/peterbwinter/worm-annotation
+data/annotation = ssh://hg@bitbucket.org/peterbwinter/worm-annotation
+code/shared/joining = ssh://hg@bitbucket.org/nick_timkovich/multi-worm-tracker-adapter
