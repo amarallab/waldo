@@ -111,8 +111,9 @@ def process_ex_id(ex_id, debug=False,**kwargs):
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
             pass
-        except Exception as e:
-            print e
+        except Exception, e:
+            e.printStackTrace()
+
         '''
         good_stuff = [(t, s) for (t, s) in zip(times, spines) if s]
         if len(good_stuff) <= 3:
