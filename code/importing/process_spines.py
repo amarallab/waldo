@@ -146,24 +146,8 @@ if __name__ == '__main__':
         # test worm
         blob_id = '00000000_000001_00001'
         blob_id = '00000000_000001_00008'
-        blob_id = '20130319_150235_01070'
-        blob_id = '20130319_150235_00014'
-        blob_id = '20130319_150235_00426'
-        blob_id = '20130319_150235_01501'
-        blob_id = '20130319_150235_01830'
-        blob_id = '20130719_124520_00951'
-        blob_id = '20130716_121314_00001'
-        blob_id = '20130611_140746_00004'
-        # large bson error:
-        #blob_id = '20130331_160517_02379'
-        #blob_id = '20130320_164252_05955'
-        #blob_id = '20130320_153235_40328'
-        # json serializable error
-        #blob_id = '20130413_123246_03046'
+        blob_id = '20131211_145827_00010'
 
-        #blob_id = '20130324_115435_04452'
-        #blob_id = '20130319_150235_01070'
-        print blob_id
         basic_data_to_smoothspine(blob_id, verbose=True)
         #for blob_id in all_unprocessed_blob_ids():
         #    basic_data_to_smoothspine(blob_id)
