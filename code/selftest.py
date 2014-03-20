@@ -29,7 +29,7 @@ from tests.importing.tests.create_testfiles import write_index_file
 from importing.process_spines import process_ex_id
 # turn all this into unit tests.
 
-TEST_DATA_DIR = CODE_DIR + 'tests/importing/tests/data/blobfiles/'
+TEST_DATA_DIR = CODE_DIR + 'tests/data/'
 print os.path.abspath(TEST_DATA_DIR)
 assert os.path.isdir(TEST_DATA_DIR)
 
@@ -38,7 +38,7 @@ def run_everything(**kwargs):
     ''' imports and processes test data. '''
     # get all ex_ids denoted as 'test'
     ei = Experiment_Attribute_Index()
-    target_ex_ids = set(ei.return_ex_ids_with_attribute(key_attribute='dataset', attribute_value='test'))
+    target_ex_ids = set(ei.return_ex_ids_with_attribute(key_attribute='dataset', attribute_value='selftest'))
     print '{N} test ids found: {l}'.format(N=len(target_ex_ids), l=target_ex_ids)
     if len(target_ex_ids) ==0:
         write_index_file()

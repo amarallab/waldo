@@ -9,7 +9,6 @@ import base
 import sys
 
 # testing sheets
-base.SPREADSHEET['spreadsheet'] = 'testan'
 base.SPREADSHEET['scaling-factors'] = 'testsf'
 
 configured = False

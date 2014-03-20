@@ -23,9 +23,11 @@ import numpy as np
 PROJECT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
 CODE_DIR = PROJECT_DIR + 'code/'
 SHARED_DIR = CODE_DIR + 'shared/'
+MULTIWORM_DIR = SHARED_DIR + 'joining'
 sys.path.append(PROJECT_DIR)
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
+sys.path.append(MULTIWORM_DIR)
 
 # nonstandard imports
 #from database import mongo_query
@@ -35,23 +37,23 @@ from settings.local import LOGISTICS, FILTER
 
 from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
-from joining.tapeworm import Taper
 from wio.file_manager import write_timeseries_file, write_metadata_file
 
 DATA_DIR = LOGISTICS['filesystem_data']
-USE_TAPEWORM = True
+USE_TAPEWORM = False
 
 def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
                                     max_blob_files=10000,
                                     data_dir=DATA_DIR, store_tmp=True, **kwargs):
     if USE_TAPEWORM:
+        from tapeworm import Taper
         return tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
                                   max_blob_files,
-                                  data_dir=DATA_DIR, store_tmp=True)
+                                  data_dir=data_dir, store_tmp=True)
     else:
         return blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
                                     max_blob_files,
-                                    data_dir=DATA_DIR, store_tmp=True)
+                                    data_dir=data_dir, store_tmp=True)
         
 def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
                          max_blob_files=10000,
@@ -71,8 +73,7 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
     assert type(min_size) in [int, float]
     assert len(ex_id.split('_')) == 2
     path = data_dir + ex_id
-    assert os.path.isdir(path)
-
+    assert os.path.isdir(path), 'Error: path not found: {path}'.format(path=path)
 
     blob_files = sorted(glob(path+'/*.blobs'))    
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
@@ -129,8 +130,7 @@ def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
     assert type(min_size) in [int, float]
     assert len(ex_id.split('_')) == 2
     path = data_dir + ex_id
-    assert os.path.isdir(path)
-
+    assert os.path.isdir(path), 'Error: path not found: {path}'.format(path=path)
 
     blob_files = sorted(glob(path+'/*.blobs'))    
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))

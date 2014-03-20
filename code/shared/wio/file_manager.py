@@ -82,7 +82,6 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
     return save_name
 
 
-# TODO actually get dset.
 def get_dset(ex_id):
     ei = Experiment_Attribute_Index()
     return ei.attribute_index.get(ex_id, {}).get('dataset', 'something')
@@ -110,6 +109,16 @@ def format_dirctory(ID_type, dataset='', tag='', ID='',
         assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type) 
 
     return file_dir
+
+def get_good_blobs(ex_id, worm_dir=WORM_DIR):
+    search_dir = format_dirctory(ID=ex_id, ID_type='w')
+    search = '{path}/*spine.*'.format(path=search_dir)
+    spine_files = glob(search)
+    blobs = []
+    for sf in spine_files:
+        blob_id = sf.split('/')[-1].split('-spine')[0]
+        blobs.append(blob_id)
+    return blobs
 
 def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
@@ -145,15 +154,13 @@ def format_results_filename(ID, result_type, tag=None,
         tag = '-{t}'.format(t=tag)
 
 
-    p = map(str, [file_dir, dset, ID_type, date_stamp])
+    p = map(str, [file_dir, dset, ID_type, result_type, date_stamp])
     p = [i.rstrip('/') for i in p]
-    save_dir = '{path}/{dset}/{dtype}-{date}/'.format(path=p[0], dset=p[1], dtype=p[2], date=p[3]) 
+    save_dir = '{path}/{dset}/{dtype}/{rt}-{date}/'.format(path=p[0], dset=p[1], dtype=p[2], rt=p[3], date=p[4]) 
     if ensure:
         ensure_dir_exists(save_dir)
     filename = '{path}{ID}{tag}.{ft}'.format(path=save_dir, ID=ID, tag=tag, ft=file_type)
     return filename
-
-
 
 def format_filename(ID, ID_type='worm', data_type='cent_speed', 
                     file_type='json',
@@ -231,6 +238,7 @@ def get_timeseries(ID, data_type,
             print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
         return times, data
     return None, None
+    
 
 def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None, **kwargs):
     # universal file formatting

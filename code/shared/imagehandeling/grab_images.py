@@ -31,6 +31,18 @@ from grab_outlines import find_frame_for_time
 # Globals
 DATA_DIR = LOGISTICS['filesystem_data']
 
+def get_base_image_path(ex_id, data_dir=DATA_DIR):
+    search_path = data_dir + ex_id + '/*.png'
+    images = glob.glob(search_path)
+    if not images:
+        print 'something may be wrong with search path. no images found:', search_path
+        return None
+    basename = ['z' for _ in range(1000)]
+    for i in images:
+        if len(i) < len(basename):
+            basename = i
+    return basename
+
 def create_image_directory(ex_id, data_dir=DATA_DIR):
     """
     returns a dictionary containing all the times at which images were taken and the paths to those images.

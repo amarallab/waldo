@@ -19,13 +19,13 @@ import numpy as np
 from scipy.ndimage.morphology import binary_fill_holes
 
 # path specifications
-test_directory = os.path.dirname(os.path.realpath(__file__)) 
-project_directory = test_directory + '/../../../../'
-shared_directory = project_directory + 'code/shared/'
-test_data_dir = test_directory + '/data/'
-print project_directory
-sys.path.append(shared_directory)
-sys.path.append(project_directory + '/code/')
+TEST_DIR = os.path.dirname(os.path.realpath(__file__)) 
+PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
+SHARED_DIR = PROJECT_DIR + '/code/shared/'
+TEST_DATA_DIR = TEST_DIR + '/data/'
+
+sys.path.append(SHARED_DIR)
+sys.path.append(PROJECT_DIR + '/code/')
 
 # nonstandard imports
 from Encoding.decode_outline import encode_outline
@@ -132,12 +132,12 @@ def outline_points_to_properties(outline_points):
 def write_blob_file_for_test_folder(ex_id='00000000_000001'):
 
     # make sure the write directory is all setup
-    blobs_file_name = '{dir}blobfiles/{eID}/test_blobsfile_00000k.blobs'.format(dir=test_data_dir, eID=ex_id)
+    blobs_file_name = '{dir}/{eID}/test_blobsfile_00000k.blobs'.format(dir=TEST_DATA_DIR, eID=ex_id)
         
     # for test ex_id, grab all jsons that show worm outlines in point form
     test_jsons = glob.glob('data/jsons/{eID}/*.json'.format(eID=ex_id)) 
     if len(test_jsons) == 0:
-        print 'no test json files found in', test_data_dir
+        print 'no test json files found in', TEST_DATA_DIR
 
     lines = []
     for i, jfile in enumerate(test_jsons[:], start=1):
@@ -229,10 +229,10 @@ def write_summary_file(ex_id='00000000_000001'):
     bID = 0
     bIDs = []
     # organize names and paths
-    search_string = test_data_dir + 'blobfiles/' + ex_id + '/*.blobs'
+    search_string = TEST_DATA_DIR + 'blobfiles/' + ex_id + '/*.blobs'
     blobfiles = sorted(glob.glob(search_string))
     basename = blobfiles[0].split('/')[-1].split('_00000k')[0]
-    summary_filename = test_data_dir + 'blobfiles/' + ex_id + '/' + basename + '.summary'
+    summary_filename = TEST_DATA_DIR + 'blobfiles/' + ex_id + '/' + basename + '.summary'
 
     # read all blobs files and pull data
     for i, blobfile in enumerate(blobfiles):
@@ -314,7 +314,7 @@ def write_index_file(ex_id='00000000_000001'):
     """
     index_file_name = '{dir}/0000-00.tsv'.format(dir=LOGISTICS['annotation'])
     print index_file_name
-    summary_search = test_data_dir + 'blobfiles/' + ex_id + '/*.summary'    
+    summary_search = TEST_DATA_DIR + '/' + ex_id + '/*.summary'    
     sum_file = glob.glob(summary_search)
     if len(sum_file) != 1:
         print 'Warning: no summary file found', summary_search
@@ -324,7 +324,7 @@ def write_index_file(ex_id='00000000_000001'):
     cols = [SPREADSHEET['row-id']] + SPREADSHEET['columns']
     data = {}
     for c in cols:
-        data[c] = 'test'
+        data[c] = 'selftest'
     data['ex-id'] = str(ex_id)
     data['vid-flags'] = ''
     data['name'] = sum_file.split('/')[-1].split('.summary')[0]

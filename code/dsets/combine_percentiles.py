@@ -98,9 +98,12 @@ def combine_worm_percentiles(dataset):
     # write worm index             
     wi = pd.DataFrame(worm_index, index=blob_ids)
     wi.to_csv(i_savename, header=False)    
+
+    for line in worm_index:
+        print line
     
 if __name__ == '__main__':
-    dataset = 'disease_models'
+    #dataset = 'disease_models'
     dataset = 'thermo_recovery'
     #dataset = 'copas_TJ3001_lifespan'
     blob_ids = combine_worm_percentiles(dataset)

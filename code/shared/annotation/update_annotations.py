@@ -269,14 +269,13 @@ def parse_summary_file(ex_dir):
             record_length = int(float(lines[-1].split()[1]))
     return file_name, record_length
 
-if __name__ == '__main__':
+if __name__ == '__main__':    
     #update_main(update_all=False)
     #find_ex_ids_to_update(update_list=['2012-10', '2012-11', '2012-12'])
     #find_ex_ids_to_update(update_list=['2013-01', '2013-02', '2013-03', '2013-04', '2013-05', '2013-06', '2013-07', '2013-08'])
 
-
-    # disease models
-    update_main(update_list=['2013-06', '2013-07'] )
-    # copas lifespan
-    #update_main(update_list=['2013-12'] )
+    #update_main(update_all=True)
+    update_main(update_list=['2013-09']) # thermotolerance
+    #update_main(update_list=['2013-06', '2013-07']) # disease models
+    #update_main(update_list=['2013-12']) # copas lifespan
     #test_scaling_factors()

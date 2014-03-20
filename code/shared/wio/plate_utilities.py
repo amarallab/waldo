@@ -37,8 +37,6 @@ def get_plate_files(dataset, data_type, tag='timeseries', path=None):
         path = format_dirctory(ID_type='plate',
                                dataset=dataset,
                                tag=tag)
-    #search = '{path}/{ds}/{dt}/*'.format(path=path.rstrip('/'),
-    #                                     ds=dataset, dt=data_type)
     search = '{path}/*'.format(path=path.rstrip('/'))
     ex_ids, file_paths = [], []
     for file_path in glob.glob(search):
@@ -107,17 +105,6 @@ def read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries'):
                                  file_tag=tag)
     #print len(times), len(data)
     return times, data
-
-'''
-def parse_plate_timeseries_txt_file(dfile):
-    times, data = [], []
-    with open(dfile) as f:
-        for line in f:
-            line = line.strip().split(',')
-            times.append(float(line[0]))
-            data.append(map(float, line[1:]))
-    return times, data
-'''
 
 def organize_plate_metadata(ex_id):
     ei = Experiment_Attribute_Index()

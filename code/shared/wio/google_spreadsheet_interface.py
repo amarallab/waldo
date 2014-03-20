@@ -164,7 +164,7 @@ class Spreadsheet_Interface:
         :return:
         """
         sheet_to_id, worksheet_ids = self.index_spread_sheets()
-        assert sheet_name in sheet_to_id
+        assert sheet_name in sheet_to_id, 'sheetname:{sn} not located'.format(sn=sheet_name)
 
         worksheets = worksheet_ids[sheet_name]
         sheet_dict = {}
