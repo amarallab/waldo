@@ -185,7 +185,7 @@ def point_and_distance_intersect_line2_line2(Apx, Apy, Avx, Avy, Bpx, Bpy, Bvx, 
     # cross product for guess the angle between lines
     d = Bvy * Avx - Bvx * Avy
     if d == 0:
-        return None # paralels...
+        return False, 0, 0, 0 # paralels...
 
     # Calculate intersection
     dy = Apy - Bpy
@@ -193,8 +193,8 @@ def point_and_distance_intersect_line2_line2(Apx, Apy, Avx, Avy, Bpx, Bpy, Bvx, 
     ua = (Bvx * dy - Bvy * dx) / d
 
     px, py = Apx + ua * Avx, Apy + ua * Avy
-    return px, py, ua   # if Av is normalized, ua is the distance and orientation!
-                        # intersection is Ap + ua * Av, so if ua > 0, the intersection is "up", else is "down"
+    return True, px, py, ua   # if Av is normalized, ua is the distance and orientation!
+                              # intersection is Ap + ua * Av, so if ua > 0, the intersection is "up", else is "down"
 
 
 def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
@@ -236,8 +236,8 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
             lnx, lny = p2x - p1x, p2y - p1y
 
             # ip[xy] intersection point between perpendicular line (s1-s2) and p1-p2 line
-            ipx, ipy, distance = point_and_distance_intersect_line2_line2(mx, my, nx, ny, p1x, p1y, lnx, lny)
-            if distance is not None:
+            intersects, ipx, ipy, distance = point_and_distance_intersect_line2_line2(mx, my, nx, ny, p1x, p1y, lnx, lny)
+            if intersects:
                 minx, maxx = (p1x, p2x) if p1x < p2x else (p2x, p1x)
                 miny, maxy = (p1y, p2y) if p1y < p2y else (p2y, p1y)
                 if ipx+0.5 >= minx and ipx-0.5 <= maxx and \

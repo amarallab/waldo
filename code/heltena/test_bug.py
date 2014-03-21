@@ -98,14 +98,14 @@ def heltena_calculate_width_for_timepoint_opt(spine, outline, index_along_spine=
 def point_and_distance_intersect_line2_line2(Apx, Apy, Avx, Avy, Bpx, Bpy, Bvx, Bvy):
     d = Bvy * Avx - Bvx * Avy
     if d == 0:
-        return None # paralels...
+        return False, 0, 0, 0 # paralels...
 
     dy = Apy - Bpy
     dx = Apx - Bpx
     ua = (Bvx * dy - Bvy * dx) / d
 
     px, py = Apx + ua * Avx, Apy + ua * Avy
-    return px, py, ua   # if Av is normalized, ua is the distance and orientation!
+    return True, px, py, ua   # if Av is normalized, ua is the distance and orientation!
 
 
 def heltena_calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
@@ -137,8 +137,8 @@ def heltena_calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
         p2x, p2y = cur[0], cur[1]
         if p1x != p2x and p1y != p2y:
             lnx, lny = p2x - p1x, p2y - p1y
-            ipx, ipy, distance = point_and_distance_intersect_line2_line2(mx, my, nx, ny, p1x, p1y, lnx, lny)
-            if distance is not None:
+            intersects, ipx, ipy, distance = point_and_distance_intersect_line2_line2(mx, my, nx, ny, p1x, p1y, lnx, lny)
+            if intersects:
                 minx, maxx = (p1x, p2x) if p1x < p2x else (p2x, p1x)
                 miny, maxy = (p1y, p2y) if p1y < p2y else (p2y, p1y)
                 if ipx+0.5 >= minx and ipx-0.5 <= maxx and \
