@@ -71,7 +71,7 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
     assert type(min_size) in [int, float]
     assert len(ex_id.split('_')) == 2
     path = data_dir + ex_id
-    assert os.path.isdir(path)
+    assert os.path.isdir(path), 'Error. path not found: {path}'.format(path=path)
 
 
     blob_files = sorted(glob(path+'/*.blobs'))    
@@ -129,7 +129,7 @@ def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
     assert type(min_size) in [int, float]
     assert len(ex_id.split('_')) == 2
     path = data_dir + ex_id
-    assert os.path.isdir(path)
+    assert os.path.isdir(path), 'Error. path not found: {path}'.format(path=path)
 
 
     blob_files = sorted(glob(path+'/*.blobs'))    
