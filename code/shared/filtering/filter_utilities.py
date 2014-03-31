@@ -27,6 +27,17 @@ sys.path.append(shared_directory)
 from equally_space import equally_space_snapshots_in_time, compute_transpose
 from database.mongo_retrieve import timedict_to_list
 
+def smoothing_function(xyt, window, order):
+    """
+    Takes in a list of positions and times of the worm, the window size for the smoothing function, and the
+    polynomial order for the smoothing function. Returns a list of the smoothed x and smoothed y values
+    with unchanged time values.
+    """
+    from filter_utilities import savitzky_golay
+    x, y, t = zip(*xyt)
+    smooth_x = savitzky_golay(y=np.array(x), window_size=window, order=order)
+    smooth_y = savitzky_golay(y=np.array(y), window_size=window, order=order)
+    return zip(smooth_x, smooth_y, t)
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     """Smooth (and optionally differentiate) data with a Savitzky-Golay filter.

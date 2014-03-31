@@ -3,6 +3,8 @@ syntax: glob
 
 # python cruft
 *.pyc
+__pycache__/
+venv/
 
 # emacs cruft
 *~
@@ -20,6 +22,7 @@ syntax: glob
 *.DS_Store
 
 # binaries
+build/
 
 # text files
 *.txt
