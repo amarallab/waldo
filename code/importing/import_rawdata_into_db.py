@@ -15,9 +15,10 @@ __status__ = 'prototype'
 #standard imports
 import os
 import sys
-from glob import glob
+from glob import iglob
 from itertools import izip
 import numpy as np
+import numbers
 
 # path definitions
 PROJECT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..')
@@ -42,7 +43,7 @@ from wio.file_manager import write_timeseries_file, write_metadata_file
 from tapeworm import Taper
 
 DATA_DIR = LOGISTICS['filesystem_data']
-USE_TAPEWORM = False
+USE_TAPEWORM = True
 
 def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
                                     max_blob_files=10000,
@@ -68,25 +69,19 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
     :param max_blob_files: if experiment contains more than this number, it is skipped to avoid deadlock
     '''
     # check if inputs are correct types and data directory exists
-    assert type(min_body_lengths) in [int, float]
-    assert type(min_body_lengths) in [int, float]
-    assert type(min_duration) in [int, float]
-    assert type(min_size) in [int, float]
+    for arg in (min_body_lengths, min_duration, min_size):
+        assert isinstance(arg, numbers.Number)
     assert len(ex_id.split('_')) == 2
     path = data_dir + ex_id
     assert os.path.isdir(path), 'Error. path not found: {path}'.format(path=path)
 
-
-    blob_files = sorted(glob(path+'/*.blobs'))    
+    blob_files = sorted(iglob(os.path.join(path, '*.blobs')))
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
     
-    TW = Taper(directory=path, min_move=min_body_lengths,
+    plate = Taper(directory=path, min_move=min_body_lengths,
                min_time=min_duration)    
-    TW.load_data()
-    TW.find_candidates()
-    TW.score_candidates()
-    TW.judge_candidates()
-    raw_blobs = list(TW.yield_candidates())
+    plate.load_data()
+    raw_blobs = dict(plate.segments())
 
     print len(raw_blobs), 'blobs found worthy'
     
@@ -135,7 +130,7 @@ def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
     assert os.path.isdir(path), 'Error. path not found: {path}'.format(path=path)
 
 
-    blob_files = sorted(glob(path+'/*.blobs'))    
+    blob_files = sorted(iglob(path+'/*.blobs'))    
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
     
     BR = Blob_Reader(path=path, min_body_lengths=min_body_lengths,
