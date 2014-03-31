@@ -15,17 +15,21 @@ __status__ = 'prototype'
 #standard imports
 import os
 import sys
-from glob import glob
+from glob import iglob
 from itertools import izip
 import numpy as np
- 
+import numbers
+
+
 # path definitions
-PROJECT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-CODE_DIR = PROJECT_DIR + 'code/'
-SHARED_DIR = CODE_DIR + 'shared/'
+PROJECT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..')
+CODE_DIR = os.path.join(PROJECT_DIR, 'code')
+SHARED_DIR = os.path.join(CODE_DIR, 'shared')
+JOINING_DIR = os.path.join(SHARED_DIR, 'joining')
 sys.path.append(PROJECT_DIR)
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
+sys.path.append(JOINING_DIR)
 
 # nonstandard imports
 #from database import mongo_query
@@ -37,14 +41,17 @@ from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
 from wio.file_manager import write_timeseries_file, write_metadata_file
 
+
 DATA_DIR = LOGISTICS['filesystem_data']
-USE_TAPEWORM = False
+USE_TAPEWORM = True
+
+if USE_TAPEWORM:
+    from tapeworm import Taper
 
 def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
                                     max_blob_files=10000,
                                     data_dir=DATA_DIR, store_tmp=True, **kwargs):
     if USE_TAPEWORM:
-        from joining.tapeworm import Taper
         return tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
                                   max_blob_files,
                                   data_dir=data_dir, store_tmp=True)
@@ -65,50 +72,83 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
     :param max_blob_files: if experiment contains more than this number, it is skipped to avoid deadlock
     '''
     # check if inputs are correct types and data directory exists
-    assert type(min_body_lengths) in [int, float]
-    assert type(min_body_lengths) in [int, float]
-    assert type(min_duration) in [int, float]
-    assert type(min_size) in [int, float]
+    for arg in (min_body_lengths, min_duration, min_size):
+        assert isinstance(arg, numbers.Number)
     assert len(ex_id.split('_')) == 2
     path = data_dir + ex_id
-    assert os.path.isdir(path), 'error: path not found {path}'.format(path=path)
+    assert os.path.isdir(path), 'Error. path not found: {path}'.format(path=path)
 
-
-    blob_files = sorted(glob(path+'/*.blobs'))    
+    blob_files = sorted(iglob(os.path.join(path, '*.blobs')))
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
+
+    # get indexed data about this recording.
+    ei = Experiment_Attribute_Index()
+    ex_attributes = ei.return_attributes_for_ex_id(ex_id)
+    if ex_attributes == None:
+        print 'ex id not found by Experiment_Attribute_Index'
+        exit()
+
     
-    TW = Taper(directory=path, min_move=min_body_lengths,
-               min_time=min_duration)    
-    TW.load_data()
-    TW.find_candidates()
-    TW.score_candidates()
-    TW.judge_candidates()
-    raw_blobs = list(TW.yield_candidates())
+    plate = Taper(directory=path, min_move=min_body_lengths,
+               min_time=min_duration, verbosity=1)    
+    plate.load_data()
 
-    print len(raw_blobs), 'blobs found worthy'
-    
-    metadata_docs = create_metadata_docs(ex_id=ex_id, raw_blobs=raw_blobs)    
 
-    if store_tmp:
-        for local_id, blob in raw_blobs.iteritems():
-            metadata = metadata_docs[local_id]
-            blob_id = metadata['blob_id']
-            #print blob_id            
-            write_metadata_file(data=metadata, ID=blob_id, data_type='metadata')
-            write_timeseries_file(ID=blob_id, data_type='xy_raw',
-                                  times=blob['time'], data=blob['xy'])
 
-            write_timeseries_file(ID=blob_id, data_type='encoded_outline',
+    blob_ids = []
+
+    for local_id, blob in plate.segments():
+
+        # go through blobs and convert them into        
+        unique_blob_id = '{eID}_{local}'.format(eID=ex_id, local=local_id)
+        blob_ids.append(unique_blob_id)
+
+        print local_id, blob.keys()
+        if store_tmp:
+            # create full metadata entry for this blob to later use in the creation of data entries
+            metadata_entry = {'blob_id': unique_blob_id.strip(),
+                              'local_blob_id': local_id.strip(),
+                              'ex_id': ex_id.strip(),
+                              'is_worm': 0,
+                              'data_type': 'metadata',
+                              'data': None,
+                              #'part': '1of1',
+                              'description': 'metadata for blob without any additional data',
+                              #TODO: add calculated attributes 
+                              'local_segments': blob.get('segments', [local_id])
+                              }
+            
+            # add descriptive attribues from the experiment to metadata
+            for atrib, value in ex_attributes.iteritems():
+                metadata_entry[atrib.strip()] = value
+
+            # write the metadata entry
+            write_metadata_file(data=metadata_entry, ID=unique_blob_id, data_type='metadata')
+            # write centriod positions
+            write_timeseries_file(ID=unique_blob_id, data_type='xy_raw',
+                                  times=blob['time'], data=blob['centroid'])
+
+            def map_string(a_list):
+                return [str(i) if i else '' for i in a_list]
+
+            # write encoded outlines
+            x, y = zip(*blob['contour_start'])
+            outlines = zip([map_string(i) for i in (x, y, blob['contour_encode_len'], blob['contour_encoded'])])
+            #x, y, l, o = [map_string(i) for i in (x, y, blob['contour_encode_len'], blob['contour_encoded'])]            
+            #y = map_string(y)
+            #l = map_string(blob['contour_encode_len'])
+            #o = map_string(blob['contour_encoded'])
+            #outlines = zip(x, y, l, o)
+            write_timeseries_file(ID=unique_blob_id, data_type='encoded_outline',
                                   times=blob['time'], data=outlines)
-            #write_timeseries_file(ID=blob_id, data_type='encoded_outline',
-            #                      times=blob['time'], data=blob['outline'])
-            write_timeseries_file(ID=blob_id, data_type='aspect_ratio',
-                                  times=blob['time'], data=blob['aspect_ratio'])
 
-    # return a list of blob_ids
-    blob_ids = [m['blob_id'] for m in metadata_docs.values()]
+            
+            # TODO: add aspect ratio
+            # write aspect ratio
+            #write_timeseries_file(ID=unique_blob_id, data_type='aspect_ratio',
+            #                      times=blob['time'], data=blob['aspect_ratio'])
+
     return blob_ids
-
 
 
 def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
@@ -129,10 +169,10 @@ def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
     assert type(min_size) in [int, float]
     assert len(ex_id.split('_')) == 2
     path = data_dir + ex_id
-    assert os.path.isdir(path), 'error: path not found {path}'.format(path=path)
+    assert os.path.isdir(path), 'Error. path not found: {path}'.format(path=path)
 
 
-    blob_files = sorted(glob(path+'/*.blobs'))    
+    blob_files = sorted(iglob(path+'/*.blobs'))    
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
     
     BR = Blob_Reader(path=path, min_body_lengths=min_body_lengths,
