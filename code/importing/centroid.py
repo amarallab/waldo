@@ -80,4 +80,5 @@ def show_centroid_processing(blob_id):
 
 if __name__ == '__main__':
     bi = '00000000_000001_00001'
+    bi = '20130610_161943_20653'
     process_centroid(blob_id=bi)

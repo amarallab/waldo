@@ -35,6 +35,8 @@ syntax: glob
 
 # Directory
 ./data/*
+./code/heltena/dsets/*
+./code/heltena/dsets2/*
 
 # editor and ide files
 .idea/*
