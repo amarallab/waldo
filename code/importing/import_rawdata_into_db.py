@@ -39,10 +39,12 @@ from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
 from wio.file_manager import write_timeseries_file, write_metadata_file
 
-from tapeworm import Taper
 
 DATA_DIR = LOGISTICS['filesystem_data']
-USE_TAPEWORM = False
+USE_TAPEWORM = True
+
+if USE_TAPEWORM:
+    from tapeworm import Taper
 
 def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
                                     max_blob_files=10000,
@@ -79,6 +81,14 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
 
     blob_files = sorted(glob(path+'/*.blobs'))    
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
+
+    # get indexed data about this recording.
+    ei = Experiment_Attribute_Index()
+    ex_attributes = ei.return_attributes_for_ex_id(ex_id)
+    if ex_attributes == None:
+        print 'ex id not found by Experiment_Attribute_Index'
+        exit()
+
     
     TW = Taper(directory=path, min_move=min_body_lengths,
                min_time=min_duration)    
@@ -86,32 +96,62 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
     TW.find_candidates()
     TW.score_candidates()
     TW.judge_candidates()
-    raw_blobs = list(TW.yield_candidates())
 
-    print len(raw_blobs), 'blobs found worthy'
-    
-    metadata_docs = create_metadata_docs(ex_id=ex_id, raw_blobs=raw_blobs)    
 
-    if store_tmp:
-        for local_id, blob in raw_blobs.iteritems():
-            metadata = metadata_docs[local_id]
-            blob_id = metadata['blob_id']
-            #print blob_id            
-            write_metadata_file(data=metadata, ID=blob_id, data_type='metadata')
-            write_timeseries_file(ID=blob_id, data_type='xy_raw',
-                                  times=blob['time'], data=blob['xy'])
+    blob_ids = []
+    i = 1
+    for blob in TW.yield_candidates():
 
-            write_timeseries_file(ID=blob_id, data_type='encoded_outline',
+        # TODO for yield canidates:
+        # ADD:
+        # 1. include the ID of the blob.
+        # 2. include the other local blob IDs that went into it.        
+
+        # This should come from the blob
+        local_id = str(i)
+        i += 1
+
+        # go through blobs and convert them into        
+        unique_blob_id = '{eID}_{local}'.format(eID=ex_id, local=local_id)
+        blob_ids.append(unique_blob_id)
+
+
+        if store_tmp:
+            # create full metadata entry for this blob to later use in the creation of data entries
+            metadata_entry = {'blob_id': unique_blob_id.strip(),
+                              'local_blob_id': local_id.strip(),
+                              'ex_id': ex_id.strip(),
+                              'is_worm': 0,
+                              'data_type': 'metadata',
+                              'data': None,
+                              #'part': '1of1',
+                              'description': 'metadata for blob without any additional data',
+                              #TODO: add calculated attributes 
+                              }
+            
+            # add descriptive attribues from the experiment to metadata
+            for atrib, value in ex_attributes.iteritems():
+                metadata_entry[atrib.strip()] = value
+
+            # write the metadata entry
+            write_metadata_file(data=metadata_entry, ID=unique_blob_id, data_type='metadata')
+            print blob.keys()
+            # write centriod positions
+            write_timeseries_file(ID=unique_blob_id, data_type='xy_raw',
+                                  times=blob['time'], data=blob['centriod'])
+
+            # write encoded outlines
+            outlines = zip(blob['contour_start'], blob['contour_encode_len'], blob['contour_encoded'])
+            write_timeseries_file(ID=unique_blob_id, data_type='encoded_outline',
                                   times=blob['time'], data=outlines)
-            #write_timeseries_file(ID=blob_id, data_type='encoded_outline',
-            #                      times=blob['time'], data=blob['outline'])
-            write_timeseries_file(ID=blob_id, data_type='aspect_ratio',
-                                  times=blob['time'], data=blob['aspect_ratio'])
 
-    # return a list of blob_ids
-    blob_ids = [m['blob_id'] for m in metadata_docs.values()]
+            
+            # TODO: add aspect ratio
+            # write aspect ratio
+            #write_timeseries_file(ID=unique_blob_id, data_type='aspect_ratio',
+            #                      times=blob['time'], data=blob['aspect_ratio'])
+            
     return blob_ids
-
 
 
 def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
