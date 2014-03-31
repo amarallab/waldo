@@ -69,7 +69,7 @@ def draw_plate_tracks(ex_id,save=True):
     ax.set_color_cycle([colormap(i) for i in 
                         np.linspace(0, 0.9, 12)])
     for bID, xy in zip(blobs,tracks):
-        if xy:
+        if xy!=None:
             if len(xy) > 1:
                 x, y = zip(*xy)
                 ax.plot(x,y)
