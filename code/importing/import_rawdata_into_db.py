@@ -18,14 +18,16 @@ import sys
 from glob import glob
 from itertools import izip
 import numpy as np
- 
+
 # path definitions
-PROJECT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-CODE_DIR = PROJECT_DIR + 'code/'
-SHARED_DIR = CODE_DIR + 'shared/'
+PROJECT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..')
+CODE_DIR = os.path.join(PROJECT_DIR, 'code')
+SHARED_DIR = os.path.join(CODE_DIR, 'shared')
+JOINING_DIR = os.path.join(SHARED_DIR, 'joining')
 sys.path.append(PROJECT_DIR)
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
+sys.path.append(JOINING_DIR)
 
 # nonstandard imports
 #from database import mongo_query
@@ -37,6 +39,8 @@ from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
 from wio.file_manager import write_timeseries_file, write_metadata_file
 
+from tapeworm import Taper
+
 DATA_DIR = LOGISTICS['filesystem_data']
 USE_TAPEWORM = False
 
@@ -44,7 +48,6 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
                                     max_blob_files=10000,
                                     data_dir=DATA_DIR, store_tmp=True, **kwargs):
     if USE_TAPEWORM:
-        from joining.tapeworm import Taper
         return tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
                                   max_blob_files,
                                   data_dir=data_dir, store_tmp=True)
