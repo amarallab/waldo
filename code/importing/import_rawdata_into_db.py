@@ -103,7 +103,7 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
         unique_blob_id = '{eID}_{local}'.format(eID=ex_id, local=local_id)
         blob_ids.append(unique_blob_id)
 
-        print local_id, blob.keys()
+        #print local_id, blob.keys()
         if store_tmp:
             # create full metadata entry for this blob to later use in the creation of data entries
             metadata_entry = {'blob_id': unique_blob_id.strip(),
@@ -114,9 +114,18 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
                               'data': None,
                               #'part': '1of1',
                               'description': 'metadata for blob without any additional data',
+                              # get all blob components
+                              'local_segments': blob.get('segments', [local_id]),
                               #TODO: add calculated attributes 
-                              'local_segments': blob.get('segments', [local_id])
+                              'start_time': float(blob['time'][0]),
+                              'stop_time': float(blob['time'][-1]),
+                              'duration': float(blob['time'][-1]) - float(blob['time'][0]),
+                              'bl_dist':0,
+                              'midline_median': 0,
                               }
+            print blob['midline'][0]
+
+            print metadata_entry['start_time'], metadata_entry['stop_time'], metadata_entry['duration']
             
             # add descriptive attribues from the experiment to metadata
             for atrib, value in ex_attributes.iteritems():
