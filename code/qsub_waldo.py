@@ -44,7 +44,7 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
         number_of_jobs = len(ex_ids)
     
     for job_num in range(number_of_jobs):
-        cmd = 'python {dir}/{py} {args}'.format(dir=CODE_DIR, py=python_script, args=args)
+        cmd = 'python2.7 {dir}/{py} {args}'.format(dir=CODE_DIR, py=python_script, args=args)
         for i, ex_id in enumerate(ex_ids):
             if i%number_of_jobs == job_num:
                 cmd += ' ' + str(ex_id)
@@ -173,11 +173,11 @@ def main(args, db_attribute):
         
 if __name__ == '__main__':
     # Toggles
-    #db_attribute = ('dataset', 'N2_aging')
+    db_attribute = ('dataset', 'N2_aging')
     #db_attribute = ('dataset', 'disease_models')
     #db_attribute = ('dataset', 'thermo_recovery')
     #db_attribute = ('dataset', 'zoom_test')
-    db_attribute = ('dataset', 'copas_TJ3001_lifespan')
+    #db_attribute = ('dataset', 'copas_TJ3001_lifespan')
     parser = argparse.ArgumentParser(prefix_chars='-',
                                      description='by default it does nothing. but you can specify if it should import, '
                                                  'processes, or aggregate your data.')
