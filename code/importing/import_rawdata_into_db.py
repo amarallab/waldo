@@ -59,6 +59,26 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
         return blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
                                     max_blob_files,
                                     data_dir=data_dir,store_tmp=True)
+
+def midline_lengths(midlines):
+    ''' accepts a list of midlines (a list of xy tuples) and returns the length of all lines
+    that are not None or have enough xy coords.
+    '''
+    lengths = []
+    # the midline portion starts with a '%' and ends either with '%%' or line end.
+    for line in midlines:
+        if line == None:
+            continue
+        if 2 > len(line) > 4: 
+            continue
+        try:
+            X, Y = zip(*line)
+            dx = np.diff(np.array([float(x) for x in X]))
+            dy = np.diff(np.array([float(y) for y in Y]))
+            lengths.append(np.sqrt(dx**2 +dy**2))
+        except Exception as e:
+            print e
+    return lengths
         
 def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
                          max_blob_files=10000,
@@ -94,7 +114,6 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
     plate.load_data()
 
 
-
     blob_ids = []
 
     for local_id, blob in plate.segments():
@@ -120,13 +139,11 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
                               'start_time': float(blob['time'][0]),
                               'stop_time': float(blob['time'][-1]),
                               'duration': float(blob['time'][-1]) - float(blob['time'][0]),
-                              'bl_dist':0,
-                              'midline_median': 0,
-                              }
-            print blob['midline'][0]
 
-            print metadata_entry['start_time'], metadata_entry['stop_time'], metadata_entry['duration']
-            
+                              'bl_dist':0,
+                              'midline_median': np.median(midline_lengths(blob['midline'])),
+                              }
+
             # add descriptive attribues from the experiment to metadata
             for atrib, value in ex_attributes.iteritems():
                 metadata_entry[atrib.strip()] = value
@@ -142,12 +159,8 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
 
             # write encoded outlines
             x, y = zip(*blob['contour_start'])
-            outlines = zip([map_string(i) for i in (x, y, blob['contour_encode_len'], blob['contour_encoded'])])
-            #x, y, l, o = [map_string(i) for i in (x, y, blob['contour_encode_len'], blob['contour_encoded'])]            
-            #y = map_string(y)
-            #l = map_string(blob['contour_encode_len'])
-            #o = map_string(blob['contour_encoded'])
-            #outlines = zip(x, y, l, o)
+            x, y, l, o = [map_string(i) for i in (x, y, blob['contour_encode_len'], blob['contour_encoded'])]            
+            outlines = zip(x, y, l, o)
             write_timeseries_file(ID=unique_blob_id, data_type='encoded_outline',
                                   times=blob['time'], data=outlines)
 

@@ -151,8 +151,8 @@ if __name__ == '__main__':
         # the following three are joined blobs
         blob_id = '20131211_145827_00334'
         blob_id = '20131211_145827_00060'
-        #lob_id = '20131211_145827_00212'
-
+        #blob_id = '20131211_145827_00212'
+        blob_id = '20131211_145827_00010'
         basic_data_to_smoothspine(blob_id, verbose=True)
         #for blob_id in all_unprocessed_blob_ids():
         #    basic_data_to_smoothspine(blob_id)

@@ -152,7 +152,7 @@ def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
             flags.append(flag_criterion(k))
     return map(bool, flags)
 
-def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=True, **kwargs):
+def flag_blob_data(blob_id, data_type, options='both', verbose=True, **kwargs):
     '''
     inputs:
     blob_id - 
@@ -184,10 +184,7 @@ def flag_blob_data(blob_id, data_type, options='both', show_plot=False, verbose=
         print msg
         return [False] * N    
     data = [d for d in data if not np.isnan(d)]
-    flags = flag_outliers(data, options=options)
-    if show_plot:
-        plot_fit_hists(data, xlabel=data_type)
-    return flags
+    return flag_outliers(data, options=options)
 
 def flag_report(blob_id):
     def count_flagged_points(blob_id, data_type):
@@ -224,8 +221,10 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
                   
     N_rows = len(times)
     N_cols = len(flag_types)
+
     all_flags = np.zeros(shape=(N_rows, N_cols), dtype=bool)
     for i, (data_type, options)  in enumerate(flag_types):
+        hey = np.array(flag_blob_data(blob_id, data_type, options=options), dtype=bool)
         all_flags[:, i] = np.array(flag_blob_data(blob_id, data_type, options=options), dtype=bool)
     
     if store_tmp:
