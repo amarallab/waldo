@@ -438,6 +438,6 @@ if __name__ == '__main__':
     #a, b, c, d represent the true positive, false positive, true negative, and false negative
     #outputs of the domain_tester function.
     synthetic_worm_domain_tester(thresholds=[10, 20, 30, 40, 60],
-                                 worm_path='./data/smoothing/synthetic_4.json')
+                                 worm_path='./data/smoothing/synthetic_1.json')
     plt.show()
     print 'Hello'
