@@ -35,6 +35,16 @@ sys.path.append(CODE_DIR)
 from settings.local import LOGISTICS
 INDEX_DIR = LOGISTICS['annotation']
 
+def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
+    ''' returns a pandas dataframe with all the annotated indicies '''
+    import pandas as pd
+    search = os.path.join('{d}'.format(d=index_tsv_directory.rstrip('/')),'*.tsv')
+    data = [pd.read_csv(f, sep='\t', index_col=0) for f in glob(search)]
+    full_index = pd.concat(data)
+    if dataset != None:
+        full_index = full_index[full_index['dataset'] == dataset]
+    return full_index
+
 # global default value
 class Experiment_Attribute_Index(object):
 
