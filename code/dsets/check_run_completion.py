@@ -47,20 +47,32 @@ def count_file_types(basedir):
 
 def file_counts_dataframe(dataset, data_dir):
     data_dir = os.path.abspath(data_dir)
+    print data_dir
     ei = Experiment_Attribute_Index2(dataset=dataset)
     data = {}
+    null_recordings = []
     for eID in list(ei.index):
         search_dir = '{d}/worms/{eId}/'.format(d=data_dir, eId=eID)
-        data[eID] = count_file_types(search_dir)
+        counts = count_file_types(search_dir)
+        data[eID] = counts
+        if counts == {}:
+            null_recordings.append(eID)
+
+    print 'found {N} recordings with no data'.format(N=len(null_recordings))
+    print null_recordings
     return pd.DataFrame(data).T
 
 if __name__ == '__main__':
     # toggles
     dataset = 'disease_models'
+    #dataset = 'N2_aging'
     data_dir = LOGISTICS['data']
-    #data_dir = LOGISTICS['cluster_data']
 
     results = file_counts_dataframe(dataset, data_dir)
     #print results.columns
     print results[['metadata.json', 'spine_rough.h5', 'spine.h5']]
-    print results.sum() / results['metadata.json'].sum()
+
+    summary = pd.DataFrame()
+    summary['fraction'] = results.sum() / results['metadata.json'].sum()
+    summary['missing'] = results['metadata.json'].sum() - results.sum()
+    print summary
