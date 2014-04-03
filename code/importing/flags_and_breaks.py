@@ -165,7 +165,7 @@ def flag_blob_data(blob_id, data_type, options='both', verbose=True, **kwargs):
                         'type value in data'.format(bi=blob_id, dt=data_type,
                                                     t=type(x))
     for d in data:
-        if type(d) not in [int, float, np.float64, np.int32]:
+        if type(d) not in [int, float, np.float64, np.int32, np.int64]:
             print 'print weird datatype:', d, type(d)
     #def check(x):
     #    assert type(x) in [int, float, np.float64, np.int], err_msg    
