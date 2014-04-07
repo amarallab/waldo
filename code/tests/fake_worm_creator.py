@@ -17,15 +17,16 @@ import pandas as pd
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__)) 
 PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
-SHARED_DIR = PROJECT_DIR + '/code/shared/'
+CODE_DIR = os.path.join(PROJECT_DIR, 'code')
+SHARED_DIR = os.path.join(CODE_DIR, 'shared')
 TEST_DATA_DIR = TEST_DIR + '/data/'
 
 sys.path.append(SHARED_DIR)
-sys.path.append(PROJECT_DIR + '/code/')
+sys.path.append(CODE_DIR)
 
 # nonstandard imports
 import filtering.filter_utilities as fu
-import importing.angle_calculations as ac
+from importing import angle_calculations as ac
 
 def generate_individual_series():
     """
@@ -36,7 +37,6 @@ def generate_individual_series():
     reorientation_chance = 10
     final_N = 36000
     
-
 
     state = (0, 0, 0, 0)
     states = [state]    
@@ -368,33 +368,6 @@ def noisy_worm_from_plate(worm_name):
     print worm
 
 
-def synthetic_worm_creator(noise_level=0.1):
-    """
-    Uses the generate_individual_series function from generate_random_series.py to create a synthetic
-    'true' worm path. This 'true' worm path then has noise added to it of a set value. The worm is then
-    packaged into a dictionary, in as similar a way as the worms in return_default_worm and return_noisy_worm,
-    which means that, in this case, the 'raw-xy' key is redundant. Of note, the 'pixels-per-mm' value is set
-    to a good estimate of 40, and this dictionary contains an additional key, 'domains', which contains the
-    true domains of non-movement of the worm.
-
-    :return: A dictionary with keys 'raw-xy', 'smooth-xy', 'noisy-xy', 'pixels-per-mm', 'domains' and 'time'.
-    """
-    worm = dict()
-    x, y, v, theta, domains = generate_individual_series()
-    t = np.arange(0, len(x)*0.1, 0.1)
-    raw_xyt = zip(x, y, t)
-    raw_xy = zip(x, y)
-    noisy_xyt = add_set_noise(raw_xyt, noise_level)
-    n_x, n_y, n_t = zip(*noisy_xyt)
-    n_xy = zip(n_x, n_y)
-    worm['smooth-xy'] = raw_xy
-    worm['noisy-xy'] = n_xy
-    worm['raw-xy'] = raw_xy
-    worm['time'] = t.tolist()
-    worm['pixels-per-mm'] = 40
-    worm['domains'] = domains
-    return worm
-
 def xy_to_full_dataframe(times, x, y):
     x, y = list(x), list(y)
     dt = np.diff(np.array(times))    
@@ -416,7 +389,7 @@ def xy_to_full_dataframe(times, x, y):
 def create_synthetic_worm_csvs(noise_level=0.1):
     """
     """    
-    x, y, v, theta, domains = generate_individual_series()
+    x, y, v, theta = generate_individual_series()
 
     #t = np.arange(0, len(x)*0.1, 0.1)
     t = np.arange(0, len(x), 1)  

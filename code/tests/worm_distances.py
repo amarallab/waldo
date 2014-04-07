@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import json
 import scipy.stats as stats
+from itertools import izip
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__)) 
 PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
@@ -19,6 +20,7 @@ TEST_DATA_DIR = TEST_DIR + '/data/'
 
 sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR + '/code/')
+
 from filtering.filter_utilities import smoothing_function
 import fake_worm_creator as fwc
 
@@ -36,6 +38,17 @@ def inbounds(list_length, index):
         return False
     else:
         return True
+
+def domains_to_expansions(domains):
+    
+
+def contract_domains(x, y, domains):
+    contraction = []
+    
+
+
+def expand_domains(x, y, domains):
+    pass
 
 
 def synthetic_worm_domain_tester(thresholds, worm_path):
