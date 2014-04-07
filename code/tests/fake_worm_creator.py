@@ -13,6 +13,7 @@ import numpy as np
 import scipy.stats as sts
 import random
 import matplotlib.pyplot as plt
+import pandas as pd
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__)) 
 PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
@@ -24,19 +25,139 @@ sys.path.append(PROJECT_DIR + '/code/')
 
 # nonstandard imports
 import filtering.filter_utilities as fu
+import importing.angle_calculations as ac
 
 def generate_individual_series():
     """
     Generates an entire individual timeseries
     """
+
+    # toggles
+    reorientation_chance = 10
+    final_N = 36000
+    
+
+
+    state = (0, 0, 0, 0)
+    states = [state]    
+
+    while len(states) < final_N + 1:
+        N_seg = int(sts.expon.rvs(scale=100))
+
+        #intialize velocity and angular change
+        new_v = random.choice([0, 0.01, 0.04])
+        d_ang = 0
+        if new_v > 0:
+            d_ang = np.random.normal(0, 0.01)
+            
+
+        # before moving. try reorientation chance.
+        rando = random.uniform(0, 1) * 100        
+        if rando < reorientation_chance and new_v > 0:
+            # reorientation make current direction equally randomly face anywhere.
+            x, y, v, ang = states[-1]
+            states[-1] = (x, y, v, np.random.uniform(- np.pi, np.pi)) 
+                   
+        # now generate all changes.
+        x, y, v, ang = states[-1]
+        for i in range(N_seg):
+            x, y, v, ang = (x + v * np.cos(ang),
+                            y + v * np.sin(ang),
+                            new_v,
+                            ang+d_ang)
+            states.append((x, y, v, ang))        
+
+
+    # remove first point (which was dummy values) and cut down to final_N points
+    x, y, vel, thetas = zip(*states[1:final_N +1])
+    return x, y, vel, thetas
+
+
+def generate_individual_series2():
+    """
+    Generates an entire individual timeseries
+    """
+    # toggles
+    reorientation_chance = 10
+    final_N = 36000
+    
     domains = []
-    x, y, vel, theta = [0.0], [0.0], [0.0], [0.0]
-    while len(x) < 36000:
-        xi, yi, veli, thetai = generate_xy_pattern(x[-1], y[-1], vel[-1], theta[-1])
-        x.extend(xi)
-        y.extend(yi)
-        vel.extend(veli)
-        theta.extend(thetai)
+    x, y, vel, thetas = [0.0], [0.0], [0.0], [0.0]
+    #just_reoriented = False
+
+    v = 0.0
+    while len(x) < final_N:
+        #How long this segment is going to be, a random int drawn from an exponential distribution.
+        N_seg = int(sts.expon.rvs(scale=100))
+
+        #Set the velocity
+        #Velocity can currently be selected from three different options.
+        #The three options are currently equally likely.
+        v, last_v = random.choice([0, 0.01, 0.04]), v
+        #All the instantaneous velocities of the segment are set to the same velocit.
+        
+        #if moving, angle change is chosen from a normal distribution.
+        d_theta = 0
+        if v > 0:
+            d_theta = np.random.normal(0, 0.01)
+
+
+        new_thetas = [thetas[-1] + (i * d_theta) for i in range(N_seg)]
+        new_vel = v * np.ones(N_seg)        
+        #if N_seg > 0 :
+        new_x = [x[-1] + last_v * np.cos(thetas[-1])]
+        new_y = [x[-1] + last_v * np.sin(thetas[-1])]
+
+        for ang in new_thetas[1:]:
+            dx = v * np.cos(ang)
+            dy = v * np.sin(ang)
+            new_x.append(new_x[-1] + dx)
+            new_y.append(new_y[-1] + dy)
+            
+        #new_x = [x0 + (v * np.cos(ang)) for i, ang in enumerate(new_thetas)]
+        #new_y = [y0 + (v * np.sin(ang)) for i, ang in enumerate(new_thetas)]
+        check_list = [len(new_x), len(new_y), len(new_vel), len(new_thetas)]
+        for i in check_list:
+            if i != N_seg:
+                print check_list, N_seg
+                #print new_x
+        if N_seg > 0:
+            x.extend(new_x)
+            y.extend(new_y)
+            vel.extend(new_vel)
+            thetas.extend(new_thetas)
+
+        '''      
+        for t in range(N_seg):
+            #Change in x and y is determined by the direction of movement and the magnitude of the movement
+            
+            theta, last_theta = last_theta + d_theta, theta
+            
+            dx = vel[t] * np.cos(theta[-1])
+            dy = vel[t] * np.sin(theta[-1])
+            #Increment the position by the x and y change.
+            x.extend(x[-1] + dx)
+            y.extend(y[-1] + dy)
+            #Slightly change the direction based on the angle change.
+            theta.append(theta[-1] + float(d_theta))
+
+        #Reorientation doesn't move the worm, just completely changes the direction.
+        # any direction is equally probable.
+        rando = random.uniform(0, 1) * 100        
+        if rando < reorientation_chance and v>0:
+            theta[-1] = np.random.uniform(0, 2 * np.pi)
+            
+            
+        return x[1:], y[1:], vel[:-1], theta[1:], False
+
+
+        
+        xi, yi, veli, thetai, just_reoriented = generate_xy_pattern(x[-1], y[-1],
+                                                                    vel[-1],
+                                                                    theta[-1],
+                                                                    just_reoriented)
+        '''                                                                    
+    print len(x), len(y), len(vel), len(thetas)        
     in_domain = False
     domain_start = 0
     for a, v in enumerate(vel):
@@ -47,7 +168,7 @@ def generate_individual_series():
         elif not in_domain and v == 0:
             in_domain = True
             domain_start = a
-    return x, y, vel, theta, domains
+    return x, y, vel, thetas, domains
 
 def show_series(x, y, vel, theta, domains):
     plt.figure(1)
@@ -69,46 +190,6 @@ def show_series(x, y, vel, theta, domains):
     plt.plot(theta)
     plt.ylabel('theta')
     plt.show()
-
-def generate_xy_pattern(x0, y0, v0, theta0):
-    rando = random.uniform(0, 1) * 100
-    reorientation_chance = 10
-    #Reorientation doesn't move the worm, just completely changes the direction.
-    if rando < reorientation_chance:
-        d_theta = np.random.normal(0, np.pi)
-        return [x0], [y0], [v0], [d_theta]
-
-    #How long this segment is going to be, a random int drawn from an exponential distribution.
-    N = int(sts.expon.rvs(scale=100))
-    times = range(N)
-
-    #Set initial conditions
-    x = [x0]
-    y = [y0]
-    theta = [theta0]
-    
-    #Set the velocity
-    #Velocity can currently be selected from three different options.
-    vs = [0, 0.01, 0.04]
-    #The three options are currently equally likely.
-    r_v = random.randint(0, 2)
-    v = vs[r_v]
-    #All the instantaneous velocities of the segment are set to the same velocity.
-    vel = v * np.ones(N)
-    #Angle change is chosen from a normal distribution.
-    d_theta = np.random.normal(0, 0.01)
-
-    for t in times[1:]:
-        #Change in x and y is determined by the direction of movement and the magnitude of the movement
-        dx = vel[t] * np.cos(theta[-1])
-        dy = vel[t] * np.sin(theta[-1])
-        #Increment the position by the x and y change.
-        x.append(x[-1] + dx)
-        y.append(y[-1] + dy)
-        #Slightly change the direction based on the angle change.
-        theta.append(theta[-1] + float(d_theta))
-    return x[1:], y[1:], vel[1:], theta[1:]
-
 
 def worm_xyt_extractor(worm_name):
     """
@@ -314,11 +395,67 @@ def synthetic_worm_creator(noise_level=0.1):
     worm['domains'] = domains
     return worm
 
+def xy_to_full_dataframe(times, x, y):
+    x, y = list(x), list(y)
+    dt = np.diff(np.array(times))    
+    dx = np.diff(np.array(x))
+    dy = np.diff(np.array(y))
+    # to guard against division by zero
+    for i, t in enumerate(dt):
+        if t < 0.0000001:
+            dt[i] = 0.0000001
+    speeds = np.sqrt(dx**2 + dy**2) / dt
+    speeds = list(speeds) + [np.nan]
+    angles = [np.nan] + list(ac.angle_change_for_xy(x, y, units='rad')) + [np.nan]
+    print len(times), len(x), len(y), len(speeds), len(angles)
+    df = pd.DataFrame(zip(x, y, speeds, angles), index=times,
+                      columns=['x', 'y', 'v', 'dtheta'])
+    print df.head()
+    return df
+    
+def create_synthetic_worm_csvs(noise_level=0.1):
+    """
+    """    
+    x, y, v, theta, domains = generate_individual_series()
+
+    #t = np.arange(0, len(x)*0.1, 0.1)
+    t = np.arange(0, len(x), 1)  
+    soln = pd.DataFrame(index=t)
+    '''
+    def rescale_dthetas(dthetas):
+        new_dth = []
+        for dth in dthetas:
+            steps = abs(int(dth / (2*np.pi))) + 1
+            if dth < -np.pi:
+                dth += steps * 2 * np.pi
+            elif dth > np.pi:
+                dth -= steps * 2 * np.pi
+            new_dth.append(dth)
+        return new_dth
+    '''
+    
+    dtheta = [np.nan] + [ac.rescale_radians(r) for r in np.diff(theta)]
+    soln['x'], soln['y'], soln['v'], soln['dtheta'] = x, y, v, dtheta
+    soln.to_csv('soln.csv')    
+    
+    soln2 = xy_to_full_dataframe(t, x, y)
+    soln2.to_csv('soln2.csv')    
+            
+    n_x, n_y, n_t = zip(*add_set_noise(zip(x, y, t), noise_level))
+    noisy = xy_to_full_dataframe(n_t, n_x, n_y)       
+    noisy.to_csv('noisy.csv')    
+
+    s_x, s_y, s_t = zip(*fu.smoothing_function(zip(n_x, n_y, n_t), 11, 5))
+    smoothed = xy_to_full_dataframe(s_t, s_x, s_y)       
+    smoothed.to_csv('smoothed.csv')    
+        
+
 if __name__ == '__main__':
     #Call a function that will create a worm dictionary, like synthetic_worm_creator(), noisy_worm_from_plate,
     #return_noisy_worm, or return_default_worm
-    worm = synthetic_worm_creator()
+    #worm = synthetic_worm_creator()
     #This worm is then saved to a location of your choosing.
-    save_dir = '{d}/smoothing'.format(d=TEST_DATA_DIR)
-    json.dump(worm, open('{d}/synthetic_1.json'.format(d=save_dir), 'w'), indent=4)
+    #save_dir = '{d}/smoothing'.format(d=TEST_DATA_DIR)
+    #json.dump(worm, open('{d}/synthetic_1.json'.format(d=save_dir), 'w'), indent=4)
     #print 'Hello'
+    create_synthetic_worm_csvs()

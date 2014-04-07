@@ -63,13 +63,13 @@ def synthetic_worm_domain_tester(thresholds, worm_path):
     #Neighbor score of a point necessary to start the creation of a domain
     #Equivalent to minimum number of points of a domain, with points separated
     #by ~0.1 seconds. Thus a score of 30 would be ~3 seconds.
-    score_threshold = 30
+    timepoint_threshold = 30
 
     #Removing True Domains that are too small to be detected or relevant, as
     #determined by the score threshold for the calculated domains
     c = 0
     for domain in true_domains:
-        if domain[1]-domain[0] >= score_threshold:
+        if domain[1]-domain[0] >= timepoint_threshold:
             t_domains_over_score.append(domain)
         else:
             c += 1
@@ -81,13 +81,12 @@ def synthetic_worm_domain_tester(thresholds, worm_path):
     rx, ry = zip(*rxy)
     rxyt = zip(rx, ry, time)
     tdx, tdy, tdt = domains_to_xyt(rxyt, true_domains)
+    
     nx, ny = zip(*nxy)
     nxyt = zip(nx, ny, time)
     sxyt = smoothing_function(nxyt, 11, 5)
     noise_x, noise_y = fwc.noise_calc(nxyt, sxyt)
     print noise_x / float(ppm)
-    true_domains_lengths = [domain[1]-domain[0] for domain in true_domains]
-    true_hist, true_bins = np.histogram(true_domains_lengths, 10, normed=True)
 
     for domain in true_domains:
         true_domains_timepoints[domain[0]:domain[1]] = np.ones(domain[1]-domain[0]) * 2
@@ -105,8 +104,8 @@ def synthetic_worm_domain_tester(thresholds, worm_path):
     unmatched_calc_domains_list = []
 
     for threshold in thresholds:
-        point_scores = neighbor_calculation(peak_distance=0.007, nxy=nxy, ppm=ppm)
-        calculated_domains = domain_creator(point_scores, score_threshold=threshold)
+        point_scores = neighbor_calculation(distance_threshold=0.007, nxy=nxy, ppm=ppm)
+        calculated_domains = domain_creator(point_scores, timepoint_threshold=threshold)
 
         if calculated_domains:
             calculated_domains_lengths = [domain[1]-domain[0] for domain in calculated_domains]
@@ -136,36 +135,40 @@ def synthetic_worm_domain_tester(thresholds, worm_path):
         ctot_hist, ctot_bins = np.histogram(calc_per_true_domains, bins=range(0, 6))
         pcovt_hist, pcovt_bins = np.histogram(percent_covered_true)
 
-        plt.figure(1)
-        plt.plot(ctot_bins[1:], ctot_hist, label='Threshold {t}'.format(t=threshold))
-        plt.figure(2)
-        plt.plot(pcovt_bins[1:], pcovt_hist, label='Threshold {t}'.format(t=threshold))
+def calc_domains_for_xy(x, y, distance_threshold=0.007, timepoint_threshold=30):
 
-    plt.figure(1)
-    plt.xlabel('# of Calculated Domains Mapped to a True Domain')
-    plt.ylabel('Count')
-    plt.legend()
+    """
+    """
 
-    plt.figure(2)
-    plt.xlabel('% of True Domain Points Covered By Calculated Domains')
-    plt.ylabel('Count')
-    plt.legend()
+    nxy = zip(x,y)
+    ppm = 40
+    #nxy = worm['noisy-xy']
+    #time = np.array(worm['time'])
 
-    plt.figure(3)
-    plt.xlabel('Domain Lengths (Number of points)')
-    plt.ylabel('Normalized Count')
-    plt.legend()
+    #Neighbor score of a point necessary to start the creation of a domain
+    #Equivalent to minimum number of points of a domain, with points separated
+    #by ~0.1 seconds. Thus a score of 30 would be ~3 seconds.
+    
+    point_scores = neighbor_calculation(distance_threshold=distance_threshold,
+                                        nxy=nxy, ppm=ppm)
+    calculated_domains = domain_creator(point_scores,
+                                        timepoint_threshold=timepoint_threshold)
+    return calculated_domains
+    
 
-    plot_confusion_matrix(tps, fps, tns, fns, thresholds)
-
-    plt.figure()
-    plt.plot(thresholds, unmatched_calc_domains_list)
-    plt.xlabel('Distance Threshold (mm)')
-    plt.ylabel('Percent of Calculated Domains Unmatched to True Domain')
-
-    ROC_plot(tps, fps, tns, fns)
-    return []
-
+def get_true_domains(velocities):
+    domains = [] 
+    in_domain = False
+    domain_start = 0
+    for a, v in enumerate(velocities):
+        if in_domain and v != 0:
+            in_domain = False
+            domain_end = a-1
+            domains.append([domain_start, domain_end])
+        elif not in_domain and v == 0:
+            in_domain = True
+            domain_start = a
+    return domains
 
 def plot_confusion_matrix(tps, fps, tns, fns, thresholds):
     """
@@ -285,18 +288,18 @@ def calc_distance(point1, point2, scalar):
     return distance
 
 
-def neighbor_calculation(peak_distance, nxy, ppm=40):
+def neighbor_calculation(distance_threshold, nxy, ppm=40):
     """
     Calculates the score at each point in the worm path, where the score represents the number
     of neighbors within a certain threshold distance.
-    :param peak_distance: This is the threshold distance to be considered a neighbor to a point, assumed here
+    :param distance_threshold: This is the threshold distance to be considered a neighbor to a point, assumed here
     to be in mm, not pixels
     :param nxy: A list of xy points, presumed to be noisy, i.e. the recorded data of the worm path
     :param ppm: A conversion factor of pixels-per-mm for converting the distance between points from pixels to mm
     :return: A list of positive integer scores for each point in the worm path.
     """
     worm_point_scores = []
-    print 'Peak distance: {p}'.format(p=peak_distance)
+    print 'Peak distance: {p}'.format(p=distance_threshold)
     print 'Calculating Peaks'
     for a, point in enumerate(nxy):
         flag1 = True
@@ -304,7 +307,7 @@ def neighbor_calculation(peak_distance, nxy, ppm=40):
         point_score = 0
         while flag1:
             if inbounds(len(nxy), a-b):
-                if calc_distance(point, np.array(nxy[a-b]), ppm) <= peak_distance:
+                if calc_distance(point, np.array(nxy[a-b]), ppm) <= distance_threshold:
                     point_score += 1
                 else:
                     flag1 = False
@@ -354,19 +357,20 @@ def domains_to_xyt(xyt, domains):
     return domains_x, domains_y, domains_t
 
 
-def domain_creator(point_scores, score_threshold=30):
+def domain_creator(point_scores, timepoint_threshold=30):
     """
     Calculates the domains, or regions along the worm path that exhibit zero movement. It does so by setting
     a threshold score for the number of nearby neighbors necessary to be considered an area of no movement, and
     then setting a domain behind that point to be considered non moving.
+    
     :param point_scores: The neighbor scores of each point in the worm path
-    :param score_threshold: The score threshold for a point to be considered the initiator of a non-moving domain
+    :param timepoint_threshold: The score threshold for a point to be considered the initiator of a non-moving domain
     :return: A list of domains
     """
     print 'Calculating Domains'
     threshold_indices = []
     for a, score in enumerate(point_scores):
-        if score > score_threshold:
+        if score > timepoint_threshold:
             threshold_indices.append(a)
     domains = []
     for index in threshold_indices:

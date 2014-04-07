@@ -13,6 +13,9 @@ __status__ = 'prototype'
 # standard imports
 import unittest
 import math
+import numpy as np
+import random
+#from angle_calculations import angle_change_for_xy2 as angle_change_for_xy
 from angle_calculations import *
 
 class TestAngleCalculations(unittest.TestCase):
@@ -74,6 +77,25 @@ class TestAngleCalculations(unittest.TestCase):
         soln = [0.540540540] * (len(x) -1)
         for i, j in zip(soln, angle_change_for_xy(x ,y)):
             self.assertAlmostEqual(i, j)        
-    
+
+    def test_constant_anglar_change(self):
+
+        N = 100
+        x = [0]
+        y = [0]
+        v = 1.0
+        theta = [0.0]
+        d_theta = random.uniform(-1, 1)       
+        for t in range(N):
+            dx = v * np.cos(theta[-1])
+            dy = v * np.sin(theta[-1])
+            x.append(x[-1] + dx)
+            y.append(y[-1] + dy)
+            #Slightly change the direction based on the angle change.
+            theta.append(theta[-1] + float(d_theta))
+        for dt in angle_change_for_xy(x, y, units='rad'):
+            self.assertAlmostEqual(d_theta, dt)
+        
+            
 if __name__ == '__main__':
     unittest.main()

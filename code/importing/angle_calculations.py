@@ -14,12 +14,30 @@ import math
 
 rad_to_deg_factor = 180.0 / np.pi
 
-def angle_change_for_xy(x, y, allow_negatives=True):
+def rescale_radians(rad, max_iter=10000):    
+    for i in xrange(max_iter):
+        rad -= 2 * np.pi * int(rad / (2*np.pi))
+        if rad < -np.pi:
+            rad += 2 * np.pi
+        elif rad > np.pi:
+            rad -= 2 * np.pi
+        if -np.pi < rad < np.pi:        
+            return rad
+    else:
+        print 'Error: rescaling failed for: {r}'.format(r=rad)
+        return False        
+
+def angle_change_for_xy(x, y, allow_negatives=True, units='deg'):
     vectors = np.array(zip(np.diff(x), np.diff(y)))
     unit_vectors = [v / np.linalg.norm(v) for v in vectors]    
     angles = []
+    nan_counts = 0
     for v1, v2 in zip(unit_vectors[:-1], unit_vectors[1:]):
-        angle = np.arccos(np.dot(v1, v2)) * rad_to_deg_factor
+        if np.isnan(v1[0]):
+            nan_counts += 1
+        angle = np.arccos(np.dot(v1, v2))
+        if units == 'deg':
+            angle = angle * rad_to_deg_factor
         # if allow negatives, see if direction of 3d cross product + or -
         if allow_negatives:
             # make sure vectors are 3D
@@ -36,8 +54,10 @@ def angle_change_for_xy(x, y, allow_negatives=True):
             else:
                 angle ==  180        
         angles.append(angle)
+    print 'nan counts', nan_counts
     return angles
 
+# Currently nonfunctional....
 def angle_change_for_xy2(x, y):
     dx, dy =np.diff(x), np.diff(y)
     angles = np.arctan2(dy, dx) * rad_to_deg_factor
