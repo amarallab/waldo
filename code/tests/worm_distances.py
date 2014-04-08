@@ -12,6 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import json
 import scipy.stats as stats
 from itertools import izip
+import pandas as pd
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__)) 
 PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
@@ -39,16 +40,63 @@ def inbounds(list_length, index):
     else:
         return True
 
-def domains_to_expansions(domains):
+def homogenize_domains(xy, domains):
+    ''' replace each stationary domain with the median values for that domain '''   
+    new_xy = copy.copy(xy)
+    for (start, end) in domains:
+        end += 1 #because string indicies are non inclusive
+        l = end - start
+        x_seg, y_seg = zip(*new_xy[start:end])
+        x_seg = np.ones(l) * np.median(x_seg)
+        y_seg = np.ones(l) * np.median(y_seg) 
+        new_xy[start:end] = zip(x_seg, y_seg)
+    return new_xy
+        
+def expand_domains(xy, domains):
+    ''' expands the one value left for each domain into multiple values '''
+    expansions = {}
+    shift = 0
+    for start, end in domains:
+        expansions[start - shift] = end - start + 1
+        shift += end - start
+    #print expansions
+    expanded = []
+    for i, val in enumerate(xy):
+        if i in expansions:
+            segment = [val] * expansions[i]
+        else:
+            segment = [val]
+        expanded.extend(segment)
+    return expanded
+
+def reduce_domains(xy, domains):
+    ''' removes all but one value for each domain '''
+    reduction_filter = [True] * len(xy)
+    for start, end in domains:
+        #print start, end, len([False] * (end - start)), len(reduction_filter[start + 1: end + 1])
+        reduction_filter[start + 1: end + 1] = [False] * (end - start)    
+    return [v for (f,v) in zip(reduction_filter, sample) if f]
+
+
+
+def test_bulk_xy(xy_file, soln_file, t_threshold, r_threshold):
+    noisy_xy = pd.read_hdf(xy_file, 'table')
+    soln = pd.read_hdf(soln_file, 'table')
+    '''
+    columns = noisy_xy.columns
+    N_trials = len(columns) / 2
+    t = noisy_xy.index
+    for i in range(N_trials):
+        xkey, ykey = ('x'+str(i)), ('y'+str(i))
+        x, y  = list(noisy_xy[xkey]), list(noisy_xy[ykey])
+    '''
+    #point_scores = neighbor_calculation(distance_threshold=r_threshold, nxy=nxy, ppm=ppm)
+    #calculated_domains = domain_creator(point_scores, timepoint_threshold=threshold)
+    return noisy_xy, soln
+    
     
 
-def contract_domains(x, y, domains):
-    contraction = []
-    
 
-
-def expand_domains(x, y, domains):
-    pass
 
 
 def synthetic_worm_domain_tester(thresholds, worm_path):
@@ -152,7 +200,6 @@ def calc_domains_for_xy(x, y, distance_threshold=0.007, timepoint_threshold=30):
 
     """
     """
-
     nxy = zip(x,y)
     ppm = 40
     #nxy = worm['noisy-xy']
@@ -201,7 +248,6 @@ def plot_confusion_matrix(tps, fps, tns, fns, thresholds):
     plt.ylabel('Count (Number of Points)')
     plt.xlabel('Distance Threshold (mm)')
     plt.legend()
-
 
 def percent_unmatched_calculated_domains(c_domains, t_domains):
     """
@@ -301,7 +347,7 @@ def calc_distance(point1, point2, scalar):
     return distance
 
 
-def neighbor_calculation(distance_threshold, nxy, ppm=40):
+def neighbor_calculation(distance_threshold, nxy, ppm=1):
     """
     Calculates the score at each point in the worm path, where the score represents the number
     of neighbors within a certain threshold distance.
@@ -329,7 +375,6 @@ def neighbor_calculation(distance_threshold, nxy, ppm=40):
             b += 1
         worm_point_scores.append(point_score)
     return worm_point_scores
-
 
 def plot_domains(domains, y):
     """
@@ -392,7 +437,7 @@ def domain_creator(point_scores, timepoint_threshold=30):
         if left < 0:
             left = 0
         if domains:
-            if domains[-1][1] > left:
+            if domains[-1][1] >= left:
                 domains[-1] = [domains[-1][0], index]
             else:
                 domains.append([left, index])
@@ -413,6 +458,27 @@ def ROC_plot(TP, FP, TN, FN):
     :param FN: A list of false negative counts
     :return: []
     """
+    TPR = []
+    FPR = []
+    precision = []
+    F1_score = []
+    plt.figure()
+    for a, tp in enumerate(TP):
+        tpr = tp/float(tp+FN[a])
+        fpr = FP[a]/float(FP[a]+TN[a])
+        TPR.append(tpr)
+        FPR.append(fpr)
+        precision.append(tp/float(tp+FP[a]))
+        F1_score.append((2*tp)/float(2*tp + FP[a] + FN[a]))
+        plt.annotate('{index}'.format(index=a), xy=(fpr, tpr), xytext=(fpr, tpr-0.01))
+    print TPR, FPR, precision, F1_score
+    plt.plot(np.linspace(0, 1, 100), np.linspace(0, 1, 100), '-r')
+    plt.scatter(FPR, TPR)
+    plt.xlabel('False Positive Rate FP/(FP+TN)')
+    plt.ylabel('True Positive Rate TP/(TP+FN)')
+    return []
+
+def ROC_plot2(TP, FP, TN, FN, labels):
     TPR = []
     FPR = []
     precision = []
@@ -454,7 +520,10 @@ def domain_merge(domains):
 if __name__ == '__main__':
     #a, b, c, d represent the true positive, false positive, true negative, and false negative
     #outputs of the domain_tester function.
-    synthetic_worm_domain_tester(thresholds=[10, 20, 30, 40, 60],
-                                 worm_path='./data/smoothing/synthetic_1.json')
+    #synthetic_worm_domain_tester(thresholds=[10, 20, 30, 40, 60],
+    #                             worm_path='./data/smoothing/synthetic_1.json')
+    soln_file = './data/smoothing/paused_soln.h5'
+    noise_file = './data/smoothing/noisy_xy_0p1.h5'
+    test_bulk_xy(xy_file=noise_file, soln_file=soln_file, r_threshold=1, t_threshold=30)
     plt.show()
     print 'Hello'

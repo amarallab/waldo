@@ -28,20 +28,17 @@ sys.path.append(CODE_DIR)
 import filtering.filter_utilities as fu
 from importing import angle_calculations as ac
 
-def generate_individual_series():
+def generate_individual_series(N_points=3600):
     """
     Generates an entire individual timeseries
     """
-
     # toggles
     reorientation_chance = 10
-    final_N = 36000
     
-
     state = (0, 0, 0, 0)
     states = [state]    
 
-    while len(states) < final_N + 1:
+    while len(states) < N_points + 2:
         N_seg = int(sts.expon.rvs(scale=100))
 
         #intialize velocity and angular change
@@ -68,147 +65,9 @@ def generate_individual_series():
             states.append((x, y, v, ang))        
 
 
-    # remove first point (which was dummy values) and cut down to final_N points
-    x, y, vel, thetas = zip(*states[1:final_N +1])
+    # remove first point (which was dummy values) and cut down to N_points points
+    x, y, vel, thetas = zip(*states[2:N_points +2])
     return x, y, vel, thetas
-
-
-def generate_individual_series2():
-    """
-    Generates an entire individual timeseries
-    """
-    # toggles
-    reorientation_chance = 10
-    final_N = 36000
-    
-    domains = []
-    x, y, vel, thetas = [0.0], [0.0], [0.0], [0.0]
-    #just_reoriented = False
-
-    v = 0.0
-    while len(x) < final_N:
-        #How long this segment is going to be, a random int drawn from an exponential distribution.
-        N_seg = int(sts.expon.rvs(scale=100))
-
-        #Set the velocity
-        #Velocity can currently be selected from three different options.
-        #The three options are currently equally likely.
-        v, last_v = random.choice([0, 0.01, 0.04]), v
-        #All the instantaneous velocities of the segment are set to the same velocit.
-        
-        #if moving, angle change is chosen from a normal distribution.
-        d_theta = 0
-        if v > 0:
-            d_theta = np.random.normal(0, 0.01)
-
-
-        new_thetas = [thetas[-1] + (i * d_theta) for i in range(N_seg)]
-        new_vel = v * np.ones(N_seg)        
-        #if N_seg > 0 :
-        new_x = [x[-1] + last_v * np.cos(thetas[-1])]
-        new_y = [x[-1] + last_v * np.sin(thetas[-1])]
-
-        for ang in new_thetas[1:]:
-            dx = v * np.cos(ang)
-            dy = v * np.sin(ang)
-            new_x.append(new_x[-1] + dx)
-            new_y.append(new_y[-1] + dy)
-            
-        #new_x = [x0 + (v * np.cos(ang)) for i, ang in enumerate(new_thetas)]
-        #new_y = [y0 + (v * np.sin(ang)) for i, ang in enumerate(new_thetas)]
-        check_list = [len(new_x), len(new_y), len(new_vel), len(new_thetas)]
-        for i in check_list:
-            if i != N_seg:
-                print check_list, N_seg
-                #print new_x
-        if N_seg > 0:
-            x.extend(new_x)
-            y.extend(new_y)
-            vel.extend(new_vel)
-            thetas.extend(new_thetas)
-
-        '''      
-        for t in range(N_seg):
-            #Change in x and y is determined by the direction of movement and the magnitude of the movement
-            
-            theta, last_theta = last_theta + d_theta, theta
-            
-            dx = vel[t] * np.cos(theta[-1])
-            dy = vel[t] * np.sin(theta[-1])
-            #Increment the position by the x and y change.
-            x.extend(x[-1] + dx)
-            y.extend(y[-1] + dy)
-            #Slightly change the direction based on the angle change.
-            theta.append(theta[-1] + float(d_theta))
-
-        #Reorientation doesn't move the worm, just completely changes the direction.
-        # any direction is equally probable.
-        rando = random.uniform(0, 1) * 100        
-        if rando < reorientation_chance and v>0:
-            theta[-1] = np.random.uniform(0, 2 * np.pi)
-            
-            
-        return x[1:], y[1:], vel[:-1], theta[1:], False
-
-
-        
-        xi, yi, veli, thetai, just_reoriented = generate_xy_pattern(x[-1], y[-1],
-                                                                    vel[-1],
-                                                                    theta[-1],
-                                                                    just_reoriented)
-        '''                                                                    
-    print len(x), len(y), len(vel), len(thetas)        
-    in_domain = False
-    domain_start = 0
-    for a, v in enumerate(vel):
-        if in_domain and v != 0:
-            in_domain = False
-            domain_end = a-1
-            domains.append([domain_start, domain_end])
-        elif not in_domain and v == 0:
-            in_domain = True
-            domain_start = a
-    return x, y, vel, thetas, domains
-
-def show_series(x, y, vel, theta, domains):
-    plt.figure(1)
-    plt.plot(x, y)
-    plt.xlabel('x')
-    plt.xlabel('y')
-
-    plt.figure(2)
-    ax = plt.subplot(411)
-    plt.plot(x)
-    plt.ylabel('x')
-    plt.subplot(412, sharex=ax)
-    plt.plot(y)
-    plt.ylabel('y')
-    plt.subplot(413, sharex=ax)
-    plt.plot(vel)
-    plt.ylabel('vel')
-    plt.subplot(414, sharex=ax)
-    plt.plot(theta)
-    plt.ylabel('theta')
-    plt.show()
-
-def worm_xyt_extractor(worm_name):
-    """
-    A function that returns the data for a specific worm that has already had its data saved into an
-    individual json file. It extracts the x, y, and t data and zips them together, and also extracts
-    the pixels-per-mm and returns that as well.
-
-    :param worm_name: A string containing the YYMMDD_HHMMSS_WORMID name of the worm.
-    """
-    file_name = glob.glob('./../../Data/Raw/{w}_*.json'.format(w=worm_name))
-    file_name = file_name[0]
-    data = json.load(open(file_name, 'r'))
-    xy = data['data']
-    t = data['time']
-    ppm = data['pixels-per-mm']
-    x, y = zip(*xy)
-    xyt = zip(x, y, t)
-    return xyt, ppm
-
 
 def noise_calc(raw_xyt, smooth_xyt):
     """
@@ -356,7 +215,6 @@ def noisy_worm_from_plate(worm_name):
     noisy_xyt = add_noise(raw_xyt, smooth_xyt)
     worm['time'] = t
     worm['pixels-per-mm'] = worm_data['pixels-per-mm']
-
     sx, sy, st = zip(*smooth_xyt)
     nx, ny, nt = zip(*noisy_xyt)
     sxy = zip(sx, sy)
@@ -364,7 +222,6 @@ def noisy_worm_from_plate(worm_name):
     worm['smooth-xy'] = sxy
     worm['noisy-xy'] = nxy
     worm['raw-xy'] = xy
-
     print worm
 
 
@@ -385,7 +242,33 @@ def xy_to_full_dataframe(times, x, y):
                       columns=['x', 'y', 'v', 'dtheta'])
     print df.head()
     return df
-    
+
+def generate_bulk_tests(N=1, l=3600, noise_levels=[0.1, 0.2, 0.3], savedir='./'):
+
+    noiseless = pd.DataFrame(index=range(l))
+    soln = pd.DataFrame(index=range(l))
+
+    for i in range(N):
+        x, y, v, theta = generate_individual_series(N_points=l)
+        noiseless['x{i}'.format(i=i)] = x
+        noiseless['y{i}'.format(i=i)] = y
+        soln[i] = [True if vi ==0 else False for vi in v]
+
+    noiseless.to_hdf('{d}noiseless_xy.h5'.format(d=savedir), 'table')
+    soln.to_hdf('{d}paused_soln.h5'.format(d=savedir), 'table')
+    print noiseless.head()
+    print soln.head()
+    print 'noisless'
+        
+    noisy_sets = []
+    for i, noise in enumerate(noise_levels):
+        savename = 'noisy_xy_{n}.h5'.format(n=str(noise).replace('.', 'p'))
+        print savename
+        noise_array = np.random.normal(scale=noise, size=noiseless.shape)
+        noisy = noiseless + noise_array
+        print noisy.head()
+        noisy.to_hdf('{d}{n}'.format(d=savedir, n=savename), 'table')
+
 def create_synthetic_worm_csvs(noise_level=0.1):
     """
     """    
@@ -425,10 +308,6 @@ def create_synthetic_worm_csvs(noise_level=0.1):
 
 if __name__ == '__main__':
     #Call a function that will create a worm dictionary, like synthetic_worm_creator(), noisy_worm_from_plate,
-    #return_noisy_worm, or return_default_worm
-    #worm = synthetic_worm_creator()
-    #This worm is then saved to a location of your choosing.
-    #save_dir = '{d}/smoothing'.format(d=TEST_DATA_DIR)
-    #json.dump(worm, open('{d}/synthetic_1.json'.format(d=save_dir), 'w'), indent=4)
-    #print 'Hello'
-    create_synthetic_worm_csvs()
+
+    generate_bulk_tests(savedir='./data/smoothing/')
+    #create_synthetic_worm_csvs()
