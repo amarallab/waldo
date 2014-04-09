@@ -309,5 +309,5 @@ def create_synthetic_worm_csvs(noise_level=0.1):
 if __name__ == '__main__':
     #Call a function that will create a worm dictionary, like synthetic_worm_creator(), noisy_worm_from_plate,
 
-    generate_bulk_tests(savedir='./data/smoothing/')
+    generate_bulk_tests(N=5, savedir='./data/smoothing/')
     #create_synthetic_worm_csvs()

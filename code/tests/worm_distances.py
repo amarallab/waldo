@@ -425,7 +425,7 @@ def domain_creator(point_scores, timepoint_threshold=30):
     :param timepoint_threshold: The score threshold for a point to be considered the initiator of a non-moving domain
     :return: A list of domains
     """
-    print 'Calculating Domains'
+    #print 'Calculating Domains'
     threshold_indices = []
     for a, score in enumerate(point_scores):
         if score > timepoint_threshold:
@@ -444,7 +444,7 @@ def domain_creator(point_scores, timepoint_threshold=30):
         else:
             domains.append([left, index])
     new_domains = domain_merge(domains)
-    print 'Number of domains: {d}'.format(d=len(domains))
+    #print 'Number of domains: {d}'.format(d=len(domains))
     return new_domains
 
 
