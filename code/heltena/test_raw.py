@@ -4,7 +4,7 @@ import math
 import json
 import os
 
-def heltena_smooth_coordinate_angle_area(a, t, threshold):
+def heltena_smooth_coordinate_angle_area(t, a, threshold):
     res = [a[0]]
     prev_p = (a[0], t[0])
     count = 0
@@ -12,8 +12,8 @@ def heltena_smooth_coordinate_angle_area(a, t, threshold):
         diff = (p[0] - prev_p[0], p[1] - prev_p[1])
         ang = math.atan2(diff[1], diff[0])
         h = math.sqrt(diff[0] ** 2 + diff[1] ** 2)
-        b = math.sin(ang) * h
-        area = (h * b) / 2.0
+        b = h * math.sin(ang) / math.cos(ang)
+        area = (h**2 * b) / 2.0
 
         count += 1
         if abs(area) >= threshold:
@@ -125,6 +125,27 @@ def smooth_locally(x, y, time, threshold):
     y = heltena_smooth_coordinate_angle(y, time, threshold)
     return x, y
 
+
+#
+# from PIL import Image, ImageDraw
+# from random import random
+#
+# t = range(0, 400)
+# x = [200 * math.sin(a*math.pi/50.0) * (1+(random()-0.5)/5.0) for a in t]
+#
+# xx = heltena_smooth_coordinate_angle_area(t, x, 600)
+#
+# x = [a + 200 for a in x]
+# xx = [a + 600 for a in xx]
+#
+# size = (400, 800)
+# img = Image.new("RGB", size, "white")
+# draw = ImageDraw.Draw(img)
+# draw.line(zip(t, x), width=1, fill=(255, 0, 0))
+# draw.line(zip(t, xx), width=1, fill=(128, 255, 0))
+# img.save("test.png", "PNG")
+
+#
 #
 #
 # size = (4096, 4096)
