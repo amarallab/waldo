@@ -50,45 +50,51 @@ def heltena_smooth_coordinate_plane(a, t, threshold):
             res.append(prev)
     return res
 
-TEST_DIR = os.path.dirname(os.path.realpath(__file__))
-PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
-TEST_DATA_DIR = PROJECT_DIR + '/code/tests/data'
+if __name__ == '__main__':
+    
+    TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+    PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
+    TEST_DATA_DIR = PROJECT_DIR + '/code/tests/data'
 
-save_dir = '{d}/smoothing'.format(d=TEST_DATA_DIR)
-filename = '{d}/synthetic_1.json'.format(d=save_dir)
+    save_dir = '{d}/smoothing'.format(d=TEST_DATA_DIR)
+    filename = '{d}/synthetic_1.json'.format(d=save_dir)
 
-values = json.loads(open(filename, 'rt').read())
-smooth_xy = values['smooth-xy']
-noisy_xy = values['noisy-xy']
-raw_xy = values['raw-xy']
-time = values['time']
-pixels_per_mm = values['pixels-per-mm']
-domains = values['domains']
+    values = json.loads(open(filename, 'rt').read())
+    smooth_xy = values['smooth-xy']
+    noisy_xy = values['noisy-xy']
+    raw_xy = values['raw-xy']
+    time = values['time']
+    pixels_per_mm = values['pixels-per-mm']
+    domains = values['domains']
 
-x = [a for a, b in raw_xy]
-y = [b for a, b in raw_xy]
+    x = [a for a, b in raw_xy]
+    y = [b for a, b in raw_xy]
 
-for threshold in [2, 5, 10, 30]:
-    xx = heltena_smooth_coordinate_plane(x, time, threshold)
-    yy = heltena_smooth_coordinate_plane(y, time, threshold)
-    res = {'smooth-xy': zip(xx, yy),
-           'noisy-xy': noisy_xy,
-           'raw-xy': raw_xy,
-           'time': time,
-           'pixels-per-mm': pixels_per_mm,
-           'domains': domains}
-    json.dump(res, open('{d}/synthetic_1-plane-{t}.json'.format(d=save_dir, t=threshold), 'w'), indent=4)
+    for threshold in [2, 5, 10, 30]:
+        xx = heltena_smooth_coordinate_plane(x, time, threshold)
+        yy = heltena_smooth_coordinate_plane(y, time, threshold)
+        res = {'smooth-xy': zip(xx, yy),
+               'noisy-xy': noisy_xy,
+               'raw-xy': raw_xy,
+               'time': time,
+               'pixels-per-mm': pixels_per_mm,
+               'domains': domains}
+        json.dump(res, open('{d}/synthetic_1-plane-{t}.json'.format(d=save_dir, t=threshold), 'w'), indent=4)
 
-    xx = heltena_smooth_coordinate_angle(x, time, threshold)
-    yy = heltena_smooth_coordinate_angle(y, time, threshold)
-    res = {'smooth-xy': zip(xx, yy),
-           'noisy-xy': noisy_xy,
-           'raw-xy': raw_xy,
-           'time': time,
-           'pixels-per-mm': pixels_per_mm,
-           'domains': domains}
-    json.dump(res, open('{d}/synthetic_1-angle-{t}.json'.format(d=save_dir, t=threshold), 'w'), indent=4)
+        xx = heltena_smooth_coordinate_angle(x, time, threshold)
+        yy = heltena_smooth_coordinate_angle(y, time, threshold)
+        res = {'smooth-xy': zip(xx, yy),
+               'noisy-xy': noisy_xy,
+               'raw-xy': raw_xy,
+               'time': time,
+               'pixels-per-mm': pixels_per_mm,
+               'domains': domains}
+        json.dump(res, open('{d}/synthetic_1-angle-{t}.json'.format(d=save_dir, t=threshold), 'w'), indent=4)
 
+def smooth_locally(x, y, time, threshold):
+    x = heltena_smooth_coordinate_angle(x, time, threshold)
+    y = heltena_smooth_coordinate_angle(y, time, threshold)
+    return x, y
 
 #
 #

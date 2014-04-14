@@ -25,7 +25,145 @@ sys.path.append(shared_directory)
 # nonstandard imports
 #from PrincipalComponents.utilities import compute_transpose
 from equally_space import equally_space_snapshots_in_time, compute_transpose
-from database.mongo_retrieve import timedict_to_list
+
+'''
+def new_smooth_xy(x, y,
+                  pre_smooth=(25, 5),
+                  time_threshold = 30,
+                  distance_threshold = 0.25,
+                  max_score=500,
+                  prime_smooth=(75, 5)):
+
+    
+
+    # perform preliminary smoothing on the xy data.
+    window, order = pre_smooth
+    x = savitzky_golay(y=np.array(x), window_size=window, order=order)
+    y = savitzky_golay(y=np.array(y), window_size=window, order=order)
+    
+    # calculate stationary regions
+    point_scores = neighbor_calculation(distance_threshold, x, y, max_score)
+    domains = domain_creator(point_scores, timepoint_threshold=time_threshold)
+    # make sure all x,y values stay consistant throughout stationary domains
+    for (start, end) in domains:
+        end += 1 #because string indicies are non inclusive
+        l = end - start
+        x[start:end] = np.ones(l) * np.median(x[start:end])
+        y[start:end] = np.ones(l) * np.median(y[start:end])
+
+    # perform primary smoothing on the xy data.
+    window, order = prime_smooth
+    x = savitzky_golay(y=np.array(x), window_size=window, order=order)
+    y = savitzky_golay(y=np.array(y), window_size=window, order=order)
+    return x, y
+'''
+
+# these functions may be useful if additional domain manipulation is added.
+'''
+def expand_domains(xy, domains):
+    #""" expands the one value left for each domain into multiple values """
+    expansions = {}
+    shift = 0
+    for start, end in domains:
+        #expansions[start - shift] = end - start + 1
+        #shift += end - start
+        expansions[start - shift] = end - start
+        shift += end - start - 1
+
+    #print expansions
+    expanded = []
+    for i, val in enumerate(xy):
+        if i in expansions:
+            segment = [val] * expansions[i]
+        else:
+            segment = [val]
+        expanded.extend(segment)
+    return expanded
+
+def reduce_domains(xy, domains):
+    #""" removes all but one value for each domain """
+    reduction_filter = [True] * len(xy)
+    for start, end in domains:
+        reduction_filter[start + 1: end] = [False] * (end - start - 1)
+    return [v for (f,v) in zip(reduction_filter, xy) if f]
+'''
+
+def neighbor_calculation(distance_threshold, x, y, max_score=500):
+    """
+    Calculates the score at each point in the worm path, where the score represents the number
+    of neighbors within a certain threshold distance.
+    :param distance_threshold: This is the threshold distance to be considered a neighbor to a point, assumed here
+    to be in mm, not pixels
+    :param nxy: A list of xy points, presumed to be noisy, i.e. the recorded data of the worm path
+    :param max_score: the max number of timepoints that will be tested as neigbors.
+    :return: A list of positive integer scores for each point in the worm path.
+    """
+    point_scores = []
+    for i, pt in enumerate(izip(x,y)):
+        start = max([0, i-max_score])
+        if i < 3:
+            point_scores.append(0)
+            continue
+            
+        #short_list = xy[start:i]
+        #xi, yi = zip(*short_list)
+        xi, yi = x[start:i], y[start:i]
+        dx = np.array(xi) - pt[0]
+        dy = np.array(yi) - pt[1]
+        dists = np.sqrt(dx**2 + dy**2)
+        
+        score = 0
+        for d in dists[::-1]:
+            if d < distance_threshold:
+                score += 1
+            else:
+                break
+        #print i, score, dists[0], dists[-1]
+        point_scores.append(score)
+    return point_scores
+    
+def domain_creator(point_scores, timepoint_threshold=30):
+    """
+    Calculates the domains, or regions along the worm path that exhibit zero movement. It does so by setting
+    a threshold score for the number of nearby neighbors necessary to be considered an area of no movement, and
+    then setting a domain behind that point to be considered non moving.
+    
+    :param point_scores: The neighbor scores of each point in the worm path
+    :param timepoint_threshold: The score threshold for a point to be considered the initiator of a non-moving domain
+    :return: A list of domains
+    """
+    #print 'Calculating Domains'
+    threshold_indices = []
+    for a, score in enumerate(point_scores):
+        if score > timepoint_threshold:
+            threshold_indices.append(a)
+    domains = []
+    for index in threshold_indices:
+        score = point_scores[index]
+        left = index-score
+        if left < 0:
+            left = 0
+        if domains:
+            if domains[-1][1] >= left:
+                domains[-1] = [domains[-1][0], index]
+            else:
+                domains.append([left, index])
+        else:
+            domains.append([left, index])
+
+    #Takes in the list of domains and merges domains that overlap. This function isn't totally
+    #necessary anymore, since I've sort of implemented this logic into the initial calculation
+
+    new_domains = []
+    for a, domain in enumerate(domains[:-1]):
+        if domain[1] > domains[a+1][0]:
+            new_domains.append([domain[0], domains[a+1][1]])
+    if not new_domains:
+        new_domains = domains
+
+    #print 'Number of domains: {d}'.format(d=len(domains))
+    return new_domains
+
 
 def smoothing_function(xyt, window, order):
     """
@@ -230,80 +368,6 @@ def filter_time_series(times, values):
     return times, filtered_snapshots
 
 
-def compute_filtered_timedict(xy_raw_timedict):
-    # convert timedict into two sorted lists of times and positions
-    t, xy = timedict_to_list(xy_raw_timedict)
-    # process lists of times and positions
-    times, xy_filtered = filter_time_series(t, xy)
-    # convert lists back into a timedict
-    filtered_timedict = {}
-    for time, xy_f in izip(times, xy_filtered):
-        time_key = str('%.3f' % time).replace('.', '?')
-        filtered_timedict[time_key] = xy_f
-        # insert filtered xy positions back into the database
-    return filtered_timedict
-
-
-def filter_stat_timedict(stat_timedict, return_type=dict):
-    from itertools import izip
-    assert type(stat_timedict) == dict
-    assert return_type in [list, dict]
-
-    # TODO: do not remove skips but smooth each region seperatly
-    times, stats = timedict_to_list(stat_timedict, remove_skips=False)
-
-    stat_region = []
-    region_times = []
-    all_stats = []
-    filtered_timedict = {}
-    
-    for i, (t, s) in enumerate(izip(times, stats), start=1):
-        if s == 'skipped' or s == []:
-            # if it's long enough, filter the region.
-            if len(stat_region) >= 26:
-                filtered_stat = savitzky_golay(np.array(stat_region), window_size=13, order=4)
-                
-                all_stats += list(stat_region)
-                for tk, fs in izip(region_times, filtered_stat): filtered_timedict[tk] = fs
-                  
-            # if region, too short, don't filter, but leave data in.
-            else: 
-                #print len(stat_region), 'stat region'
-                all_stats += stat_region
-                for tk, fs in izip(region_times, stat_region): filtered_timedict[tk] = fs
-                    
-            # keep the skipped in the timedict.
-            all_stats.append(s)
-            filtered_timedict[('%.3f' % t).replace('.', '?')] = s
-            # reset region.
-            stat_region = []
-            region_times = []
-
-        # if this is the last point, checkout
-        elif i >= len(times):
-            stat_region.append(s)
-            region_times.append(('%.3f' % t).replace('.', '?'))            
-            if len(stat_region) >= 26:
-                filtered_stat = savitzky_golay(np.array(stat_region), window_size=13, order=4)
-            
-                all_stats += list(filtered_stat)
-                for tk, fs in izip(region_times, filtered_stat): filtered_timedict[tk] = fs
-                  
-            
-            else: 
-                #print len(stat_region), 'stat region'
-                all_stats += stat_region
-                for tk, fs in izip(region_times, stat_region): filtered_timedict[tk] = fs
-
-        else:
-            stat_region.append(s)
-            region_times.append(('%.3f' % t).replace('.', '?'))
-
-    
-    if return_type == list:
-        return all_stats
-    else:
-        return filtered_timedict
 
 if __name__ == '__main__':
     """

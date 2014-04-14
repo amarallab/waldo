@@ -26,7 +26,7 @@ sys.path.append(CODE_DIR)
 
 # nonstandard imports
 import filtering.filter_utilities as fu
-from importing import angle_calculations as ac
+from wormmetrics import angle_calculations as ac
 
 def generate_individual_series(N_points=3600):
     """
@@ -68,9 +68,9 @@ def generate_individual_series(N_points=3600):
     # remove first point (which was dummy values) and cut down to N_points points
     x, y, vel, thetas = zip(*states[2:N_points +2])
     return x, y, vel, thetas
-
+'''
 def noise_calc(raw_xyt, smooth_xyt):
-    """
+    #"""
     Calculates a rough estimate of the noise by taking the smoothed data, pretending it is the 'real'
     path of the worm, and then calculating the standard deviation of the distribution of the displacement
     of the raw data from the smoothed data.
@@ -78,7 +78,7 @@ def noise_calc(raw_xyt, smooth_xyt):
     :param smooth_xyt: A list of xyt values that have been smoothed such that it is supposed to represent the
     'real' worm path.
     :return: Returns separate x and y noise estimates.
-    """
+    #"""
     dx = []
     dy = []
     for a, point in enumerate(raw_xyt):
@@ -92,7 +92,7 @@ def noise_calc(raw_xyt, smooth_xyt):
 
 
 def add_noise(raw_xyt, smooth_xyt):
-    """
+    #"""
     Adds gaussian noise to xyt data that was smoothed from real worm raw xyt data. The size of the noise is estimated
     using the noise_calc function, and the values of the noise for each x and y value are randomly chosen from
     a random normal distribution.
@@ -100,7 +100,7 @@ def add_noise(raw_xyt, smooth_xyt):
     :param smooth_xyt: A list of xyt values that have been smoothed such that it is supposed to represent the
     'real' worm path.
     :return: Returns a list of xyt values that have had noise added to them.
-    """
+    #"""
     noise_x, noise_y = noise_calc(raw_xyt, smooth_xyt)
     x, y, t = zip(*smooth_xyt)
     x = np.array(x)
@@ -112,37 +112,14 @@ def add_noise(raw_xyt, smooth_xyt):
     return noisy_xyt
 
 
-def add_set_noise(xyt, noise_x, noise_y=0):
-    """
-    Adds noise to a list of xyt points. The size of the noise is predetermined and brought into the function
-    as a parameter.
-    :param xyt: A list of xyt points, presumably the 'real' worm path.
-    :param noise_x: A positive number representing the size of the normal distribution from which the noise
-    will be randomly chosen for each point in the xyt list.
-    :param noise_y: If no value is given, the y noise will be set equal to the x noise. Otherwise, this value
-    is used the same way the noise_x is used, except for the y value of each xyt point.
-    :return: A list of noisy xyt points representing the 'collected' noisy data
-    """
-    if noise_y == 0:
-        noise_y = noise_x
-    x, y, t = zip(*xyt)
-    x = np.array(x)
-    y = np.array(y)
-    t = np.array(t)
-    n_x = x + np.random.normal(scale=noise_x, size=x.shape)
-    n_y = y + np.random.normal(scale=noise_y, size=y.shape)
-    noisy_xyt = zip(n_x.tolist(), n_y.tolist(), t)
-    return noisy_xyt
-
-
 def return_default_worm():
-    """
+    #"""
     This function opens the json file, collects the xyt data, smooths and adds noise to the data, and
     returns a worm dictionary that contains the raw, smoothed, and noisy xy data, the time, and the
     pixels-per-mm of the worm. This is for the default worm that I have been testing.
 
     :return: A dictionary with keys 'raw-xy', 'smooth-xy', 'noisy-xy', 'pixels-per-mm', and 'time'.
-    """
+    #"""
     worm_name = '20130319_161150_00006'
     raw_xyt, ppm = worm_xyt_extractor(worm_name)
     smooth_xyt = fu.smoothing_function(raw_xyt, window=11, order=5)
@@ -191,7 +168,7 @@ def return_noisy_worm(worm_name):
 
 
 def noisy_worm_from_plate(worm_name):
-    """
+    #"""
     Same as return_default_worm, except with a parameter for selecting the specific worm you want to use.
     This function is to be used instead of the return_noisy_worm function when the worm that you want to use
     hasn't already had its data extracted from the raw plate json file. This function will extract the worm
@@ -201,7 +178,7 @@ def noisy_worm_from_plate(worm_name):
     returns a worm dictionary that contains the raw, smoothed, and noisy xy data, the time, and the
     pixels-per-mm of the worm.
     :param worm_name: A string of the worm name - YYMMDD_HHMMSS_WORMID
-    """
+    #"""
     plate_name = worm_name[:-6]
     file_name = glob.glob('./../../Data/N2_agingxy_raw/{p}_*.json'.format(p=plate_name))
     plate_data = json.load(open(file_name[0], 'r'))
@@ -223,9 +200,32 @@ def noisy_worm_from_plate(worm_name):
     worm['noisy-xy'] = nxy
     worm['raw-xy'] = xy
     print worm
+'''
+
+def add_set_noise(xyt, noise_x, noise_y=0):
+    """
+    Adds noise to a list of xyt points. The size of the noise is predetermined and brought into the function
+    as a parameter.
+    :param xyt: A list of xyt points, presumably the 'real' worm path.
+    :param noise_x: A positive number representing the size of the normal distribution from which the noise
+    will be randomly chosen for each point in the xyt list.
+    :param noise_y: If no value is given, the y noise will be set equal to the x noise. Otherwise, this value
+    is used the same way the noise_x is used, except for the y value of each xyt point.
+    :return: A list of noisy xyt points representing the 'collected' noisy data
+    """
+    if noise_y == 0:
+        noise_y = noise_x
+    x, y, t = zip(*xyt)
+    x = np.array(x)
+    y = np.array(y)
+    t = np.array(t)
+    n_x = x + np.random.normal(scale=noise_x, size=x.shape)
+    n_y = y + np.random.normal(scale=noise_y, size=y.shape)
+    noisy_xyt = zip(n_x.tolist(), n_y.tolist(), t)
+    return noisy_xyt
 
 
-def xy_to_full_dataframe(times, x, y):
+def speeds_and_angles(times, x, y):
     x, y = list(x), list(y)
     dt = np.diff(np.array(times))    
     dx = np.diff(np.array(x))
@@ -237,6 +237,10 @@ def xy_to_full_dataframe(times, x, y):
     speeds = np.sqrt(dx**2 + dy**2) / dt
     speeds = list(speeds) + [np.nan]
     angles = [np.nan] + list(ac.angle_change_for_xy(x, y, units='rad')) + [np.nan]
+    return speeds, angles
+
+def xy_to_full_dataframe(times, x, y):    
+    speeds, angles = speeds_and_angles(times, x, y)
     print len(times), len(x), len(y), len(speeds), len(angles)
     df = pd.DataFrame(zip(x, y, speeds, angles), index=times,
                       columns=['x', 'y', 'v', 'dtheta'])
@@ -244,10 +248,8 @@ def xy_to_full_dataframe(times, x, y):
     return df
 
 def generate_bulk_tests(N=1, l=3600, noise_levels=[0.1, 0.2, 0.3], savedir='./'):
-
     noiseless = pd.DataFrame(index=range(l))
     soln = pd.DataFrame(index=range(l))
-
     for i in range(N):
         x, y, v, theta = generate_individual_series(N_points=l)
         noiseless['x{i}'.format(i=i)] = x
@@ -277,18 +279,6 @@ def create_synthetic_worm_csvs(noise_level=0.1):
     #t = np.arange(0, len(x)*0.1, 0.1)
     t = np.arange(0, len(x), 1)  
     soln = pd.DataFrame(index=t)
-    '''
-    def rescale_dthetas(dthetas):
-        new_dth = []
-        for dth in dthetas:
-            steps = abs(int(dth / (2*np.pi))) + 1
-            if dth < -np.pi:
-                dth += steps * 2 * np.pi
-            elif dth > np.pi:
-                dth -= steps * 2 * np.pi
-            new_dth.append(dth)
-        return new_dth
-    '''
     
     dtheta = [np.nan] + [ac.rescale_radians(r) for r in np.diff(theta)]
     soln['x'], soln['y'], soln['v'], soln['dtheta'] = x, y, v, dtheta
@@ -301,13 +291,22 @@ def create_synthetic_worm_csvs(noise_level=0.1):
     noisy = xy_to_full_dataframe(n_t, n_x, n_y)       
     noisy.to_csv('noisy.csv')    
 
+    s_x, s_y, s_t = zip(*fu.smoothing_function(zip(n_x, n_y, n_t), 225, 5))
+    smoothed = xy_to_full_dataframe(s_t, s_x, s_y)       
+    smoothed.to_csv('smoothed225.csv')    
+
+    s_x, s_y, s_t = zip(*fu.smoothing_function(zip(n_x, n_y, n_t), 75, 5))
+    smoothed = xy_to_full_dataframe(s_t, s_x, s_y)       
+    smoothed.to_csv('smoothed75.csv')    
+
+    s_x, s_y, s_t = zip(*fu.smoothing_function(zip(n_x, n_y, n_t), 35, 5))
+    smoothed = xy_to_full_dataframe(s_t, s_x, s_y)       
+    smoothed.to_csv('smoothed35.csv')    
+
     s_x, s_y, s_t = zip(*fu.smoothing_function(zip(n_x, n_y, n_t), 11, 5))
     smoothed = xy_to_full_dataframe(s_t, s_x, s_y)       
-    smoothed.to_csv('smoothed.csv')    
+    smoothed.to_csv('smoothed11.csv')    
         
-
 if __name__ == '__main__':
-    #Call a function that will create a worm dictionary, like synthetic_worm_creator(), noisy_worm_from_plate,
-
-    generate_bulk_tests(N=5, savedir='./data/smoothing/')
-    #create_synthetic_worm_csvs()
+    #generate_bulk_tests(N=5, './data/smoothing/')
+    create_synthetic_worm_csvs()

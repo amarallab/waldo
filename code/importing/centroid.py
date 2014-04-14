@@ -13,6 +13,7 @@ from itertools import izip
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
+import pandas as pd
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -29,7 +30,8 @@ from shared.wio.file_manager import get_timeseries, write_timeseries_file
 from settings.local import SMOOTHING 
 from equally_space import equally_spaced_tenth_second_times
 from equally_space import equally_space_xy_for_stepsize
-from filtering.filter_utilities import savitzky_golay
+from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
+from wormmetrics import angle_calculations as ac
 
 ORDER = SMOOTHING['time_order']
 WINDOW = SMOOTHING['time_window']
@@ -61,6 +63,90 @@ def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwar
     return eq_times, xy
 
 
+def process_centroid2(blob_id, **kwargs):
+    """
+    """
+    # retrieve raw xy positions
+    orig_times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)
+    x, y = zip(*xy)
+    dataframe = full_package(orig_times, x, y)
+    x_new, y_new = dataframe['x'], dataframe['y']
+    xy = zip(list(x_new), list(y_new))
+
+    # store as cached file
+    if store_tmp:
+        #data ={'time':eq_times, 'data':xy}
+        write_timeseries_file(ID=blob_id, data_type='xy',
+                              times=eq_times, data=xy)
+    return eq_times, xy
+
+
+def full_package(times, x, y,
+                 pre_smooth=(25, 5),
+                 time_threshold = 30,
+                 distance_threshold = 0.25,
+                 max_score=500,
+                 prime_smooth=(75, 5)):
+    
+    # perform preliminary smoothing on the xy data.
+    window, order = pre_smooth
+    x = savitzky_golay(y=np.array(x), window_size=window, order=order)
+    y = savitzky_golay(y=np.array(y), window_size=window, order=order)
+    
+    # calculate stationary regions
+    point_scores = neighbor_calculation(distance_threshold, x, y, max_score)
+    domains = domain_creator(point_scores, timepoint_threshold=time_threshold)
+    # make sure all x,y values stay consistant throughout stationary domains
+    for (start, end) in domains:
+        end += 1 #because string indicies are non inclusive
+        l = end - start
+        x[start:end] = np.ones(l) * np.median(x[start:end])
+        y[start:end] = np.ones(l) * np.median(y[start:end])
+
+    # perform primary smoothing on the xy data.
+    window, order = prime_smooth
+    x = savitzky_golay(y=np.array(x), window_size=window, order=order)
+    y = savitzky_golay(y=np.array(y), window_size=window, order=order)
+
+
+    eq_times = times
+    # if setting spacing of timepoints, change this
+    '''
+    kind = 'linear'
+    eq_times = equally_spaced_tenth_second_times(times[0], times[-1])
+    #print times[0], times[-1]
+    #print eq_times[0], eq_times[-1]
+    interp_x = interpolate.interp1d(times, x, kind=kind)
+    interp_y = interpolate.interp1d(times, y, kind=kind)        
+    x = interp_x(eq_times)
+    y = interp_y(eq_times)
+    '''
+    dataframe = xy_to_full_dataframe(times=eq_times, x=x, y=y)
+    return dataframe
+
+def speeds_and_angles(times, x, y):
+    x, y = list(x), list(y)
+    dt = np.diff(np.array(times))    
+    dx = np.diff(np.array(x))
+    dy = np.diff(np.array(y))
+    # to guard against division by zero
+    for i, t in enumerate(dt):
+        if t < 0.0000001:
+            dt[i] = 0.0000001
+    speeds = np.sqrt(dx**2 + dy**2) / dt
+    speeds = list(speeds) + [np.nan]
+    angles = [np.nan] + list(ac.angle_change_for_xy(x, y, units='rad')) + [np.nan]
+    return speeds, angles
+
+def xy_to_full_dataframe(times, x, y):    
+    speeds, angles = speeds_and_angles(times, x, y)
+    print len(times), len(x), len(y), len(speeds), len(angles)
+    df = pd.DataFrame(zip(x, y, speeds, angles), index=times,
+                      columns=['x', 'y', 'v', 'dtheta'])
+    print df.head()
+    return df
+
+
 # defunct.
 def show_centroid_processing(blob_id):
     # optionally show differences between origional, smoothed, and interpoated xy
@@ -75,8 +161,6 @@ def show_centroid_processing(blob_id):
     plt.plot(orig_times,y1)
     plt.plot(eq_times,y_new)    
     plt.show()
-
-
 
 if __name__ == '__main__':
     bi = '00000000_000001_00001'
