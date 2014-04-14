@@ -68,7 +68,11 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
         print '\tfinished smoothing spine | N: {N}'.format(N=len(smoothed_times))
     return smoothed_times, smoothed_spines
 
-def process_ex_id(ex_id, debug=False,**kwargs):
+def just_process_centroid(ex_id, **kwargs):
+    process_ex_id(ex_id, just_centroid=True, **kwargs)
+    
+
+def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
     '''
     processes all blobs in database from ex_id from raw data all the way to smoothspines.
     if ex_id does not have any blobs already in database, it reads the .blobs files and inserts
@@ -104,6 +108,9 @@ def process_ex_id(ex_id, debug=False,**kwargs):
     for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
         process_centroid(blob_id, **kwargs)
+        if just_centroid:
+            continue
+
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
         if len(spines) > 0:
             good_blobs.append(blob_id)
@@ -113,26 +120,11 @@ def process_ex_id(ex_id, debug=False,**kwargs):
             pass
         except Exception, e:
             e.printStackTrace()
-
-        '''
-        good_stuff = [(t, s) for (t, s) in zip(times, spines) if s]
-        if len(good_stuff) <= 3:
-            continue
-        times, spines = zip(*good_stuff)
-        x, y = zip(*zip(*spines)[0])
-
-        try:
-        plt.plot(x, y)
-        x, y = zip(*zip(*spines)[25])
-        plt.plot(x, y)
-        x, y = zip(*zip(*spines)[-1])
-        plt.plot(x, y)
-        plt.savefig(blob_id + '.png')
-        plt.clf()
-        '''
         if debug:
             break
     else:
+        if just_centroid:
+            return
         write_plate_timeseries_set(ex_id, blob_ids=good_blobs, **kwargs)
         write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 

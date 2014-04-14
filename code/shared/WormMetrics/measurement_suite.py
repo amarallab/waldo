@@ -29,7 +29,7 @@ from wio.file_manager import get_timeseries
 # add angle over distance
 
 STANDARD_MEASUREMENTS = ['length_mm', 'curve_w', 'cent_speed_bl']
-FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl']
+FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl', 'angle_change']
 
 def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
     """

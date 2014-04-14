@@ -5,6 +5,7 @@ import json
 import os
 
 def heltena_smooth_coordinate_angle_area(a, t, threshold):
+
     res = [a[0]]
     prev_p = (a[0], t[0])
     count = 0
@@ -121,8 +122,10 @@ if __name__ == '__main__':
         json.dump(res, open('{d}/synthetic_1-angle-{t}.json'.format(d=save_dir, t=threshold), 'w'), indent=4)
 
 def smooth_locally(x, y, time, threshold):
-    x = heltena_smooth_coordinate_angle(x, time, threshold)
-    y = heltena_smooth_coordinate_angle(y, time, threshold)
+    #x = heltena_smooth_coordinate_angle(x, time, threshold)
+    #y = heltena_smooth_coordinate_angle(y, time, threshold)
+    x = heltena_smooth_coordinate_angle_area(x, time, threshold)
+    y = heltena_smooth_coordinate_angle_area(y, time, threshold)
     return x, y
 
 #

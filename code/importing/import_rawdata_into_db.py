@@ -32,9 +32,6 @@ sys.path.append(SHARED_DIR)
 sys.path.append(JOINING_DIR)
 
 # nonstandard imports
-#from database import mongo_query
-#from database.mongo_insert import insert_blob_entries
-#from database.mongo_insert import timedict_to_entry
 from settings.local import LOGISTICS, FILTER
 
 from annotation.experiment_index import Experiment_Attribute_Index
@@ -43,7 +40,7 @@ from wio.file_manager import write_timeseries_file, write_metadata_file
 
 
 DATA_DIR = LOGISTICS['filesystem_data']
-USE_TAPEWORM = True
+USE_TAPEWORM = False
 
 if USE_TAPEWORM:
     from tapeworm import Taper

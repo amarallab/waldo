@@ -36,7 +36,7 @@ from wormmetrics import angle_calculations as ac
 ORDER = SMOOTHING['time_order']
 WINDOW = SMOOTHING['time_window']
 
-def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwargs):
+def process_centroid_old(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwargs):
     """
     """
     # retrieve raw xy positions
@@ -62,24 +62,37 @@ def process_centroid(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwar
                               times=eq_times, data=xy)
     return eq_times, xy
 
-
-def process_centroid2(blob_id, **kwargs):
+def process_centroid(blob_id, **kwargs):
     """
     """
     # retrieve raw xy positions
     orig_times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)
     x, y = zip(*xy)
+
+    if xy == None:
+        return 
+    if len(xy) == 0:
+        return 
+
     dataframe = full_package(orig_times, x, y)
-    x_new, y_new = dataframe['x'], dataframe['y']
-    xy = zip(list(x_new), list(y_new))
+    #print dataframe.head()
 
-    # store as cached file
-    if store_tmp:
-        #data ={'time':eq_times, 'data':xy}
-        write_timeseries_file(ID=blob_id, data_type='xy',
-                              times=eq_times, data=xy)
-    return eq_times, xy
+    times = list(dataframe.index)
+    # write xy
+    xy = zip(list(dataframe['x']), list(dataframe['y']))
+    write_timeseries_file(ID=blob_id, data_type='xy',
+                          times=times, data=xy)
 
+    # write cent_speed
+    cent_speed = dataframe['v']
+    write_timeseries_file(ID=blob_id, data_type='cent_speed',
+                          times=times, data=xy)
+
+    # write angle_change
+    angle_change = dataframe['dtheta']
+    write_timeseries_file(ID=blob_id, data_type='angle_change',
+                          times=times, data=xy)
+    return
 
 def full_package(times, x, y,
                  pre_smooth=(25, 5),
@@ -108,7 +121,6 @@ def full_package(times, x, y,
     x = savitzky_golay(y=np.array(x), window_size=window, order=order)
     y = savitzky_golay(y=np.array(y), window_size=window, order=order)
 
-
     eq_times = times
     # if setting spacing of timepoints, change this
     '''
@@ -124,6 +136,8 @@ def full_package(times, x, y,
     dataframe = xy_to_full_dataframe(times=eq_times, x=x, y=y)
     return dataframe
 
+# warning: this is not the same code that otherwise calculates speed or angular change.
+# consolidate this code into the other.
 def speeds_and_angles(times, x, y):
     x, y = list(x), list(y)
     dt = np.diff(np.array(times))    

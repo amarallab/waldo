@@ -28,7 +28,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import ensure_dir_exists
-from importing.process_spines import process_ex_id
+from importing.process_spines import process_ex_id, just_process_centroid
 import database.mongo_support_functions as mongo
 from settings.local import MONGO
 
@@ -110,6 +110,9 @@ def main(args):
     if args.c is not None:
         print 'Error with -c argument'
 
+    if args.centroid:        
+        run_function_for_ex_ids(f=just_process_centroid, name='centroid', ex_ids=args.ex_ids)
+        return
     if args.all:
         args.w, args.p, args.s = True, True, True
     if args.w:
@@ -132,6 +135,7 @@ if __name__ == '__main__':
     #parser.add_argument('-e', action='store_true', help='export percentiles')
     parser.add_argument('-t', action='store_true', help='records processing time')
     parser.add_argument('--all', action='store_true', help='import, process, and aggregate measurements')
+    parser.add_argument('--centroid', action='store_true', help='just use centroid measurements')
     #parser.add_argument('--overwrite', action='store_true', help='overwrite previous documents in database')
     main(args=parser.parse_args())
 

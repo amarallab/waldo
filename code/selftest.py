@@ -23,10 +23,10 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from annotation.experiment_index import Experiment_Attribute_Index
 from settings.local import MONGO as mongo_settings
-from tests.importing.tests.create_testfiles import write_index_file
+from tests.create_testfiles import write_index_file
 #from waldo import import_ex_id
 #from waldo import process_ex_id
-from importing.process_spines import process_ex_id
+from importing.process_spines import process_ex_id, just_process_centroid
 # turn all this into unit tests.
 
 TEST_DATA_DIR = CODE_DIR + 'tests/data/'
@@ -46,6 +46,7 @@ def run_everything(**kwargs):
     # process all ex_ids
     for ex_id in sorted(target_ex_ids):
         print 'testing', ex_id
+        '''
         process_ex_id(ex_id, 
                       # overwride 
                       min_body_lengths=0,
@@ -53,6 +54,14 @@ def run_everything(**kwargs):
                       min_size=1,
                       data_dir=TEST_DATA_DIR,
                       debug=False)
+        '''
+        just_process_centroid(ex_id, 
+                              # overwride 
+                              min_body_lengths=0,
+                              min_duration=1,
+                              min_size=1,
+                              data_dir=TEST_DATA_DIR,
+                              debug=False)
 
 if __name__ == '__main__':
     run_everything()
