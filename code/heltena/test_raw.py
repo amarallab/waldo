@@ -4,6 +4,35 @@ import math
 import json
 import os
 
+def heltena_smooth_coordinate_angle_area(a, t, threshold):
+    res = [a[0]]
+    prev_p = (a[0], t[0])
+    count = 0
+    for p in zip(a, t):
+        diff = (p[0] - prev_p[0], p[1] - prev_p[1])
+        ang = math.atan2(diff[1], diff[0])
+        h = math.sqrt(diff[0] ** 2 + diff[1] ** 2)
+        b = math.sin(ang) * h
+        area = (h * b) / 2.0
+
+        count += 1
+        if abs(area) >= threshold:
+            diff = (diff[0] / float(count), diff[1] / float(count))
+            for _ in range(count):
+                prev_p = (prev_p[0] + diff[0], prev_p[1] + diff[1])
+                res.append(prev_p[0])
+            count = 0
+
+    if count > 0:
+        diff = (p[0] - prev_p[0], p[1] - prev_p[1])
+        diff = (diff[0] / float(count), diff[1] / float(count))
+        for _ in range(count):
+            prev_p = (prev_p[0] + diff[0], prev_p[1] + diff[1])
+            res.append(prev_p[0])
+
+    return res
+
+
 def heltena_smooth_coordinate_angle(a, t, threshold):
     res = [a[0]]
     prev_p = (a[0], t[0])
