@@ -122,11 +122,12 @@ def main(args):
     if args.s:
         run_function_for_ex_ids(f=process_ex_id, name='dataset', ex_ids=args.ex_ids)
 
-if __name__ == '__main__':
+def create_parser(for_qsub=False):
     parser = argparse.ArgumentParser(prefix_chars='-',
                                      description="by default it does nothing. but you can specify if it should import, "
                                                  "processes, or aggregate your data.")
-    parser.add_argument('ex_ids', metavar='N', type=str, nargs='+', help='an integer for the accumulator')
+    if not for_qsub:
+        parser.add_argument('ex_ids', metavar='N', type=str, nargs='+', help='an integer for the accumulator')
     #parser.add_argument('-i', action='store_true', help='import data')
     parser.add_argument('-c', help='configuration username')
     parser.add_argument('-w', action='store_true', help='create worm data (stage 1)')
@@ -137,6 +138,10 @@ if __name__ == '__main__':
     parser.add_argument('--all', action='store_true', help='import, process, and aggregate measurements')
     parser.add_argument('--centroid', action='store_true', help='just use centroid measurements')
     #parser.add_argument('--overwrite', action='store_true', help='overwrite previous documents in database')
+    return parser
+
+if __name__ == '__main__':
+    parser = create_parser()
     main(args=parser.parse_args())
 
 

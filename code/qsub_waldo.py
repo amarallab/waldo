@@ -21,10 +21,11 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from database.mongo_retrieve import mongo_query
 from settings.local import LOGISTICS
 from annotation.experiment_index import Experiment_Attribute_Index
 from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
+from waldo import create_parser
+
 
 def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job',
                     number_of_jobs=25):
@@ -145,12 +146,19 @@ def main(args, db_attribute):
     :param args: arguments from command line.
     :param db_attribute: tuple to toggle behavior of script.
     """
-   
     new_args = '-c %s' % args.c if args.c is not None else ''
     dataset = str(db_attribute[1])
+    
 
     # initiallize recording selection to have no criterion.
     blobfiles, stage1, stage2 =None, None, None
+
+    if args.centroid:
+        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
+        name = '{ds}-w'.format(ds=dataset)
+        qsub_run_script(python_script='waldo.py -t --centroid', job_name=name,
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)        
+        return
     if args.w:
         # if not overwrite: do not process recordings with data present
         if not args.o:
@@ -178,14 +186,7 @@ if __name__ == '__main__':
     #db_attribute = ('dataset', 'thermo_recovery')
     #db_attribute = ('dataset', 'zoom_test')
     #db_attribute = ('dataset', 'copas_TJ3001_lifespan')
-    parser = argparse.ArgumentParser(prefix_chars='-',
-                                     description='by default it does nothing. but you can specify if it should import, '
-                                                 'processes, or aggregate your data.')
-    parser.add_argument('-c', help='configuration username')
-    parser.add_argument('-w', action='store_true', help='worms')
-    parser.add_argument('-p', action='store_true', help='plates')
-    parser.add_argument('-s', action='store_true', help='datasets')
-    parser.add_argument('-o', action='store_true', help='overwrite')
+    parser = create_parser(for_qsub=True)
     main(args=parser.parse_args(), db_attribute=db_attribute)
 
 
