@@ -29,7 +29,8 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, format_filename, format_dirctory, get_timeseries
+from file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, \
+     format_filename, format_dirctory, get_timeseries
 from annotation.experiment_index import Experiment_Attribute_Index
 
 def get_plate_files(dataset, data_type, tag='timeseries', path=None):
