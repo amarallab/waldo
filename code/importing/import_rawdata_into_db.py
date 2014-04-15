@@ -43,6 +43,7 @@ DATA_DIR = LOGISTICS['filesystem_data']
 USE_TAPEWORM = (JOINING['method'] == 'tapeworm') # turned on and off in settings file.
 
 if USE_TAPEWORM:
+    # if tapeworm not in use, it may also not be installed.
     from tapeworm import Taper
 
 def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
