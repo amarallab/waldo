@@ -143,7 +143,7 @@ def all_unprocessed_blob_ids(ex_id, **kwargs):
     # flat-file version
     all_blobs = get_good_blobs(ex_id, key='xy_raw')
     processed_blobs = get_good_blobs(ex_id, key='spine')
-    unprocessed_ids = liest(set(all_blobs) - set(processed_blobs))
+    unprocessed_ids = list(set(all_blobs) - set(processed_blobs))
     return unprocessed_ids
 
 if __name__ == '__main__':

@@ -44,6 +44,7 @@ DSET_DIR = LOGISTICS['dsets']
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
+    TIME_SERIES_FILE_TYPE = 'h5'
     # dont import if hdf5 not chosen. h5py may not be installed.    
     from h5_interface import write_h5_timeseries_base
     from h5_interface import read_h5_timeseries_base
@@ -210,7 +211,7 @@ def write_timeseries_file(ID, data_type, times, data,
     # save method depends on file_type
     if file_type == 'json':
         json.dump({'time':times, 'data':data}, open(filename, 'w'))
-    if file_type == 'hdf5':        
+    if file_type == 'h5':        
         write_h5_timeseries_base(filename, times, data)
     return True
 
@@ -229,7 +230,7 @@ def get_timeseries(ID, data_type,
         if file_type == 'json':
             data_dict = json.load(open(filename, 'r'))
             times, data = data_dict.get('time', []), data_dict.get('data', [])                    
-        elif file_type == 'hdf5':        
+        elif file_type == 'h5':        
             times, data = read_h5_timeseries_base(filename)
         # print warning if file is empty
         if len(times)==0 and len(data)==0:
