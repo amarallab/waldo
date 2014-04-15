@@ -1,9 +1,11 @@
+
 #!/usr/bin/env python
 
 '''
-Filename: temp_cache.py
+Filename: file_manager.py
 
-Description:
+Description: holds many low-level scripts for finding, sorting, and saving files
+in a rigid directory structure.
 '''
 
 __author__ = 'Peter B. Winter'
@@ -151,7 +153,6 @@ def format_results_filename(ID, result_type, tag=None,
         tag = ''
     else:
         tag = '-{t}'.format(t=tag)
-
 
     p = map(str, [file_dir, dset, ID_type, result_type, date_stamp])
     p = [i.rstrip('/') for i in p]

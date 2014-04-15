@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 '''
-Filename: process_plate_timeseries.py
+Filename: draw_plate_worm_tracks.py
+
 Description:
-Pull one type of data out of database, and save it in jsons organized by ex_id.
-data pulled is broken into 15 minute segments. within each 15min segment data is pulled either
-by subsampling the data or by binning into 10 second bins.
+Draws all the tracks of worms for a given plate onto one image from that plate.
 '''
 
 __author__ = 'Peter B. Winter'
@@ -32,13 +31,14 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-#from exponential_fitting import fit_exponential_decay_robustly, rebin_data, exponential_decay, fit_constrained_decay_in_range
-#from plate_utilities import get_ex_id_files,  write_dset_summary, parse_plate_timeseries_txt_file
-#from plate_utilities import return_flattened_plate_timeseries, organize_plate_metadata
 from wio.file_manager import format_results_filename, get_good_blobs, get_timeseries, get_dset
 from imagehandeling.grab_images import get_base_image_path
 
 def get_all_worm_tracks(ex_id):
+    ''' returns a list of blob_ids, a string denoting the dataset, and a list of lists (xy positions)
+    for all blobs recorded for ex_id.
+    '''
+
     blobs = get_good_blobs(ex_id)
     dset = get_dset(ex_id)
     tracks = []
@@ -48,8 +48,9 @@ def get_all_worm_tracks(ex_id):
         tracks.append(xy)
     return blobs, dset, tracks
 
-def draw_plate_tracks(ex_id,save=True):
-    
+def draw_plate_tracks(ex_id, save=True):
+    ''' draws all blob tracks from ex_id onto one image.
+    '''
 
     blobs, dset, tracks = get_all_worm_tracks(ex_id)
     if len(blobs) == 0:
@@ -57,6 +58,9 @@ def draw_plate_tracks(ex_id,save=True):
         return None
 
     im_path = get_base_image_path(ex_id)
+    if im_path == None:
+        print 'no images found for plate: {ID}'.format(ID=ex_id)
+        return
     img = Image.open(im_path)
     ymax, xmax = img.size
     background = np.array(img)#.T #.reshape(img.size[0], img.size[1])

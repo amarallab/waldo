@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-Filename: import_rawdata_into_db.py
+Filename: initialize_recording.py
 
 Description: sifts through raw data files created by Multi-Worm Tracker ('*.blobs' files).
 Blobs that meet minimal requirements have their data reformatted and are inserted into the database along with some

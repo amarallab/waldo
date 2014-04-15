@@ -35,7 +35,7 @@ from smooth_spines_in_time import smooth_good_regions_repeatedly
 from compute_basic_measurements import compute_basic_measurements
 #from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
-from import_rawdata_into_db import create_entries_from_blobs_files
+from initialize_recording import create_entries_from_blobs_files
 from wio.file_manager import get_good_blobs
 from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set, write_plate_percentiles
 from centroid import process_centroid

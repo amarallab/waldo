@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 '''
-Filename: fit_plate_timeseries.py
+Filename: fig2_single_plate.py
+
 Description:
 Pull one type of data out of database, and save it in jsons organized by ex_id.
 data pulled is broken into 15 minute segments. within each 15min segment data is pulled either
@@ -25,14 +26,18 @@ import scipy.stats as stats
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
+CODE_DIRECTORY = os.path.abspath(HERE + '/../')
+SHARED_DIRECTORY = os.path.abspath(CODE_DIRECTORY + '/shared/')
 PROJECT_DIRECTORY = os.path.abspath(HERE + '/../../')
-sys.path.append(PROJECT_DIRECTORY)
+sys.path.append(CODE_DIRECTORY)
+sys.path.append(SHARED_DIRECTORY)
 
 # nonstandard imports
 from exponential_fitting import exponential_decay, rebin_data
-from Shared.Code.ExportData.export_utilities import ensure_dir_exists
+from wio.file_manager import ensure_dir_exists
 from fit_plate_timeseries import parse_plate_timeseries_txt_file, parse_plate_timeseries_json_file
 from plot_fit_params import ex_id_to_age
+
 
 TIME_SERIES_DIR = HERE + '/../Data/Time-Series/'
 FITS_DIR = HERE + '/../Data/Fits/'

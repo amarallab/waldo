@@ -34,8 +34,7 @@ sys.path.append(SHARED_DIR)
 from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata
 from wio.file_manager import format_dirctory, ensure_dir_exists
 
-def get_combined_worm_percentiles(dataset):
-    
+def get_combined_worm_percentiles(dataset):    
     data_type = 'percentiles'
     tag = 'worm_percentiles'
     ex_ids, plate_files = get_plate_files(dataset=dataset,
@@ -80,8 +79,7 @@ def create_full_worm_index(blob_ids):
             ex_id_data[ex_id] = organize_plate_metadata(ex_id)
         worm_rows.append(ex_id_data[ex_id])
     return worm_rows
-        
-        
+                
 def combine_worm_percentiles(dataset):
     # manage paths for files
     save_dir = format_dirctory(ID=dataset, ID_type='dset')

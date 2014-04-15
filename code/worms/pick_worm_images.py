@@ -34,11 +34,9 @@ PROJECT_DIR = os.path.abspath(HERE + '/../../')
 sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR)
 
-
-print SHARED_DIR
 #DATA_DIR = HERE + '/../Data/'
 
-from wio.file_manager import WORM_DIR
+from wio.file_manager import WORM_DIR, format_results_filename
 from annotation.experiment_index import Experiment_Attribute_Index
 from imagehandeling.grab_images import grab_images_in_time_range
 from wormmetrics.measurement_switchboard import find_data, pull_blob_data
@@ -66,12 +64,13 @@ def pull_timeseries(blob_id, savedir):
     return start_time, end_time
     '''
 
-def pull_plate_images(blob_id, savedir, start_time, end_time=3600.0, max_images=4):
-    ''' 
+# depricated. no longer pull images as this causes needless dupication.
+'''
+def pull_plate_images(blob_id, savedir=None, start_time=0.0, end_time=3600.0, max_images=4):
+    #"""
     saves the first image of the plate for which the blob is present
     returns the time used in the image
-    '''
-    
+    #"""    
     ex_id = '_'.join(blob_id.split('_')[:2])
     time_to_image = create_image_directory(ex_id)
     print '{N} images found for ex_id'.format(N=len(time_to_image))
@@ -93,6 +92,7 @@ def pull_plate_images(blob_id, savedir, start_time, end_time=3600.0, max_images=
         print cmd
         os.system(cmd)
     return image_times
+'''
 
 def ex_ids_matching_request(dataset, label, day, verbose=True):
     ei = Experiment_Attribute_Index()
@@ -110,6 +110,7 @@ def ex_ids_matching_request(dataset, label, day, verbose=True):
             print '\t{id} | {d} | {l} | {y}'.format(id=ex_id, d=atrib['dataset'], 
                                                     l=atrib['label'], y=atrib['age'])
     return list(merge)
+
 
 def find_all_worms(dataset, label, day, verbose=True, path=WORM_DIR):
     ex_ids = ex_ids_matching_request(dataset, label, day)
@@ -130,7 +131,7 @@ def find_all_worms(dataset, label, day, verbose=True, path=WORM_DIR):
         blobs = [b.split('/')[-1].split(tag)[0] for b in blob_files]
         if verbose:
             print '\t{eID} | {N} blobs'.format(eID=eID, N=len(blobs))
-        all_blobs += blobs
+        all_blobs.extend(blobs)
     print '{N} blobs found matching criterion'.format(N=len(all_blobs))            
     return all_blobs
 
@@ -280,12 +281,20 @@ if __name__ == '__main__':
     for label in labels:
         for day in ['A1', 'A3']:
             for r in ['A', 'B', 'C']:
-                json_name = '{set}-{l}-{d}-{r}.json'.format(set=dataset, l=label, d=day, r=r)
-                plot_name = '{set}-{l}-{d}-{r}.png'.format(set=dataset, l=label, d=day, r=r)
+                plot_name = format_results_filename(ID=dataset, ID_type='dset',
+                                                    result_type='worm_image',
+                                                    date_stamp=None,
+                                                    file_type='png',
+                                                    tag='{l}-{d}-{r}'.format(l=label, d=day, r=r),
+                                                    ensure=False)
+                                              
+                json_name = plot_name.replace('.png', '.json')
+                #json_name = '{set}-{l}-{d}-{r}.json'.format(set=dataset, l=label, d=day, r=r)
+                #plot_name = '{set}-{l}-{d}-{r}.png'.format(set=dataset, l=label, d=day, r=r)
                 try:
                     worms_to_draw =save_drawable_worms(dataset, label, day, N=N, savename=json_name)
                     draw_worms(worms_to_draw, plot_name)
                 except Exception as e:
                     print label, day, 'failed'
                     print e
-    
+

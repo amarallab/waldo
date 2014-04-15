@@ -2,9 +2,11 @@
 '''
 Filename: process_plate_timeseries.py
 Description:
-Pull one type of data out of database, and save it in jsons organized by ex_id.
-data pulled is broken into 15 minute segments. within each 15min segment data is pulled either
-by subsampling the data or by binning into 10 second bins.
+Uses ex_id files in which plate-timeseries has been consolodated.
+
+either: 
+1. grabs relevant info to plot quartiles for each plate across time.
+2. attempts to fit an exponential decay to the data.
 '''
 
 __author__ = 'Peter B. Winter'
@@ -101,7 +103,6 @@ def process_fitting_for_data_type(dataset, data_type, verbose=True):
           'days':days,
           }
     return data
-
 
 def process_basic_plate_timeseries(dataset, data_type, verbose=True):
     ex_ids, dfiles = get_ex_id_files(dataset, data_type)

@@ -23,22 +23,24 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 
 
 # path definitions
-project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-sys.path.append(project_directory)
+HERE = os.path.dirname(os.path.realpath(__file__))
+CODE_DIR = os.path.abspath(HERE + '/../')
+PROJECT_DIR = os.path.abspath(CODE_DIR + '/../')
+SHARED_DIR = CODE_DIR + '/shared/'
+sys.path.append(CODE_DIR)
+sys.path.append(SHARED_DIR)
+
 
 # nonstandard imports
 #from Shared.Code.wormmetrics.spine_measures import compute_spine_measures
 #from Shared.Code.wormmetrics.centroid_measures import compute_centroid_measures
 #from Shared.Code.wormmetrics.basic_measures import compute_basic_measures
-from Shared.Code.WormMetrics.switchboard import pull_metric_for_blob_id
-from Shared.Code.Database.mongo_retrieve import pull_data_type_for_blob
-#from Shared.Code.Database.mongo_retrieve import unique_blob_ids_for_query
-#from Shared.Code.Database.mongo_insert import compute_and_insert_measurements
-#from Shared.Code.Database.mongo_insert import filter_skipped_and_out_of_rang
-import Shared.Code.Database.mongo_support_functions as mongo
-from Shared.Code.Settings.data_settings import mongo_settings
-from Shared.Code.Database.mongo_retrieve import timedict_to_list
-from Shared.Code.Analysis.filter_utilities import savitzky_golay
+from wormmetrics.switchboard import pull_metric_for_blob_id
+#from Shared.Code.Database.mongo_retrieve import pull_data_type_for_blob
+#import Shared.Code.Database.mongo_support_functions as mongo
+#from Shared.Code.Settings.data_settings import mongo_settings
+#from Shared.Code.Database.mongo_retrieve import timedict_to_list
+from filtering.filter_utilities import savitzky_golay
 
 DATA_DIR = './../Data/Single-Speeds/'
 '''

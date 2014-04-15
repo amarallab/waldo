@@ -24,22 +24,24 @@ venv/
 # binaries
 build/
 
-# text files
+
+# data and results files
 *.txt
 *.dat
 *logfile
-
-# png files
 *.png
-
-# pdf files
 *.pdf
 *.json
+*.h5
+*.csv
+*.tsv
+
 
 # Directory
 ./data/*
 ./code/heltena/dsets/*
 ./code/heltena/dsets2/*
+*.ipynb_checkpoints/*
 
 # editor and ide files
 .idea/*
