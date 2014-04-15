@@ -74,6 +74,6 @@ SMOOTHING = {'spine_order': 5, 'spine_window': 13,
               'time_order': 5, 'time_window': 71,
               'N_points':50, 'time_step':0.1}
 
-JOINING = {'method': None # None or 'tapeworm'
+JOINING = {'method': 'tapeworm' #None
 }
     
