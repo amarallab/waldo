@@ -33,10 +33,10 @@ from create_spine import create_spine_from_outline
 from flags_and_breaks import flag_blob_id, create_breaks_for_blob_id
 from smooth_spines_in_time import smooth_good_regions_repeatedly
 from compute_basic_measurements import compute_basic_measurements
-from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
+#from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
 from settings.local import LOGISTICS, FILTER
 from import_rawdata_into_db import create_entries_from_blobs_files
-#import wio.file_manager import get_metadata, get_timeseries
+from wio.file_manager import get_good_blobs
 from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set, write_plate_percentiles
 from centroid import process_centroid
 
@@ -69,8 +69,15 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     return smoothed_times, smoothed_spines
 
 def just_process_centroid(ex_id, **kwargs):
-    process_ex_id(ex_id, just_centroid=True, **kwargs)
-    
+    overwrite = kwargs.pop('overwrite', True)
+    print kwargs    
+    if not overwrite:
+        good_blobs = get_good_blobs(ex_id, key='xy')
+        if len(good_blobs) > 0:
+            print '{eID} already processed. to reprocess use overwrite=True'
+            return False
+        
+    process_ex_id(ex_id, just_centroid=True, **kwargs)            
 
 def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
     '''
@@ -80,7 +87,6 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
 
     :param ex_id: the identification string for a particular recording.
     '''
-
     min_body_lengths = kwargs.pop('min_body_lengths', FILTER['min_body_lengths'])
     min_duration = kwargs.pop('min_duration', FILTER['min_duration'])
     min_size = kwargs.pop('min_size', FILTER['min_size'])
@@ -89,15 +95,16 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
     # importing blobs section
     # must perform: import_rawdata_into_db.import_ex_id
 
-    # check if entries for ex_id already exist, dont do anything
-    if not overwrite:
-        entries = mongo_query({'ex_id': ex_id, 'data_type': 'metadata'},
-                              {'blob_id': 1, 'duration': 1}, **kwargs)
-        if len(entries) > 0:
-            return False
-    
-    blob_ids = create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, 
-                                               min_size, store_tmp= True, **kwargs)
+
+    if not overwrite and len(get_good_blobs(ex_id)) > 0:
+        # check if entries for ex_id already exist, dont do anything
+        print ex_id, 'already processed'
+        return False
+
+    blob_ids = create_entries_from_blobs_files(ex_id, min_body_lengths,
+                                               min_duration,
+                                               min_size, store_tmp= True,
+                                               **kwargs)
 
     # processing blobs section.
     # must perform: process_spines.process_ex_id
@@ -110,7 +117,7 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
         process_centroid(blob_id, **kwargs)
         if just_centroid:
             continue
-
+        
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
         if len(spines) > 0:
             good_blobs.append(blob_id)
@@ -128,10 +135,15 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
         write_plate_timeseries_set(ex_id, blob_ids=good_blobs, **kwargs)
         write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 
-def all_unprocessed_blob_ids(**kwargs):
-    all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)
-    processed_ids = unique_blob_ids_for_query({'data_type': 'raw_spine'}, **kwargs)
-    unprocessed_ids = [blob_id for blob_id in all_ids not in processed_ids]
+def all_unprocessed_blob_ids(ex_id, **kwargs):
+    # mongo version
+    #all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)
+    #processed_ids = unique_blob_ids_for_query({'data_type': 'raw_spine'}, **kwargs)
+    #unprocessed_ids = [blob_id for blob_id in all_ids not in processed_ids]
+    # flat-file version
+    all_blobs = get_good_blobs(ex_id, key='xy_raw')
+    processed_blobs = get_good_blobs(ex_id, key='spine')
+    unprocessed_ids = liest(set(all_blobs) - set(processed_blobs))
     return unprocessed_ids
 
 if __name__ == '__main__':

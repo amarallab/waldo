@@ -37,7 +37,10 @@ def configure(configuration_name=None):
         base.MONGO['password'] = base.get_env_variable('WORM_MONGO_PASSWORD')
         base.SPREADSHEET['user'] = base.get_env_variable('WORM_SPREADSHEET_USER')
         base.SPREADSHEET['password'] = base.get_env_variable('WORM_SPREADSHEET_PASSWORD')
+        base.JOINING['method'] = None
+        #base.JOINING['method'] = 'tapeworm'        
 
+        
     global configured
     configured = True
 
@@ -51,9 +54,10 @@ except ValueError:
     configure() # default
 
 get_env_variable = base.get_env_variable
-PROJECT_DIRECTORY = base.PROJECT_DIRECTORY
+PROJECT_HOME = base.PROJECT_HOME
 MONGO = base.MONGO
 LOGISTICS = base.LOGISTICS
 SPREADSHEET = base.SPREADSHEET
 FILTER = base.FILTER
 SMOOTHING = base.SMOOTHING
+JOINING = base.JOINING

@@ -15,9 +15,10 @@ def get_env_variable(var_name):
         print msg
 
 #set relative paths.
-PROJECT_DIRECTORY = os.path.dirname(os.path.realpath(__file__)) + '/../../'
+PROJECT_HOME = os.path.dirname(os.path.realpath(__file__)) + '/../../'
 
 MONGO = {
+    'use_mongo': False,
     'ip': 'chicago.chem-eng.northwestern.edu',
     'port': 27017,
     'user':'mongo_user',
@@ -31,14 +32,17 @@ MONGO = {
     }
 
 LOGISTICS = {
+    'time-series-file-type': 'hdf5', # supports 'hdf5' or 'json'
     # directories for annotation and organization
-    'data': PROJECT_DIRECTORY + 'data/',
-    'plates': PROJECT_DIRECTORY + 'data/plates/',
-    'results': PROJECT_DIRECTORY + 'results/',
-    'inventory': PROJECT_DIRECTORY + 'data/annotation/inventory/',
-    'annotation': PROJECT_DIRECTORY + 'data/annotation/experiment_index',
-    'scaling-factors': PROJECT_DIRECTORY + 'data/annotation/scaling_factor_images',
-    'export': PROJECT_DIRECTORY + 'data/export/',
+    'data': PROJECT_HOME + 'data/',
+    'worms': PROJECT_HOME + 'data/worms/',    
+    'plates': PROJECT_HOME + 'data/plates/',
+    'dsets': PROJECT_HOME + 'data/dsets/',
+    'results': PROJECT_HOME + 'results/',
+    'inventory': PROJECT_HOME + 'data/annotation/inventory/',
+    'annotation': PROJECT_HOME + 'data/annotation/experiment_index',
+    'scaling-factors': PROJECT_HOME + 'data/annotation/scaling_factor_images',
+    'export': PROJECT_HOME + 'data/export/',
 
     # filesystem variables
     'filesystem_address': 'peterwinter@barcelona.chem-eng.northwestern.edu',
@@ -47,7 +51,7 @@ LOGISTICS = {
     # cluster variables
     'cluster_data': '/home/projects/worm_movement/Data/MWT_RawData/',
     'cluster_address': 'peterwinter@phoenix.research.northwestern.edu',
-    'qsub_directory': PROJECT_DIRECTORY + 'data/qsub/',
+    'qsub_directory': PROJECT_HOME + 'data/qsub/',
     }
 
 SPREADSHEET = {'user': 'your gmail name',
@@ -70,4 +74,6 @@ SMOOTHING = {'spine_order': 5, 'spine_window': 13,
               'time_order': 5, 'time_window': 71,
               'N_points':50, 'time_step':0.1}
 
-
+JOINING = {'method': None # None or 'tapeworm'
+}
+    

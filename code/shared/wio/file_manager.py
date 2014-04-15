@@ -36,17 +36,15 @@ from annotation.experiment_index import Experiment_Attribute_Index
 INDEX_DIR = LOGISTICS['annotation']
 RESULT_DIR = os.path.abspath(LOGISTICS['results'])
 EXPORT_PATH = LOGISTICS['export']
+WORM_DIR = LOGISTICS['worms']
+PLATE_DIR = LOGISTICS['plates']
+DSET_DIR = LOGISTICS['dsets']
 
-WORM_DIR = PROJECT_HOME + '/data/worms/'
-PLATE_DIR = PROJECT_HOME + '/data/plates/'
-DSET_DIR = PROJECT_HOME + '/data/dsets/'
 
+TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
-TIME_SERIES_FILE_TYPE = 'json'
-USE_JSON = False
-
-if not USE_JSON:
-    TIME_SERIES_FILE_TYPE = 'h5'
+if TIME_SERIES_FILE_TYPE == 'hdf5':
+    # dont import if hdf5 not chosen. h5py may not be installed.    
     from h5_interface import write_h5_timeseries_base
     from h5_interface import read_h5_timeseries_base
 
@@ -110,13 +108,13 @@ def format_dirctory(ID_type, dataset='', tag='', ID='',
 
     return file_dir
 
-def get_good_blobs(ex_id, worm_dir=WORM_DIR):
+def get_good_blobs(ex_id, key='spine', worm_dir=WORM_DIR):
     search_dir = format_dirctory(ID=ex_id, ID_type='w')
-    search = '{path}/*spine.*'.format(path=search_dir)
+    search = '{path}/*{key}.*'.format(path=search_dir, key=key)
     spine_files = glob(search)
     blobs = []
     for sf in spine_files:
-        blob_id = sf.split('/')[-1].split('-spine')[0]
+        blob_id = sf.split('/')[-1].split('-{key}'.format(key=key))[0]
         blobs.append(blob_id)
     return blobs
 
@@ -212,7 +210,7 @@ def write_timeseries_file(ID, data_type, times, data,
     # save method depends on file_type
     if file_type == 'json':
         json.dump({'time':times, 'data':data}, open(filename, 'w'))
-    if file_type == 'h5':        
+    if file_type == 'hdf5':        
         write_h5_timeseries_base(filename, times, data)
     return True
 
@@ -231,7 +229,7 @@ def get_timeseries(ID, data_type,
         if file_type == 'json':
             data_dict = json.load(open(filename, 'r'))
             times, data = data_dict.get('time', []), data_dict.get('data', [])                    
-        elif file_type == 'h5':        
+        elif file_type == 'hdf5':        
             times, data = read_h5_timeseries_base(filename)
         # print warning if file is empty
         if len(times)==0 and len(data)==0:

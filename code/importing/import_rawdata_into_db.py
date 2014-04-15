@@ -32,7 +32,7 @@ sys.path.append(SHARED_DIR)
 sys.path.append(JOINING_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS, FILTER
+from settings.local import LOGISTICS, FILTER, JOINING
 
 from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
@@ -40,7 +40,7 @@ from wio.file_manager import write_timeseries_file, write_metadata_file
 
 
 DATA_DIR = LOGISTICS['filesystem_data']
-USE_TAPEWORM = False
+USE_TAPEWORM = (JOINING['method'] == 'tapeworm') # turned on and off in settings file.
 
 if USE_TAPEWORM:
     from tapeworm import Taper
