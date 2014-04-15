@@ -26,7 +26,7 @@ sys.path.append(CODE_DIR)
 
 # nonstandard imports
 import filtering.filter_utilities as fu
-from wormmetrics import angle_calculations as ac
+from wormmetrics.compute_clearmetrics import rescale_radians, angle_change_for_xy
 
 def generate_individual_series(N_points=3600):
     """
@@ -224,7 +224,6 @@ def add_set_noise(xyt, noise_x, noise_y=0):
     noisy_xyt = zip(n_x.tolist(), n_y.tolist(), t)
     return noisy_xyt
 
-
 def speeds_and_angles(times, x, y):
     x, y = list(x), list(y)
     dt = np.diff(np.array(times))    
@@ -236,7 +235,7 @@ def speeds_and_angles(times, x, y):
             dt[i] = 0.0000001
     speeds = np.sqrt(dx**2 + dy**2) / dt
     speeds = list(speeds) + [np.nan]
-    angles = [np.nan] + list(ac.angle_change_for_xy(x, y, units='rad')) + [np.nan]
+    angles = [np.nan] + list(angle_change_for_xy(x, y, units='rad')) + [np.nan]
     return speeds, angles
 
 def xy_to_full_dataframe(times, x, y):    
@@ -280,7 +279,7 @@ def create_synthetic_worm_csvs(noise_level=0.1):
     t = np.arange(0, len(x), 1)  
     soln = pd.DataFrame(index=t)
     
-    dtheta = [np.nan] + [ac.rescale_radians(r) for r in np.diff(theta)]
+    dtheta = [np.nan] + [rescale_radians(r) for r in np.diff(theta)]
     soln['x'], soln['y'], soln['v'], soln['dtheta'] = x, y, v, dtheta
     soln.to_csv('soln.csv')    
     

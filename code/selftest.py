@@ -46,7 +46,7 @@ def run_everything(**kwargs):
     # process all ex_ids
     for ex_id in sorted(target_ex_ids):
         print 'testing', ex_id
-        '''
+
         process_ex_id(ex_id, 
                       # overwride 
                       min_body_lengths=0,
@@ -62,7 +62,7 @@ def run_everything(**kwargs):
                               min_size=1,
                               data_dir=TEST_DATA_DIR,
                               debug=False)
-
+        '''
 if __name__ == '__main__':
     run_everything()
 

@@ -29,6 +29,8 @@ from GeometricCalculations.distance import euclidean
 from wio.file_manager import get_blob_ids, get_timeseries
 from importing.flags_and_breaks import consolidate_flags
 
+RAD_TO_DEG = 180.0 / np.pi
+
 # TODO? move remove flag functionality further upstream?
 def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
     ''' default option to remove flagged timepoints!'''
@@ -77,7 +79,21 @@ def compute_centroid_speed(blob_id, **kwargs):
     if len(times) ==0 or len(xy) ==0:
         return [], []
     x, y = zip(*xy)
-    dt = np.diff(np.array(times))
+    speeds = txy_to_speeds(t=times, x=x, y=y)
+    return times, speeds
+
+def compute_angle_change(blob_id, **kwargs):
+    times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)
+    if len(times) ==0 or len(xy) ==0:
+        return [], []
+    x, y = zip(*xy)
+    angle_change = angle_change_for_xy(x=x, y=y)
+    # not make angle change over time.
+    angle_change_dt = angle_change[1:-1] * np.diff(np.array(t))        
+    return times, angle_change_dt
+
+def txy_to_speeds(t, x, y):
+    dt = np.diff(np.array(t))
     dx = np.diff(np.array(x))
     dy = np.diff(np.array(y))
     # to guard against division by zero
@@ -85,8 +101,52 @@ def compute_centroid_speed(blob_id, **kwargs):
         if t < 0.0000001:
             dt[i] = 0.0000001
     speeds = np.sqrt(dx**2 + dy**2) / dt
-    return times[1:], speeds
-    
+    return list(speeds) + [np.nan]
+
+def rescale_radians(rad, max_iter=10000):    
+    for i in xrange(max_iter):
+        rad -= 2 * np.pi * int(rad / (2*np.pi))
+        if rad < -np.pi:
+            rad += 2 * np.pi
+        elif rad > np.pi:
+            rad -= 2 * np.pi
+        if -np.pi < rad < np.pi:        
+            return rad
+    else:
+        print 'Error: rescaling failed for: {r}'.format(r=rad)
+        return False        
+
+def angle_change_for_xy(x, y, allow_negatives=True, units='rad'):
+    vectors = np.array(zip(np.diff(x), np.diff(y)))
+    unit_vectors = [v / np.linalg.norm(v) for v in vectors]    
+    angles = []
+    nan_counts = 0
+    for v1, v2 in zip(unit_vectors[:-1], unit_vectors[1:]):
+        if np.isnan(v1[0]):
+            nan_counts += 1
+        angle = np.arccos(np.dot(v1, v2))
+        if units == 'deg':
+            angle = angle * rad_to_deg_factor
+        # if allow negatives, see if direction of 3d cross product + or -
+        if allow_negatives:
+            # make sure vectors are 3D
+            va = np.array([v1[0], v1[1], 0])
+            vb = np.array([v2[0], v2[1], 0])            
+            cross = np.cross(va, vb)[2]
+            # take sign of angle change
+            if cross != 0:
+                angle = math.copysign(1.0, cross) * angle
+        # catch any right angle exceptions
+        if np.isnan(angle):
+            if (v1 == v2).all():
+                angle ==  0.0
+            else:
+                angle ==  180        
+        angles.append(angle)
+
+    #print 'nan counts', nan_counts
+    return [np.nan] + list(angles) + [np.nan]
+        
 def length_of_spine(spine):
         dx, dy = map(np.diff, map(np.array, zip(*spine)))
         return np.sqrt(dx**2 + dy**2).sum()

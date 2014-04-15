@@ -38,7 +38,9 @@ SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
              'speed_prep': {'func': compute_speed_perp, 'units':['mm', 'bl'], 
                              'position':['head', 'mid', 'tail']},
              'cent_speed': {'func': compute_centroid_speed,
-                            'units': ['bl', 'mm']}}        
+                            'units': ['bl', 'mm']},
+             'angle_change':{'func': compute_angle_change, 'units':['rad', 'deg']}
+                            }        
 
 # **** main function of the module. 
 def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, 
@@ -87,7 +89,9 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0,
         if pixels_per_w != 0.0:
             data = np.array(data)  / pixels_per_w        
         else:
-            return [], []
+            return [], []    
+    if scaling_factor_type == 'deg':
+        data = np.array(data) * 180.0 / np.pi
     return times, data
 
 def find_data(blob_id, metric, **kwargs):

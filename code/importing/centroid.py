@@ -31,7 +31,8 @@ from settings.local import SMOOTHING
 from equally_space import equally_spaced_tenth_second_times
 from equally_space import equally_space_xy_for_stepsize
 from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
-from wormmetrics import angle_calculations as ac
+
+from wormmetrics.compute_metrics import txy_to_speeds, angle_change_for_xy
 
 ORDER = SMOOTHING['time_order']
 WINDOW = SMOOTHING['time_window']
@@ -123,7 +124,7 @@ def full_package(times, x, y,
 
     eq_times = times
     # if setting spacing of timepoints, change this
-    '''
+
     kind = 'linear'
     eq_times = equally_spaced_tenth_second_times(times[0], times[-1])
     #print times[0], times[-1]
@@ -132,49 +133,18 @@ def full_package(times, x, y,
     interp_y = interpolate.interp1d(times, y, kind=kind)        
     x = interp_x(eq_times)
     y = interp_y(eq_times)
-    '''
+
     dataframe = xy_to_full_dataframe(times=eq_times, x=x, y=y)
     return dataframe
 
-# warning: this is not the same code that otherwise calculates speed or angular change.
-# consolidate this code into the other.
-def speeds_and_angles(times, x, y):
-    x, y = list(x), list(y)
-    dt = np.diff(np.array(times))    
-    dx = np.diff(np.array(x))
-    dy = np.diff(np.array(y))
-    # to guard against division by zero
-    for i, t in enumerate(dt):
-        if t < 0.0000001:
-            dt[i] = 0.0000001
-    speeds = np.sqrt(dx**2 + dy**2) / dt
-    speeds = list(speeds) + [np.nan]
-    angles = [np.nan] + list(ac.angle_change_for_xy(x, y, units='rad')) + [np.nan]
-    return speeds, angles
-
 def xy_to_full_dataframe(times, x, y):    
-    speeds, angles = speeds_and_angles(times, x, y)
+    speeds = txy_to_speeds(t=times, x=x, y=y)
+    angles = angle_change_for_xy(x, y, units='rad')
     print len(times), len(x), len(y), len(speeds), len(angles)
     df = pd.DataFrame(zip(x, y, speeds, angles), index=times,
                       columns=['x', 'y', 'v', 'dtheta'])
     print df.head()
     return df
-
-
-# defunct.
-def show_centroid_processing(blob_id):
-    # optionally show differences between origional, smoothed, and interpoated xy
-    fig = plt.figure()
-    ax1 = plt.subplot(2,1,1)
-    plt.plot(orig_times,x, label='orig')
-    plt.plot(orig_times,x1, label='smooth')
-    plt.plot(eq_times,x_new, label='interp')
-    plt.legend()
-    ax2 = plt.subplot(2,1,2, sharex=ax1)
-    plt.plot(orig_times,y)
-    plt.plot(orig_times,y1)
-    plt.plot(eq_times,y_new)    
-    plt.show()
 
 if __name__ == '__main__':
     bi = '00000000_000001_00001'
