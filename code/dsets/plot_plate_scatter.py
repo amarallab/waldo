@@ -25,12 +25,12 @@ import glob
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
-PROJECT_DIRECTORY = os.path.abspath(HERE + '/../../')
-sys.path.append(PROJECT_DIRECTORY)
+CODE_DIR = os.path.abspath(os.path.join(HERE, '..'))
+SHARED_DIR = os.path.abspath(os.path.join(CODE_DIR, 'shared'))
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from plate_utilities import read_dset_summary
-
+from wio.plate_utilities import read_dset_summary
 
 def plot_timeseries(labels, xs, ys, bars):
     colors =['blue', 'red', 'green', 'black', 'orange']
@@ -55,7 +55,7 @@ def plot_dset(dataset, data_type, plot_attribute, age_range=[0,1000000], split_b
     labels = data['labels']
     sublabels = data['sub']
     ex_ids = data['ex_ids']
-    ages = data['ages']
+    ages = data['hours']
 
     # combine labe
     if split_by_sublabel:
@@ -119,9 +119,9 @@ def plot_dset(dataset, data_type, plot_attribute, age_range=[0,1000000], split_b
 
 if __name__ == '__main__':
     dataset = 'disease_models'
-    #data_type = 'cent_speed_bl'
-    data_type = 'length_mm'
-    #data_type = 'curve_bl'
+    data_type = 'cent_speed_bl'
+    #data_type = 'length_mm'
+    #data_type = 'curve_w'
     
     # data source toggles
     # plot toggles

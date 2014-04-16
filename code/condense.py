@@ -33,8 +33,8 @@ def main(args):
     for dset in args.dataset:
         if args.run:
             # TODO: write a check to make dset is really a dataset.
-            write_combined_worm_percentiles(dset)
             write_dset_summaries(dset)
+            #write_combined_worm_percentiles(dset)
         if args.show:
             # show how many recordings/worms we have for each condition
             show_dset(dset)

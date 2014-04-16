@@ -87,7 +87,6 @@ def read_dset_summary(data_type, dataset, sum_type='basic', dset_dir=None):
     filename = format_dset_summary_name(data_type, dataset, sum_type, dset_dir)
     return json.load(open(filename, 'r'))
 
-
 def write_plate_summary(data, ex_id, sum_type, dataset, data_type, path=None):
     filename = format_plate_summary_name(ex_id, sum_type, dataset, data_type, path)
     json.dump(data, open(filename, 'w'))

@@ -33,7 +33,8 @@ SHARED_DIR = CODE_DIR + '/shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata
+from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata, \
+    return_flattened_plate_timeseries, write_dset_summary
 from wio.file_manager import format_dirctory, ensure_dir_exists
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
@@ -162,8 +163,9 @@ def write_combined_worm_percentiles(dataset):
 
 def write_dset_summaries(dataset, measurements=STANDARD_MEASUREMENTS):
     for data_type in measurements:
-        print dataset, data_type,
+        print 'consolidating data for {dt}'.format(dt=data_type)
         data = consolidate_dset_from_plate_timeseries(dataset, data_type)
+        print dataset, data_type, data
         write_dset_summary(data=data, sum_type='basic', 
                            data_type=data_type, dataset=dataset)
 
