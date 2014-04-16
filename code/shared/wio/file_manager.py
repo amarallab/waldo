@@ -277,10 +277,13 @@ def get_ex_ids_in_worms(directory=WORM_DIR):
             ex_ids.append(ex_id)
     return ex_ids
 
+# depreciated mongo version of code.
+'''
 def get_ex_ids(query, **kwargs):
     # return a list of unique ex_id names for a query
     return list(set([e['ex_id'] for e in mongo_query(query=query, projection={'ex_id':1}, **kwargs)]))
-
+'''
+    
 def get_blob_ids(query, **kwargs):
     # return a list of unique blob_id names for a query
     return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))

@@ -23,7 +23,7 @@ __status__ = 'prototype'
 from glob import glob
 import os
 import sys
-
+import pandas as pd
 # path definitions
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -37,7 +37,6 @@ INDEX_DIR = LOGISTICS['annotation']
 
 def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
     ''' returns a pandas dataframe with all the annotated indicies '''
-    import pandas as pd
     search = os.path.join('{d}'.format(d=index_tsv_directory.rstrip('/')),'*.tsv')
     data = [pd.read_csv(f, sep='\t', index_col=0) for f in glob(search)]
     full_index = pd.concat(data)

@@ -37,7 +37,7 @@ def configure(configuration_name=None):
         base.MONGO['password'] = base.get_env_variable('WORM_MONGO_PASSWORD')
         base.SPREADSHEET['user'] = base.get_env_variable('WORM_SPREADSHEET_USER')
         base.SPREADSHEET['password'] = base.get_env_variable('WORM_SPREADSHEET_PASSWORD')
-        #base.JOINING['method'] = None
+        base.JOINING['method'] = None
         #base.JOINING['method'] = 'tapeworm'        
 
         

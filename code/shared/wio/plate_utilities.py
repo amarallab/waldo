@@ -131,16 +131,17 @@ def organize_plate_metadata(ex_id):
     #    print i
     return hours, label, sub_label, pID, day
 
-def return_flattened_plate_timeseries(dfile):
+def return_flattened_plate_timeseries(ex_id, dataset, data_type):
     """
     """    
-    times, data = parse_plate_timeseries_txt_file(dfile)
-    times, data = parse_plate_timeseries_txt_file(dfile)
+    #times, data = parse_plate_timeseries_txt_file(dfile)
+    times, data = read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries')
+    #times, data = parse_plate_timeseries_txt_file(dfile)
     flat_data = []
     if not len(times):
         return []
     for i, t_bin in enumerate(data):
-        flat_data += list(t_bin)
+        flat_data.extend(list(t_bin))
     # take data out of bins and remove nan values
     flat_data = np.array(flat_data)
     N_w_nan = len(flat_data)

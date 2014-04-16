@@ -35,7 +35,8 @@ sys.path.append(SHARED_DIRECTORY)
 # nonstandard imports
 from exponential_fitting import exponential_decay, rebin_data
 from wio.file_manager import ensure_dir_exists
-from fit_plate_timeseries import parse_plate_timeseries_txt_file, parse_plate_timeseries_json_file
+# TODO the plate timeseries files haven't been fixed up yet.
+#from fit_plate_timeseries import parse_plate_timeseries_txt_file, parse_plate_timeseries_json_file
 from plot_fit_params import ex_id_to_age
 
 
@@ -72,18 +73,10 @@ def plot_plate(ptimes, pmedian, pq1st, pq3rd, wtimes=[], wvalues=[], fit_times=[
 
     plt.show()
 
-def get_plate_timeseries(ex_id, dataset):
-    times, median, q1st, q3rd = [], [], [], []
-    plate_file = '{path}/{dset}/{eID}.txt'.format(path=TIME_SERIES_DIR.rstrip('/'), 
-                                                  dset=dataset, eID=ex_id)
-    if os.path.isfile(plate_file):
-        times, data = parse_plate_timeseries_txt_file(plate_file)
-    else:
-        search = '{path}/{dset}/{eID}*'.format(path=TIME_SERIES_DIR.rstrip('/'), dset=dataset, eID=ex_id)
-        print search
-        json_file = glob.glob(search)[0]
-        print json_file
-        times, data = parse_plate_timeseries_json_file(json_file)
+def get_plate_timeseries(ex_id, dataset, data_type):
+
+    median, q1st, q3rd = [], [], []
+    times, data = read_plate_timeseries(ex_id, dataset, data_type)
     x, bins, n = rebin_data(times, bins=data, t_step=10)
     times = x
     median = [np.median(b) for b in bins]
@@ -115,7 +108,8 @@ def print_attributes(ex_id):
     print ex_id, 'is', age, 'hours old'
 
 if __name__ == '__main__':
-    dataset = 'N2_aging-centroid_speed'
+    dataset = 'N2_aging'
+    data_type = 'centroid_speed'
     #dataset = 'N2_aging-smooth_length'
     #dataset = 'N2_aging-curvature_all_bl'
     eID = '20130318_165649'
@@ -124,7 +118,8 @@ if __name__ == '__main__':
 
     y_label = dataset.split('-')[-1]
     print_attributes(ex_id=eID)
-    ptimes, pmedian, pq1st, pq3rd = get_plate_timeseries(ex_id=eID, dataset=dataset)
+    ptimes, pmedian, pq1st, pq3rd = get_plate_timeseries(ex_id=eID, dataset=dataset,
+                                                         data_type=data_type)
     print 'median of medians=', np.median(pmedian)
     wtimes, wvalues = get_worm_timeseries(blob_id, dataset)
     fit_times, fit = get_plate_fit(ex_id=eID, dataset=dataset)

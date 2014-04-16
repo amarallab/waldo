@@ -28,10 +28,10 @@ PROJECT_DIRECTORY = os.path.abspath(HERE + '/../../')
 sys.path.append(PROJECT_DIRECTORY)
 
 # nonstandard imports
-from plate_utilities import organize_plate_metadata, get_ex_id_files, return_flattened_plate_timeseries
+from plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries
 
 def get_annotations(dataset, data_type, label='all'):
-    ex_ids, dfiles = get_ex_id_files(dataset=dataset, data_type=data_type)
+    ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
     print len(ex_ids), 'ex_ids found for', dataset, data_type
     #print len(dfiles)
     ids, days, files = [], [], []

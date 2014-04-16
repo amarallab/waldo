@@ -31,7 +31,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from exponential_fitting import fit_exponential_decay_robustly, rebin_data, exponential_decay, fit_constrained_decay_in_range
-from plate_utilities import get_ex_id_files,  write_dset_summary, parse_plate_timeseries_txt_file
+from plate_utilities import get_plate_files,  write_dset_summary, read_plate_timeseries
 from plate_utilities import return_flattened_plate_timeseries, organize_plate_metadata
 
 ''' 
@@ -64,7 +64,7 @@ def fit_function_plot(x, y, xfit, yfit, residuals, n, ex_id,
 '''
 
 def process_fitting_for_data_type(dataset, data_type, verbose=True):
-    ex_ids, dfiles = get_ex_id_files(dataset, data_type)
+    ex_ids, dfiles = get_plate_files(dataset, data_type)
     params, errs = [], []
     hours, days = [], []    
     mean_Ns = []
@@ -79,7 +79,7 @@ def process_fitting_for_data_type(dataset, data_type, verbose=True):
         plate_ids.append(pID)
         days.append(day)
         
-        times, data = parse_plate_timeseries_txt_file(dfile)
+        times, data = read_plate_timeseries(ex_id, dataset, data_type)
         x, bins, n = rebin_data(times, bins=data, t_step=10)
         y = [np.mean(b) for b in bins]
         mean_Ns.append(np.mean(n))
@@ -105,7 +105,7 @@ def process_fitting_for_data_type(dataset, data_type, verbose=True):
     return data
 
 def process_basic_plate_timeseries(dataset, data_type, verbose=True):
-    ex_ids, dfiles = get_ex_id_files(dataset, data_type)
+    ex_ids, dfiles = get_plate_files(dataset, data_type)
     means, stds = [], []
     quartiles = []
     hours = []

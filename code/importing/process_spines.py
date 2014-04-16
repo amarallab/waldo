@@ -20,25 +20,33 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
+import numpy as np
 import matplotlib.pyplot as plt        
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
-PROJECT_DIR = os.path.abspath(HERE + '/../../')
-sys.path.append(PROJECT_DIR)
+CODE_DIR = os.path.abspath(os.path.join(HERE + '..'))
+SHARED_DIR = os.path.abspath(os.path.join(HERE + 'shared'))
+
+sys.path.append(CODE_DIR)
+sys.path.append(SHARED_DIR)
+
 
 # nonstandard imports
+from initialize_recording import create_entries_from_blobs_files
+from centroid import process_centroid
 from create_spine import create_spine_from_outline
-
+from compute_basic_measurements import compute_basic_measurements
 from flags_and_breaks import flag_blob_id, create_breaks_for_blob_id
 from smooth_spines_in_time import smooth_good_regions_repeatedly
-from compute_basic_measurements import compute_basic_measurements
-#from database.mongo_retrieve import mongo_query, unique_blob_ids_for_query
+from consolidate_plates import write_plate_timeseries_set, write_plate_percentiles
+#from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set, write_plate_percentiles
+
+
 from settings.local import LOGISTICS, FILTER
-from initialize_recording import create_entries_from_blobs_files
+from wormmetrics.measurement_switchboard import pull_blob_data, quantiles_for_data, FULL_SET
+from wio.file_manager import write_timeseries_file, get_metadata
 from wio.file_manager import get_good_blobs
-from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set, write_plate_percentiles
-from centroid import process_centroid
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     """
@@ -135,6 +143,43 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
         write_plate_timeseries_set(ex_id, blob_ids=good_blobs, **kwargs)
         write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 
+def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
+    """
+    Arguments:
+    - `blob_id`:
+    - `**kwargs`:
+    """    
+    print 'Computing Standard Measurements'
+    # prepare scaling factors to convert from pixels to units
+    metadata = get_metadata(blob_id, **kwargs)
+    lt, lengths = pull_blob_data(blob_id, metric='length', **kwargs)
+    wt, widths = pull_blob_data(blob_id, metric='width50', **kwargs)
+    pixels_per_bl = float(np.median(lengths))
+    pixels_per_w = float(np.median(widths))
+    pixels_per_mm = float(metadata.get('pixels-per-mm', 1.0))
+    print '\tunits mm : {mm} | bl: {bl} | w:{w}'.format(bl=round(pixels_per_bl, ndigits=2),
+                                                        mm=round(pixels_per_mm, ndigits=2),
+                                                        w=round(pixels_per_w, ndigits=2))
+    # loop through standard set of measurements and write them
+    for metric in measurements:        
+        t, data = pull_blob_data(blob_id, metric=metric,
+                                 pixels_per_bl=pixels_per_bl,
+                                 pixels_per_mm=pixels_per_mm, 
+                                 pixels_per_w=pixels_per_w, 
+                                 **kwargs)
+        if store_tmp:
+            write_timeseries_file(blob_id, data_type=metric,
+                                  times=t, data=list(data))
+
+        try:
+            mean = round(np.mean(data), ndigits=3)
+            s = round(np.std(data), ndigits=3)
+        except:
+            mean, std = 'Na', 'Na'
+        N = len(data)
+        print '\t{m} mean: {mn} | std: {s} | N: {N}'.format(m=metric, mn=mean, s=s, N=N)
+
+        
 def all_unprocessed_blob_ids(ex_id, **kwargs):
     # mongo version
     #all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)
