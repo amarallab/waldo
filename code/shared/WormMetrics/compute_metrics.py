@@ -26,7 +26,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 from GeometricCalculations.distance import euclidean
-from wio.file_manager import get_blob_ids, get_timeseries
+from wio.file_manager import get_timeseries
 from importing.flags_and_breaks import consolidate_flags
 
 RAD_TO_DEG = 180.0 / np.pi
@@ -76,7 +76,8 @@ def compute_width(blob_id, **kwargs):
 def compute_centroid_speed(blob_id, **kwargs):
     # speed is not a body shape.
     times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)
-    if len(times) ==0 or len(xy) ==0:
+
+    if times==None or len(times) ==0 or len(xy) ==0:
         return [], []
     x, y = zip(*xy)
     speeds = txy_to_speeds(t=times, x=x, y=y)
@@ -84,12 +85,12 @@ def compute_centroid_speed(blob_id, **kwargs):
 
 def compute_angle_change(blob_id, **kwargs):
     times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)
-    if len(times) ==0 or len(xy) ==0:
+    if times == None or len(times) ==0 or len(xy) ==0:
         return [], []
     x, y = zip(*xy)
     angle_change = angle_change_for_xy(x=x, y=y)
     # not make angle change over time.
-    angle_change_dt = angle_change[1:-1] * np.diff(np.array(t))        
+    angle_change_dt = angle_change[:-1] * np.diff(np.array(times))        
     return times, angle_change_dt
 
 def txy_to_speeds(t, x, y):

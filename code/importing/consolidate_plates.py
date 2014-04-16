@@ -35,9 +35,21 @@ from wio.plate_utilities import get_plate_files,  \
 
 from wormmetrics.measurement_switchboard import pull_blob_data, quantiles_for_data, \
      FULL_SET, STANDARD_MEASUREMENTS
-from wio.file_manager import get_blob_ids, get_timeseries, get_metadata, write_timeseries_file
+from wio.file_manager import get_good_blobs, get_timeseries, get_metadata, write_timeseries_file
      
 def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
+    """ this function joins timeseries from all blob_ids and returns the results.
+    by default, this is two lists. times and data (a list of lists containin values
+    for all blobs at that given time.
+
+    params
+    blob_ids: (list)
+       the list of all blob ids that should be joined into the plate timeseries
+    metric: (str)
+       a string denoting what data_type the timeseries are.
+    return_array: (bool)
+       if false, this returns a dictionary rather than the default output.
+    """
     data_dict = {}
     for blob_id in blob_ids:
         # calculate metric for blob, skip if empty list returned        
@@ -51,32 +63,36 @@ def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
                 data_dict[new_key] = []
             data_dict[new_key].append(value)    
 
-    if return_array:
-        times, data = [], []
-        N_cols = 0
-        for t in sorted(data_dict):
-            row = data_dict[t]
-            if len(row) > 0:
-                times.append(t)
-                data.append(row)
-                if len(row) > N_cols:
-                    N_cols = len(row)
-        
-        # fill out array with NAs        
-        filled_data = []
-        for d in data:
-            d = d + [np.nan] * N_cols
-            d = d[:N_cols]
-            filled_data.append(d)            
-        times = np.array(times, dtype=float)
-        data = np.array(filled_data, dtype=float)
-        return times, data
-    else:
+
+    if not return_array:
         return data_dict        
+
+    times, data = [], []
+    N_cols = 0
+    for t in sorted(data_dict):
+        row = data_dict[t]
+        if len(row) > 0:
+            times.append(t)
+            data.append(row)
+            if len(row) > N_cols:
+                N_cols = len(row)
+        
+    # fill out array with NAs        
+    filled_data = []
+    for d in data:
+        d = d + [np.nan] * N_cols
+        d = d[:N_cols]
+        filled_data.append(d)
+
+    times = np.array(times, dtype=float)
+    data = np.array(filled_data, dtype=float)
+    return times, data
+
 
 def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     if not blob_ids:
-        blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
+        #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
+        blob_ids = get_good_blobs(ex_id)
     metadata = get_metadata(ID=blob_ids[0], **kwargs)    
     dataset = metadata.get('dataset', 'none')
     plate_dataset = {}
@@ -105,6 +121,7 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     print len(bad_blobs), 'bad'
             
     ids, data = plate_dataset.keys(), plate_dataset.values()
+    # even though this is not writing a timeseries, the format is the same.
     write_timeseries_file(ID=ex_id,
                           ID_type='plate',
                           times=ids,
@@ -127,23 +144,15 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     #    print i1, i2
     for d1, d2 in zip(data, data2):
         print d1, d2
-    '''
+     '''
 
-def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
+def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
     if not blob_ids:
-        blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
+        #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
+        blob_ids = get_good_blobs(ex_id)
     metadata = get_metadata(ID=blob_ids[0], **kwargs)    
     dataset = metadata.get('dataset', 'none')
     for metric in measurements:
-        '''
-        path_tag = '{ds}-{m}'.format(ds=dataset, m=metric)
-        print path_tag        
-        write_full_plate_timeseries(ex_id=ex_id,
-                                    metric=metric,
-                                    path_tag=path_tag,
-                                    blob_ids=blob_ids,
-                                    **kwargs)
-        '''
         times, data = consolidate_plate_timeseries(blob_ids, metric, return_array=True)
         write_timeseries_file(ID=ex_id,
                               ID_type='plate',
@@ -152,68 +161,12 @@ def write_plate_timeseries_set(ex_id, blob_ids=[], measurements=STANDARD_MEASURE
                               data_type=metric,
                               dset=dataset,
                               file_tag='timeseries')                              
-    
-     
-def process_basic_plate_timeseries(dataset, data_type, verbose=True):
-    
-    ex_ids, dfiles = get_plate_files(dataset, data_type)
-    means, stds = [], []
-    quartiles = []
-    hours = []
-    days = []
-    #labels, sublabels, plate_ids = {}, {}, {}
-    labels, sublabels, plate_ids = [], [], []
-
-    for i, (ex_id, dfile) in enumerate(izip(ex_ids, dfiles)):
-        hour, label, sub_label, pID, day = organize_plate_metadata(ex_id)
-        hours.append(hour)
-        labels.append(label)
-        sublabels.append(sub_label)
-        plate_ids.append(pID)
-        days.append(day)
-
-        flat_data = return_flattened_plate_timeseries(ex_id, dataset, data_type)
-        if not len(flat_data):
-            continue
-        means.append(np.mean(flat_data))
-        stds.append(np.std(flat_data))
-        men = float(np.mean(flat_data))
-        #print men, type(men), men<0
-        #print flat_data[:5]
-        quartiles.append([stats.scoreatpercentile(flat_data, 25),
-                          stats.scoreatpercentile(flat_data, 50),
-                          stats.scoreatpercentile(flat_data, 75)])
-        if verbose:
-            print '{i} {eID} | N: {N} | hour: {h} | label: {l}'.format(i=i, eID=ex_id,
-                                                                       N=len(flat_data),
-                                                                       h=round(hour, ndigits=1), l=label)                                      
-
-    #for i in zip(ex_ids, means, stds, quartiles):
-    #    print i
-    data={'ex_ids':ex_ids,
-          'hours':hours,
-          'mean':means,
-          'std':stds,
-          'quartiles':quartiles,
-          'labels':labels,
-          'sub':sublabels,
-          'plate_ids':plate_ids,
-          'days':days,
-          }
-    return data
-
-def process_basics_for_standard_set(dataset):
-    standard_set = ['cent_speed_bl', 'length_mm', 'curve_bl']
-    for data_type in standard_set:
-        print dataset, data_type,
-        data = process_basic_plate_timeseries(dataset, data_type)
-        write_dset_summary(data=data, sum_type='basic', 
-                           data_type=data_type, dataset=dataset)
 
 if __name__ == '__main__':
     dataset = 'disease_models'
     #data_type = 'cent_speed_bl'
     #data_type = 'length_mm'
     #data_type = 'curve_bl'
-    #process_basics_for_standard_set(dataset)
-    process_fitting_for_speed(dataset)
+    eID = '20131211_145827'
+    write_plate_timeseries(ex_id=eID)
+    write_plate_percentiles(ex_id=eID)

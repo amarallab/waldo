@@ -13,8 +13,6 @@ import os
 import sys
 from itertools import izip
 import numpy as np
-import summary_reader as reader
-import scipy.stats as stats
 import matplotlib.pyplot as plt
 import glob
 

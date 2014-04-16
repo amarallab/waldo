@@ -28,7 +28,8 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import ensure_dir_exists
-from importing.process_spines import process_ex_id, just_process_centroid
+from importing.process_spines import process_ex_id, just_process_centroid, \
+    plate_consolidation
 import database.mongo_support_functions as mongo
 from settings.local import MONGO
 
@@ -109,7 +110,6 @@ def main(args):
 
     if args.c is not None:
         print 'Error with -c argument'
-
     if args.centroid:        
         run_function_for_ex_ids(f=just_process_centroid, name='centroid', ex_ids=args.ex_ids)
         return
@@ -118,9 +118,10 @@ def main(args):
     if args.w:
         run_function_for_ex_ids(f=process_ex_id, name='worm', ex_ids=args.ex_ids)
     if args.p:
-        run_function_for_ex_ids(f=process_ex_id, name='plate', ex_ids=args.ex_ids)
-    if args.s:
-        run_function_for_ex_ids(f=process_ex_id, name='dataset', ex_ids=args.ex_ids)
+        run_function_for_ex_ids(f=plate_consolidation, name='plate', ex_ids=args.ex_ids)
+    # NOTE: it doesn't make sense to consolidate the dataset at this point yet.
+    #if args.s:
+    #    run_function_for_ex_ids(f=dataset_consolidation, name='dataset', ex_ids=[])
 
 def create_parser(for_qsub=False):
     parser = argparse.ArgumentParser(prefix_chars='-',
@@ -128,11 +129,10 @@ def create_parser(for_qsub=False):
                                                  "processes, or aggregate your data.")
     if not for_qsub:
         parser.add_argument('ex_ids', metavar='N', type=str, nargs='+', help='an integer for the accumulator')
-    #parser.add_argument('-i', action='store_true', help='import data')
     parser.add_argument('-c', help='configuration username')
     parser.add_argument('-w', action='store_true', help='create worm data (stage 1)')
     parser.add_argument('-p', action='store_true', help='compile plate timeseries (stage 2)')
-    parser.add_argument('-s', action='store_true', help='dataset processing (stage 3)')
+    #parser.add_argument('-s', action='store_true', help='dataset processing (stage 3)')
     #parser.add_argument('-e', action='store_true', help='export percentiles')
     parser.add_argument('-t', action='store_true', help='records processing time')
     parser.add_argument('--all', action='store_true', help='import, process, and aggregate measurements')

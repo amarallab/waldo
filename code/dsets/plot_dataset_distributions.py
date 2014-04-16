@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 '''
-Filename: fit_plate_timeseries.py
+Filename: plot_dataset_distributions.py
 Description:
-Pull one type of data out of database, and save it in jsons organized by ex_id.
-data pulled is broken into 15 minute segments. within each 15min segment data is pulled either
-by subsampling the data or by binning into 10 second bins.
+Code for plotting the distributions of aging for different
+labels inside the same dataset for multiple different types of measurements.
 '''
 
 __author__ = 'Peter B. Winter'
@@ -24,11 +23,12 @@ import matplotlib.gridspec as gridspec
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
-PROJECT_DIRECTORY = os.path.abspath(HERE + '/../../')
-sys.path.append(PROJECT_DIRECTORY)
+CODE_DIR = os.path.abspath(os.path.join(HERE, '..'))
+SHARED_DIR = os.path.abspath(os.path.join(CODE_DIR, 'shared'))
+sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries
+from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries
 
 def get_annotations(dataset, data_type, label='all'):
     ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)

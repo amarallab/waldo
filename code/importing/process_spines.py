@@ -39,8 +39,8 @@ from create_spine import create_spine_from_outline
 from compute_basic_measurements import compute_basic_measurements
 from flags_and_breaks import flag_blob_id, create_breaks_for_blob_id
 from smooth_spines_in_time import smooth_good_regions_repeatedly
-from consolidate_plates import write_plate_timeseries_set, write_plate_percentiles
-#from wormmetrics.measurement_suite import measure_all, write_plate_timeseries_set, write_plate_percentiles
+from consolidate_plates import write_plate_timeseries, write_plate_percentiles
+#from wormmetrics.measurement_suite import measure_all, write_plate_timeseries, write_plate_percentiles
 
 
 from settings.local import LOGISTICS, FILTER
@@ -137,10 +137,12 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, **kwargs):
             e.printStackTrace()
         if debug:
             break
-    else:
+    else: # excicute this code if for loop does not break        
         if just_centroid:
+            write_plate_timeseries(ex_id, blob_ids=good_blobs, 
+                                   measurments=['cent_speed_bl'], **kwargs)
             return
-        write_plate_timeseries_set(ex_id, blob_ids=good_blobs, **kwargs)
+        write_plate_timeseries(ex_id, blob_ids=good_blobs, **kwargs)
         write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 
 def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
@@ -179,6 +181,10 @@ def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
         N = len(data)
         print '\t{m} mean: {mn} | std: {s} | N: {N}'.format(m=metric, mn=mean, s=s, N=N)
 
+
+def plate_consolidation(ex_id):
+    write_plate_timeseries(ex_id)
+    write_plate_percentiles(ex_id)
         
 def all_unprocessed_blob_ids(ex_id, **kwargs):
     # mongo version
@@ -208,4 +214,4 @@ if __name__ == '__main__':
     else:
         for ex_id in sys.argv[1:]: 
             process_ex_id(ex_id)
-            #write_plate_timeseries_set(ex_id, blob_ids=['20131213_140440_06928'])
+            #write_plate_timeseries(ex_id, blob_ids=['20131213_140440_06928'])

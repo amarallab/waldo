@@ -24,7 +24,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.file_manager import get_blob_ids, get_metadata, get_timeseries
+from wio.file_manager import get_metadata, get_timeseries
 from compute_metrics import *
 
 STANDARD_MEASUREMENTS = ['length_mm', 'curve_w', 'cent_speed_bl']
