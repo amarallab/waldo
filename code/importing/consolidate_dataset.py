@@ -1,9 +1,11 @@
 #!/usr/bin/env python
+
 '''
-Filename: compile_plates_for_clustering.py
+Filename: consolidate_dataset.py
 Description:
 
-
+These functions are for consolidating plate summaries,
+The plate summaries were created using consolidate_plates.py
 '''
 
 __author__ = 'Peter B. Winter'
@@ -105,5 +107,3 @@ if __name__ == '__main__':
     dataset = 'thermo_recovery'
     #dataset = 'copas_TJ3001_lifespan'
     blob_ids = combine_worm_percentiles(dataset)
-
-    
