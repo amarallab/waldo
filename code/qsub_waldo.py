@@ -151,23 +151,23 @@ def main(args, db_attribute):
     
     # initiallize recording selection to have no criterion.
     blobfiles, stage1, stage2 =None, None, None
+    # if not overwrite: do not process recordings with data present
+    if not args.o:
+        stage1 = False
 
     if args.centroid:
-        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=False)
+        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -t --centroid', job_name=name,
                         args=new_args, ex_ids=ex_ids, number_of_jobs=100)        
         return
     if args.w:
-        # if not overwrite: do not process recordings with data present
-        if not args.o:
-            stage1 = False
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -tw', job_name=name,
                         args=new_args, ex_ids=ex_ids, number_of_jobs=100)
     if args.p:
-        ex_ids = choose_ex_ids(db_attribute=db_attribute)
+        ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True)
         name = '{ds}-p'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -tp', job_name=name,
                         args=new_args, ex_ids=ex_ids, number_of_jobs=100)
