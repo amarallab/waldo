@@ -26,7 +26,8 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from importing.consolidate_dataset import write_combined_worm_percentiles, write_dset_summaries
+from importing.consolidate_dataset import write_combined_worm_percentiles, write_dset_summaries, \
+    preprocess_distribution_set
 from dsets.check_dset import show_dset, show_dset_completeness
 
 def main(args):    
@@ -34,7 +35,8 @@ def main(args):
         if args.run:
             # TODO: write a check to make dset is really a dataset.
             write_dset_summaries(dset)
-            #write_combined_worm_percentiles(dset)
+            write_combined_worm_percentiles(dset)
+            preprocess_distribution_set(dset)
         if args.show:
             # show how many recordings/worms we have for each condition
             show_dset(dset)

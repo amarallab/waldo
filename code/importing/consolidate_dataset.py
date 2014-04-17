@@ -58,7 +58,7 @@ def get_annotations(dataset, data_type, label='all'):
     print labels
     return ids, days, files        
 
-def preprocess_distribution_data(dataset, data_type, label, xlim, verbose=True):
+def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     ex_ids, days, dfiles = get_annotations(dataset=dataset, data_type=data_type, label=label)
     print len(ex_ids), 'ex_ids found for', label
     #organize data by days
@@ -100,7 +100,7 @@ def preprocess_distribution_data(dataset, data_type, label, xlim, verbose=True):
 
 
 
-def preprocess_standard_set_of_distributions(dataset, labels=None, 
+def preprocess_distribution_set(dataset, labels=None, 
                                              data_types=STANDARD_MEASUREMENTS):
     xlims = {'cent_speed_bl':[0.0, 0.4], 
              'length_mm': [0.0, 2.0], 
@@ -116,7 +116,7 @@ def preprocess_standard_set_of_distributions(dataset, labels=None,
     for data_type in data_types:
         xlim = xlims.get(data_type, [0, 1])
         for label in labels:
-            preprocess_distribution_data(dataset, data_type, label, xlim=xlim)
+            generate_distribution(dataset, data_type, label, xlim=xlim)
 
 
 def combine_worm_percentiles_for_dset(dataset):    
@@ -256,5 +256,5 @@ if __name__ == '__main__':
     #dataset = 'copas_TJ3001_lifespan'
     #write_combined_worm_percentiles(dataset)
     #write_dset_summaries(dataset)
-    #preprocess_distribution_data(dataset)
-    preprocess_standard_set_of_distributions(dataset)
+    #generate_distribution(dataset)
+    preprocess_distribution_set(dataset)
