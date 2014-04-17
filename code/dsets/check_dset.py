@@ -49,7 +49,9 @@ def merge_experiment_index_with_file_counts(dataset, data_dir=LOGISTICS['data'])
             null_recordings.append(eID)
 
     print 'found {N} recordings with no data'.format(N=len(null_recordings))
-    print null_recordings
+    if len(null_recordings) == len(ei.index):
+        return []
+    #print null_recordings
     results = pd.DataFrame(data).T
     return pd.concat([ei, results], axis=1)
 
@@ -90,11 +92,17 @@ def file_counts_dataframe(dataset, data_dir=LOGISTICS['data']):
             null_recordings.append(eID)
 
     print 'found {N} recordings with no data'.format(N=len(null_recordings))
-    print null_recordings
+    if len(null_recordings) == len(ei.index):
+        return []
+    #print null_recordings
     return pd.DataFrame(data).T
 
 def show_completeness(results):
-    print results[['metadata.json', 'spine_rough.h5', 'spine.h5']]
+    
+    cols = [col for col in ['metadata.json', 'spine_rough.h5', 'spine.h5'] 
+            if col in results.columns]
+    #print results[['metadata.json', 'spine_rough.h5', 'spine.h5']]
+    print results[cols]
     summary = pd.DataFrame()
     summary['fraction'] = results.sum() / results['metadata.json'].sum()
     summary['missing'] = results['metadata.json'].sum() - results.sum()
@@ -102,11 +110,17 @@ def show_completeness(results):
 
 def show_dset(dataset):
     results = merge_experiment_index_with_file_counts(dataset)
-    show_counts_by_label(results, final_filetype='spine.h5')
+    if len(results) == 0:
+        return
+    fin_file = 'spine.h5'
+    if fin_file not in results.columns:
+        fin_file = 'xy.h5'
+    show_counts_by_label(results, final_filetype=fin_file)
 
 def show_dset_completeness(dataset):
     results = file_counts_dataframe(dataset)
-    print show_completeness(results)
+    if len(results) > 0:
+        print show_completeness(results)
 
 
 if __name__ == '__main__':
