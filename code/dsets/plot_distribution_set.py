@@ -32,13 +32,13 @@ from wio.plate_utilities import organize_plate_metadata, get_plate_files, return
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
 
-def plot_distributions_by_day(dataset, data_type, labels, ylim, plotname=None):
+def plot_distributions_by_day(dataset, data_type, labels, ylim, N_days=9, plotname=None):
     #plt.plot(x, y, label=str(len(s)))
     
     y_lim = [0.0, 0.006]
     #N_days = len(dist_by_day)    
-    N_days = 5
-    fig = plt.figure()
+    
+    #fig = plt.figure()
     gs1 = gridspec.GridSpec(1, N_days)
     gs1.update(left=0.1, right=0.9, wspace=0.00)
     ax1 = plt.subplot(gs1[0, 0])
@@ -53,17 +53,25 @@ def plot_distributions_by_day(dataset, data_type, labels, ylim, plotname=None):
 
     for color, label in zip(colors, labels):
         
-        savename = '{ds}-{dt}-{l}.json'.format(ds=dataset, dt=data_type, l=label)
-        savename = '{ds}-{dt}-{l}.json'.format(ds=dataset, dt=data_type, l=label)
-        print savename, os.path.isfile(savename)
+        #savename = '{ds}-{dt}-{l}.json'.format(ds=dataset, dt=data_type, l=label)
+        #savename = '{ds}-{dt}-{l}.json'.format(ds=dataset, dt=data_type, l=label)
+        #print savename, os.path.isfile(savename)
 
         #dist_by_day = json.load(open(savename, 'r'))
         dist_by_day = read_dset_summary(dataset=dataset, data_type=data_type, 
                                         ID=label, sum_type='dist')
+        print label, len(dist_by_day), dist_by_day.keys()
 
         for day in sorted(dist_by_day):
-            data = dist_by_day[day]
+            data = dist_by_day.get(day, None)
+            if data == None:
+                print day, 'has no data', label
+                continue
             i = int(day) - 1
+
+            if i >= N_days:
+                continue
+
             # flip axis
             y, x = data['x'] ,data['y']            
             ax[i].fill_between(x, y, alpha=0.5, color=color)
@@ -84,6 +92,8 @@ def plot_distributions_by_day(dataset, data_type, labels, ylim, plotname=None):
             tick.set_fontsize(0.0)
     # move tick labels to right side for last box.
     ax[-1].yaxis.tick_right()
+    ax[0].set_ylabel(data_type)
+
     print max_x
     #plt.ylim([0.0, 2.0])
     plt.ylim(ylim)
@@ -93,23 +103,10 @@ def plot_distributions_by_day(dataset, data_type, labels, ylim, plotname=None):
         plt.savefig(plotname)
     plt.show()
     plt.clf()
-                             
-if __name__ == '__main__':
-    dataset = 'disease_models'
-    #preprocess_standard_set_of_distributions(dataset)
+    
 
-    type_index = 1
-    standard_set = ['cent_speed_bl', 'length_mm', 'curve_bl']
-    xlims = [[0.0, 0.4], [0.0, 2.0], [0.0, 0.006]]
-
-    data_type = standard_set[type_index]
-    xlim = xlims[type_index]
-
-    #data_type = 'cent_speed_bl'
-    #data_type = 'length_mm'
-    #data_type = 'curve_bl'
-    #xlim = [0.0, 0.006]
-    #xlim = [0.0, 2.0]
+# TODO consolidate this into coherent code.
+def disease_models_settings():
     '''
     label = 'all'
     label = 'N2'
@@ -125,6 +122,8 @@ if __name__ == '__main__':
     labels = [u'N2', u'MQ35', u'MQ40']
     labels = [u'N2', u'MQ0']
     labels = [u'N2', u'NQ40', u'NQ67']
+
+
     for i, labels in enumerate([[u'N2', u'MQ35', u'MQ40'],
                                 [u'N2', u'MQ0'],
                                 [u'N2', u'NQ40', u'NQ67']]):
@@ -132,3 +131,30 @@ if __name__ == '__main__':
         plotname = '{set}-{dtype}-{i}.png'.format(set=dataset, dtype=data_type, i=i)
         print plotname
         plot_distributions_by_day(dataset, data_type, labels, ylim=xlim, plotname=plotname)
+                         
+if __name__ == '__main__':
+    dataset = 'disease_models'
+    #dataset = 'N2_aging'
+
+
+    # labels for N2_aging
+    labels = ['all']
+    labels = ['set A', 'set B']
+
+
+    # labels for disease_models
+    labels = ['N2', 'NQ67']
+
+    xlims = {'cent_speed_bl':[0.0, 0.4], 
+             'length_mm': [0.0, 2.0], 
+             'curve_bl': [0.0, 0.006], 
+             'curve_w': [0.0, 0.2], 
+             'width_mm': [0.0, .2], 
+             'angle_change': [-0.1, 0.1]}
+
+    print FULL_SET
+    for data_type in FULL_SET[-1:]:
+        xlim = xlims.get(data_type, [0.0, 1.0])
+        plot_distributions_by_day(dataset, data_type, labels, ylim=xlim)
+
+    #preprocess_standard_set_of_distributions(dataset)

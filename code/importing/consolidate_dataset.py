@@ -98,15 +98,14 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     write_dset_summary(data=day_distributions, sum_type='dist', ID=label,
                        data_type=data_type, dataset=dataset)
 
-
-
 def preprocess_distribution_set(dataset, labels=None, 
                                              data_types=STANDARD_MEASUREMENTS):
     xlims = {'cent_speed_bl':[0.0, 0.4], 
              'length_mm': [0.0, 2.0], 
-             'curve_w': [0.0, 0.006], 
+             'curve_bl': [0.0, 0.006], 
+             'curve_w': [0.0, 0.2], 
              'width_mm': [0.0, .2], 
-             'angle_change': [0.0, 0.006]}
+             'angle_change': [-0.1, 0.1]}
 
     if labels == None:
         ei = Experiment_Attribute_Index2(dataset)

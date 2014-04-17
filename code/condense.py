@@ -32,11 +32,18 @@ from dsets.check_dset import show_dset, show_dset_completeness
 
 def main(args):    
     for dset in args.dataset:
+
+
         if args.run:
             # TODO: write a check to make dset is really a dataset.
-            write_dset_summaries(dset)
-            write_combined_worm_percentiles(dset)
+            args.dist = args.perc = args.sum = True
+        if args.dist:
             preprocess_distribution_set(dset)
+        if args.perc:
+            write_combined_worm_percentiles(dset)
+        if args.sum:
+            write_dset_summaries(dset)
+
         if args.show:
             # show how many recordings/worms we have for each condition
             show_dset(dset)
@@ -54,6 +61,9 @@ if __name__ == '__main__':
     parser.add_argument('dataset', metavar='N', type=str, nargs='+', help='dataset name')
     parser.add_argument('-c', help='configuration username')
     parser.add_argument('--run', action='store_true', help='show')    
+    parser.add_argument('--dist', action='store_true', help='show')    
+    parser.add_argument('--perc', action='store_true', help='show')   
+    parser.add_argument('--sum', action='store_true', help='show')     
     parser.add_argument('--show', action='store_true', help='show')
     parser.add_argument('--check', action='store_true', help='show')
     main(args=parser.parse_args())    
