@@ -31,6 +31,13 @@ sys.path.append(SHARED_DIR)
 from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries, read_dset_summary
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
+XLIMS = {'cent_speed_bl':[0.0, 0.04], 
+         'length_mm': [0.0, 2.5], 
+         'curve_bl': [0.0, 0.006], 
+         'curve_w': [0.0, 0.04], 
+         'width_mm': [0.0, .2], 
+         'angle_change': [-0.1, 0.1]}
+
 
 def plot_distributions_by_day(dataset, data_type, labels, ylim, N_days=9, plotname=None):
     #plt.plot(x, y, label=str(len(s)))
@@ -134,7 +141,7 @@ def disease_models_settings():
                          
 if __name__ == '__main__':
     dataset = 'disease_models'
-    #dataset = 'N2_aging'
+    dataset = 'N2_aging'
 
 
     # labels for N2_aging
@@ -143,17 +150,11 @@ if __name__ == '__main__':
 
 
     # labels for disease_models
-    labels = ['N2', 'NQ67']
+    #labels = ['N2', 'NQ67']
 
-    xlims = {'cent_speed_bl':[0.0, 0.4], 
-             'length_mm': [0.0, 2.0], 
-             'curve_bl': [0.0, 0.006], 
-             'curve_w': [0.0, 0.2], 
-             'width_mm': [0.0, .2], 
-             'angle_change': [-0.1, 0.1]}
 
     print FULL_SET
-    for data_type in FULL_SET[-1:]:
+    for data_type in FULL_SET[:]:
         xlim = xlims.get(data_type, [0.0, 1.0])
         plot_distributions_by_day(dataset, data_type, labels, ylim=xlim)
 

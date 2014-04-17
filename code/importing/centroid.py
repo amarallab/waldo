@@ -63,7 +63,7 @@ def process_centroid_old(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **
                               times=eq_times, data=xy)
     return eq_times, xy
 
-def process_centroid(blob_id, **kwargs):
+def process_centroid(blob_id, verbose=True, **kwargs):
     """
     """
     # retrieve raw xy positions
@@ -76,8 +76,10 @@ def process_centroid(blob_id, **kwargs):
         return 
 
     dataframe = full_package(orig_times, x, y)
-    #print dataframe.head()
-
+    if verbose:
+        print 'centroid measurements calculated for {bid}'.format(bid=blob_id)
+        print dataframe.head()
+        print 
     times = list(dataframe.index)
     # write xy
     xy = zip(list(dataframe['x']), list(dataframe['y']))
@@ -85,14 +87,14 @@ def process_centroid(blob_id, **kwargs):
                           times=times, data=xy)
 
     # write cent_speed
-    cent_speed = dataframe['v']
+    cent_speed = list(dataframe['v'])
     write_timeseries_file(ID=blob_id, data_type='cent_speed',
-                          times=times, data=xy)
+                          times=times, data=cent_speed)
 
     # write angle_change
-    angle_change = dataframe['dtheta']
+    angle_change = list(dataframe['dtheta'])
     write_timeseries_file(ID=blob_id, data_type='angle_change',
-                          times=times, data=xy)
+                          times=times, data=angle_change)
     return
 
 def full_package(times, x, y,
@@ -140,10 +142,9 @@ def full_package(times, x, y,
 def xy_to_full_dataframe(times, x, y):    
     speeds = txy_to_speeds(t=times, x=x, y=y)
     angles = angle_change_for_xy(x, y, units='rad')
-    print len(times), len(x), len(y), len(speeds), len(angles)
+    #print len(times), len(x), len(y), len(speeds), len(angles)
     df = pd.DataFrame(zip(x, y, speeds, angles), index=times,
                       columns=['x', 'y', 'v', 'dtheta'])
-    print df.head()
     return df
 
 if __name__ == '__main__':

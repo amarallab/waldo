@@ -38,6 +38,7 @@ from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize
 from wio.file_manager import format_dirctory, ensure_dir_exists
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from annotation.experiment_index import Experiment_Attribute_Index2
+from dsets.plot_distribution_set import XLIMS
 
 def get_annotations(dataset, data_type, label='all'):
     ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
@@ -100,12 +101,6 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
 
 def preprocess_distribution_set(dataset, labels=None, 
                                              data_types=STANDARD_MEASUREMENTS):
-    xlims = {'cent_speed_bl':[0.0, 0.4], 
-             'length_mm': [0.0, 2.0], 
-             'curve_bl': [0.0, 0.006], 
-             'curve_w': [0.0, 0.2], 
-             'width_mm': [0.0, .2], 
-             'angle_change': [-0.1, 0.1]}
 
     if labels == None:
         ei = Experiment_Attribute_Index2(dataset)
@@ -113,7 +108,7 @@ def preprocess_distribution_set(dataset, labels=None,
         labels.append('all')
 
     for data_type in data_types:
-        xlim = xlims.get(data_type, [0, 1])
+        xlim = XLIMS.get(data_type, [0, 1])
         for label in labels:
             generate_distribution(dataset, data_type, label, xlim=xlim)
 
