@@ -29,6 +29,7 @@ from compute_metrics import *
 
 #STANDARD_MEASUREMENTS = ['length_mm', 'curve_w', 'cent_speed_bl']
 FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl', 'angle_change']
+
 STANDARD_MEASUREMENTS = FULL_SET
 
 # globals

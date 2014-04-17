@@ -16,10 +16,10 @@ import os
 import sys
 import numpy as np
 import random
-import json
 from itertools import izip
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import scipy.stats as stats
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -28,71 +28,9 @@ SHARED_DIR = os.path.abspath(os.path.join(CODE_DIR, 'shared'))
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries
+from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries, read_dset_summary
+from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
-def get_annotations(dataset, data_type, label='all'):
-    ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
-    print len(ex_ids), 'ex_ids found for', dataset, data_type
-    #print len(dfiles)
-    ids, days, files = [], [], []
-    labels = []
-    for eID, dfile  in izip(ex_ids, dfiles):                
-        #print eID, label
-        hours, elabel, sub_label, pID, day = organize_plate_metadata(eID)
-        if elabel not in labels:
-            labels.append(elabel)
-        if label == 'all' or str(label) == str(elabel):
-            #print elabel, eID, day
-            ids.append(eID)
-            files.append(dfile)
-            days.append(day)
-    print labels
-    return ids, days, files        
-
-def organize_plates_by_day(ex_ids, dfiles, days, verbose=False):
-    data_by_days ={}
-    for e, d, f in zip(ex_ids, days, dfiles):
-        day = int(d[1:])
-        if day not in data_by_days:
-            data_by_days[day] = []
-        data_by_days[day].append((e, f))
-    if verbose:
-        for d in sorted(data_by_days):
-            print d, len(data_by_days[d])        
-    return data_by_days
-
-def plot_data_by_days(data_by_days, xlim=[0.0, 0.2]):
-    day_distributions = {}
-    day_quartiles = {}
-    for day in sorted(data_by_days)[:]:
-        print day
-        all_data = []
-        for eID, f in data_by_days[day][:]:
-            plate_data = return_flattened_plate_timeseries(f)
-            all_data += list(plate_data)
-            print len(all_data)
-        s = all_data
-        xmin, xmax = xlim
-        bins = np.linspace(xmin, xmax, 5000)
-        y, x = np.histogram(s, bins=bins)
-        x = x[1:]
-        y = np.array(y, dtype=float) / sum(y)
-        day_distributions[day] = {'x':list(x), 'y':list(y)}
-        day_quartiles[day] = [stats.scoreatpercentile(all_data, 25),
-                                stats.scoreatpercentile(all_data, 50),
-                                stats.scoreatpercentile(all_data, 75)]
-                               
-    return day_distributions, day_quartiles
-
-def preprocess_distribution_data(dataset, data_type, label, xlim):
-    ex_ids, days, dfiles = get_annotations(dataset=dataset, data_type=data_type, label=label)
-    print len(ex_ids), 'ex_ids found for', label
-    data_by_days = organize_plates_by_day(ex_ids, dfiles, days)
-    day_distributions = plot_data_by_days(data_by_days, xlim=xlim)
-    savename = '{ds}-{dt}-{l}.json'.format(ds=dataset, dt=data_type, l=label)
-    print savename
-    json.dump(day_distributions, open(savename, 'w'))
-                
 
 def plot_distributions_by_day(dataset, data_type, labels, ylim, plotname=None):
     #plt.plot(x, y, label=str(len(s)))
@@ -114,9 +52,14 @@ def plot_distributions_by_day(dataset, data_type, labels, ylim, plotname=None):
     #                  'labelbottom': 'off', 'labeltop': 'off', 'labelright': 'off', 'labelleft': 'off'}
 
     for color, label in zip(colors, labels):
+        
+        savename = '{ds}-{dt}-{l}.json'.format(ds=dataset, dt=data_type, l=label)
         savename = '{ds}-{dt}-{l}.json'.format(ds=dataset, dt=data_type, l=label)
         print savename, os.path.isfile(savename)
-        dist_by_day = json.load(open(savename, 'r'))
+
+        #dist_by_day = json.load(open(savename, 'r'))
+        dist_by_day = read_dset_summary(dataset=dataset, data_type=data_type, 
+                                        ID=label, sum_type='dist')
 
         for day in sorted(dist_by_day):
             data = dist_by_day[day]
@@ -148,19 +91,8 @@ def plot_distributions_by_day(dataset, data_type, labels, ylim, plotname=None):
     ax[1].legend()
     if plotname:
         plt.savefig(plotname)
-    #plt.show()
+    plt.show()
     plt.clf()
-
-def preprocess_standard_set_of_distributions(dataset):
-    standard_set = ['cent_speed_bl', 'length_mm', 'curve_bl']
-    xlims = [[0.0, 0.4], [0.0, 2.0], [0.0, 0.006]]
-
-    labels = [u'NQ19', u'NQ67', u'MQ0', u'N2', u'MQ40', u'NQ40', u'MQ35']
-    
-
-    for data_type, xlim in zip(standard_set, xlims):
-        for label in labels:
-            preprocess_distribution_data(dataset, data_type, label, xlim=xlim)
                              
 if __name__ == '__main__':
     dataset = 'disease_models'

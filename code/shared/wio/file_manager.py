@@ -104,7 +104,7 @@ def format_dirctory(ID_type, dataset='', tag='', ID='',
 
     elif str(ID_type) in['dataset', 'dset', 's']:
         file_dir = '{path}/{dset}/{tag}'.format(path=dset_dir.rstrip('/'),
-                                                dset=ID.rstrip('/'),
+                                                dset=dataset.rstrip('/'),
                                                 tag=tag.rstrip('/'))
     else:
         assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type) 
@@ -188,11 +188,11 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
                                               dt=data_type, 
                                               ft=file_type)
     elif str(ID_type) in['dset', 's']:
-        return  '{path}/{tag}{dt}.{ft}'.format(path=file_dir,
-                                               tag=file_tag,
+        return  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir,
+                                               ID=ID,
                                                dt=data_type, 
                                                ft=file_type)
-    
+     
 def write_timeseries_file(ID, data_type, times, data, 
                           ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
                           dset=None, file_tag='',

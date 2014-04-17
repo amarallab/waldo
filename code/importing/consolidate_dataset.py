@@ -34,9 +34,90 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata, \
-    return_flattened_plate_timeseries, write_dset_summary
+    return_flattened_plate_timeseries, write_dset_summary, format_dset_summary_name
 from wio.file_manager import format_dirctory, ensure_dir_exists
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
+from annotation.experiment_index import Experiment_Attribute_Index2
+
+def get_annotations(dataset, data_type, label='all'):
+    ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
+    print len(ex_ids), 'ex_ids found for', dataset, data_type
+    #print len(dfiles)
+    ids, days, files = [], [], []
+    labels = []
+    for eID, dfile  in izip(ex_ids, dfiles):                
+        #print eID, label
+        hours, elabel, sub_label, pID, day = organize_plate_metadata(eID)
+        if elabel not in labels:
+            labels.append(elabel)
+        if label == 'all' or str(label) == str(elabel):
+            #print elabel, eID, day
+            ids.append(eID)
+            files.append(dfile)
+            days.append(day)
+    print labels
+    return ids, days, files        
+
+def preprocess_distribution_data(dataset, data_type, label, xlim, verbose=True):
+    ex_ids, days, dfiles = get_annotations(dataset=dataset, data_type=data_type, label=label)
+    print len(ex_ids), 'ex_ids found for', label
+    #organize data by days
+    #data_by_days = organize_plates_by_day(ex_ids, dfiles, days)
+    data_by_days ={}
+    for e, d, f in zip(ex_ids, days, dfiles):
+        day = int(d[1:])
+        if day not in data_by_days:
+            data_by_days[day] = []
+        data_by_days[day].append((e, f))
+    if verbose:
+        for d in sorted(data_by_days):
+            print 'day', d, 'N:', len(data_by_days[d])
+
+    # get a distribution for each day.
+    #day_distributions = preprocess_distributions_by_day(data_by_days, xlim=xlim)
+    day_distributions = {}
+    day_quartiles = {}
+    for day in sorted(data_by_days)[:]:
+        print day
+        all_data = []
+        for eID, f in data_by_days[day][:]:
+            plate_data = return_flattened_plate_timeseries(eID, dataset, data_type)
+            all_data += list(plate_data)
+            print len(all_data)
+        s = all_data
+        xmin, xmax = xlim
+        bins = np.linspace(xmin, xmax, 5000)
+        y, x = np.histogram(s, bins=bins)
+        x = x[1:]
+        y = np.array(y, dtype=float) / sum(y)
+        day_distributions[day] = {'x':list(x), 'y':list(y)}
+        day_quartiles[day] = [stats.scoreatpercentile(all_data, 25),
+                                stats.scoreatpercentile(all_data, 50),
+                                stats.scoreatpercentile(all_data, 75)]
+    
+    write_dset_summary(data=day_distributions, sum_type='dist', ID=label,
+                       data_type=data_type, dataset=dataset)
+
+
+
+def preprocess_standard_set_of_distributions(dataset, labels=None, 
+                                             data_types=STANDARD_MEASUREMENTS):
+    xlims = {'cent_speed_bl':[0.0, 0.4], 
+             'length_mm': [0.0, 2.0], 
+             'curve_w': [0.0, 0.006], 
+             'width_mm': [0.0, .2], 
+             'angle_change': [0.0, 0.006]}
+
+    if labels == None:
+        ei = Experiment_Attribute_Index2(dataset)
+        labels = [str(i) for i in set(ei['label'])]
+        labels.append('all')
+
+    for data_type in data_types:
+        xlim = xlims.get(data_type, [0, 1])
+        for label in labels:
+            preprocess_distribution_data(dataset, data_type, label, xlim=xlim)
+
 
 def combine_worm_percentiles_for_dset(dataset):    
     data_type = 'percentiles'
@@ -170,8 +251,10 @@ def write_dset_summaries(dataset, measurements=STANDARD_MEASUREMENTS):
                            data_type=data_type, dataset=dataset)
 
 if __name__ == '__main__':
-    #dataset = 'disease_models'
-    dataset = 'thermo_recovery'
+    dataset = 'disease_models'
+    #dataset = 'thermo_recovery'
     #dataset = 'copas_TJ3001_lifespan'
-    write_combined_worm_percentiles(dataset)
-    write_dset_summaries(dataset)
+    #write_combined_worm_percentiles(dataset)
+    #write_dset_summaries(dataset)
+    #preprocess_distribution_data(dataset)
+    preprocess_standard_set_of_distributions(dataset)
