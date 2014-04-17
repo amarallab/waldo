@@ -149,7 +149,6 @@ def main(args, db_attribute):
     new_args = '-c %s' % args.c if args.c is not None else ''
     dataset = str(db_attribute[1])
     
-
     # initiallize recording selection to have no criterion.
     blobfiles, stage1, stage2 =None, None, None
 

@@ -132,12 +132,11 @@ def create_parser(for_qsub=False):
     parser.add_argument('-c', help='configuration username')
     parser.add_argument('-w', action='store_true', help='create worm data (stage 1)')
     parser.add_argument('-p', action='store_true', help='compile plate timeseries (stage 2)')
-    #parser.add_argument('-s', action='store_true', help='dataset processing (stage 3)')
+    parser.add_argument('-o', action='store_true', help='overwrite previous results')
     #parser.add_argument('-e', action='store_true', help='export percentiles')
     parser.add_argument('-t', action='store_true', help='records processing time')
     parser.add_argument('--all', action='store_true', help='import, process, and aggregate measurements')
     parser.add_argument('--centroid', action='store_true', help='just use centroid measurements')
-    #parser.add_argument('--overwrite', action='store_true', help='overwrite previous documents in database')
     return parser
 
 if __name__ == '__main__':
