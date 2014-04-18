@@ -31,17 +31,10 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries, read_dset_summary
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
-
+from importing.consolidate_dataset import XLIMS
 
 # global settings
 style.use('ggplot')
-
-XLIMS = {'cent_speed_bl':[0.0, 0.04], 
-         'length_mm': [0.0, 1.5], 
-         'curve_bl': [0.0, 0.006], 
-         'curve_w': [0.0, 0.04], 
-         'width_mm': [0.0, .2], 
-         'angle_change': [-0.1, 0.1]}
 
 
 def plot_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=None):

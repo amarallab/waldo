@@ -33,12 +33,23 @@ SHARED_DIR = CODE_DIR + '/shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
+# nonstandard imports
 from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata, \
     return_flattened_plate_timeseries, write_dset_summary, format_dset_summary_name
 from wio.file_manager import format_dirctory, ensure_dir_exists
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from annotation.experiment_index import Experiment_Attribute_Index2
-from dsets.plot_distribution_set import XLIMS
+
+# globals
+XLIMS = {'cent_speed_bl':[0.0, 0.04], 
+         'length_mm': [0.0, 1.5], 
+         'curve_bl': [0.0, 0.006], 
+         'curve_w': [0.0, 0.04], 
+         'width_mm': [0.0, .2], 
+         'angle_change': [-0.1, 0.1]}
+
+
+
 
 def get_annotations(dataset, data_type, label='all'):
     ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
