@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import random
 import json
 import glob
+from mpltools import style
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -31,8 +32,12 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.plate_utilities import read_dset_summary
+from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
-def plot_timeseries(labels, xs, ys, bars):
+# global settings
+style.use('ggplot')
+
+def plot_timeseries(ax, labels, xs, ys, bars):
     colors =['blue', 'red', 'green', 'black', 'orange']
     for c, l in zip(colors, labels):
         print l
@@ -41,17 +46,13 @@ def plot_timeseries(labels, xs, ys, bars):
         set_bars = bars[l]        
         for xi, b in izip(x, set_bars):
             b1, b2 = b
-            plt.plot([xi, xi], [b1, b2], lw=0.5, color=c)
-        plt.plot(x,y, color=c, lw=0, marker='o', alpha=1.0, label=l)
-    plt.legend()
-    plt.show()                                        
+            ax.plot([xi, xi], [b1, b2], lw=0.5, color=c)
+        ax.plot(x,y, color=c, lw=0, marker='o', alpha=1.0, label=l)
 
-def plot_dset(dataset, data_type, plot_attribute, age_range=[0,1000000], split_by_sublabel=False):
-
+def plot_data_type_plate_scatter(ax, dataset, data_type, show_mean, age_range=[0,1000000], split_by_sublabel=False):
     data = read_dset_summary(dataset=dataset, data_type=data_type)
     print data.keys()
 
-    
     labels = data['labels']
     sublabels = data['sub']
     ex_ids = data['ex_ids']
@@ -67,11 +68,12 @@ def plot_dset(dataset, data_type, plot_attribute, age_range=[0,1000000], split_b
     print 'ages: {N}'.format(N=len(ages))
 
     # get graph ready if mean or median 
-    if plot_attribute == 'mean':
+    #if show_mean == 'mean':
+    if show_mean:
         primary = data.get('mean', [])
         stds = data.get('std', [])
         bars = [[m-s, m+s] for (m,s) in izip(primary, stds)]
-    if plot_attribute == 'median':
+    else:
         quantiles = data.get('quartiles', [[], [], []])
         q1, primary, q3 = zip(*quantiles)
         bars = zip(q1, q3)
@@ -94,43 +96,57 @@ def plot_dset(dataset, data_type, plot_attribute, age_range=[0,1000000], split_b
         set_bars[l].append(bar)
         set_ys[l].append(m)
 
-    plot_data = {'labels':sorted(set_names),
+    plot_data = {'ax':ax,
+                 'labels':sorted(set_names),
                  'xs':set_xs, 'ys':set_ys,
                  'bars':set_bars}
 
     plot_timeseries(**plot_data)
+    ax.set_ylabel(data_type)
     return plot_data
 
+
+def plot_dset(dataset, data_types=FULL_SET, show_mean=False, age_range=[0,1000000], split_by_sublabel=False):
+
+
     '''
-    dsets = parse_datasets(json.load(open(dfile, 'r')), plot_attribute,
+    dsets = parse_datasets(json.load(open(dfile, 'r')), show_mean,
                            age_range=age_range)
     print len(dsets)
 
     #plot_params(dsets=dsets, labels=['2013-03-18', '2013-04-08'])
     labels = ['N2 set A', 'N2 set B']
 
-    if plot_attribute == 'params':
+    if show_mean == 'params':
         plot_params(dsets=dsets, labels=labels, age_range=age_range)
-    elif plot_attribute == 'quartiles':
+    elif show_mean == 'quartiles':
         plot_quantiles(dsets=dsets, labels=labels, fit_function=fit, age_range=age_range)
-    elif plot_attribute == 'means':
+    elif show_mean == 'means':
         plot_means(dsets=dsets, labels=labels, fit_function=fit, age_range=age_range)
     '''
+    N = len(data_types)
+    fig, axes = plt.subplots(N, 1)
+    for ax, data_type in zip(axes, data_types):
+        plot_data_type_plate_scatter(ax, dataset, data_type, show_mean, 
+                                     age_range=age_range, split_by_sublabel=split_by_sublabel)
+    plt.legend()
+    plt.show()                                        
+
 
 if __name__ == '__main__':
     dataset = 'disease_models'
-    data_type = 'cent_speed_bl'
+    #dataset = 'N2_aging'
     #data_type = 'length_mm'
     #data_type = 'curve_w'
     
     # data source toggles
     # plot toggles
-    plot_attribute = 'median'
-    #plot_attribute = 'mean'
+    show_mean = True
+    #show_mean = 'mean'
 
     # optional toggles
     age_range=[0,1000000]
     #age_range=[40,210]
     #age_range=[40,260]    
-    sets = plot_dset(dataset=dataset, data_type=data_type, plot_attribute=plot_attribute, age_range=age_range)
+    sets = plot_dset(dataset=dataset, show_mean=show_mean, age_range=age_range)
     
