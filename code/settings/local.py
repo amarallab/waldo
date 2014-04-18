@@ -39,7 +39,6 @@ def configure(configuration_name=None):
         base.SPREADSHEET['password'] = base.get_env_variable('WORM_SPREADSHEET_PASSWORD')
         base.JOINING['method'] = None
         #base.JOINING['method'] = 'tapeworm'        
-
         
     global configured
     configured = True
