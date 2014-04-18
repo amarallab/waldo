@@ -79,7 +79,7 @@ def pick_ticks(maxdata, ndig=1, step_inc=0.1):
 
 
 def add_plate_median(ax, ex_id, dataset, data_type):
-
+    print '\tadding', data_type
     times, data = read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries')    
     times, data = preprocess_plate_timeseries(times, data)
     if times == None or data == None:
@@ -100,8 +100,6 @@ def add_plate_median(ax, ex_id, dataset, data_type):
     ax.plot(times, q1st, color=color, alpha=0.3)
     ax.plot(times, q3rd, color=color, alpha=0.3)
     ax.fill_between(times, q1st, q3rd, color=color, alpha=0.2)
-    
-    print data_type
     ticks = pick_ticks(max(q3rd))
 
     ax.set_yticks(ticks)
@@ -121,8 +119,6 @@ def plot_all_for_dset(dataset, data_types=STANDARD_MEASUREMENTS, save=False):
     print '{N} recordings in {ds} dataset'.format(N=len(ex_ids), ds=dataset)
     print '{N} recordings processed'.format(N=len(processed_ex_ids))
 
-
-
     #worthy_ex_ids, ages = [], []
     for eID, age in zip(ex_ids, ei['age']):
         #plotting2(ex_id=eID, data_types=FULL_SET, save=save)        
@@ -135,7 +131,7 @@ def plot_all_for_dset(dataset, data_types=STANDARD_MEASUREMENTS, save=False):
         if times == None or data == None:
             continue
 
-        print 'found worthy'
+        print '\tfound worthy'
 
         plot_one_plate(eID, data_types, dataset, save, age)
         plt.clf()
@@ -145,8 +141,7 @@ def plot_all_for_dset(dataset, data_types=STANDARD_MEASUREMENTS, save=False):
         #print '{N} recordings have sufficient data'.format(N=len(worthy_ex_ids))        
         #for eID, age in zip(worthy_ex_ids, ages):
 
-def plot_one_plate(ex_id, data_types=STANDARD_MEASUREMENTS, dataset=None, save=True, age=''): 
-
+def plot_one_plate(ex_id, data_types=STANDARD_MEASUREMENTS, dataset=None, save=False, age=''): 
     N = len(data_types)
     if dataset == None:
         dataset = get_dset(ex_id)
@@ -162,12 +157,14 @@ def plot_one_plate(ex_id, data_types=STANDARD_MEASUREMENTS, dataset=None, save=T
         savename = format_results_filename(ID=ex_id, result_type='timeseries',
                                            ID_type='plate', dset=dataset,
                                            ensure=True)
+        print 'saving:'
+        print savename
         plt.savefig(savename)
-        
-if __name__ == '__main__':
+        plt.clf()
 
+if __name__ == '__main__':
     dset = 'N2_aging'
-    plot_all_for_dset(dataset=dset)
+    plot_all_for_dset(dataset=dset, save=True)
     '''
     save = True
     eID = '20130318_131056'
