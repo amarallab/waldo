@@ -224,8 +224,9 @@ def get_timeseries(ID, data_type,
     filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,                               
                                dset=dset, file_tag=file_tag,
                                file_type=file_type, file_dir=file_dir)
+    #print os.path.abspath(filename), os.path.isfile(filename)
     #print 'tag', file_tag
-    #print filename, os.path.isfile(filename)
+    
     if os.path.isfile(filename):
         # retrval method depends on file_type
         if file_type == 'json':
@@ -238,7 +239,6 @@ def get_timeseries(ID, data_type,
             print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
         return times, data
     return None, None
-    
 
 def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None, **kwargs):
     # universal file formatting

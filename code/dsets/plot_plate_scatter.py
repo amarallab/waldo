@@ -135,7 +135,7 @@ def plot_dset(dataset, data_types=FULL_SET, show_mean=False, age_range=[0,100000
 
 if __name__ == '__main__':
     dataset = 'disease_models'
-    #dataset = 'N2_aging'
+    dataset = 'N2_aging'
     #data_type = 'length_mm'
     #data_type = 'curve_w'
     

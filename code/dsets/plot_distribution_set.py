@@ -119,16 +119,20 @@ def plot_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], N_day
 if __name__ == '__main__':
     dataset = 'disease_models'
     #dataset = 'N2_aging'
+    dataset = 'thermo_recovery'
 
 
     dtypes = FULL_SET
     #dtypes = ['length_mm']
     show_legend = True
 
+    # defaults
+    N_days = 5    
+    labels = ['all']
+
     # labels for N2_aging
     if dataset == 'N2_aging':
         N_days = 9
-        labels = ['all']
         labels = ['set A', 'set B']
 
     # labels for disease_models
@@ -138,6 +142,6 @@ if __name__ == '__main__':
         #labels = [u'N2', u'MQ0']
         labels = [u'N2', u'NQ40', u'NQ67']
         #labels = ['N2', 'NQ67']
-        N_days = 5
+
 
     plot_distribution_matrix(dataset, labels=labels, data_types=dtypes, N_days=N_days, show_legend=show_legend)
