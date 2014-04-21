@@ -4,7 +4,7 @@ syntax: glob
 # python cruft
 *.pyc
 __pycache__/
-venv/
+venv*/
 
 # emacs cruft
 *~
