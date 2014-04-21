@@ -139,6 +139,7 @@ def combine_worm_percentiles_for_dset(dataset):
                                           tag=tag)
 
     all_blob_ids, all_percentiles = [], None
+    expected_N_cols = 0 
     for ex_id in ex_ids:
         #ex_id = pf.split('/')[-1].split('-')[0]
         #print ex_id
@@ -147,7 +148,8 @@ def combine_worm_percentiles_for_dset(dataset):
                                                       data_type=data_type,
                                                       tag=tag)
         N_rows, N_cols = percentiles.shape
-        expected_N_cols = 0 
+        if N_rows ==0 or N_cols==0:
+            continue
         if all_percentiles == None:
             all_blob_ids = list(blob_ids)
             all_percentiles = percentiles
