@@ -53,7 +53,7 @@ XLIMS = {'cent_speed_bl':[0.0, 0.04],
 
 def get_annotations(dataset, data_type, label='all'):
     ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
-    print len(ex_ids), 'ex_ids found for', dataset, data_type
+    #print len(ex_ids), 'ex_ids found for', dataset, data_type
     #print len(dfiles)
     ids, days, files = [], [], []
     labels = []
@@ -67,12 +67,12 @@ def get_annotations(dataset, data_type, label='all'):
             ids.append(eID)
             files.append(dfile)
             days.append(day)
-    print labels
+    #print labels
     return ids, days, files        
 
 def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     ex_ids, days, dfiles = get_annotations(dataset=dataset, data_type=data_type, label=label)
-    print len(ex_ids), 'ex_ids found for', label
+    print '{label}: {N} recordings found'.format(l=label, N=len(ex_ids))
     #organize data by days
     #data_by_days = organize_plates_by_day(ex_ids, dfiles, days)
     data_by_days ={}
@@ -81,11 +81,8 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
         if day not in data_by_days:
             data_by_days[day] = []
         data_by_days[day].append((e, f))
-    #if verbose:
-    #    for d in sorted(data_by_days):
             
     # get a distribution for each day.
-    #day_distributions = preprocess_distributions_by_day(data_by_days, xlim=xlim)
     day_distributions = {}
     day_quartiles = {}
     for day in sorted(data_by_days)[:]:        
@@ -94,9 +91,11 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
         for eID, f in data_by_days[day][:]:
             plate_data = return_flattened_plate_timeseries(eID, dataset, data_type)
             all_data += list(plate_data)
-            print len(all_data)
         if verbose:
-            print 'day', day, 'recordings:', len(data_by_days[day]), 'timepoints:', len(all_data)
+            #print 'day', day, 'recordings:', len(data_by_days[day]), 'timepoints:', len(all_data)
+            print '\tday {d}| recordings:{r} | timepoints: {t}'.format(d=day, 
+                                                                       r=len(data_by_days[day]), 
+                                                                       t=len(all_data))
         s = all_data
         xmin, xmax = xlim
         bins = np.linspace(xmin, xmax, 5000)
