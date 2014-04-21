@@ -119,7 +119,7 @@ def plot_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], N_day
 if __name__ == '__main__':
     dataset = 'disease_models'
     #dataset = 'N2_aging'
-    dataset = 'thermo_recovery'
+    #dataset = 'thermo_recovery'
 
 
     dtypes = FULL_SET

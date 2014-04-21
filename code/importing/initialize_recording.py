@@ -19,7 +19,7 @@ from glob import iglob
 from itertools import izip
 import numpy as np
 import numbers
-
+import shutil
 
 # path definitions
 PROJECT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..')
@@ -36,7 +36,7 @@ from settings.local import LOGISTICS, FILTER, JOINING
 
 from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
-from wio.file_manager import write_timeseries_file, write_metadata_file
+from wio.file_manager import write_timeseries_file, write_metadata_file, format_dirctory
 
 
 DATA_DIR = LOGISTICS['filesystem_data']
@@ -47,15 +47,24 @@ if USE_TAPEWORM:
     from tapeworm import Taper
 
 def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
-                                    max_blob_files=10000,
+                                    max_blob_files=10000, overwrite = True,
                                     data_dir=DATA_DIR, store_tmp=True, **kwargs):
+
+    # remove existing directory if overwite == true
+    init_dir = os.path.abspath(format_dirctory(ID=ex_id,ID_type='worm'))
+    print 'overwite previous data is: {o}'.format(o=overwrite)
+    if overwrite and os.path.isdir(init_dir):
+        print 'removing: {d}'.format(d=init_dir)                                       
+        shutil.rmtree(init_dir)
+
+    # initialize the directory
     if USE_TAPEWORM:
         return tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
-                                  max_blob_files,
+                                  max_blob_files, overwrite=overwrite,
                                   data_dir=data_dir, store_tmp=True)
     else:
         return blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
-                                    max_blob_files,
+                                    max_blob_files, overwrite=overwrite,
                                     data_dir=data_dir,store_tmp=True)
 
 def midline_lengths(midlines):
@@ -80,7 +89,7 @@ def midline_lengths(midlines):
         
 def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
                          max_blob_files=10000,
-                         data_dir=DATA_DIR, store_tmp=True, **kwargs):
+                         data_dir=DATA_DIR, store_tmp=True, overwrite=False, **kwargs):
     ''' creates a list of database documents out of all worthy blobs for a particular recording.
 
     :param ex_id: the experiment index of the recording
@@ -173,7 +182,7 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
 
 def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
                          max_blob_files=10000,
-                         data_dir=DATA_DIR, store_tmp=True, **kwargs):
+                         data_dir=DATA_DIR, store_tmp=True, overwrite=False, **kwargs):
     ''' creates a list of database documents out of all worthy blobs for a particular recording.
 
     :param ex_id: the experiment index of the recording
@@ -202,6 +211,8 @@ def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
     print len(raw_blobs), 'blobs found worthy'
     
     metadata_docs = create_metadata_docs(ex_id=ex_id, raw_blobs=raw_blobs)    
+
+    
 
     if store_tmp:
         for local_id, blob in raw_blobs.iteritems():
@@ -249,7 +260,6 @@ def reformat_outline(outlines):
         ox[i][:len(x)] = np.array(x)
         oy[i][:len(x)] = np.array(y)        
     return ox, oy
-    
 
 def create_metadata_docs(ex_id, raw_blobs):
 

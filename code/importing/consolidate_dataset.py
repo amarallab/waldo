@@ -81,21 +81,22 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
         if day not in data_by_days:
             data_by_days[day] = []
         data_by_days[day].append((e, f))
-    if verbose:
-        for d in sorted(data_by_days):
-            print 'day', d, 'N:', len(data_by_days[d])
-
+    #if verbose:
+    #    for d in sorted(data_by_days):
+            
     # get a distribution for each day.
     #day_distributions = preprocess_distributions_by_day(data_by_days, xlim=xlim)
     day_distributions = {}
     day_quartiles = {}
-    for day in sorted(data_by_days)[:]:
-        print day
+    for day in sorted(data_by_days)[:]:        
+
         all_data = []
         for eID, f in data_by_days[day][:]:
             plate_data = return_flattened_plate_timeseries(eID, dataset, data_type)
             all_data += list(plate_data)
             print len(all_data)
+        if verbose:
+            print 'day', d, 'recordings:', len(data_by_days[d]), 'timepoints:', len(all_data)
         s = all_data
         xmin, xmax = xlim
         bins = np.linspace(xmin, xmax, 5000)
@@ -142,8 +143,9 @@ def combine_worm_percentiles_for_dset(dataset):
         if all_percentiles == None:
             all_blob_ids = list(blob_ids)
             all_percentiles = percentiles
+            print percentiles.columns
         else:
-            all_blob_ids += list(blob_ids)
+            all_blob_ids.extend(list(blob_ids))
             all_percentiles = np.concatenate((all_percentiles, percentiles))
         #print len(all_blob_ids), all_percentiles.shape
 

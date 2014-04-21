@@ -37,12 +37,12 @@ def main(args):
         if args.run:
             # TODO: write a check to make dset is really a dataset.
             args.dist = args.perc = args.sum = True
-        if args.dist:
-            preprocess_distribution_set(dset)
-        if args.perc:
-            write_combined_worm_percentiles(dset)
+        if args.dist:            
+            preprocess_distribution_set(dset)        
         if args.sum:
             write_dset_summaries(dset)
+        if args.perc:
+            write_combined_worm_percentiles(dset)
 
         if args.show:
             # show how many recordings/worms we have for each condition
