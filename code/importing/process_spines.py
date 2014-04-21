@@ -23,6 +23,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt        
 
+
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
 CODE_DIR = os.path.abspath(os.path.join(HERE + '..'))
@@ -46,7 +47,8 @@ from consolidate_plates import write_plate_timeseries, write_plate_percentiles
 from settings.local import LOGISTICS, FILTER
 from wormmetrics.measurement_switchboard import pull_blob_data, quantiles_for_data, FULL_SET
 from wio.file_manager import write_timeseries_file, get_metadata
-from wio.file_manager import get_good_blobs
+from wio.file_manager import get_good_blobs, format_filename, get_dset
+from wio.plate_utilities import remove_plate_files
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     """
@@ -144,8 +146,9 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwite=True, **kwar
             write_plate_timeseries(ex_id, blob_ids=good_blobs, 
                                    measurments=['cent_speed_bl'], **kwargs)
             return
-        write_plate_timeseries(ex_id, blob_ids=good_blobs, **kwargs)
-        write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
+        plate_consolidation(ex_id, blob_ids=good_blobs, overwite=overwite)
+        #write_plate_timeseries(ex_id, blob_ids=good_blobs, **kwargs)
+        #write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 
 def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
     """
@@ -184,9 +187,14 @@ def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
         print '\t{m} mean: {mn} | std: {s} | N: {N}'.format(m=metric, mn=mean, s=s, N=N)
 
 
-def plate_consolidation(ex_id):
-    write_plate_timeseries(ex_id)
-    write_plate_percentiles(ex_id)
+def plate_consolidation(ex_id, blob_ids=None, overwrite=True):
+    # if overwrite, remove old plate files.
+    # remove existing directory if overwite == true
+    if overwrite:
+        remove_plate_files(ex_id, file_tags = ['worm_percentiles', 'timeseries'])
+        
+    write_plate_timeseries(ex_id, blob_ids=blob_ids)
+    write_plate_percentiles(ex_id, blob_ids=blob_ids)
         
 def all_unprocessed_blob_ids(ex_id, **kwargs):
     # mongo version

@@ -75,9 +75,9 @@ def process_centroid(blob_id, verbose=True, **kwargs):
     if len(xy) == 0:
         return 
 
-    dataframe = full_package(orig_times, x, y)
+    dataframe, domains = full_package(orig_times, x, y)
     if verbose:
-        print 'centroid measurements calculated for {bid}'.format(bid=blob_id)
+        print '{bid} centroid measurements'.format(bid=blob_id)
         print dataframe.head()
         print 
     times = list(dataframe.index)
@@ -124,20 +124,19 @@ def full_package(times, x, y,
     x = savitzky_golay(y=np.array(x), window_size=window, order=order)
     y = savitzky_golay(y=np.array(y), window_size=window, order=order)
 
-    eq_times = times
-    # if setting spacing of timepoints, change this
 
+    # equally space 
+    eq_times = times
     kind = 'linear'
     eq_times = equally_spaced_tenth_second_times(times[0], times[-1])
-    #print times[0], times[-1]
-    #print eq_times[0], eq_times[-1]
     interp_x = interpolate.interp1d(times, x, kind=kind)
     interp_y = interpolate.interp1d(times, y, kind=kind)        
     x = interp_x(eq_times)
     y = interp_y(eq_times)
 
+    # change to dataframe
     dataframe = xy_to_full_dataframe(times=eq_times, x=x, y=y)
-    return dataframe
+    return dataframe, domains
 
 def xy_to_full_dataframe(times, x, y):    
     speeds = txy_to_speeds(t=times, x=x, y=y)

@@ -72,7 +72,7 @@ def get_annotations(dataset, data_type, label='all'):
 
 def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     ex_ids, days, dfiles = get_annotations(dataset=dataset, data_type=data_type, label=label)
-    print '{label}: {N} recordings found'.format(l=label, N=len(ex_ids))
+    print '{l}: {N} recordings found'.format(l=label, N=len(ex_ids))
     #organize data by days
     #data_by_days = organize_plates_by_day(ex_ids, dfiles, days)
     data_by_days ={}
@@ -93,7 +93,7 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
             all_data += list(plate_data)
         if verbose:
             #print 'day', day, 'recordings:', len(data_by_days[day]), 'timepoints:', len(all_data)
-            print '\tday {d}| recordings:{r} | timepoints: {t}'.format(d=day, 
+            print '\tday {d} | recordings:{r} | timepoints: {t}'.format(d=day, 
                                                                        r=len(data_by_days[day]), 
                                                                        t=len(all_data))
         s = all_data
@@ -106,7 +106,7 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
         day_quartiles[day] = [stats.scoreatpercentile(all_data, 25),
                                 stats.scoreatpercentile(all_data, 50),
                                 stats.scoreatpercentile(all_data, 75)]
-    
+    print 'writing'
     write_dset_summary(data=day_distributions, sum_type='dist', ID=label,
                        data_type=data_type, dataset=dataset)
 
@@ -118,6 +118,8 @@ def preprocess_distribution_set(dataset, labels=None,
         labels = [str(i) for i in set(ei['label'])]
         labels.append('all')
 
+    print 'preprocessing distributions'
+    print 'labels: {ls}'.format(ls=', '.join(labels))
     for data_type in data_types:
         xlim = XLIMS.get(data_type, [0, 1])
         for label in labels:
@@ -125,6 +127,11 @@ def preprocess_distribution_set(dataset, labels=None,
 
 
 def combine_worm_percentiles_for_dset(dataset):    
+    """
+
+    Note: currently takes first percentiles file to be current 
+    and expects all rest to have same format.
+    """
     data_type = 'percentiles'
     tag = 'worm_percentiles'
     ex_ids, plate_files = get_plate_files(dataset=dataset,
@@ -139,13 +146,19 @@ def combine_worm_percentiles_for_dset(dataset):
                                                       dataset=dataset,
                                                       data_type=data_type,
                                                       tag=tag)
+        N_rows, N_cols = percentiles.shape
+        expected_N_cols = 0 
         if all_percentiles == None:
             all_blob_ids = list(blob_ids)
             all_percentiles = percentiles
-            print percentiles.columns
-        else:
+            expected_N_cols = N_cols
+        elif N_cols == expected_N_cols:
             all_blob_ids.extend(list(blob_ids))
             all_percentiles = np.concatenate((all_percentiles, percentiles))
+        else:
+            print 'warning: columns mismatch between'
+            print (ex_ids[0], expected_N_cols), 'and', (ex_id, N_cols)
+
         #print len(all_blob_ids), all_percentiles.shape
 
     nan_count = 0
@@ -203,9 +216,10 @@ def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):
                           stats.scoreatpercentile(flat_data, 50),
                           stats.scoreatpercentile(flat_data, 75)])
         if verbose:
-            print '{i} {eID} | N: {N} | hour: {h} | label: {l}'.format(i=i, eID=ex_id,
-                                                                       N=len(flat_data),
-                                                                       h=round(hour, ndigits=1), l=label)                                      
+            print '{i} | {eID} | N: {N} | hour: {h} | label: {l}'.format(i=i, eID=ex_id,
+                                                                         N=len(flat_data),
+                                                                         h=round(hour, ndigits=1), 
+                                                                         l=label)                                      
 
     #for i in zip(ex_ids, means, stds, quartiles):
     #    print i

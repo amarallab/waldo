@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import random
 import json
 import glob
+import shutil
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -30,8 +31,21 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from file_manager import ensure_dir_exists, PLATE_DIR, DSET_DIR, \
-     format_filename, format_dirctory, get_timeseries
+     format_filename, format_dirctory, get_timeseries, get_dset
 from annotation.experiment_index import Experiment_Attribute_Index
+
+def remove_plate_files(ex_id, file_tags):
+    dataset = get_dset(ex_id)
+
+    for tag in file_tags:
+        print tag
+        search_dir = os.path.abspath(format_dirctory(ID=ex_id, ID_type='plate',
+                                                     dataset=dataset,
+                                                     tag=tag))
+        search = '{d}/{eID}*'.format(d=search_dir, eID=ex_id)
+        for rfile in glob.iglob(search):
+            print 'removing:', rfile
+            os.remove(rfile)
 
 def get_plate_files(dataset, data_type, tag='timeseries', path=None):
     if not path:
