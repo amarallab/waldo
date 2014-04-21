@@ -96,7 +96,7 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
             all_data += list(plate_data)
             print len(all_data)
         if verbose:
-            print 'day', d, 'recordings:', len(data_by_days[d]), 'timepoints:', len(all_data)
+            print 'day', day, 'recordings:', len(data_by_days[day]), 'timepoints:', len(all_data)
         s = all_data
         xmin, xmax = xlim
         bins = np.linspace(xmin, xmax, 5000)
