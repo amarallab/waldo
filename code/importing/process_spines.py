@@ -89,9 +89,9 @@ def just_process_centroid(ex_id, **kwargs):
             return False
         
     # note: overwrite = false, so that all non centroid data is not deleted.
-    process_ex_id(ex_id, just_centroid=True, overwrite=False, **kwargs)            
+    process_ex_id(ex_id, just_centroid=True, overwrite=False, reprocess=True, **kwargs)            
 
-def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, **kwargs):
+def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, reprocess=True, **kwargs):
     '''
     processes all blobs in database from ex_id from raw data all the way to smoothspines.
     if ex_id does not have any blobs already in database, it reads the .blobs files and inserts
@@ -107,10 +107,11 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, **kwa
     # importing blobs section
     # must perform: import_rawdata_into_db.import_ex_id
 
-    if not overwrite and len(get_good_blobs(ex_id)) > 0:
-        # check if entries for ex_id already exist, dont do anything
-        print ex_id, 'already processed'
-        return False
+    if not overwrite or not reprocess:
+        if len(get_good_blobs(ex_id)) > 0:
+            # check if entries for ex_id already exist, dont do anything
+            print ex_id, 'already processed'
+            return False
 
     blob_ids = create_entries_from_blobs_files(ex_id, min_body_lengths,
                                                min_duration,
@@ -144,7 +145,10 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, **kwa
     else: # excicute this code if for loop does not break        
         if just_centroid:
             write_plate_timeseries(ex_id, blob_ids=good_blobs, 
-                                   measurments=['cent_speed_bl'], **kwargs)
+                                   measurments=['cent_speed_bl',
+                                                'angle_change',
+                                                'go_dur',
+                                                'stop_dur'], **kwargs)
             return
         plate_consolidation(ex_id, blob_ids=good_blobs, overwrite=overwrite)
         #write_plate_timeseries(ex_id, blob_ids=good_blobs, **kwargs)
