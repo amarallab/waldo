@@ -28,7 +28,7 @@ from wio.file_manager import get_metadata, get_timeseries
 from compute_metrics import *
 
 #STANDARD_MEASUREMENTS = ['length_mm', 'curve_w', 'cent_speed_bl']
-FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl', 'angle_change', 'stop_dur', 'go_dur']
+FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl', 'angle_change'] #, 'stop_dur', 'go_dur']
 STANDARD_MEASUREMENTS = FULL_SET
 
 # globals
