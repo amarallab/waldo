@@ -38,6 +38,7 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
     """
 
     qsub_directory = os.path.abspath(LOGISTICS['qsub_directory'])
+    print 'dir', qsub_directory
     ensure_dir_exists(qsub_directory)
 
     # if there are more jobs than recordings. reduce the number of jobs.
@@ -51,14 +52,14 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
                 cmd += ' ' + str(ex_id)
                 
         job_id = job_name + '_' + str(job_num)
-        qsub_filename = qsub_directory + job_id + '.sh'
+        qsub_filename = '{d}/{n}.sh'.format(d=qsub_directory, n=job_id)
         print qsub_filename
         print cmd
         with open(qsub_filename, "w") as f:
             f.write("#! /bin/bash\n")
             f.write("#PBS -d .\n")
-            f.write('#PBS -e {d}{id}-std.err\n'.format(d=qsub_directory, id=job_id))
-            f.write('#PBS -o {d}{id}-std.out\n'.format(d=qsub_directory, id=job_id))
+            f.write('#PBS -e {d}/{id}-std.err\n'.format(d=qsub_directory, id=job_id))
+            f.write('#PBS -o {d}/{id}-std.out\n'.format(d=qsub_directory, id=job_id))
             f.write('#PBS -N {id}\n'.format(id=job_id))
             f.write("#PBS -q low\n\n\n")
             f.write(cmd)
