@@ -171,17 +171,11 @@ def main(args, db_attribute):
         name = '{ds}-p'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -tp', job_name=name,
                         args=new_args, ex_ids=ex_ids, number_of_jobs=100)
-    if args.s:
-        ex_ids = choose_ex_ids(db_attribute=db_attribute)
-        name = '{ds}-s'.format(ds=dataset)
-        qsub_run_script(python_script='waldo.py -ts', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=1)
-        
-        
+                
 if __name__ == '__main__':
     # Toggles
-    #db_attribute = ('dataset', 'N2_aging')
-    db_attribute = ('dataset', 'disease_models')
+    db_attribute = ('dataset', 'N2_aging')
+    #db_attribute = ('dataset', 'disease_models')
     #db_attribute = ('dataset', 'thermo_recovery')
     #db_attribute = ('dataset', 'zoom_test')
     #db_attribute = ('dataset', 'copas_TJ3001_lifespan')
