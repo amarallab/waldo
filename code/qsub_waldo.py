@@ -37,7 +37,7 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
     :param number_of_jobs: number of jobs
     """
 
-    qsub_directory = LOGISTICS['qsub_directory']
+    qsub_directory = os.path.abspath(LOGISTICS['qsub_directory'])
     ensure_dir_exists(qsub_directory)
 
     # if there are more jobs than recordings. reduce the number of jobs.
