@@ -77,9 +77,9 @@ def process_centroid(blob_id, verbose=True, **kwargs):
 
     dataframe, domains = full_package(orig_times, x, y)
     if verbose:
-        print '{bid} centroid measurements'.format(bid=blob_id)
-        print dataframe.head()
-        print 
+        print 'centroid measurements: \n'
+        print dataframe.head(), '\n'
+
     times = list(dataframe.index)
     # write xy
     xy = zip(list(dataframe['x']), list(dataframe['y']))
@@ -95,7 +95,52 @@ def process_centroid(blob_id, verbose=True, **kwargs):
     angle_change = list(dataframe['dtheta'])
     write_timeseries_file(ID=blob_id, data_type='angle_change',
                           times=times, data=angle_change)
+
+    # write is_moving durations
+    if isinstance(domains, pd.DataFrame):
+        write_timeseries_file(ID=blob_id, data_type='is_moving',
+                              times=np.array(domains.index, dtype=float), 
+                              data=np.array(domains[domains.columns], dtype=float))
+
     return
+
+def domains_to_dataframe(stop_domains, times):    
+    first, last = times[0], times[-1]
+
+    if len(stop_domains) > 0:
+
+        last_d = [0, stop_domains[0][0]]
+        new_d = stop_domains[0]
+
+        full = [(last_d[0], last_d[1], 1),
+                (new_d[0], new_d[1], 0)]
+
+        for d in stop_domains[1:]:
+            new_d, last_d = d, new_d
+            full.extend([(last_d[1], new_d[0], 1),  # moving
+                         (new_d[0], new_d[1], 0)]) # not moving
+
+        full.extend([(last_d[1], len(times)-1, 1)])
+    else:
+        full = [(0, len(times)-1, 1)]
+
+    # convert from indicies to times.
+    data = []
+    t = times
+    for start, stop, move in full:
+        #print int(start), int(stop), len(times)
+        data.append((t[int(start)], t[int(stop)], move))
+
+    #df = pd.DataFrame()
+    df = pd.DataFrame(data=data, columns=['start', 'end', 'moving'])
+    df['dur'] =  df['end'] - df['start']
+    df = df.set_index('start')
+
+    print 'modes of movement:\n'
+    print df.head(), '\n'
+
+    return df
+
 
 def full_package(times, x, y,
                  pre_smooth=(25, 5),
@@ -124,7 +169,6 @@ def full_package(times, x, y,
     x = savitzky_golay(y=np.array(x), window_size=window, order=order)
     y = savitzky_golay(y=np.array(y), window_size=window, order=order)
 
-
     # equally space 
     eq_times = times
     kind = 'linear'
@@ -136,7 +180,8 @@ def full_package(times, x, y,
 
     # change to dataframe
     dataframe = xy_to_full_dataframe(times=eq_times, x=x, y=y)
-    return dataframe, domains
+    domain_df = domains_to_dataframe(domains, times=times)
+    return dataframe, domain_df
 
 def xy_to_full_dataframe(times, x, y):    
     speeds = txy_to_speeds(t=times, x=x, y=y)
@@ -149,4 +194,5 @@ def xy_to_full_dataframe(times, x, y):
 if __name__ == '__main__':
     bi = '00000000_000001_00001'
     bi = '20130610_161943_20653'
+    #bi = '20130415_104153_00853'
     process_centroid(blob_id=bi)

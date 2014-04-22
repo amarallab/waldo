@@ -28,8 +28,7 @@ from wio.file_manager import get_metadata, get_timeseries
 from compute_metrics import *
 
 #STANDARD_MEASUREMENTS = ['length_mm', 'curve_w', 'cent_speed_bl']
-FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl', 'angle_change']
-
+FULL_SET = ['length_mm', 'width_mm', 'curve_w', 'cent_speed_bl', 'angle_change', 'stop_dur', 'go_dur']
 STANDARD_MEASUREMENTS = FULL_SET
 
 # globals
@@ -44,7 +43,9 @@ SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
                              'position':['head', 'mid', 'tail']},
              'cent_speed': {'func': compute_centroid_speed,
                             'units': ['bl', 'mm']},
-             'angle_change':{'func': compute_angle_change, 'units':['rad', 'deg']}
+             'angle_change':{'func': compute_angle_change, 'units':['rad', 'deg']},
+             'stop_dur':{'func': compute_stopped_duratations, 'units':['s']},
+             'go_dur':{'func': compute_moving_duratations, 'units':['s']}
                             }        
 
 # **** main function of the module. 
@@ -157,7 +158,6 @@ def switchboard(metric, switches=dict(SWITCHES)):
     print 'the metric you specified, ({m}) could not be located'.format(m=metric)
     return False, {}
 
-
 # TODO: is this really used? in it's current state, this is better off removed.
 '''
 def pull_metric_for_ex_id(ex_id, metric, verbose=False):
@@ -178,21 +178,6 @@ def list_all_metrics():
         all_metrics += properties['metrics']
     return all_metrics
 
-# TODO: is this really used? in it's current state, this is better off removed.
-'''
-def pull_all_for_blob_id(blob_id, out_format='values', **kwargs):
-    all_data = {}
-    assert out_format in ['values', 'timedict']
-    times, flags, _ = get_data(blob_id, data_type='flags', **kwargs)
-    for metric_type, properties in SWITCHES.iteritems():
-        for metric in properties['metrics']:
-            if out_format == 'values':
-                all_data[metric] = pull_blob_data(blob_id, metric=metric, **kwargs).values()
-            else:
-                all_data[metric] = pull_blob_data(blob_id, metric=metric,
-                                                           **kwargs)
-    return all_data
-'''
 
 
 if __name__ == '__main__':
@@ -206,10 +191,15 @@ if __name__ == '__main__':
         print m, len(data)
     '''
     bID = '20130415_104153_00853'
+    bID = '20130610_161943_20653'
     #bID='00000000_000001_00001'
     import time
     start = time.time()
-    pull_blob_data(blob_id=bID, metric='length')
+    #pull_blob_data(blob_id=bID, metric='length')
+    print 'go'
+    pull_blob_data(blob_id=bID, metric='go_dur')
+    print 'stop'
+    pull_blob_data(blob_id=bID, metric='stop_dur')
     dur = time.time() - start
 
     print '1', dur

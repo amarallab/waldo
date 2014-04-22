@@ -141,7 +141,7 @@ if __name__ == '__main__':
     
     # data source toggles
     # plot toggles
-    show_mean = True
+    show_mean = False
     #show_mean = 'mean'
 
     # optional toggles

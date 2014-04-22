@@ -79,7 +79,7 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     return smoothed_times, smoothed_spines
 
 def just_process_centroid(ex_id, **kwargs):
-    # note: overwite defaluts to true so that all recordings will be processed.
+    # note: overwrite defaluts to true so that all recordings will be processed.
     overwrite = kwargs.pop('overwrite', True)
     print kwargs    
     if not overwrite:
@@ -88,10 +88,10 @@ def just_process_centroid(ex_id, **kwargs):
             print '{eID} already processed. to reprocess use overwrite=True'
             return False
         
-    # note: overwite = false, so that all non centroid data is not deleted.
-    process_ex_id(ex_id, just_centroid=True, overwite=False, **kwargs)            
+    # note: overwrite = false, so that all non centroid data is not deleted.
+    process_ex_id(ex_id, just_centroid=True, overwrite=False, **kwargs)            
 
-def process_ex_id(ex_id, debug=False, just_centroid=False, overwite=True, **kwargs):
+def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, **kwargs):
     '''
     processes all blobs in database from ex_id from raw data all the way to smoothspines.
     if ex_id does not have any blobs already in database, it reads the .blobs files and inserts
@@ -115,7 +115,7 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwite=True, **kwar
     blob_ids = create_entries_from_blobs_files(ex_id, min_body_lengths,
                                                min_duration,
                                                min_size, store_tmp= True,
-                                               overwite=overwite,
+                                               overwrite=overwrite,
                                                **kwargs)
 
     # processing blobs section.
@@ -146,7 +146,7 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwite=True, **kwar
             write_plate_timeseries(ex_id, blob_ids=good_blobs, 
                                    measurments=['cent_speed_bl'], **kwargs)
             return
-        plate_consolidation(ex_id, blob_ids=good_blobs, overwite=overwite)
+        plate_consolidation(ex_id, blob_ids=good_blobs, overwrite=overwrite)
         #write_plate_timeseries(ex_id, blob_ids=good_blobs, **kwargs)
         #write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 
@@ -189,7 +189,7 @@ def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
 
 def plate_consolidation(ex_id, blob_ids=None, overwrite=True):
     # if overwrite, remove old plate files.
-    # remove existing directory if overwite == true
+    # remove existing directory if overwrite == true
     if overwrite:
         remove_plate_files(ex_id, file_tags = ['worm_percentiles', 'timeseries'])
         

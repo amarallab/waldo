@@ -275,7 +275,8 @@ if __name__ == '__main__':
     #find_ex_ids_to_update(update_list=['2013-01', '2013-02', '2013-03', '2013-04', '2013-05', '2013-06', '2013-07', '2013-08'])
 
     #update_main(update_all=True)
-    update_main(update_list=['2013-09']) # thermotolerance
+    #update_main(update_list=['2013-09']) # thermotolerance
+    update_main(update_list=['2013-03', '2013-04']) # N2_aging
     #update_main(update_list=['2013-06', '2013-07']) # disease models
     #update_main(update_list=['2013-12']) # copas lifespan
     #test_scaling_factors()

@@ -93,6 +93,9 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     if not blob_ids:
         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
         blob_ids = get_good_blobs(ex_id)
+    if not blob_ids:
+        return
+
     metadata = get_metadata(ID=blob_ids[0], **kwargs)    
     dataset = metadata.get('dataset', 'none')
     plate_dataset = {}
@@ -150,6 +153,8 @@ def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENT
     if not blob_ids:
         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
         blob_ids = get_good_blobs(ex_id)
+    if not blob_ids:
+        return
     metadata = get_metadata(ID=blob_ids[0], **kwargs)    
     dataset = metadata.get('dataset', 'none')
     for metric in measurements:

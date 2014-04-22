@@ -16,6 +16,7 @@ import math
 import numpy as np
 from itertools import izip
 import scipy.stats as stats
+import pandas as pd
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -53,6 +54,40 @@ def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
             return [], []
         times, data = zip(*unflagged_timeseries)
     return times, data
+
+
+
+def pull_is_moving(blob_id, moving=True, **kwargs):
+    times, data = get_timeseries(blob_id, data_type='is_moving', **kwargs)    
+    if times == None or data == None:
+        return [], []
+
+    df = pd.DataFrame(data, index=times, columns=['stop', 'moving', 'dur'])
+
+    #print df.head()
+
+    result = None
+    for i, grp in df.groupby('moving'):
+        #print i, 'moving:', moving and (i > 0.5), ' | not moving:', not moving and not (i > 0.5)
+        if moving and (i > 0.5):
+            result = grp
+        if not moving and not (i > 0.5):
+            result = grp
+
+    if isinstance(result, pd.DataFrame):
+        times = list(result.index)
+        dur = list(result['dur'])
+        return times, dur
+    else:
+        return [], []
+
+def compute_stopped_duratations(blob_id, **kwargs):
+    times, dur = pull_is_moving(blob_id, moving=False, **kwargs)
+    return times, dur
+
+def compute_moving_duratations(blob_id, **kwargs):
+    times, dur = pull_is_moving(blob_id, moving=True, **kwargs)
+    return times, dur
 
 # todo
 def space_basic_data_type_linearly(times, values):
