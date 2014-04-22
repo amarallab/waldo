@@ -159,7 +159,7 @@ def main(args, db_attribute):
     if args.centroid:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
-        qsub_run_script(python_script='waldo.py -t --centroid', job_name=name,
+        qsub_run_script(python_script='waldo.py -to --centroid', job_name=name,
                         args=new_args, ex_ids=ex_ids, number_of_jobs=100)        
         return # centroid specifies that only centroid should be processed.
     if args.w:
