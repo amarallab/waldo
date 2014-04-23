@@ -144,4 +144,5 @@ if __name__ == '__main__':
         #labels = ['N2', 'NQ67']
 
 
-    plot_distribution_matrix(dataset, labels=labels, data_types=dtypes, N_days=N_days, show_legend=show_legend)
+    plot_distribution_matrix(dataset, labels=labels, data_types=dtypes,
+                             N_days=N_days, show_legend=show_legend)
