@@ -13,7 +13,6 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-import pylab as pl
 from itertools import izip
 import math
 import numpy as np

@@ -30,6 +30,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries, read_dset_summary
+from wio.file_manager import read_table
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from importing.consolidate_dataset import XLIMS
 
@@ -72,6 +73,11 @@ def plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=
             #plt.tick_params(**label_settings)
             if max_x < max(x):
                 max_x = max(x)
+        print data_type, max_x
+
+
+    if data_type == 'cent_speed_bl':
+        max_x = 0.001
 
     # make x axis ticks relativly sparse
     for a in ax_row:
@@ -105,7 +111,7 @@ def plot_full_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], 
         ax_row = [ax1] + ax_row
 
         ylim = XLIMS.get(data_type, [0.0, 1.0])
-        plot_distribution_row(ax_row, dataset, data_type, labels, ylim)
+        plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim)
         axes_rows.append(ax_row)
 
     ax_row = axes_rows[0]
@@ -127,7 +133,7 @@ def plot_worm_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], 
         ax_row = [ax1] + ax_row
 
         ylim = XLIMS.get(data_type, [0.0, 1.0])
-        plot_distribution_row(ax_row, dataset, data_type, labels, ylim)
+        plot_worm_distribution_row(ax_row, dataset, data_type, labels, ylim)
         axes_rows.append(ax_row)
 
     ax_row = axes_rows[0]
@@ -145,9 +151,9 @@ def plot_worm_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=
 
     for j, label in enumerate(labels):
         percentiles = read_table(dataset=dataset, data_type=data_type, 
-                                        ID=label, sum_type='dist')
-        print label, len(dist_by_day), dist_by_day.keys()
-
+                                 ID=label, sum_type='dist')
+        print percentiles.head()
+        
         for day in sorted(dist_by_day):
             data = dist_by_day.get(day, None)
             if data == None:
@@ -172,6 +178,9 @@ def plot_worm_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=
             #plt.tick_params(**label_settings)
             if max_x < max(x):
                 max_x = max(x)
+
+    if data_type == 'cent_speed_bl':
+        max_x = 0.001
 
     # make x axis ticks relativly sparse
     for a in ax_row:
@@ -220,5 +229,7 @@ if __name__ == '__main__':
         #labels = ['N2', 'NQ67']
 
 
-    plot_full_distribution_matrix(dataset, labels=labels, data_types=dtypes,
+    #plot_full_distribution_matrix(dataset, labels=labels, data_types=dtypes,
+    #                              N_days=N_days, show_legend=show_legend)
+    plot_worm_distribution_matrix(dataset, labels=labels, data_types=dtypes,
                                   N_days=N_days, show_legend=show_legend)

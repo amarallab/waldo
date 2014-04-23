@@ -29,7 +29,7 @@ from filtering.filter_utilities import savitzky_golay
 from settings.local import SMOOTHING
 from wio.file_manager import get_timeseries, insert_data_into_db, write_timeseries_file
 from shared.filtering.equally_space import find_next_index, correct_point
-
+from shared.wormmetrics.compute_metrics import euclidean
 
 # set defaults from settings file
 DEFAULT_ORDER = SMOOTHING['spine_order']

@@ -39,7 +39,6 @@ from wio.file_manager import get_good_blobs, get_dset
 from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
 from wio.file_manager import write_table, read_table
      
-
 def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     """ this function joins timeseries from all blob_ids and returns the results.
     by default, this is two lists. times and data (a list of lists containin values
