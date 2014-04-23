@@ -15,8 +15,7 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-from itertools import izip
-import pylab as pl
+
 #from scipy.spatial.distance import euclidean
 
 # path definitions
@@ -28,12 +27,11 @@ assert os.path.exists(SHARED_DIRECTORY), 'shared code directory not found'
 sys.path.append(SHARED_DIRECTORY)
 
 # nonstandard imports
-from GeometricCalculations import compute_displacement_along_curve
+from GeometricCalculations.compute_displacement_along_curves import compute_displacement_along_curve
 from GeometricCalculations.distance import euclidean
 from wio.file_manager import get_timeseries, write_timeseries_file, get_metadata
 from flags_and_breaks import good_segments_from_data, get_flagged_times
-from create_spine import smooth_and_space_xy_points
-from equally_space import *
+import equally_space as es
 from settings.local import SMOOTHING 
 
 # set defaults from settings file
@@ -86,24 +84,24 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         print '\tregion {i}'.format(i=i)
         print '\tstart: {s} | end: {e} | N: {n}'.format(s=s, e=e, n=N)
         # transform spine point format into matrix format
-        times, x_matrix, y_matrix = create_spine_matricies(times, spines)
+        times, x_matrix, y_matrix = es.create_spine_matricies(times, spines)
         # smooth once in both directions and make sure points are equally spaced along spine
-        x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
-        x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
-        x_matrix, y_matrix = equally_space_matrix_distances(x_matrix, y_matrix)
+        x_matrix, y_matrix = es.smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
+        x_matrix, y_matrix = es.smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
+        x_matrix, y_matrix = es.equally_space_matrix_distances(x_matrix, y_matrix)
         # interpolate missing times 
-        eq_times = equally_spaced_tenth_second_times(start=times[0], end=times[-1])
-        x_matrix, y_matrix = equally_space_matricies_times(eq_times, times, x_matrix, y_matrix)
+        eq_times = es.equally_spaced_tenth_second_times(start=times[0], end=times[-1])
+        x_matrix, y_matrix = es.equally_space_matricies_times(eq_times, times, x_matrix, y_matrix)
         # now that times have been set, smooth + space spines repeatedly
 
         for i in range(repeated_smoothings):
-            x_matrix, y_matrix = smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
-            x_matrix, y_matrix = smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
-            x_matrix, y_matrix = equally_space_matrix_distances(x_matrix, y_matrix)
+            x_matrix, y_matrix = es.smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
+            x_matrix, y_matrix = es.smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
+            x_matrix, y_matrix = es.equally_space_matrix_distances(x_matrix, y_matrix)
         # check if head is correct and reverse row orientation if not
-        x_matrix, y_matrix = set_matrix_orientation(x_matrix, y_matrix)
+        x_matrix, y_matrix = es.set_matrix_orientation(x_matrix, y_matrix)
         # transform spine matrix format into point format
-        spines = spine_matricies_to_points(x_matrix, y_matrix)
+        spines = es.spine_matricies_to_points(x_matrix, y_matrix)
         # add an empty string one space after end of region.
         #times.append(str(float(times[-1]) + float(time_step)))
         #spines.append([])

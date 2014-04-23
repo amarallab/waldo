@@ -21,7 +21,7 @@ SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../'
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from database.mongo_retrieve import pull_data_type_for_blob
+#from database.mongo_retrieve import pull_data_type_for_blob
 from filtering.filter_utilities import compute_polynomial_xy_smoothing_by_index
 
 # globals
@@ -299,9 +299,10 @@ def decode_outline(params):
             byte <<= 2
     return points
 
-
+# functions from the database days
+"""
 def pull_outline(blob_id, **kwargs):
-    ''' returns outline in point form from database using the blob_id as a key '''
+    #''' returns outline in point form from database using the blob_id as a key '''
 
     entry = pull_data_type_for_blob(blob_id, 'encoded_outline', **kwargs)
     encoded_outline_timedict = entry['data']
@@ -312,7 +313,7 @@ def pull_outline(blob_id, **kwargs):
 
 
 def pull_smoothed_outline(blob_id, poly_order=4, window_size=25, **kwargs):
-    ''' returns a smoothed outline in point form from database using the blob_id as a key '''
+    #''' returns a smoothed outline in point form from database using the blob_id as a key '''
 
     entry = pull_data_type_for_blob(blob_id, 'encoded_outline', **kwargs)
     encoded_outline_timedict = entry['data']
@@ -323,7 +324,7 @@ def pull_smoothed_outline(blob_id, poly_order=4, window_size=25, **kwargs):
                                                                        window_size=window_size,
                                                                        poly_order=poly_order)
     return outline_timedict
-
+"""
 
 def make_square():
     ''' returns a series of x,y coordinates that coorespond to the outside of a square '''

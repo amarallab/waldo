@@ -15,12 +15,8 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-import datetime
 from itertools import izip
 import numpy as np
-import random
-import json
-import glob
 import scipy.stats as stats
 import pandas as pd
 

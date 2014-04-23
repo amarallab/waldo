@@ -51,8 +51,8 @@ def fit_gaussian(x, num_bins=200):
     bincenters = [0.5 * (bin_edges[i + 1] + bin_edges[i]) for i in xrange(len(n))]
 
     # Target function
-    fitfunc = lambda p, x: mlab.normpdf(x, p[0], p[1])
-
+    #fitfunc = lambda p, x: mlab.normpdf(x, p[0], p[1])
+    fitfunc = lambda p, x: scipy.stats.norm.pdf(x, p[0], p[1])
     # Distance to the target function 
     errfunc = lambda p, x, y: fitfunc(p, x) - y
 

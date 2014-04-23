@@ -9,7 +9,6 @@ __author__ = 'peterwinter'
 # standard imports
 import os
 import sys
-from itertools import izip
 import numpy as np
 import scipy.interpolate as interpolate
 import pandas as pd
@@ -23,12 +22,11 @@ sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
-from Encoding.decode_outline import pull_smoothed_outline, decode_outline
+from Encoding.decode_outline import decode_outline
 from ExceptionHandling.record_exceptions import write_pathological_input
 from shared.wio.file_manager import get_timeseries, write_timeseries_file
 from settings.local import SMOOTHING 
 from equally_space import equally_spaced_tenth_second_times
-from equally_space import equally_space_xy_for_stepsize
 from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
 
 from wormmetrics.compute_metrics import txy_to_speeds, angle_change_for_xy

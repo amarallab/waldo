@@ -4,6 +4,7 @@
 Filename: qsub_waldo.py
 Description: runs many parallel copies of a python script on the cluster.
 '''
+
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
@@ -12,7 +13,6 @@ __status__ = 'prototype'
 import os
 import sys
 import glob
-import argparse
 
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -22,7 +22,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from settings.local import LOGISTICS
-from annotation.experiment_index import Experiment_Attribute_Index
+from annotation.experiment_index import Experiment_Attribute_Index, list_ex_ids_with_raw_data
 from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
 from waldo import create_parser
 
@@ -71,41 +71,7 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
                 f.write(line)
             f.close()
         os.system('qsub '+ qsub_filename)
-        
-        
-def list_ex_ids_with_raw_data(inventory_directory):
-    ''' make list of ex_ids present in the data directory on the cluster.
 
-    :param inventory_directory: directory to search for ex_id data.
-    '''
-    search_path = inventory_directory + '*'
-    ex_ids = []
-
-    for entry in glob.glob(search_path):
-        dirname = entry.split('/')[-1]
-        if os.path.isdir(entry) and len(dirname) == 15:
-            ex_ids.append(dirname)
-
-    if len(ex_ids) < 5:
-        print 'Warning: not many ex_id directories found'
-        print 'search path for raw data is ({sp})'.format(sp=search_path)
-        print '{N} ex_ids present'.format(N=len(ex_ids))
-    return ex_ids
-
-def list_ex_ids_with_exported_data(export_directory):
-    ''' make list of ex_ids present in the data directory on the cluster.
-
-    :param inventory_directory: directory to search for ex_id data.
-    '''
-    search_string = '{dir}blob_percentiles_*.json'.format(dir=export_directory)
-    print search_string
-    ex_ids = []
-    for entry in glob.glob(search_string):
-        ex_id = entry.split(export_directory + 'blob_percentiles_')[-1][:15]
-        # one minor check to see if ex_id has a _ at right location.
-        if ex_id[8] == '_':
-            ex_ids.append(ex_id)
-    return ex_ids
 
 def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=None, stage2=None, exported=None, **kwargs):
     """ Return a list of ex_ids that match desired criteria. Good for bulk processing.

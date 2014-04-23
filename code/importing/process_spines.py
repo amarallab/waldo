@@ -39,10 +39,9 @@ from compute_basic_measurements import compute_basic_measurements
 from flags_and_breaks import flag_blob_id, create_breaks_for_blob_id
 from smooth_spines_in_time import smooth_good_regions_repeatedly
 from consolidate_plates import write_plate_timeseries, write_plate_percentiles
-#from wormmetrics.measurement_suite import measure_all, write_plate_timeseries, write_plate_percentiles
 
 
-from settings.local import LOGISTICS, FILTER
+from settings.local import FILTER
 from wormmetrics.measurement_switchboard import pull_blob_data, quantiles_for_data, FULL_SET
 from wio.file_manager import write_timeseries_file, get_metadata
 from wio.file_manager import get_good_blobs, format_filename, get_dset
