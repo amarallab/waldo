@@ -52,9 +52,8 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
         job_id = '{name}_{num}'.format(name=job_name, num=job_num)
         qsub_filename = '{d}/{n}.sh'.format(d=qsub_dir, n=job_id)
         
-        python_script = 'waldo.py'
         py = '{dir}/{py}'.format(dir=CODE_DIR, py=python_script)
-        python_call = 'python2.7 -c {py}'.format(py=py)
+        python_call = 'python2.7 {py}'.format(py=py)
 
         lines = ["#! /bin/bash\n",
                 "#PBS -d .\n",

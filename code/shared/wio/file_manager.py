@@ -52,6 +52,7 @@ if TIME_SERIES_FILE_TYPE == 'hdf5':
     from h5_interface import write_h5_timeseries_base
     from h5_interface import read_h5_timeseries_base
 
+#ensure_dir_exists(WORM_DIR)
         
 def silent_remove(filename):
     try:
@@ -308,138 +309,7 @@ def get_ex_ids_in_worms(directory=WORM_DIR):
             ex_id = g.split('/')[-1]
             ex_ids.append(ex_id)
     return ex_ids
-
-# depreciated mongo version of code.
-'''
-def get_ex_ids(query, **kwargs):
-    # return a list of unique ex_id names for a query
-    return list(set([e['ex_id'] for e in mongo_query(query=query, projection={'ex_id':1}, **kwargs)]))
-
-    
-def get_blob_ids(query, **kwargs):
-    # return a list of unique blob_id names for a query
-    return list(set([e['blob_id'] for e in mongo_query(query=query, projection={'blob_id':1}, **kwargs)]))
-
-
-def get_timeseries(blob_id, data_type, search_db=True, **kwargs):
-    #return read_h5_timeseries(blob_id, data_type)
-    # default: look in json file and split into 'time' and 'data'
-    data_dict = read_json_file(blob_id=blob_id, data_type=data_type)
-    # temp file not located, and search_db=True, attempt to find data in database.
-    if search_db and not isinstance(data_dict, dict):
-        data_dict = search_db_for_data(blob_id, data_type=data_type, **kwargs)
-
-    # if data source found
-    if isinstance(data_dict, dict):
-        times, data = data_dict.get('time', []), data_dict.get('data', [])        
-
-        if not times and not data:
-            print 'No Time or Data Found! {dt} for {bi} not found'.format(dt=data_type, bi=blob_id)
-        return times, data
-    # if data source not found
-    return None, None
-
-
-def get_metadata(blob_id, data_type='metadata', search_db=True, **kwargs):
-    
-    metadata = read_json_file(blob_id=blob_id, data_type=data_type)
-    # default: look in json file and split into 'time' and 'data'
-    found_it = False
-    # look in temp file but do not split results
-    if metadata != None:
-        return metadata
-    # temp file not located, and search_db=True, attempt to find data in database.
-    elif search_db:
-        metadata = search_db_for_data(blob_id, data_type='metadata')
-    return metadata
-
-
-def write_metadata_file(blob_id, data_type, data, json_dir=WORM_DIR):
-    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
-    json.dump(data, open(json_file, 'w'))
-
-
-
-def format_json_filename(blob_id, data_type, json_dir):
-    errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
-    assert isinstance(blob_id, basestring), errmsg
-    ex_id = '_'.join(blob_id.split('_')[:2])
-    blob_path = '{path}/{eID}'.format(path=json_dir, eID=ex_id)
-    ensure_dir_exists(blob_path)
-    json_file = '{path}/{bID}-{dt}.json'.format(path=blob_path, bID=blob_id,
-                                               dt=data_type)
-    return json_file
-
-
-def format_h5_path(blob_id, data_type, h5_dir):
-    errmsg = 'blob_id must be string, not {i}'.format(i=blob_id)
-    assert isinstance(blob_id, basestring), errmsg    
-    ex_id = '_'.join(blob_id.split('_')[:2])
-    h5_dir = h5_dir.rstrip('/')
-    file_path = '{path}/{eID}'.format(path=h5_dir, eID=ex_id)
-    ensure_dir_exists(file_path)
-    h5_file = '{path}.h5'.format(path=file_path)
-    h5_dataset = '{bID}/{dt}'.format(bID=blob_id, dt=data_type)
-    return h5_file, h5_dataset    
-    #h5_file = '{path}/{bID}-{dt}.json'.format(path=file_path, bID=blob_id,
-    #                                          dt=data_type)
-    #return h5_file #, h5_dataset
-
-#def write_outlines(blob_id, data_type, times, data, h5_dir=H5_DIR):
-#    h5_file = format_h5_path(blob_id, data_type, h5_dir)
-#    write_h5_outlines(h5_file, times, data)
-
-def write_h5_timeseries(blob_id, data_type, times, data, h5_dir=H5_DIR):
-    h5_file = format_h5_path(blob_id, data_type, h5_dir)
-    write_h5_timeseries_base(h5_file, times, data)
-    
-def read_h5_timeseries(blob_id, data_type, h5_dir=H5_DIR):
-    h5_file = format_h5_path(blob_id, data_type, h5_dir)
-    times, data = read_h5_timeseries_base(h5_file)
-    #print data
-    return times, data
-
-def clear_json_file(blob_id, data_type='all'):
-    blob_path = '{path}/{bID}'.format(path=json_dir, bID=blob_id)
-    json_file = '{path}/{dt}.json'.format(path=blob_path, dt=data_type)
-    silent_remove(json_file)
-    if data_type == 'all' or len(glob.glob(blob_path + '/*')) == 0:
-        os.rmdir(blob_path)
-
-def read_json_file(blob_id, data_type, json_dir=WORM_DIR):
-    json_file = format_json_filename(blob_id, data_type, json_dir=json_dir)
-    if os.path.isfile(json_file):
-        return json.load(open(json_file, 'r'))    
-    return None
-
-'''    
-        
-
-'''                             
-def store_data_in_db(blob_id, data_type, data, description, db_doc=None, **kwargs):
-    if not db_doc:
-        db_doc = read_json_file(blob_id=blob_id, data_type='metadata')
-    if not db_doc:
-        try:
-            db_doc = mongo_query({'blob_id':blob_id, 'data_type':'metadata'}, find_one=True)
-            print 'warning: could not find json file for', blob_id, 'metadata'
-        except Exception as e:
-            print '\nFailure! could not locate data'
-            print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt='metadata')
-            print e
-            assert False
-    insert_data_into_db(data, db_doc, data_type=data_type, 
-                        description=description, **kwargs)                        
-    return db_doc
-
-
-
-def store_data_in_db(blob_id, data_type, times, data, description, db_doc=None, **kwargs):
-    # convert back to timedict form. then insert
-    timedict = times_to_timedict(times, data)
-    store_timedict_in_db(blob_id, data_type, timedict, description, db_doc, **kwargs)
-'''    
        
-ensure_dir_exists(WORM_DIR)
+
         
     

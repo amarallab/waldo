@@ -92,6 +92,7 @@ def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     times = np.array(times, dtype=float)
     data = np.array(filled_data, dtype=float)
     return times, data
+
 '''
 def write_plate_percentiles_old(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     if not blob_ids:
