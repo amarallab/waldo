@@ -46,7 +46,7 @@ SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
              'angle_change':{'func': compute_angle_change, 'units':['rad', 'deg']},
              'stop_dur':{'func': compute_stopped_duratations, 'units':['s']},
              'go_dur':{'func': compute_moving_duratations, 'units':['s']}
-                            }        
+             }
 
 # **** main function of the module. 
 def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, 
