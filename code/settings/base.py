@@ -47,6 +47,7 @@ LOGISTICS = {
     # filesystem variables
     'filesystem_address': 'peterwinter@barcelona.chem-eng.northwestern.edu',
     'filesystem_data': '/home/projects/worm_movement/Data/MWT_RawData/',
+    'filesystem_inventory': '/home/projects/worm_movement/Data/Inventory/',
 
     # cluster variables
     'cluster_data': '/home/projects/worm_movement/Data/MWT_RawData/',

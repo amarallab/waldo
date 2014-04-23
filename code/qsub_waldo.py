@@ -26,8 +26,12 @@ from annotation.experiment_index import Experiment_Attribute_Index
 from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
 from waldo import create_parser
 
+QSUB_DIR = os.path.abspath(LOGISTICS['qsub_directory'])
+#QSUB_DIR = '.'
 
-def qsub_run_script2(python_script='waldo.py', args='', ex_ids=[], job_name='job',
+print 'saving to', QSUB_DIR
+
+def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job', qsub_dir=QSUB_DIR,
                     number_of_jobs=25):
     """ Runs parallel python jobs on cluster after receiving a list of arguments for that script.
 
@@ -36,89 +40,36 @@ def qsub_run_script2(python_script='waldo.py', args='', ex_ids=[], job_name='job
     :param job_name: identifier for job type. used for output file naming.
     :param number_of_jobs: number of jobs
     """
-
-    qsub_directory = LOGISTICS['qsub_directory']
-    print 'dir', qsub_directory
-    ensure_dir_exists(qsub_directory)
-
+ 
+    ensure_dir_exists(qsub_dir)
     # if there are more jobs than recordings. reduce the number of jobs.
     if len(ex_ids) < number_of_jobs:
         number_of_jobs = len(ex_ids)
-    
-    for job_num in range(number_of_jobs):
-        cmd = 'python2.7 {dir}/{py} {args}'.format(dir=CODE_DIR, py=python_script, args=args)
-        for i, ex_id in enumerate(ex_ids):
-            if i%number_of_jobs == job_num:
-                cmd += ' ' + str(ex_id)
-                
-        job_id = job_name + '_' + str(job_num)
-        qsub_filename = '{d}/{n}.sh'.format(d=qsub_directory, n=job_id)
-        print qsub_filename
-        print cmd
-        with open(qsub_filename, "w") as f:
-            f.write("#! /bin/bash\n")
-            f.write("#PBS -d .\n")
-            f.write('#PBS -e {d}/{id}-std.err\n'.format(d=qsub_directory, id=job_id))
-            f.write('#PBS -o {d}/{id}-std.out\n'.format(d=qsub_directory, id=job_id))
-            f.write('#PBS -N {id}\n'.format(id=job_id))
-            f.write("#PBS -q low\n\n\n")
-            f.write(cmd)
-            f.close()
-        os.system('qsub '+ qsub_filename)
-
-def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job',
-                    number_of_jobs=25):
-    """ Runs parallel python jobs on cluster after receiving a list of arguments for that script.
-
-    :param python_script: which python script should be run
-    :param args: the arguments that should be passed to the scripts    
-    :param job_name: identifier for job type. used for output file naming.
-    :param number_of_jobs: number of jobs
-    """
-
-    qsub_directory = os.path.abspath(LOGISTICS['qsub_directory'])
-    print 'dir', qsub_directory
-    ensure_dir_exists(qsub_directory)
-
-    # if there are more jobs than recordings. reduce the number of jobs.
-    if len(ex_ids) < number_of_jobs:
-        number_of_jobs = len(ex_ids)
-
-
                                                                    
     for job_num in range(number_of_jobs):
-        #for i, ex_id in enumerate(ex_ids):
-        #    if i%number_of_jobs == job_num:
-        #        comand = cmd + ' ' + str(ex_id)
                 
         eIDs = ex_ids[job_num::number_of_jobs]       
         job_id = '{name}_{num}'.format(name=job_name, num=job_num)
-        qsub_filename = '{d}/{n}.sh'.format(d=qsub_directory, n=job_id)
+        qsub_filename = '{d}/{n}.sh'.format(d=qsub_dir, n=job_id)
+        
         python_script = 'waldo.py'
         py = '{dir}/{py}'.format(dir=CODE_DIR, py=python_script)
-        py = r'print "{py}"'.format(py=py)
         python_call = 'python2.7 -c {py}'.format(py=py)
-        command = '{c} {eids}'.format(c=python_call, eids=' '.join(eIDs))
-        print command                                                      
 
-        
         lines = ["#! /bin/bash\n",
                 "#PBS -d .\n",
-                '#PBS -e {d}/{ID}-std.err\n'.format(d=qsub_directory, ID=job_id),
-                '#PBS -o {d}/{ID}-std.out\n'.format(d=qsub_directory, ID=job_id),
+                '#PBS -e {d}/{ID}-std.err\n'.format(d=qsub_dir, ID=job_id),
+                '#PBS -o {d}/{ID}-std.out\n'.format(d=qsub_dir, ID=job_id),
                 '#PBS -N {id}\n'.format(id=job_id),
                 "#PBS -q low\n\n\n",
-                '{py} {args} {IDs}'.format(py=python_script,
-                                           args=args, IDs=eIDs)
-                ]
-
-
-
+                '{py} {args} {IDs}'.format(py=python_call,
+                                           args=args, 
+                                           IDs=' '.join(eIDs))]
         
         print qsub_filename
-        print cmd
         with open(qsub_filename, "w") as f:
-            f.write(cmd)
+            for line in lines:
+                f.write(line)
             f.close()
         os.system('qsub '+ qsub_filename)
         
@@ -217,18 +168,18 @@ def main(args, db_attribute):
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -to --centroid', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)        
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=2)        
         return # centroid specifies that only centroid should be processed.
     if args.w:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -tw', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=2)
     if args.p:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True)
         name = '{ds}-p'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -tp', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=2)
                 
 if __name__ == '__main__':
     # Toggles

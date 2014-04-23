@@ -39,6 +39,7 @@ HEADERS = SPREADSHEET['columns']
 DEFAULT_DATA_DIR = LOGISTICS['filesystem_data']
 DEFAULT_LOGISTICS_DIR = LOGISTICS['inventory']
 DEFAULT_SAVE_DIR = LOGISTICS['annotation']
+SOURCE_INVENTORY = LOGISTICS['filesystem_inventory']
 
 def inventory_data_directories(base_data_dir=DEFAULT_DATA_DIR):
     """
@@ -62,6 +63,15 @@ def inventory_data_directories(base_data_dir=DEFAULT_DATA_DIR):
             if ex_id not in dirs_by_yearmonth[yearmonth]:
                 dirs_by_yearmonth[yearmonth][ex_id] = entry
     return dirs_by_yearmonth
+
+def update_inventory(finventory=SOURCE_INVENTORY, local_inventory=DEFAULT_LOGISTICS_DIR):
+    #print finventory
+    #print local_inventory
+    cmd = 'rsync -a {fi}/* {li}'.format(fi=finventory.rstrip('/'), 
+                                      li=local_inventory.rstrip('/'))
+    print cmd
+    os.system(cmd)
+
 
 def update_annotation_worksheet(data_ex_ids, annotated_ex_ids, ex_ids_to_add, ex_ids_to_remove, source_computers, scaling_factors):
     """
@@ -270,6 +280,7 @@ def parse_summary_file(ex_dir):
     return file_name, record_length
 
 if __name__ == '__main__':    
+    update_inventory()
     #update_main(update_all=False)
     #find_ex_ids_to_update(update_list=['2012-10', '2012-11', '2012-12'])
     #find_ex_ids_to_update(update_list=['2013-01', '2013-02', '2013-03', '2013-04', '2013-05', '2013-06', '2013-07', '2013-08'])
