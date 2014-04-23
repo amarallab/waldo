@@ -24,7 +24,6 @@ sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
 from Encoding.decode_outline import decode_outline
-from GeometricCalculations.compute_intersection import get_ortogonal_to_spine, find_intersection_points, check_point_is_inside_box, calculate_area_of_box
 from ExceptionHandling.record_exceptions import write_pathological_input
 from shared.wio.file_manager import get_timeseries, write_timeseries_file
 

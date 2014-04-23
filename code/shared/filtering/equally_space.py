@@ -20,15 +20,8 @@ assert os.path.exists(shared_directory)
 sys.path.append(shared_directory)
 
 # nonstandard imports
-from GeometricCalculations.distance import euclidean
+from thinning.distance import euclidean
 
-def compute_transpose(x):
-    """ given a matrix, computes the transpose """
-    xt=[([0]*len(x)) for k in x[0]]
-    for i, x_row in enumerate(x):
-        for j, b in enumerate(x_row):
-            xt[j][i]=x[i][j]
-    return xt
 
 def sign(x):
     x = float(x)
@@ -81,56 +74,6 @@ def find_next_index(xy, next_index_along_original_line, point_so_far, step):
     return dist, next_index_along_original_line, point_so_far
 
 
-def equally_space(xy, points=-1, prefixed_step='no_prefixed_step', verbose=False, forgiving=True):
-    """
-        this functions takes a list xy
-        in the format [(x1, y1), (x2, y2)...]
-        points is the number of x, y pairs desired
-    """
-    if forgiving and len(xy) <= 2:
-        return []
-
-    assert len(xy) > 2, 'equally_space2 function found a very short spine. this is a BUG!'
-    if points == -1:
-        points = len(xy)
-        #print 'len xy', len(xy)
-    tot_distance = 0
-    for k, a in enumerate(xy[:-1]):
-        #tot_distance += euclidean_distance(xy[k][0], xy[k][1], xy[k + 1][0], xy[k + 1][1])
-        tot_distance += euclidean(xy[k], xy[k + 1])
-        #print tot_distance, "total distance"
-    step = tot_distance / (points - 1)
-    #print step, "step"
-
-    if prefixed_step != 'no_prefixed_step':
-        step = prefixed_step
-        points = int(tot_distance / step)
-
-    if verbose:
-        print 'prefixed_step', prefixed_step
-        print 'tot_distance', tot_distance
-        print 'num points', points
-        print 'step size', step
-
-    equally_spaced = [(xy[0][0], xy[0][1])]
-    next_index_along_original_line = 1
-
-    for k in xrange(points - 1):
-        point_so_far = equally_spaced[-1]
-        # find the next point along xy which is further than step
-        dist, \
-        next_index_along_original_line, \
-        point_so_far = find_next_index(xy, next_index_along_original_line,
-                                       point_so_far, step)
-
-        # correct the point decreasing its dictance from the next one
-        correction = dist - step
-        point_so_far = correct_point(point_so_far, xy[next_index_along_original_line], correction)
-        equally_spaced.append(point_so_far)
-
-    #print len(equally_spaced), 'equally spaced'
-
-    return equally_spaced
 
 def equally_space_times(num_ids, step=0):
     """
@@ -161,65 +104,6 @@ def equally_space_times(num_ids, step=0):
     assert len(num_ids) == len(ids_eq), 'BUG! equally spaced times do not have the same length'
     return ids_eq
 
-def equally_space_snapshots_in_time(ids_strings, original_snapshots):
-    """
-        ids_strings is a list of strings with the times of the snapshots
-        original_snapshots is a list of list, so that original_snapshots[i] looks like [x1, y1, x2, y2, ...]
-        returns equally spaced times and snapshots
-    """
-
-    num_ids = [float(v) for v in ids_strings]
-    ids_eq = equally_space_times(num_ids)
-
-    tsnapshots = compute_transpose(original_snapshots)
-    equally_spaced_snapshots = []
-
-    for tsnapshot in tsnapshots:
-        eq_values = equally_space_snapshots_in_time_1d(num_ids, ids_eq, tsnapshot)
-        equally_spaced_snapshots.append(eq_values)
-
-    ids_strings_eq = [str(v) for v in ids_eq]
-
-    return ids_strings_eq, compute_transpose(equally_spaced_snapshots)
-
-
-def equally_space_snapshots_in_time_1d(ids_not_eq, ids_eq, values, interpolation_kind='linear'):
-    """
-        ids_not_eq and ids_eq are lists of floats with times
-        values is a list of floats you want to equally space in time
-        interpolation_kind should be 'linear'. nothing more for now.
-        returns equally spaced positions
-    """
-
-    assert ids_not_eq == sorted(ids_not_eq), 'DATA PROBLEM: time ids are not sorted!'
-    assert ids_eq == sorted(ids_eq), 'BUG!!! ids_eq not sorted!!!'
-
-    import bisect
-
-    eq_values = []
-    for k, dummy in enumerate(ids_eq):
-
-        left_index = bisect.bisect_left(ids_not_eq, ids_eq[k])
-        assert left_index < len(ids_not_eq), 'left index is out of range'
-
-        if ids_not_eq[left_index] == ids_eq[k]:
-            eq_values.append(values[left_index])
-
-        else:
-            left_index -= 1
-            right_index = left_index + 1
-            #print left_index, right_index, len(ids_eq), len(ids_not_eq), len(values)
-            eq_values.append(linear_interpolation( \
-                ids_eq[k],
-                (ids_not_eq[left_index], values[left_index]), \
-                (ids_not_eq[right_index], values[right_index])) \
-                )
-
-            #print ids_eq[k], ids_not_eq[left_index], ids_not_eq[right_index], 'III', left_index, right_index, k
-            #print eq_values[-1], values[left_index], values[right_index]
-            assert ids_eq[k] >= ids_not_eq[left_index] and ids_eq[k] < ids_not_eq[right_index], 'bisection is wrong'
-
-    return eq_values
 
 
 def linear_interpolation(x, point1, point2):

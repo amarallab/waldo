@@ -3,6 +3,7 @@
 Filename: filter_utilities
 Description: functions involving smoothing of data.
 '''
+from shared.filtering.equally_space import equally_space_times, linear_interpolation
 
 __authors__ = 'Peter B. Winter and Andrea Lancanetti'
 __email__ = 'peterwinteriii@gmail.com'
@@ -24,7 +25,6 @@ sys.path.append(shared_directory)
 
 # nonstandard imports
 #from PrincipalComponents.utilities import compute_transpose
-from equally_space import equally_space_snapshots_in_time, compute_transpose
 
 '''
 def new_smooth_xy(x, y,
@@ -368,6 +368,14 @@ def filter_time_series(times, values):
     return times, filtered_snapshots
 
 
+def compute_transpose(x):
+    """ given a matrix, computes the transpose """
+    xt=[([0]*len(x)) for k in x[0]]
+    for i, x_row in enumerate(x):
+        for j, b in enumerate(x_row):
+            xt[j][i]=x[i][j]
+    return xt
+
 
 if __name__ == '__main__':
     """
@@ -406,3 +414,64 @@ if __name__ == '__main__':
     plt.plot(ids_eq, filtered_snapshots[0], 'x', ls='-')
     plt.legend(['data', 'eq', 'smoothed'], loc='upper right')
     plt.savefig('test1.pdf')
+
+
+def equally_space_snapshots_in_time(ids_strings, original_snapshots):
+    """
+        ids_strings is a list of strings with the times of the snapshots
+        original_snapshots is a list of list, so that original_snapshots[i] looks like [x1, y1, x2, y2, ...]
+        returns equally spaced times and snapshots
+    """
+
+    num_ids = [float(v) for v in ids_strings]
+    ids_eq = equally_space_times(num_ids)
+
+    tsnapshots = compute_transpose(original_snapshots)
+    equally_spaced_snapshots = []
+
+    for tsnapshot in tsnapshots:
+        eq_values = equally_space_snapshots_in_time_1d(num_ids, ids_eq, tsnapshot)
+        equally_spaced_snapshots.append(eq_values)
+
+    ids_strings_eq = [str(v) for v in ids_eq]
+
+    return ids_strings_eq, compute_transpose(equally_spaced_snapshots)
+
+
+def equally_space_snapshots_in_time_1d(ids_not_eq, ids_eq, values, interpolation_kind='linear'):
+    """
+        ids_not_eq and ids_eq are lists of floats with times
+        values is a list of floats you want to equally space in time
+        interpolation_kind should be 'linear'. nothing more for now.
+        returns equally spaced positions
+    """
+
+    assert ids_not_eq == sorted(ids_not_eq), 'DATA PROBLEM: time ids are not sorted!'
+    assert ids_eq == sorted(ids_eq), 'BUG!!! ids_eq not sorted!!!'
+
+    import bisect
+
+    eq_values = []
+    for k, dummy in enumerate(ids_eq):
+
+        left_index = bisect.bisect_left(ids_not_eq, ids_eq[k])
+        assert left_index < len(ids_not_eq), 'left index is out of range'
+
+        if ids_not_eq[left_index] == ids_eq[k]:
+            eq_values.append(values[left_index])
+
+        else:
+            left_index -= 1
+            right_index = left_index + 1
+            #print left_index, right_index, len(ids_eq), len(ids_not_eq), len(values)
+            eq_values.append(linear_interpolation( \
+                ids_eq[k],
+                (ids_not_eq[left_index], values[left_index]), \
+                (ids_not_eq[right_index], values[right_index])) \
+                )
+
+            #print ids_eq[k], ids_not_eq[left_index], ids_not_eq[right_index], 'III', left_index, right_index, k
+            #print eq_values[-1], values[left_index], values[right_index]
+            assert ids_eq[k] >= ids_not_eq[left_index] and ids_eq[k] < ids_not_eq[right_index], 'bisection is wrong'
+
+    return eq_values

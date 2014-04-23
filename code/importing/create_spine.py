@@ -25,10 +25,11 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from skeletonize_outline import compute_skeleton_from_outline
 from Encoding.decode_outline import decode_outline
-from filtering.equally_space import equally_space
 from filtering.filter_utilities import savitzky_golay
 from settings.local import SMOOTHING
 from wio.file_manager import get_timeseries, insert_data_into_db, write_timeseries_file
+from shared.filtering.equally_space import find_next_index, correct_point
+
 
 # set defaults from settings file
 DEFAULT_ORDER = SMOOTHING['spine_order']
@@ -266,3 +267,54 @@ if __name__ == "__main__":
     blob_id = '20121124_181927_00197'
     blob_id = '20130319_150235_00426'
     create_spine_from_outline(blob_id)
+
+
+def equally_space(xy, points=-1, prefixed_step='no_prefixed_step', verbose=False, forgiving=True):
+    """
+        this functions takes a list xy
+        in the format [(x1, y1), (x2, y2)...]
+        points is the number of x, y pairs desired
+    """
+    if forgiving and len(xy) <= 2:
+        return []
+
+    assert len(xy) > 2, 'equally_space2 function found a very short spine. this is a BUG!'
+    if points == -1:
+        points = len(xy)
+        #print 'len xy', len(xy)
+    tot_distance = 0
+    for k, a in enumerate(xy[:-1]):
+        #tot_distance += euclidean_distance(xy[k][0], xy[k][1], xy[k + 1][0], xy[k + 1][1])
+        tot_distance += euclidean(xy[k], xy[k + 1])
+        #print tot_distance, "total distance"
+    step = tot_distance / (points - 1)
+    #print step, "step"
+
+    if prefixed_step != 'no_prefixed_step':
+        step = prefixed_step
+        points = int(tot_distance / step)
+
+    if verbose:
+        print 'prefixed_step', prefixed_step
+        print 'tot_distance', tot_distance
+        print 'num points', points
+        print 'step size', step
+
+    equally_spaced = [(xy[0][0], xy[0][1])]
+    next_index_along_original_line = 1
+
+    for k in xrange(points - 1):
+        point_so_far = equally_spaced[-1]
+        # find the next point along xy which is further than step
+        dist, \
+        next_index_along_original_line, \
+        point_so_far = find_next_index(xy, next_index_along_original_line,
+                                       point_so_far, step)
+
+        # correct the point decreasing its dictance from the next one
+        correction = dist - step
+        point_so_far = correct_point(point_so_far, xy[next_index_along_original_line], correction)
+        equally_spaced.append(point_so_far)
+
+    #print len(equally_spaced), 'equally spaced'
+    return equally_spaced

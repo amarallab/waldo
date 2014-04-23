@@ -27,8 +27,6 @@ assert os.path.exists(SHARED_DIRECTORY), 'shared code directory not found'
 sys.path.append(SHARED_DIRECTORY)
 
 # nonstandard imports
-from GeometricCalculations.compute_displacement_along_curves import compute_displacement_along_curve
-from GeometricCalculations.distance import euclidean
 from wio.file_manager import get_timeseries, write_timeseries_file, get_metadata
 from flags_and_breaks import good_segments_from_data, get_flagged_times
 import equally_space as es

@@ -26,7 +26,6 @@ SHARED_DIR = CODE_DIR + 'shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-from GeometricCalculations.distance import euclidean
 from wio.file_manager import get_timeseries
 from importing.flags_and_breaks import consolidate_flags
 
@@ -55,7 +54,8 @@ def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
         times, data = zip(*unflagged_timeseries)
     return times, data
 
-
+def euclidean(list1, list2):
+    return math.sqrt(sum((x - y) ** 2 for x, y in izip(list1, list2)))
 
 def pull_is_moving(blob_id, moving=True, **kwargs):
     times, data = get_timeseries(blob_id, data_type='is_moving', **kwargs)    

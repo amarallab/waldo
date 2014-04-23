@@ -31,11 +31,7 @@ if not os.path.exists(exception_directory):
     
 # nonstandard imports
 from ExceptionHandling.record_exceptions import write_pathological_input
-from GeometricCalculations.shape_thinning import skeletonize
-#from GeometricCalculations.matrix_and_point_operations import compute_closest_point
-#from GeometricCalculations.matrix_and_point_operations import close_outline_border
-#from GeometricCalculations.matrix_and_point_operations import line_matrix_to_ordered_points
-#from GeometricCalculations.matrix_and_point_operations import calculate_branch_and_endpoints
+from thinning.shape_thinning import skeletonize
 
 def trim_spine_matrix(spine_matrix, endpoints, branchpoints):
     '''

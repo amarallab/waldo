@@ -3,8 +3,9 @@
 Filename: timedicts
 Description: filtering functions to be preformed on data organized in timedicts.
 '''
+from shared.filtering.filter_utilities import compute_transpose, equally_space_snapshots_in_time
 
- __authors__ = 'Peter B. Winter and Andrea Lancanetti'
+__authors__ = 'Peter B. Winter and Andrea Lancanetti'
  __email__ = 'peterwinteriii@gmail.com'
  __status__ = 'prototype'
 
@@ -24,8 +25,7 @@ Description: filtering functions to be preformed on data organized in timedicts.
 
  # nonstandard imports
  #from PrincipalComponents.utilities import compute_transpose
- from equally_space import equally_space_snapshots_in_time, compute_transpose
- from database.mongo_retrieve import timedict_to_list
+from database.mongo_retrieve import timedict_to_list
  from filter_utilities import savitzky_golay
 
 def compute_filtered_timedict(xy_raw_timedict):
