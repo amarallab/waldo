@@ -122,12 +122,13 @@ if __name__ == '__main__':
     #dataset = 'thermo_recovery'
 
 
-    dtypes = FULL_SET
+    dtypes = FULL_SET[:-2]
+    print dtypes
     #dtypes = ['length_mm']
     show_legend = True
 
     # defaults
-    N_days = 5    
+    N_days = 5
     labels = ['all']
 
     # labels for N2_aging
@@ -137,10 +138,11 @@ if __name__ == '__main__':
 
     # labels for disease_models
     if dataset == 'disease_models':
-        #labels = [u'NQ19', u'NQ67', u'MQ0', u'N2', u'MQ40', u'NQ40', u'MQ35']
+        labels = [u'NQ19', u'NQ67', u'MQ0', u'N2', u'MQ40', u'NQ40', u'MQ35']
         #labels = [u'N2', u'MQ35', u'MQ40']
         #labels = [u'N2', u'MQ0']
         labels = [u'N2', u'NQ40', u'NQ67']
+        labels = [u'N2', u'NQ19', u'NQ67']
         #labels = ['N2', 'NQ67']
 
 

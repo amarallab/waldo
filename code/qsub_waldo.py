@@ -27,7 +27,7 @@ from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
 from waldo import create_parser
 
 QSUB_DIR = os.path.abspath(LOGISTICS['qsub_directory'])
-#QSUB_DIR = '.'
+QSUB_DIR = '.'
 
 print 'saving to', QSUB_DIR
 
@@ -148,6 +148,7 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
     print '{a} ex_ids available for job'.format(a=len(target_ex_ids))
     return list(target_ex_ids)
 
+
 def main(args, db_attribute):
     """
     Main function that interprets input arguments and activates appropriate scripts.
@@ -164,23 +165,24 @@ def main(args, db_attribute):
     if not args.o:
         stage1 = False
 
+    # TODO: rewrite this code so that all arguments for qsub_waldo passed on to waldo.
     if args.centroid:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -to --centroid', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=2)        
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)        
         return # centroid specifies that only centroid should be processed.
     if args.w:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -tw', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=2)
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)
     if args.p:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True)
         name = '{ds}-p'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -tp', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=2)
-                
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)
+
 if __name__ == '__main__':
     # Toggles
     db_attribute = ('dataset', 'N2_aging')
