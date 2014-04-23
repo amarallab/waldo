@@ -21,8 +21,6 @@ __status__ = 'prototype'
 import os
 import sys
 import numpy as np
-import matplotlib.pyplot as plt        
-
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
