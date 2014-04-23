@@ -27,7 +27,7 @@ from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
 from waldo import create_parser
 
 QSUB_DIR = os.path.abspath(LOGISTICS['qsub_directory'])
-QSUB_DIR = '.'
+#QSUB_DIR = '.'
 
 print 'saving to', QSUB_DIR
 
@@ -147,7 +147,6 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
 
     print '{a} ex_ids available for job'.format(a=len(target_ex_ids))
     return list(target_ex_ids)
-
 
 def main(args, db_attribute):
     """
