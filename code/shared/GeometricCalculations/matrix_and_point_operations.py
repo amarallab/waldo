@@ -3,8 +3,6 @@ __author__ = 'peterwinter'
 
 import os
 import sys
-#import pylab as pl
-#import matplotlib.pyplot as pl
 
 # path definitions
 SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../'
@@ -12,38 +10,6 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from ExceptionHandling.record_exceptions import write_pathological_input
-
-'''
-def plot_np_arrays(matrix_list):
-    pl.figure()
-
-    for matrix in matrix_list:
-        points = []
-        for i, matrix_row in enumerate(matrix):
-            for j, b in enumerate(matrix_row):
-                if matrix[i][j] == 1:
-                    points.append((i, j))
-        xs, ys = zip(*points)
-        pl.plot(xs, ys, 'o') #marker='.')
-    pl.show()
-
-
-def plot_np_array(matrix, pt_list=[]):
-    pl.figure()
-
-    points = []
-    for i, matrix_row in enumerate(matrix):
-        for j, _ in enumerate(matrix_row):
-            if matrix[i][j] == 1:
-                points.append((i, j))
-    if len(points) > 0:
-        xs, ys = zip(*points)
-        pl.plot(xs, ys, 'o')
-    if len(pt_list) > 0:
-        x, y = zip(*pt_list)
-        pl.plot(x, y, marker='x', color='red', alpha=0.5)
-    pl.show()
-'''
 
 def matrix_to_unordered_points(matrix):
     sm = matrix.copy()

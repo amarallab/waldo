@@ -11,7 +11,6 @@ import os
 import sys
 from itertools import izip
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
 import pandas as pd
 

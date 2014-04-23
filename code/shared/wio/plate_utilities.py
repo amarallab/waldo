@@ -15,8 +15,6 @@ import sys
 import datetime
 from itertools import izip
 import numpy as np
-import matplotlib.pyplot as plt
-import random
 import json
 import glob
 import shutil

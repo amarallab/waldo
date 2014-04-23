@@ -16,9 +16,7 @@ import sys
 import pylab as pl
 from itertools import izip
 import math
-import matplotlib.mlab as mlab
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy
 
 # path definitions
@@ -70,8 +68,10 @@ def fit_gaussian(x, num_bins=200):
     else:
         return None
 
-
+'''
 def plot_fit_hists(x, num_bins=200, xlabel=''):
+    import matplotlib.mlab as mlab
+    import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(111)
     # the histogram of the data_from_list
@@ -85,6 +85,7 @@ def plot_fit_hists(x, num_bins=200, xlabel=''):
     ax.set_xlim([0, mu + 10 * sigma])
     plt.show()
     plt.clf()
+'''
 
 def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
 
@@ -157,7 +158,6 @@ def flag_blob_data(blob_id, data_type, options='both', verbose=True, **kwargs):
     inputs:
     blob_id - 
     data_type - 
-    show_plot -
     '''
     times, data = get_timeseries(ID=blob_id, data_type=data_type, **kwargs)
     # check to see if all data is correct type
@@ -188,9 +188,9 @@ def flag_blob_data(blob_id, data_type, options='both', verbose=True, **kwargs):
 
 def flag_report(blob_id):
     def count_flagged_points(blob_id, data_type):
-        x = flag_blob_data(blob_id, data_type, options='long', show_plot=False)
+        x = flag_blob_data(blob_id, data_type, options='long')
         l = len(x) - sum(x)
-        x = flag_blob_data(blob_id, data_type, options='short', show_plot=False)
+        x = flag_blob_data(blob_id, data_type, options='short')
         s = len(x) - sum(x)
         print data_type, 'has %i flags (%i short and %i long) out of %i' % (l + s, s, l, len(x))
         #for i in sorted(x):
@@ -270,7 +270,7 @@ def remove_loner_flags(flags, window_size=21, min_nonflag_fraction=0.7,
                 print 'range:', window, fraction_true
     return new_flags
 
-
+'''
 def plot_lists_of_flags(list_of_flags):
     """
     shows graphic representation of where flags occur in time course.
@@ -287,6 +287,7 @@ def plot_lists_of_flags(list_of_flags):
         pl.fill_between(t, 1, v)
         pl.ylim([-0.1, 1.1])
     pl.show()
+'''
 
 def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     """

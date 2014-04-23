@@ -16,7 +16,6 @@ import os
 import sys
 from itertools import izip
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.stats as stats
 import pandas as pd
 
@@ -212,7 +211,6 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     '''
     p2 = read_table(ID=ex_id,
                     ID_type='plate',
-                    dataframe=percentiles,
                     data_type='percentiles',
                     dset=get_dset(ex_id),
                     file_tag='worm_percentiles')

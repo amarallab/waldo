@@ -14,7 +14,6 @@ import sys
 import re
 import numpy as np
 import scipy.interpolate as interpolate
-import matplotlib.pyplot as plt
 from itertools import izip
 import random
 import math
@@ -254,11 +253,4 @@ if __name__ == '__main__':
     x2, y2 = xy_time_to_distance(x, y, step=step, kind=kind)
     dists(x2, y2)
     print 'x, y leftovers: {x}, {y}'.format(x=x[-1]-x2[-1], y=y[-1]-y2[-1])
-
-
-    plt.plot(x, y, label='raw')
-    plt.plot(x1, y1, label='linear')
-    plt.plot(x2, y2, label='cubic')
-    plt.legend()
-    plt.show()
     '''

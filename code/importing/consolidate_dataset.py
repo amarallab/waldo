@@ -18,7 +18,6 @@ import sys
 import datetime
 from itertools import izip
 import numpy as np
-import matplotlib.pyplot as plt
 import random
 import json
 import glob
@@ -36,7 +35,7 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata, \
     return_flattened_plate_timeseries, write_dset_summary, format_dset_summary_name
-from wio.file_manager import format_dirctory, ensure_dir_exists
+from wio.file_manager import format_dirctory, ensure_dir_exists, read_table
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from annotation.experiment_index import Experiment_Attribute_Index2
 
@@ -176,18 +175,35 @@ def combine_worm_percentiles_for_dset(dataset):
     print 'types found:', list(set(data_types))
     return all_blob_ids, all_percentiles
 
-# probably not used.
-'''
-def create_full_worm_index(blob_ids):
-    ex_id_data, worm_rows = {}, []    
-    for blob_id in blob_ids:
-        ex_id = '_'.join(blob_id.split('_')[:2])
+# TODO: this is untested waiting for the pandas revolution in plate consolidation.
+def combine_worm_percentiles_for_dset2(dataset):    
+    """
+
+    Note: currently takes first percentiles file to be current 
+    and expects all rest to have same format.
+    """
+    data_type = 'percentiles'
+    tag = 'worm_percentiles'
+    ex_ids, plate_files = get_plate_files(dataset=dataset,
+                                          data_type=data_type,
+                                          tag=tag)
+
+
+    expected_N_cols = 0 
+    percentiles = []
+    for ex_id in ex_ids:
+        #ex_id = pf.split('/')[-1].split('-')[0]
         #print ex_id
-        if ex_id not in ex_id_data:
-            ex_id_data[ex_id] = organize_plate_metadata(ex_id)
-        worm_rows.append(ex_id_data[ex_id])
-    return worm_rows
-'''
+        perc = read_table(ID=ex_id,
+                          ID_type='plate',
+                          dataframe=percentiles,
+                          data_type='percentiles',
+                          dset=get_dset(ex_id),
+                          file_tag='worm_percentiles')
+        percentiles.append(perc)
+        all_percentiles = np.concatenate(percentiles)        
+        return all_percentiles
+
                     
 def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):    
     ex_ids, dfiles = get_plate_files(dataset, data_type)
@@ -236,6 +252,83 @@ def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):
           'days':days,
           }
     return data
+
+def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):    
+    ex_ids, dfiles = get_plate_files(dataset, data_type)
+    means, stds = [], []
+    quartiles = []
+    hours = []
+    days = []
+    #labels, sublabels, plate_ids = {}, {}, {}
+    labels, sublabels, plate_ids = [], [], []
+
+    for i, (ex_id, dfile) in enumerate(izip(ex_ids, dfiles)):
+        hour, label, sub_label, pID, day = organize_plate_metadata(ex_id)
+        hours.append(hour)
+        labels.append(label)
+        sublabels.append(sub_label)
+        plate_ids.append(pID)
+        days.append(day)
+
+        flat_data = return_flattened_plate_timeseries(ex_id, dataset, data_type)
+        if not len(flat_data):
+            continue
+        means.append(np.mean(flat_data))
+        stds.append(np.std(flat_data))
+        men = float(np.mean(flat_data))
+        #print men, type(men), men<0
+        #print flat_data[:5]
+        quartiles.append([stats.scoreatpercentile(flat_data, 25),
+                          stats.scoreatpercentile(flat_data, 50),
+                          stats.scoreatpercentile(flat_data, 75)])
+        if verbose:
+            print '{i} | {eID} | N: {N} | hour: {h} | label: {l}'.format(i=i, eID=ex_id,
+                                                                         N=len(flat_data),
+                                                                         h=round(hour, ndigits=1), 
+                                                                         l=label)                                      
+
+    #for i in zip(ex_ids, means, stds, quartiles):
+    #    print i
+    data={'ex_ids':ex_ids,
+          'hours':hours,
+          'mean':means,
+          'std':stds,
+          'quartiles':quartiles,
+          'labels':labels,
+          'sub':sublabels,
+          'plate_ids':plate_ids,
+          'days':days,
+          }
+    return data
+
+
+# TODO: this is untested waiting for the pandas revolution in plate consolidation.
+def write_combined_worm_percentiles2(dataset):
+    # manage paths for files
+    save_dir = format_dirctory(ID=dataset, ID_type='dset')
+    f_savename = '{path}{dset}_features.csv'.format(path=save_dir, dset=dataset)
+    i_savename = '{path}{dset}_index.csv'.format(path=save_dir, dset=dataset)    
+    ensure_dir_exists(save_dir)    
+    # combine worm percentiles and indexes for worms
+    percentiles = combine_worm_percentiles_for_dset(dataset)
+    print percentiles.columns
+    #worm_index = create_full_worm_index(blob_ids)
+    ex_id_data, worm_index = {}, []    
+    for blob_id in percentiles.index:
+        ex_id = '_'.join(blob_id.split('_')[:2])
+        #print ex_id
+        if ex_id not in ex_id_data:
+            ex_id_data[ex_id] = organize_plate_metadata(ex_id)
+        worm_index.append(ex_id_data[ex_id])
+    print '{N} blob ids included'.format(N=len(blob_ids))
+    # write features    
+    percentiles.to_csv(f_savename, header=False)
+    # write worm index             
+    wi = pd.DataFrame(worm_index, index=blob_ids)
+    wi.to_csv(i_savename, header=False)    
+
+    for line in worm_index:
+        print line
 
 def write_combined_worm_percentiles(dataset):
     # manage paths for files
