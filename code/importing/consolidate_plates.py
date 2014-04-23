@@ -18,6 +18,7 @@ from itertools import izip
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
+import pandas as pd
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -33,10 +34,14 @@ from wio.plate_utilities import get_plate_files,  \
      write_dset_summary, \
      return_flattened_plate_timeseries, organize_plate_metadata
 
-from wormmetrics.measurement_switchboard import pull_blob_data, quantiles_for_data, \
+from wormmetrics.measurement_switchboard import pull_blob_data, \
      FULL_SET, STANDARD_MEASUREMENTS
-from wio.file_manager import get_good_blobs, get_timeseries, get_metadata, write_timeseries_file
+from wormmetrics.compute_metrics import quantiles_for_data
+from wio.file_manager import get_good_blobs, get_dset
+from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
+from wio.file_manager import write_table, read_table
      
+
 def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     """ this function joins timeseries from all blob_ids and returns the results.
     by default, this is two lists. times and data (a list of lists containin values
@@ -87,17 +92,18 @@ def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     times = np.array(times, dtype=float)
     data = np.array(filled_data, dtype=float)
     return times, data
-
-
-def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
+'''
+def write_plate_percentiles_old(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     if not blob_ids:
         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
         blob_ids = get_good_blobs(ex_id)
     if not blob_ids:
         return
 
-    metadata = get_metadata(ID=blob_ids[0], **kwargs)    
-    dataset = metadata.get('dataset', 'none')
+    #metadata = get_metadata(ID=blob_ids[0], **kwargs)    
+    #dataset = metadata.get('dataset', 'none')
+    dataset = get_dset(ex_id)
+
     plate_dataset = {}
     bad_blobs = []
     for bID in blob_ids:
@@ -114,7 +120,7 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
                 blob_is_good = False
                 print bID, metric, 'quantiles bad'
                 break
-            blob_data += quantiles
+            blob_data.extend(quantiles)
         if blob_is_good:
             plate_dataset[bID] = blob_data
         else:
@@ -132,8 +138,9 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
                           data_type='percentiles',
                           dset=dataset,
                           file_tag='worm_percentiles')
-    # check to see if ids get written ok
-    '''
+'''
+# check to see if ids get written ok
+'''
     ids2, data2 = get_timeseries(ID=ex_id,
                                  ID_type='plate',
                                  times=ids,
@@ -147,7 +154,70 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     #    print i1, i2
     for d1, d2 in zip(data, data2):
         print d1, d2
-     '''
+'''
+
+def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
+    if not blob_ids:
+        #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
+        blob_ids = get_good_blobs(ex_id)
+    if not blob_ids:
+        return
+
+    
+    plate_dataset = {}
+    bad_blobs = []
+    metric_index = []
+
+    for bID in blob_ids:
+        blob_data = []
+        blob_is_good = True
+        metric_labels = []
+        for metric in metrics:
+            times, data = pull_blob_data(bID, metric=metric)
+            if type(data) == None or len(data) == 0:
+                print bID, metric, 'not found'
+                blob_is_good = False
+                break
+            Qs=range(10,91, 10)
+            quantiles = quantiles_for_data(data, quantiles=Qs)            
+            if any(np.isnan(quantiles)):
+                blob_is_good = False
+                print bID, metric, 'quantiles bad'
+                break
+            blob_data.extend(quantiles)
+            metric_labels.extend(['{m}-{q}'.format(m=metric, q=q)
+                                 for q in Qs])
+
+        if blob_is_good:
+            plate_dataset[bID] = blob_data
+            metric_index = metric_labels
+        else:
+            bad_blobs.append(bID)
+
+    print metric_index
+    print len(blob_ids), 'all'
+    print len(bad_blobs), 'bad'
+
+    percentiles = pd.DataFrame(plate_dataset, index=metric_index)
+    percentiles = percentiles.T
+    #print percentiles.head()
+    #percentiles.to_csv('perc_test.csv')
+    write_table(ID=ex_id,
+                ID_type='plate',
+                dataframe=percentiles,
+                data_type='percentiles',
+                dset=get_dset(ex_id),
+                file_tag='worm_percentiles')
+    '''
+    p2 = read_table(ID=ex_id,
+                    ID_type='plate',
+                    dataframe=percentiles,
+                    data_type='percentiles',
+                    dset=get_dset(ex_id),
+                    file_tag='worm_percentiles')
+
+    print p2.head()
+    '''
 
 def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
     if not blob_ids:
@@ -155,8 +225,10 @@ def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENT
         blob_ids = get_good_blobs(ex_id)
     if not blob_ids:
         return
-    metadata = get_metadata(ID=blob_ids[0], **kwargs)    
-    dataset = metadata.get('dataset', 'none')
+    #metadata = get_metadata(ID=blob_ids[0], **kwargs)    
+    #dataset = metadata.get('dataset', 'none')
+
+    dataset = get_dset(ex_id)
     for metric in measurements:
         times, data = consolidate_plate_timeseries(blob_ids, metric, return_array=True)
         write_timeseries_file(ID=ex_id,
@@ -173,5 +245,6 @@ if __name__ == '__main__':
     #data_type = 'length_mm'
     #data_type = 'curve_bl'
     eID = '20131211_145827'
-    write_plate_timeseries(ex_id=eID)
-    write_plate_percentiles(ex_id=eID)
+    #write_plate_timeseries(ex_id=eID)
+    metrics = FULL_SET[:2]
+    write_plate_percentiles(ex_id=eID, metrics=metrics)

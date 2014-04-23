@@ -19,6 +19,7 @@ import json
 from glob import glob
 import datetime
 #from itertools import izip
+import pandas as pd
  
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -215,6 +216,37 @@ def write_timeseries_file(ID, data_type, times, data,
     if file_type == 'h5':        
         write_h5_timeseries_base(filename, times, data)
     return True
+
+# TODO clean up read/write table
+def write_table(ID, data_type, dataframe, 
+                ID_type='w',
+                dset=None, file_tag='',
+                file_dir=None, **kwargs):
+
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type, 
+                               file_type='h5',
+                               dset=dset, 
+                               file_tag=file_tag,
+                               file_dir=file_dir)    
+    dataframe.to_hdf(filename, 'table')
+
+def read_table(ID, data_type, 
+                ID_type='w', file_type='h5',
+                dset=None, file_tag='',
+                file_dir=None, **kwargs):
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type, 
+                               file_type=file_type,
+                               dset=dset, 
+                               file_tag=file_tag,
+                               file_dir=file_dir)
+    
+    return pd.read_hdf(filename, 'table')    
 
 def get_timeseries(ID, data_type, 
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
