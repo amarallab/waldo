@@ -10,8 +10,6 @@ import os
 import sys
 import math
 from itertools import izip, combinations
-#from pylab import *
-import pylab as pl
 import numpy as np
 
 # Path definitions
