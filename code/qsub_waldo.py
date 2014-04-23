@@ -27,7 +27,7 @@ from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
 from waldo import create_parser
 
 
-def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job',
+def qsub_run_script2(python_script='waldo.py', args='', ex_ids=[], job_name='job',
                     number_of_jobs=25):
     """ Runs parallel python jobs on cluster after receiving a list of arguments for that script.
 
@@ -37,7 +37,7 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
     :param number_of_jobs: number of jobs
     """
 
-    qsub_directory = os.path.abspath(LOGISTICS['qsub_directory'])
+    qsub_directory = LOGISTICS['qsub_directory']
     print 'dir', qsub_directory
     ensure_dir_exists(qsub_directory)
 
@@ -66,6 +66,63 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
             f.close()
         os.system('qsub '+ qsub_filename)
 
+def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job',
+                    number_of_jobs=25):
+    """ Runs parallel python jobs on cluster after receiving a list of arguments for that script.
+
+    :param python_script: which python script should be run
+    :param args: the arguments that should be passed to the scripts    
+    :param job_name: identifier for job type. used for output file naming.
+    :param number_of_jobs: number of jobs
+    """
+
+    qsub_directory = os.path.abspath(LOGISTICS['qsub_directory'])
+    print 'dir', qsub_directory
+    ensure_dir_exists(qsub_directory)
+
+    # if there are more jobs than recordings. reduce the number of jobs.
+    if len(ex_ids) < number_of_jobs:
+        number_of_jobs = len(ex_ids)
+
+
+                                                                   
+    for job_num in range(number_of_jobs):
+        #for i, ex_id in enumerate(ex_ids):
+        #    if i%number_of_jobs == job_num:
+        #        comand = cmd + ' ' + str(ex_id)
+                
+        eIDs = ex_ids[job_num::number_of_jobs]       
+        job_id = '{name}_{num}'.format(name=job_name, num=job_num)
+        qsub_filename = '{d}/{n}.sh'.format(d=qsub_directory, n=job_id)
+        python_script = 'waldo.py'
+        py = '{dir}/{py}'.format(dir=CODE_DIR, py=python_script)
+        py = r'print "{py}"'.format(py=py)
+        python_call = 'python2.7 -c {py}'.format(py=py)
+        command = '{c} {eids}'.format(c=python_call, eids=' '.join(eIDs))
+        print command                                                      
+
+        
+        lines = ["#! /bin/bash\n",
+                "#PBS -d .\n",
+                '#PBS -e {d}/{ID}-std.err\n'.format(d=qsub_directory, ID=job_id),
+                '#PBS -o {d}/{ID}-std.out\n'.format(d=qsub_directory, ID=job_id),
+                '#PBS -N {id}\n'.format(id=job_id),
+                "#PBS -q low\n\n\n",
+                '{py} {args} {IDs}'.format(py=python_script,
+                                           args=args, IDs=eIDs)
+                ]
+
+
+
+        
+        print qsub_filename
+        print cmd
+        with open(qsub_filename, "w") as f:
+            f.write(cmd)
+            f.close()
+        os.system('qsub '+ qsub_filename)
+        
+        
 def list_ex_ids_with_raw_data(inventory_directory):
     ''' make list of ex_ids present in the data directory on the cluster.
 
