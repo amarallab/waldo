@@ -22,7 +22,6 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from annotation.experiment_index import Experiment_Attribute_Index
-from settings.local import MONGO as mongo_settings
 from tests.create_testfiles import write_index_file
 #from waldo import import_ex_id
 #from waldo import process_ex_id
@@ -65,14 +64,3 @@ def run_everything(**kwargs):
         '''
 if __name__ == '__main__':
     run_everything()
-
-    '''
-    try:
-        mongo_client, _ = mongo.start_mongo_client(mongo_settings['mongo_ip'], mongo_settings['mongo_port'],
-                                                   mongo_settings['worm_db'], mongo_settings['blob_collection'])
-        run_everything(mongo_client=mongo_client)
-    #check_if_test_worms_missing_fields()
-    finally:
-        mongo.close_mongo_client(mongo_client)
-        #mongo_client.close()
-    '''

@@ -11,7 +11,6 @@ __status__ = 'prototype'
 
 import os
 import sys
-import re
 import numpy as np
 import scipy.interpolate as interpolate
 from itertools import izip

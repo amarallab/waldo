@@ -9,9 +9,9 @@ __author__ = 'peterwinter + Andrea L.'
 import os
 import sys
 import math
-import time
 from itertools import izip, combinations
-from pylab import *
+#from pylab import *
+import pylab as pl
 import numpy as np
 
 # Path definitions
@@ -23,8 +23,8 @@ sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
-from Encoding.decode_outline import pull_smoothed_outline, decode_outline
-from GeometricCalculations import get_ortogonal_to_spine, find_intersection_points, check_point_is_inside_box, calculate_area_of_box
+from Encoding.decode_outline import decode_outline
+from GeometricCalculations.compute_intersection import get_ortogonal_to_spine, find_intersection_points, check_point_is_inside_box, calculate_area_of_box
 from ExceptionHandling.record_exceptions import write_pathological_input
 from shared.wio.file_manager import get_timeseries, write_timeseries_file
 
@@ -53,13 +53,6 @@ def compute_basic_measurements(blob_id, verbose=True, **kwargs):
             print '\tcould not compute mean and std for widths'
 
 def calculate_length_for_timepoint(spine):
-    # length = 0.0
-    # for i, a in enumerate(spine[:-1]):
-    #     x1, y1 = spine[i]
-    #     x2, y2 = spine[i + 1]
-    #     d = (math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2))
-    #     length += d
-    # return length
     length = 0.0
     px, py = spine[0] # previous
     for a in spine[1:]:
@@ -70,7 +63,7 @@ def calculate_length_for_timepoint(spine):
     return length
 
 
-def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
+def calculate_lengths_for_blob_id(blob_id, store_tmp=True, **kwargs):
     """
     Calculates and returns the timedict of lengths. Optionally inserts lengths into database.
 
@@ -78,7 +71,7 @@ def calculate_lengths_for_blob_id(blob_id, times=[], store_tmp=True, **kwargs):
     :param blob_id: blob identification string
     :param insert: True/False toggle to insert into database
     :param spine_entry: database document containing the list of spines.
-    :return: timedict of lengths.
+    :return: list of lengths.
     """
     times, spines = get_timeseries(ID=blob_id, data_type='spine_rough', **kwargs)
     lengths = []
@@ -132,50 +125,6 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
                               times=times, data=width80)
 
     return width20, width50, width80
-
-'''
-def show_worm_video(spine_timedict, outline_timedict):
-    # floats sort more properly than strings, hence using sorted tuple with (float, string)
-    times = sorted([(float(t.replace('?', '.')), t) for t in spine_timedict])
-
-    ion()
-    for t_float, t in times[:]:
-        p1, p2, flag, width = calculate_width_for_timepoint(spine_timedict[t], outline_timedict[t])
-
-        spine = spine_timedict[t]
-        outline = outline_timedict[t]
-
-        #print t
-        sx = [v[0] for v in spine]
-        sy = [v[1] for v in spine]
-        ox = [v[0] for v in outline]
-        oy = [v[1] for v in outline]
-
-        if flag == True:
-            plt.plot([p1[0], p2[0]], [p1[1], p2[1]], marker='o', color='green')
-            plot(sx, sy, color='blue')
-            plot(ox, oy, color='blue')
-
-        else:
-            plot(sx, sy, color='red')
-            plot(ox, oy, color='red')
-            #import pickle
-            #pickle.dump((spine, outline), open('spine_outline.pkl', 'w'))
-            #exit()
-
-        center_x, center_y = spine[len(spine) / 2]
-        #plot([xys[0][0]], [xys[0][1]], marker='o', color='red')
-        #plot([xys[1][0]], [xys[1][1]], marker='o', color='blue')
-        window_size = 30
-        xlim([int(center_x) - window_size, int(center_x) + window_size])
-        ylim([int(center_y) - window_size, int(center_y) + window_size])
-        draw()
-
-        if flag == False:
-            time.sleep(1)
-
-        clf()
-'''
 
 # Ap[xy] point of the first line
 # Av[xy] vector director of the first line
@@ -273,78 +222,6 @@ def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
 
     l = math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2)  # distance between points
     return (a[0], a[1]), (b[0], b[1]), True, l
-
-
-# def calculate_width_for_timepoint(spine, outline, index_along_spine=-1):
-#     '''
-#         spine and ouline are list of [x,y]
-#         index_along_spine is len(spine)/2 for the midpoint
-#         returns:
-#
-#         (x1,y1) and (x2,y2) of the intersection points
-#         True if everything is ok
-#         width
-#
-#         if flag is False, function returns
-#         (-1,-1), (-1,-1), False, -1
-#     '''
-#
-#     if index_along_spine == -1:
-#         index_along_spine = len(spine) / 2
-#
-#     outline.append(list(outline[0]))
-#     orthogonal_m, q1 = get_ortogonal_to_spine(spine, index_along_spine)
-#
-#     intersection_xs, intersection_ys = find_intersection_points(q1, orthogonal_m, outline)
-#
-#     if len(intersection_xs) == 0:
-#         #print 'intersection points are zero!'
-#         write_pathological_input((spine, outline), input_type='spine/outline',
-#                                  note='no intersection points',
-#                                  savename='%sno_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
-#         return (-1, -1), (-1, -1), False, -1
-#
-#     # if len(intersection_xs) % 2 != 0:
-#     #     #print 'intersection points are odd', len(intersection_xs)
-#     #     write_pathological_input((spine, outline), input_type='spine/outline',
-#     #                              note='num intersection points odd',
-#     #                              savename='%sodd_num_intersection_%s.json' % (EXCEPTION_DIR, str(time.time())))
-#     #     #print intersection_xs, intersection_ys
-#     #     return (intersection_xs[0], intersection_ys[0]), (-1, -1), False, -1
-#
-#
-#     #HELTENA changes... I think now it's look better
-#     # for i, a in enumerate(points):
-#     #     for j, b in enumerate(points[i + 1:], start=i + 1):
-#     #         condition, area = check_point_is_inside_box(q1, points[i], points[j]) # function changed!!!
-#     #         if condition and area < min_area:
-#     #             min_area = area
-#     #             point_pair = [points[i], points[j]]
-#
-#     #points = sorted(zip(intersection_xs, intersection_ys)) # Why are you sorting?
-#     points = zip(intersection_xs, intersection_ys)
-#     min_area = 1e200
-#     point_pair = []
-#     for a, b in combinations(points, 2):
-#         area = calculate_area_of_box(a, b)
-#         if area < min_area:
-#             if check_point_is_inside_box(q1, a, b):
-#                 min_area = area
-#                 point_pair = [a, b]
-#
-#     if len(point_pair) == 0:
-#         #print 'spine outside of outline'
-#         write_pathological_input((spine, outline), input_type='spine/outline', note='spine outside outline',
-#                                  savename='%sspine_outside_outline_%s.json' % (EXCEPTION_DIR, str(time.time())))
-#         return -1, -1, False, -1
-#     else:
-#         # width = math.sqrt((point_pair[0][0] - point_pair[1][0]) ** 2 + (point_pair[0][1] - point_pair[1][1]) ** 2)
-#         # return point_pair[0], point_pair[1], True, width
-#         a = point_pair[0]
-#         b = point_pair[1]
-#         width = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-#         return a, b, True, width
-
 
 if __name__ == "__main__":
     blob_id = '20120914_172813_01708'

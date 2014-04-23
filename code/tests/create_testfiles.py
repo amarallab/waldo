@@ -29,7 +29,7 @@ sys.path.append(PROJECT_DIR + '/code/')
 
 # nonstandard imports
 from Encoding.decode_outline import encode_outline
-from GeometricCalculations.matrix_and_point_operations import close_outline_border
+from importing.skeletonize_outline import close_outline_border
 from settings.local import SPREADSHEET, LOGISTICS
 
 def outline_timedict_to_list(outline_timedict):

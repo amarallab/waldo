@@ -30,17 +30,12 @@ sys.path.append(SHARED_DIR)
 from wio.file_manager import ensure_dir_exists
 from importing.process_spines import process_ex_id, just_process_centroid, \
     plate_consolidation
-import database.mongo_support_functions as mongo
-from settings.local import MONGO
 
 TIMING_DIR = PROJECT_DIR + '/data/diagnostics/timing'
 PROFILE_DIR = PROJECT_DIR + '/data/diagnostics/profileing'
 
-MONGO_SETTINGS = {'ip':MONGO['ip'], 'port':MONGO['port'],
-                  'database_name':MONGO['database'],
-                  'collection_name':MONGO['blobs']}
 
-def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR, no_mongo=True,
+def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
                             profile_dir=PROFILE_DIR):
     """ repeatedly runs a function on each ex_id in a list.
     For each run, it stores timing data and a profiler binary file.
@@ -55,53 +50,25 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR, no_mongo=Tru
     time_file = '{dir}/{type}_{now}_x{N}.json'.format(dir=timing_dir, type=name,
                                                       now=now_string, N=len(ex_ids))
 
-    if no_mongo:
-        time_storage = {}
-        ensure_dir_exists(profile_dir)        
-        for ex_id in ex_ids:
-            print '{fun}ing {ei} starting at: {t}'.format(fun=name, ei=ex_id,
-                                                          t=time.clock())
-            profile_file = '{dir}/{type}_{id}_{now}.profile'.format(dir=profile_dir,
-                                                                    type=name,
-                                                                    now=now_string,
-                                                                    id=ex_id)
-            time_storage[ex_id] = {'start': time.clock()}
-            try:
-                profile.runctx('f(ex_id)', globals(), locals(), filename=profile_file)
-                time_storage[ex_id]['finish'] = time.clock()
-                json.dump(time_storage, open(time_file, 'w'))
-            except Exception as e:
-                print 'Error with {name} at time {t}\n{err}'.format(name=name, t=time.clock(), err=e)
-                logging.exception("HELTENA")
-        return True
-
-    # if mongo is being used... run this version.
-    mongo_client = None
-    try:
-        # initialize the connection to the mongo client
-        mongo_client, _ = mongo.start_mongo_client(**MONGO_SETTINGS)
-        time_storage = {}
-        ensure_dir_exists(profile_dir)        
-        for ex_id in ex_ids:
-            print '{fun}ing {ei} starting at: {t}'.format(fun=name, ei=ex_id,
-                                                          t=time.clock())
-
-            profile_file = '{dir}/{type}_{id}_{now}.profile'.format(dir=profile_dir,
-                                                                    type=name,
-                                                                    now=now_string,
-                                                                    id=ex_id)
-            time_storage[ex_id] = {'start': time.clock()}
-            profile.runctx('f(ex_id, mongo_client=mongo_client)',
-                           globals(), locals(), filename=profile_file)
+    time_storage = {}
+    ensure_dir_exists(profile_dir)
+    for ex_id in ex_ids:
+        print '{fun}ing {ei} starting at: {t}'.format(fun=name, ei=ex_id,
+                                                      t=time.clock())
+        profile_file = '{dir}/{type}_{id}_{now}.profile'.format(dir=profile_dir,
+                                                                type=name,
+                                                                now=now_string,
+                                                                id=ex_id)
+        time_storage[ex_id] = {'start': time.clock()}
+        try:
+            profile.runctx('f(ex_id)', globals(), locals(), filename=profile_file)
             time_storage[ex_id]['finish'] = time.clock()
+            json.dump(time_storage, open(time_file, 'w'))
+        except Exception as e:
+            print 'Error with {name} at time {t}\n{err}'.format(name=name, t=time.clock(), err=e)
+            logging.exception("HELTENA")
+    return True
 
-        json.dump(time_storage, open(time_file, 'w'))
-
-    except Exception as e:
-        print 'Error with {name} at time {t}\n{err}'.format(name=name, t=time.clock(), err=e)
-    finally:
-        if mongo_client:
-            mongo_client.close()
 
 def main(args):
     """ all arguments are parsed here and the appropriate functions are called.

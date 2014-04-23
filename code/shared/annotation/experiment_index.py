@@ -14,6 +14,7 @@ ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_agi
 ei.return_attribute_for_ex_ids(['20130423_123836', '20130410_143246'], 'pixels-per-mm')
 ei.return_ex_ids_within_dates(start_date='20120300', end_date='20121000')
 '''
+import glob
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -31,8 +32,8 @@ CODE_DIR = os.path.abspath(HERE + '/../../')
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-#from wio.file_manager import ensure_dir_exists, INDEX_DIR
 from settings.local import LOGISTICS
+
 INDEX_DIR = LOGISTICS['annotation']
 
 def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
@@ -136,6 +137,24 @@ class Experiment_Attribute_Index(object):
         """
         return [self.attribute_index[ex_id].get(attribute, None) for ex_id in ex_ids]
 
+def list_ex_ids_with_raw_data(inventory_directory):
+    ''' make list of ex_ids present in the data directory on the cluster.
+
+    :param inventory_directory: directory to search for ex_id data.
+    '''
+    search_path = inventory_directory + '*'
+    ex_ids = []
+
+    for entry in glob.glob(search_path):
+        dirname = entry.split('/')[-1]
+        if os.path.isdir(entry) and len(dirname) == 15:
+            ex_ids.append(dirname)
+
+    if len(ex_ids) < 5:
+        print 'Warning: not many ex_id directories found'
+        print 'search path for raw data is ({sp})'.format(sp=search_path)
+        print '{N} ex_ids present'.format(N=len(ex_ids))
+    return ex_ids
 
 if __name__ == '__main__':
     ei = Experiment_Attribute_Index()
@@ -148,3 +167,5 @@ if __name__ == '__main__':
     print ei.return_attribute_for_ex_ids(['20130423_123836', '20130410_143246', '20130413_150111', '20130325_152726'], 'pixels-per-mm')
     print ei.return_ex_ids_within_dates(start_date='20120300', end_date='20121000')
     '''
+
+
