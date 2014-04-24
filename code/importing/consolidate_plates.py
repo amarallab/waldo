@@ -154,6 +154,7 @@ def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
 #         print d1, d2
 # '''
 
+
 def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     if not blob_ids:
         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
@@ -206,6 +207,7 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
                 data_type='percentiles',
                 dset=get_dset(ex_id),
                 file_tag='worm_percentiles')
+
     # '''
     # p2 = read_table(ID=ex_id,
     #                 ID_type='plate',
