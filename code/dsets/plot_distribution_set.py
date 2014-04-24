@@ -14,12 +14,8 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-import numpy as np
-import random
-from itertools import izip
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import scipy.stats as stats
 from mpltools import style
 
 # Path definitions
@@ -31,7 +27,7 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries, read_dset_summary
 from wio.file_manager import read_table
-from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
+from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from importing.consolidate_dataset import XLIMS
 
 # global settings

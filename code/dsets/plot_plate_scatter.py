@@ -15,13 +15,8 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-import datetime
 from itertools import izip
-import numpy as np
 import matplotlib.pyplot as plt
-import random
-import json
-import glob
 from mpltools import style
 import pandas as pd
 
@@ -33,7 +28,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.plate_utilities import read_dset_summary
-from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
+from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
 # global settings
 style.use('ggplot')
