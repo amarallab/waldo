@@ -37,7 +37,7 @@ from wormmetrics.measurement_switchboard import pull_blob_data, \
 from wormmetrics.compute_metrics import quantiles_for_data
 from wio.file_manager import get_good_blobs, get_dset
 from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
-#from wio.file_manager import write_table, read_table
+from wio.file_manager import write_table, read_table
      
 def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     """ this function joins timeseries from all blob_ids and returns the results.
@@ -90,6 +90,7 @@ def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     data = np.array(filled_data, dtype=float)
     return times, data
 
+'''
 def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     if not blob_ids:
         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
@@ -135,7 +136,7 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
                           data_type='percentiles',
                           dset=dataset,
                           file_tag='worm_percentiles')
-
+'''
 # check to see if ids get written ok
 '''
     ids2, data2 = get_timeseries(ID=ex_id,
@@ -153,7 +154,7 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
         print d1, d2
 '''
 
-'''
+
 def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     if not blob_ids:
         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
@@ -206,7 +207,7 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
                 data_type='percentiles',
                 dset=get_dset(ex_id),
                 file_tag='worm_percentiles')
-'''
+
 
 def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
     if not blob_ids:
