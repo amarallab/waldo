@@ -32,7 +32,7 @@ sys.path.append(SHARED_DIR)
 from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata, \
     return_flattened_plate_timeseries, write_dset_summary, format_dset_summary_name
 from wio.file_manager import format_dirctory, ensure_dir_exists, read_table
-from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
+from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from annotation.experiment_index import Experiment_Attribute_Index2
 
 # globals

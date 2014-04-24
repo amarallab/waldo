@@ -32,9 +32,9 @@ sys.path.append(SHARED_DIR)
 
 
 # nonstandard imports
-#from Shared.Code.wormmetrics.spine_measures import compute_spine_measures
-#from Shared.Code.wormmetrics.centroid_measures import compute_centroid_measures
-#from Shared.Code.wormmetrics.basic_measures import compute_basic_measures
+#from Shared.Code.metrics.spine_measures import compute_spine_measures
+#from Shared.Code.metrics.centroid_measures import compute_centroid_measures
+#from Shared.Code.metrics.basic_measures import compute_basic_measures
 from wormmetrics.switchboard import pull_metric_for_blob_id
 #from Shared.Code.Database.mongo_retrieve import pull_data_type_for_blob
 #import Shared.Code.Database.mongo_support_functions as mongo

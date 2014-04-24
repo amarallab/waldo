@@ -172,7 +172,7 @@ def angle_change_for_xy(x, y, allow_negatives=True, units='rad'):
             # take sign of angle change
             if cross != 0:
                 angle = math.copysign(1.0, cross) * angle
-        # catch any right angle exceptions
+        # catch any right angle deviant
         if np.isnan(angle):
             if (v1 == v2).all():
                 angle ==  0.0

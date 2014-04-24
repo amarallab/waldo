@@ -28,7 +28,7 @@ sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR + '/code/')
 
 # nonstandard imports
-from Encoding.decode_outline import encode_outline
+from encoding.decode_outline import encode_outline
 from importing.skeletonize_outline import close_outline_border
 from settings.local import SPREADSHEET, LOGISTICS
 

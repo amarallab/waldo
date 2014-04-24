@@ -19,18 +19,18 @@ import time
 # path definitions
 project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
 shared_directory = project_directory + 'code/shared/'
-exception_directory = project_directory + 'data/importing/exceptions/'
+exception_directory = project_directory + 'data/importing/deviant/'
 
 assert os.path.exists(project_directory), 'project directory not found'
 assert os.path.exists(shared_directory), 'shared code directory not found'
 sys.path.append(shared_directory)
 
-# if directory to store exceptions does not exist, create it.
+# if directory to store deviant does not exist, create it.
 if not os.path.exists(exception_directory):
     os.makedirs(exception_directory)
     
 # nonstandard imports
-from ExceptionHandling.record_exceptions import write_pathological_input
+from deviant.record_exceptions import write_pathological_input
 from thinning.shape_thinning import skeletonize
 
 def trim_spine_matrix(spine_matrix, endpoints, branchpoints):

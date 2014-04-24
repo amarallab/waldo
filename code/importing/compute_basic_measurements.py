@@ -16,13 +16,13 @@ import numpy as np
 HERE = os.path.dirname(os.path.realpath(__file__))
 SHARED_DIR = os.path.abspath(HERE + '/../shared/')
 PROJECT_DIR = os.path.abspath(HERE + '/../../')
-EXCEPTION_DIR = PROJECT_DIR + '/data/importing/exceptions/'
+EXCEPTION_DIR = PROJECT_DIR + '/data/importing/deviant/'
 sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
-from Encoding.decode_outline import decode_outline
-from ExceptionHandling.record_exceptions import write_pathological_input
+from encoding.decode_outline import decode_outline
+from deviant.record_exceptions import write_pathological_input
 from shared.wio.file_manager import get_timeseries, write_timeseries_file
 
 def compute_basic_measurements(blob_id, verbose=True, **kwargs):

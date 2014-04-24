@@ -333,7 +333,7 @@ def plot_domains(domains, y):
     :param y: A y value at which the function will graph the horizontal line.
     :return: []
     """
-    print 'Plotting Domains'
+    print 'plotting Domains'
     for domain in domains:
         plt.hlines(y, domain[0], domain[1])
     return []

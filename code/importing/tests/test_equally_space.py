@@ -3,7 +3,7 @@
 '''
 Filename: test_equally_space.py
 
-Description: unit tests to test equally_space.py
+Description: unit tests to test equally_space_old.py
 '''
 
 __author__ = 'Peter B. Winter'

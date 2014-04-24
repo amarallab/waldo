@@ -17,7 +17,7 @@ import numpy as np
 import math
 import glob
 from itertools import izip
-from Encoding.decode_outline import decode_outline
+from encoding.decode_outline import decode_outline
 import sys
 
 # TODO. move this into the testing dir.

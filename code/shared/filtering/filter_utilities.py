@@ -3,7 +3,7 @@
 Filename: filter_utilities
 Description: functions involving smoothing of data.
 '''
-from shared.filtering.equally_space import equally_space_times, linear_interpolation
+from shared.filtering.equally_space_old import equally_space_times, linear_interpolation
 
 __authors__ = 'Peter B. Winter and Andrea Lancanetti'
 __email__ = 'peterwinteriii@gmail.com'
@@ -24,61 +24,28 @@ assert os.path.exists(shared_directory), 'shared directory not found'
 sys.path.append(shared_directory)
 
 # nonstandard imports
-#from PrincipalComponents.utilities import compute_transpose
-
-'''
-def new_smooth_xy(x, y,
-                  pre_smooth=(25, 5),
-                  time_threshold = 30,
-                  distance_threshold = 0.25,
-                  max_score=500,
-                  prime_smooth=(75, 5)):
-
-    
-
-    # perform preliminary smoothing on the xy data.
-    window, order = pre_smooth
-    x = savitzky_golay(y=np.array(x), window_size=window, order=order)
-    y = savitzky_golay(y=np.array(y), window_size=window, order=order)
-    
-    # calculate stationary regions
-    point_scores = neighbor_calculation(distance_threshold, x, y, max_score)
-    domains = domain_creator(point_scores, timepoint_threshold=time_threshold)
-    # make sure all x,y values stay consistant throughout stationary domains
-    for (start, end) in domains:
-        end += 1 #because string indicies are non inclusive
-        l = end - start
-        x[start:end] = np.ones(l) * np.median(x[start:end])
-        y[start:end] = np.ones(l) * np.median(y[start:end])
-
-    # perform primary smoothing on the xy data.
-    window, order = prime_smooth
-    x = savitzky_golay(y=np.array(x), window_size=window, order=order)
-    y = savitzky_golay(y=np.array(y), window_size=window, order=order)
-    return x, y
-'''
 
 # these functions may be useful if additional domain manipulation is added.
-'''
-def expand_domains(xy, domains):
-    #""" expands the one value left for each domain into multiple values """
-    expansions = {}
-    shift = 0
-    for start, end in domains:
-        #expansions[start - shift] = end - start + 1
-        #shift += end - start
-        expansions[start - shift] = end - start
-        shift += end - start - 1
 
-    #print expansions
-    expanded = []
-    for i, val in enumerate(xy):
-        if i in expansions:
-            segment = [val] * expansions[i]
-        else:
-            segment = [val]
-        expanded.extend(segment)
-    return expanded
+# def expand_domains(xy, domains):
+#     #""" expands the one value left for each domain into multiple values """
+#     expansions = {}
+#     shift = 0
+#     for start, end in domains:
+#         #expansions[start - shift] = end - start + 1
+#         #shift += end - start
+#         expansions[start - shift] = end - start
+#         shift += end - start - 1
+#
+#     #print expansions
+#     expanded = []
+#     for i, val in enumerate(xy):
+#         if i in expansions:
+#             segment = [val] * expansions[i]
+#         else:
+#             segment = [val]
+#         expanded.extend(segment)
+#     return expanded
 
 def reduce_domains(xy, domains):
     #""" removes all but one value for each domain """
@@ -86,7 +53,7 @@ def reduce_domains(xy, domains):
     for start, end in domains:
         reduction_filter[start + 1: end] = [False] * (end - start - 1)
     return [v for (f,v) in zip(reduction_filter, xy) if f]
-'''
+
 
 def neighbor_calculation(distance_threshold, x, y, max_score=500):
     """
@@ -249,45 +216,45 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     y = np.concatenate((firstvals, y, lastvals))
     return np.convolve(m[::-1], y, mode='valid')
 
-
-def smooth_snapshots(original_snapshots, filter_method='savitzky_golay', running_window_size=19, order=4):
-    """
-        The snapshots are expected to be equally spaced in time.
-
-        INPUT:
-        
-        1. original_snapshots is a list of list, so that original_snapshots[i] looks like [x1, y1, x2, y2, ...]
-        2. filter_method is a keyword, whoch could be 'wiener', 'median' or 'savitzky_golay'
-        3. running_window_size : int
-           the length of the window. Must be an odd integer number.
-        4. order : int. Just for the savitzky_golay method
-           the order of the polynomial used in the filtering.
-           Must be less then `window_size` - 1.
-           
-        OUTPUT:
-        
-            filtered snapshots
-    """
-
-    tsnapshots = compute_transpose(original_snapshots)
-    smoothed_snaps = []
-
-    for tsnapshot in tsnapshots:
-
-        if filter_method == 'median':
-            filtered_signal = scipy.signal.medfilt(tsnapshot, kernel_size=running_window_size)
-
-        if filter_method == 'wiener':
-            filtered_signal = scipy.signal.wiener(tsnapshot)
-
-        if filter_method == 'savitzky_golay':
-            filtered_signal = savitzky_golay(np.array(tsnapshot), running_window_size, order)
-
-        smoothed_snaps.append(filtered_signal)
-
-    return compute_transpose(smoothed_snaps)
-
-
+#
+# def smooth_snapshots(original_snapshots, filter_method='savitzky_golay', running_window_size=19, order=4):
+#     """
+#         The snapshots are expected to be equally spaced in time.
+#
+#         INPUT:
+#
+#         1. original_snapshots is a list of list, so that original_snapshots[i] looks like [x1, y1, x2, y2, ...]
+#         2. filter_method is a keyword, whoch could be 'wiener', 'median' or 'savitzky_golay'
+#         3. running_window_size : int
+#            the length of the window. Must be an odd integer number.
+#         4. order : int. Just for the savitzky_golay method
+#            the order of the polynomial used in the filtering.
+#            Must be less then `window_size` - 1.
+#
+#         OUTPUT:
+#
+#             filtered snapshots
+#     """
+#
+#     tsnapshots = compute_transpose(original_snapshots)
+#     smoothed_snaps = []
+#
+#     for tsnapshot in tsnapshots:
+#
+#         if filter_method == 'median':
+#             filtered_signal = scipy.signal.medfilt(tsnapshot, kernel_size=running_window_size)
+#
+#         if filter_method == 'wiener':
+#             filtered_signal = scipy.signal.wiener(tsnapshot)
+#
+#         if filter_method == 'savitzky_golay':
+#             filtered_signal = savitzky_golay(np.array(tsnapshot), running_window_size, order)
+#
+#         smoothed_snaps.append(filtered_signal)
+#
+#     return compute_transpose(smoothed_snaps)
+#
+#
 def compute_polynomial_xy_smoothing_by_index(unfiltered_outline, window_size=23, poly_order=3):
     '''
         unfiltered_outline is a list of tuples/lists: [[x1,y1], [x2,y2], ...]
@@ -309,78 +276,79 @@ def compute_polynomial_xy_smoothing_by_index(unfiltered_outline, window_size=23,
 
     return filtered_outline
 
+#
+# def smooth_and_equally_space(ids, snapshots, running_window_size=19, order=4, filter_method='savitzky_golay'):
+#     """
+#         1. ids_strings is a list of strings with the times of the snapshots
+#         2. snapshots is a list of list, so that snapshots[i] looks like [x1, y1, x2, y2, ...]
+#         2. filter_method is a keyword, whoch could be 'wiener', 'median' or 'savitzky_golay'
+#         3. running_window_size : int
+#         the length of the window. Must be an odd integer number.
+#         4. order : int. Just for the savitzky_golay method
+#         the order of the polynomial used in the filtering.
+#         Must be less then `window_size` - 1.
+#
+#         returns equally-spaced times (strings), equally-spaced snapshots, and smooth snapshots
+#     """
+#
+#     ids_eq, snapshots_eq = equally_space_snapshots_in_time(ids, snapshots)
+#     filtered_snapshots = smooth_snapshots(snapshots_eq, filter_method=filter_method,
+#                                           running_window_size=running_window_size, order=order)
+#     return ids_eq, snapshots_eq, filtered_snapshots
 
-def smooth_and_equally_space(ids, snapshots, running_window_size=19, order=4, filter_method='savitzky_golay'):
-    """
-        1. ids_strings is a list of strings with the times of the snapshots
-        2. snapshots is a list of list, so that snapshots[i] looks like [x1, y1, x2, y2, ...]        
-        2. filter_method is a keyword, whoch could be 'wiener', 'median' or 'savitzky_golay'
-        3. running_window_size : int
-        the length of the window. Must be an odd integer number.
-        4. order : int. Just for the savitzky_golay method
-        the order of the polynomial used in the filtering.
-        Must be less then `window_size` - 1.
-
-        returns equally-spaced times (strings), equally-spaced snapshots, and smooth snapshots
-    """
-
-    ids_eq, snapshots_eq = equally_space_snapshots_in_time(ids, snapshots)
-    filtered_snapshots = smooth_snapshots(snapshots_eq, filter_method=filter_method,
-                                          running_window_size=running_window_size, order=order)
-    return ids_eq, snapshots_eq, filtered_snapshots
-
-def smooth_and_equally_space_point_format(ids, points, running_window_size=19, order=4, filter_method='savitzky_golay'):
-    values = []
-    for ps in points:
-        value = []
-        for xy in ps:
-            value.append(xy[0])
-            value.append(xy[1])
-            #print len(value)
-        values.append(value)
-        #print len(values)
-    times, snapshots_eq, filtered_snapshots = smooth_and_equally_space(ids, values,
-                                                                       running_window_size=running_window_size,
-                                                                       order=order, filter_method=filter_method)
-
-    filtered_points = []
-    for v in filtered_snapshots:
-        xs = v[::2]
-        ys = v[1::2]
-        xy = zip(xs, ys)
-        filtered_points.append(xy)
-    return times, filtered_points
-
-def filter_time_series(times, values):
-    '''
-    inputs:
-    times - list of floats
-    Wrong! values - a list of lists (ex. [[x1,y1],[x2,y2]])
-
-    outputs:
-    filtered_snapshots - a list of lists (ex. [[
-    '''
-    ids_eq, snapshots_eq, filtered_snapshots = smooth_and_equally_space(times, values,
-                                                                        running_window_size=19,
-                                                                        order=4,
-                                                                        filter_method='savitzky_golay')
-    times = [float(i) for i in ids_eq]
-    return times, filtered_snapshots
+# def smooth_and_equally_space_point_format(ids, points, running_window_size=19, order=4, filter_method='savitzky_golay'):
+#     values = []
+#     for ps in points:
+#         value = []
+#         for xy in ps:
+#             value.append(xy[0])
+#             value.append(xy[1])
+#             #print len(value)
+#         values.append(value)
+#         #print len(values)
+#     times, snapshots_eq, filtered_snapshots = smooth_and_equally_space(ids, values,
+#                                                                        running_window_size=running_window_size,
+#                                                                        order=order, filter_method=filter_method)
+#
+#     filtered_points = []
+#     for v in filtered_snapshots:
+#         xs = v[::2]
+#         ys = v[1::2]
+#         xy = zip(xs, ys)
+#         filtered_points.append(xy)
+#     return times, filtered_points
 
 
-def compute_transpose(x):
-    """ given a matrix, computes the transpose """
-    xt=[([0]*len(x)) for k in x[0]]
-    for i, x_row in enumerate(x):
-        for j, b in enumerate(x_row):
-            xt[j][i]=x[i][j]
-    return xt
+# def filter_time_series(times, values):
+#     '''
+#     inputs:
+#     times - list of floats
+#     Wrong! values - a list of lists (ex. [[x1,y1],[x2,y2]])
+#
+#     outputs:
+#     filtered_snapshots - a list of lists (ex. [[
+#     '''
+#     ids_eq, snapshots_eq, filtered_snapshots = smooth_and_equally_space(times, values,
+#                                                                         running_window_size=19,
+#                                                                         order=4,
+#                                                                         filter_method='savitzky_golay')
+#     times = [float(i) for i in ids_eq]
+#     return times, filtered_snapshots
+
+# def compute_transpose(x):
+#     """ given a matrix, computes the transpose """
+#     xt=[([0]*len(x)) for k in x[0]]
+#     for i, x_row in enumerate(x):
+#         for j, b in enumerate(x_row):
+#             xt[j][i]=x[i][j]
+#     return xt
 
 
 if __name__ == '__main__':
-    """
-        running this script shows a simple example
-    """
+    print 'hello'
+
+    #running this script shows a simple example
+
 
     print 'testing filtering...'
 
@@ -398,80 +366,73 @@ if __name__ == '__main__':
     print ids
     print values
 
-    ids_eq, snapshots_eq, filtered_snapshots = smooth_and_equally_space(ids, compute_transpose([values]),
-                                                                        running_window_size=13, order=3,
-                                                                        filter_method='median')
-
-    snapshots_eq = compute_transpose(snapshots_eq)
-    filtered_snapshots = compute_transpose(filtered_snapshots)
-
-    print len(filtered_snapshots), len(filtered_snapshots[0])
-
-    import matplotlib.pyplot as plt
-
-    plt.plot(ids, values, 'o')
-    plt.plot(ids_eq, snapshots_eq[0], 'x', ls='-')
-    plt.plot(ids_eq, filtered_snapshots[0], 'x', ls='-')
-    plt.legend(['data', 'eq', 'smoothed'], loc='upper right')
-    plt.savefig('test1.pdf')
+    # todo: finish example
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.plot(ids, values, 'o')
+    # plt.plot(ids_eq, snapshots_eq[0], 'x', ls='-')
+    # plt.plot(ids_eq, filtered_snapshots[0], 'x', ls='-')
+    # plt.legend(['data', 'eq', 'smoothed'], loc='upper right')
+    # plt.savefig('test1.pdf')
 
 
-def equally_space_snapshots_in_time(ids_strings, original_snapshots):
-    """
-        ids_strings is a list of strings with the times of the snapshots
-        original_snapshots is a list of list, so that original_snapshots[i] looks like [x1, y1, x2, y2, ...]
-        returns equally spaced times and snapshots
-    """
-
-    num_ids = [float(v) for v in ids_strings]
-    ids_eq = equally_space_times(num_ids)
-
-    tsnapshots = compute_transpose(original_snapshots)
-    equally_spaced_snapshots = []
-
-    for tsnapshot in tsnapshots:
-        eq_values = equally_space_snapshots_in_time_1d(num_ids, ids_eq, tsnapshot)
-        equally_spaced_snapshots.append(eq_values)
-
-    ids_strings_eq = [str(v) for v in ids_eq]
-
-    return ids_strings_eq, compute_transpose(equally_spaced_snapshots)
-
-
-def equally_space_snapshots_in_time_1d(ids_not_eq, ids_eq, values, interpolation_kind='linear'):
-    """
-        ids_not_eq and ids_eq are lists of floats with times
-        values is a list of floats you want to equally space in time
-        interpolation_kind should be 'linear'. nothing more for now.
-        returns equally spaced positions
-    """
-
-    assert ids_not_eq == sorted(ids_not_eq), 'DATA PROBLEM: time ids are not sorted!'
-    assert ids_eq == sorted(ids_eq), 'BUG!!! ids_eq not sorted!!!'
-
-    import bisect
-
-    eq_values = []
-    for k, dummy in enumerate(ids_eq):
-
-        left_index = bisect.bisect_left(ids_not_eq, ids_eq[k])
-        assert left_index < len(ids_not_eq), 'left index is out of range'
-
-        if ids_not_eq[left_index] == ids_eq[k]:
-            eq_values.append(values[left_index])
-
-        else:
-            left_index -= 1
-            right_index = left_index + 1
-            #print left_index, right_index, len(ids_eq), len(ids_not_eq), len(values)
-            eq_values.append(linear_interpolation( \
-                ids_eq[k],
-                (ids_not_eq[left_index], values[left_index]), \
-                (ids_not_eq[right_index], values[right_index])) \
-                )
-
-            #print ids_eq[k], ids_not_eq[left_index], ids_not_eq[right_index], 'III', left_index, right_index, k
-            #print eq_values[-1], values[left_index], values[right_index]
-            assert ids_eq[k] >= ids_not_eq[left_index] and ids_eq[k] < ids_not_eq[right_index], 'bisection is wrong'
-
-    return eq_values
+# def equally_space_snapshots_in_time(ids_strings, original_snapshots):
+#     """
+#         ids_strings is a list of strings with the times of the snapshots
+#         original_snapshots is a list of list, so that original_snapshots[i] looks like [x1, y1, x2, y2, ...]
+#         returns equally spaced times and snapshots
+#     """
+#
+#     num_ids = [float(v) for v in ids_strings]
+#     ids_eq = equally_space_times(num_ids)
+#
+#     tsnapshots = compute_transpose(original_snapshots)
+#     equally_spaced_snapshots = []
+#
+#     for tsnapshot in tsnapshots:
+#         eq_values = equally_space_snapshots_in_time_1d(num_ids, ids_eq, tsnapshot)
+#         equally_spaced_snapshots.append(eq_values)
+#
+#     ids_strings_eq = [str(v) for v in ids_eq]
+#
+#     return ids_strings_eq, compute_transpose(equally_spaced_snapshots)
+#
+#
+# def equally_space_snapshots_in_time_1d(ids_not_eq, ids_eq, values, interpolation_kind='linear'):
+#     """
+#         ids_not_eq and ids_eq are lists of floats with times
+#         values is a list of floats you want to equally space in time
+#         interpolation_kind should be 'linear'. nothing more for now.
+#         returns equally spaced positions
+#     """
+#
+#     assert ids_not_eq == sorted(ids_not_eq), 'DATA PROBLEM: time ids are not sorted!'
+#     assert ids_eq == sorted(ids_eq), 'BUG!!! ids_eq not sorted!!!'
+#
+#     import bisect
+#
+#     eq_values = []
+#     for k, dummy in enumerate(ids_eq):
+#
+#         left_index = bisect.bisect_left(ids_not_eq, ids_eq[k])
+#         assert left_index < len(ids_not_eq), 'left index is out of range'
+#
+#         if ids_not_eq[left_index] == ids_eq[k]:
+#             eq_values.append(values[left_index])
+#
+#         else:
+#             left_index -= 1
+#             right_index = left_index + 1
+#             #print left_index, right_index, len(ids_eq), len(ids_not_eq), len(values)
+#             eq_values.append(linear_interpolation( \
+#                 ids_eq[k],
+#                 (ids_not_eq[left_index], values[left_index]), \
+#                 (ids_not_eq[right_index], values[right_index])) \
+#                 )
+#
+#             #print ids_eq[k], ids_not_eq[left_index], ids_not_eq[right_index], 'III', left_index, right_index, k
+#             #print eq_values[-1], values[left_index], values[right_index]
+#             assert ids_eq[k] >= ids_not_eq[left_index] and ids_eq[k] < ids_not_eq[right_index], 'bisection is wrong'
+#
+#     return eq_values

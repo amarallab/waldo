@@ -22,14 +22,13 @@ sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
-from Encoding.decode_outline import decode_outline
-from ExceptionHandling.record_exceptions import write_pathological_input
-from shared.wio.file_manager import get_timeseries, write_timeseries_file
+from encoding.decode_outline import decode_outline
+from deviant.record_exceptions import write_pathological_input
+from wio.file_manager import get_timeseries, write_timeseries_file
 from settings.local import SMOOTHING 
 from equally_space import equally_spaced_tenth_second_times
 from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
-
-from wormmetrics.compute_metrics import txy_to_speeds, angle_change_for_xy
+from metrics.compute_metrics import txy_to_speeds, angle_change_for_xy
 
 ORDER = SMOOTHING['time_order']
 WINDOW = SMOOTHING['time_window']

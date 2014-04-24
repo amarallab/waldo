@@ -11,7 +11,6 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-import math
 
 # path definitions
 project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../../'
@@ -23,55 +22,12 @@ sys.path.append(shared_directory)
 from thinning.distance import euclidean
 
 
-def sign(x):
-    x = float(x)
-    if x == 0.:
-        return 1.
-    else:
-        return math.fabs(x) / x
-
-def correct_point(point_so_far, next_point, distance_from_next_point):
-    """
-        we correct point_so_far placing it along the line between point_so_far and next_point
-        so that the distance_from_next_point is matched 
-    """
-    # if points have same x
-    if point_so_far[0] == next_point[0]:
-        return (point_so_far[0],
-                next_point[1] - distance_from_next_point * sign(next_point[1] - point_so_far[1]))
-    else:
-        m = float(next_point[1] - point_so_far[1]) / (next_point[0] - point_so_far[0])
-        x = next_point[0] - distance_from_next_point / math.sqrt(1 + m ** 2) * sign(next_point[0] - point_so_far[0])
-        y = next_point[1] + m * (x - next_point[0])
-        return (x, y)
 
 
-def find_next_index(xy, next_index_along_original_line, point_so_far, step):
-    """
-        xy is a list of tuples (x,y)
-        next_index_along_original_line is an integer, pointing to a point ahead
-        point_so_far which is the last (x,y) in the equally space spine
-    """
-    dist = 0.
-    while True:
-        assert next_index_along_original_line < len(xy), 'find_next_index: BUG!'
-        # next point along original line
-        next_point = xy[next_index_along_original_line]
-        # compute the distance we have walked so far plus the next point 
-        dist += euclidean(point_so_far, next_point)
 
-        # if this is further than what we want, stop
-        if dist >= step:
-            break
-        # if this is not, point_so_far becomes next point and we move the next point further
-        else:
-        # if there are no more points to go further we stay where we are
-            if next_index_along_original_line + 1 == len(xy):
-                return dist, next_index_along_original_line, point_so_far
-            next_index_along_original_line += 1
-            point_so_far = next_point
 
-    return dist, next_index_along_original_line, point_so_far
+
+
 
 
 

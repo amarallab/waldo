@@ -42,7 +42,7 @@ from consolidate_plates import write_plate_timeseries, write_plate_percentiles
 
 
 from settings.local import FILTER
-from wormmetrics.measurement_switchboard import pull_blob_data, quantiles_for_data, FULL_SET
+from metrics.measurement_switchboard import pull_blob_data, quantiles_for_data, FULL_SET
 from wio.file_manager import write_timeseries_file, get_metadata
 from wio.file_manager import get_good_blobs, format_filename, get_dset
 from wio.plate_utilities import remove_plate_files

@@ -4,6 +4,7 @@
 Filename: create_spine.py
 Description: find_ex_ids_to_update function is create_spine_from_outline
 '''
+import math
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -24,12 +25,11 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from skeletonize_outline import compute_skeleton_from_outline
-from Encoding.decode_outline import decode_outline
+from encoding.decode_outline import decode_outline
 from filtering.filter_utilities import savitzky_golay
 from settings.local import SMOOTHING
 from wio.file_manager import get_timeseries, insert_data_into_db, write_timeseries_file
-from shared.filtering.equally_space import find_next_index, correct_point
-from shared.wormmetrics.compute_metrics import euclidean
+from metrics.compute_metrics import euclidean
 
 # set defaults from settings file
 DEFAULT_ORDER = SMOOTHING['spine_order']
@@ -134,12 +134,13 @@ def show_worm_video(spine_timedict):
         pl.raw()
         pl.clf()
 
+'''
 def smooth_and_space_xy_points(points, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WINDOW, point_num=50):
     xs, ys = zip(*points)
     filtered_xs = list(savitzky_golay(np.array(xs), window_size=window_size, order=poly_order))
     filtered_ys = list(savitzky_golay(np.array(ys), window_size=window_size, order=poly_order))
     return equally_space(zip(filtered_xs, filtered_ys), points=point_num)
-
+'''
 
 def treat_spine(times, spines, poly_order=DEFAULT_ORDER,
                 window_size=DEFAULT_WINDOW, verbose=True):
@@ -187,8 +188,17 @@ def treat_spine(times, spines, poly_order=DEFAULT_ORDER,
     #ion()
     #2. equally space and reverse points if backwards
     
-    treated_spines = map(lambda x: equally_space(x, points=50), treated_spines)
-
+    #treated_spines = map(lambda x: equally_space(x, points=50), treated_spines)
+    treated_spines = [equally_space(x, points=50) for x in treated_spines]
+    # TODO: trouble shoot code to remove
+    '''
+    spaced = []
+    for spine in spines:
+        x, y = zip(*spine)
+        x, y = equally_space_N_xy_points(x, y)
+        spaced.append(zip(x, y))
+    treated_spines = spaced
+    '''
     #standardized_spines = [treated_spines[0]]
     for i in range(len(treated_spines)):
         if i > 0:
@@ -275,6 +285,59 @@ def equally_space(xy, points=-1, prefixed_step='no_prefixed_step', verbose=False
         in the format [(x1, y1), (x2, y2)...]
         points is the number of x, y pairs desired
     """
+    def find_next_index(xy, next_index_along_original_line, point_so_far, step):
+        """
+            xy is a list of tuples (x,y)
+            next_index_along_original_line is an integer, pointing to a point ahead
+            point_so_far which is the last (x,y) in the equally space spine
+        """
+        dist = 0.
+        while True:
+            assert next_index_along_original_line < len(xy), 'find_next_index: BUG!'
+            # next point along original line
+            next_point = xy[next_index_along_original_line]
+            # compute the distance we have walked so far plus the next point
+            dist += euclidean(point_so_far, next_point)
+
+            # if this is further than what we want, stop
+            if dist >= step:
+                break
+            # if this is not, point_so_far becomes next point and we move the next point further
+            else:
+            # if there are no more points to go further we stay where we are
+                if next_index_along_original_line + 1 == len(xy):
+                    return dist, next_index_along_original_line, point_so_far
+                next_index_along_original_line += 1
+                point_so_far = next_point
+
+        return dist, next_index_along_original_line, point_so_far
+
+    def correct_point(point_so_far, next_point, distance_from_next_point):
+        """
+            we correct point_so_far placing it along the line between point_so_far and next_point
+            so that the distance_from_next_point is matched
+        """
+        # if points have same x
+        if point_so_far[0] == next_point[0]:
+            return (point_so_far[0],
+                    next_point[1] - distance_from_next_point * sign(next_point[1] - point_so_far[1]))
+        else:
+            m = float(next_point[1] - point_so_far[1]) / (next_point[0] - point_so_far[0])
+            x = next_point[0] - distance_from_next_point / math.sqrt(1 + m ** 2) * sign(next_point[0] - point_so_far[0])
+            y = next_point[1] + m * (x - next_point[0])
+            return (x, y)
+
+
+    def sign(x):
+        x = float(x)
+        if x == 0.:
+            return 1.
+        else:
+            return math.fabs(x) / x
+
+
+
+
     if forgiving and len(xy) <= 2:
         return []
 
@@ -318,3 +381,5 @@ def equally_space(xy, points=-1, prefixed_step='no_prefixed_step', verbose=False
 
     #print len(equally_spaced), 'equally spaced'
     return equally_spaced
+
+
