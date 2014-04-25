@@ -144,7 +144,7 @@ def main(args, db_attribute):
     if args.p:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=True)
         name = '{ds}-p'.format(ds=dataset)
-        qsub_run_script(python_script='waldo.py -tp', job_name=name,
+        qsub_run_script(python_script='waldo.py -tpo', job_name=name,
                         args=new_args, ex_ids=ex_ids, number_of_jobs=100)
 
 if __name__ == '__main__':

@@ -120,8 +120,8 @@ if __name__ == '__main__':
         labels = [u'NQ19', u'NQ67', u'MQ0', u'N2', u'MQ40', u'NQ40', u'MQ35']
         #labels = [u'N2', u'MQ35', u'MQ40']
         #labels = [u'N2', u'MQ0']
-        labels = [u'N2', u'NQ40', u'NQ67']
-        #labels = [u'N2', u'NQ19', u'NQ67']
+        #labels = [u'N2', u'NQ40', u'NQ67']
+        labels = [u'N2', u'NQ19', u'NQ67']
         #labels = ['N2', 'NQ67']
 
     sets = plot_dset(dataset=dataset, show_mean=show_mean, age_range=age_range, data_types=dtypes, labels=labels)

@@ -197,6 +197,12 @@ def get_attributes_for_dir(ex_dir, sources, scaling_factors):
             'num-blobs-files': str(len(glob.glob(ex_dir + '/*.blobs'))),
             'num-images': str(len(glob.glob(ex_dir + '/*.png'))),
             'source-camera': source,
+ 
+
+
+ 
+
+ 
             'pixels-per-mm': scaling_factor}
 
 
@@ -280,7 +286,7 @@ def parse_summary_file(ex_dir):
     return file_name, record_length
 
 if __name__ == '__main__':    
-    update_inventory()
+    #update_inventory()
     #update_main(update_all=False)
     #find_ex_ids_to_update(update_list=['2012-10', '2012-11', '2012-12'])
     #find_ex_ids_to_update(update_list=['2013-01', '2013-02', '2013-03', '2013-04', '2013-05', '2013-06', '2013-07', '2013-08'])
