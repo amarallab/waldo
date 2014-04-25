@@ -16,7 +16,7 @@ from itertools import izip
 import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
-#from mpltools import style
+from mpltools import style
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -31,7 +31,7 @@ from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from annotation.experiment_index import Experiment_Attribute_Index2
 
 # global settings
-#style.use('ggplot')
+style.use('ggplot')
 
 
 def preprocess_plate_timeseries(times, data):
@@ -97,14 +97,17 @@ def add_plate_median(ax, ex_id, dataset, data_type):
 
     ax.set_ylabel(data_type)
     ax.plot(times, median, color=color)
-    ax.plot(times, q1st, color=color, alpha=0.3)
-    ax.plot(times, q3rd, color=color, alpha=0.3)
+    #ax.plot(times, q1st, color=color, alpha=0.3)
+    #ax.plot(times, q3rd, color=color, alpha=0.3)
     ax.fill_between(times, q1st, q3rd, color=color, alpha=0.2)
-    ticks = pick_ticks(max(q3rd))
-
-    ax.set_yticks(ticks)
-    ax.set_ylim([0, max(q3rd)])
+    #ax.set_yticks(pick_ticks(max(q3rd)))
     ax.set_xlim([0, max(times)])
+
+    if data_type != 'angle_change':
+        ax.set_ylim([0, stats.scoreatpercentile(q3rd, 99)])
+    else:
+        ax.set_ylim([stats.scoreatpercentile(q1st, 01), stats.scoreatpercentile(q3rd, 99)])        
+
 
 
 def plot_all_for_dset(dataset, data_types=STANDARD_MEASUREMENTS, save=False):
@@ -152,7 +155,7 @@ def plot_one_plate(ex_id, data_types=STANDARD_MEASUREMENTS, dataset=None, save=F
     plt.xlabel('time (m)')
     #plotting2(ex_id=eID, data_types=STANDARD_MEASUREMENTS)        
     axes[0].set_title(dataset + ' ' + ex_id + ' ' + age)
-    plt.tight_layout()
+    #plt.tight_layout()
     if save:
         savename = format_results_filename(ID=ex_id, result_type='timeseries',
                                            ID_type='plate', dset=dataset,
@@ -164,11 +167,13 @@ def plot_one_plate(ex_id, data_types=STANDARD_MEASUREMENTS, dataset=None, save=F
 
 if __name__ == '__main__':
     dset = 'N2_aging'
-    plot_all_for_dset(dataset=dset, save=True)
-    '''
-    save = True
-    eID = '20130318_131056'
+    #plot_all_for_dset(dataset=dset, save=True)
+
+    #save = True
+    save = False
+    eID = '20130414_140704'
+    #eID = '20130318_131056'
     plot_one_plate(ex_id=eID, data_types=FULL_SET, save=save)
     plt.show()
-    '''
+
     #plot_all_for_dset('N2_aging', save=save)

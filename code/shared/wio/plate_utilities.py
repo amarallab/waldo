@@ -158,6 +158,8 @@ def return_flattened_plate_timeseries(ex_id, dataset, data_type):
     times, data = read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries')
     #times, data = parse_plate_timeseries_txt_file(dfile)
     flat_data = []
+    if times == None:
+        return []
     if not len(times):
         return []
     for i, t_bin in enumerate(data):
