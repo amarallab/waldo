@@ -42,8 +42,8 @@ XLIMS = {'cent_speed_bl':[0.0, 0.04],
          'curve_w': [0.0, 0.04], 
          'width_mm': [0.0, .2], 
          'angle_change': [-0.1, 0.1],
-         'stop_dur': [0, 100], 
-         'go_dur': [0, 300]}
+         'stop_dur': [0, 10], 
+         'go_dur': [0, 100]}
 
 def get_annotations(dataset, data_type, label='all'):
     ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)

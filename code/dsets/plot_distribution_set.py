@@ -35,11 +35,8 @@ style.use('ggplot')
 
 def plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=None):
     N_days = len(ax_row)
-    max_x = 0.0
-    
-    #colors = ['blue', 'red', 'green', 'black']
-    
-
+    max_x = 0.0    
+    #colors = ['blue', 'red', 'green', 'black']    
     for j, label in enumerate(labels):        
         dist_by_day = read_dset_summary(dataset=dataset, data_type=data_type, 
                                         ID=label, sum_type='dist')
@@ -70,7 +67,6 @@ def plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=
             if max_x < max(x):
                 max_x = max(x)
         print data_type, max_x
-
 
     if data_type == 'cent_speed_bl':
         max_x = 0.001
@@ -201,7 +197,7 @@ if __name__ == '__main__':
     dataset = 'N2_aging'
     #dataset = 'thermo_recovery'
 
-    dtypes = FULL_SET[:-2]
+    dtypes = FULL_SET[:]
     print dtypes
     #dtypes = ['length_mm']
     show_legend = True
