@@ -121,7 +121,7 @@ def preprocess_distribution_set(dataset, labels=None,
             generate_distribution(dataset, data_type, label, xlim=xlim)
 
 
-def combine_worm_percentiles_for_dset(dataset):    
+def combine_worm_percentiles_for_dset2(dataset):    
     """
 
     Note: currently takes first percentiles file to be current 
@@ -172,7 +172,7 @@ def combine_worm_percentiles_for_dset(dataset):
     return all_blob_ids, all_percentiles
 
 # TODO: this is untested waiting for the pandas revolution in plate consolidation.
-def combine_worm_percentiles_for_dset2(dataset):    
+def combine_worm_percentiles_for_dset(dataset):    
     """
 
     Note: currently takes first percentiles file to be current 
@@ -299,7 +299,7 @@ def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):
 
 
 # TODO: this is untested waiting for the pandas revolution in plate consolidation.
-def write_combined_worm_percentiles2(dataset):
+def write_combined_worm_percentiles(dataset):
     # manage paths for files
     save_dir = format_dirctory(ID=dataset, ID_type='dset')
     f_savename = '{path}{dset}_features.csv'.format(path=save_dir, dset=dataset)
@@ -326,7 +326,7 @@ def write_combined_worm_percentiles2(dataset):
     for line in worm_index:
         print line
 
-def write_combined_worm_percentiles(dataset):
+def write_combined_worm_percentiles2(dataset):
     # manage paths for files
     save_dir = format_dirctory(ID=dataset, ID_type='dset')
     f_savename = '{path}{dset}_features.csv'.format(path=save_dir, dset=dataset)

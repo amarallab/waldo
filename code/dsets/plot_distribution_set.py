@@ -93,7 +93,7 @@ def plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=
     ax_row[0].set_ylim(ylim)
     ax_row[0].set_xlim([0.0, max_x])
 
-def plot_full_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], N_days=5, show_legend=True):
+def plot_full_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], N_days=5, show_legend=True, colors=None):
 
     N_rows = len(data_types)
     #fig = plt.figure()
@@ -107,16 +107,16 @@ def plot_full_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], 
         ax_row = [ax1] + ax_row
 
         ylim = XLIMS.get(data_type, [0.0, 1.0])
-        plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim)
+        plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=colors)
         axes_rows.append(ax_row)
 
     ax_row = axes_rows[0]
     ax_row[-1].legend(loc='best', ncol=1)
 
     #axes_rows[0][1]
-    plt.show()
+    #plt.show()
 
-def plot_worm_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], N_days=5, show_legend=True):
+def plot_worm_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], N_days=5, show_legend=True, colors=None):
     N_rows = len(data_types)
     #fig = plt.figure()
     grid = gridspec.GridSpec(N_rows, N_days)
@@ -129,20 +129,20 @@ def plot_worm_distribution_matrix(dataset, data_types=FULL_SET, labels=['all'], 
         ax_row = [ax1] + ax_row
 
         ylim = XLIMS.get(data_type, [0.0, 1.0])
-        plot_worm_distribution_row(ax_row, dataset, data_type, labels, ylim)
+        plot_worm_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=colors)
         axes_rows.append(ax_row)
 
     ax_row = axes_rows[0]
     ax_row[-1].legend(loc='best', ncol=1)
 
     #axes_rows[0][1]
-    plt.show()
+    #plt.show()
 
 def plot_worm_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=None):
     N_days = len(ax_row)
     max_x = 0.0
     
-    #colors = ['blue', 'red', 'green', 'black']
+    
     
 
     for j, label in enumerate(labels):
@@ -198,7 +198,7 @@ def plot_worm_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=
                          
 if __name__ == '__main__':
     dataset = 'disease_models'
-    #dataset = 'N2_aging'
+    dataset = 'N2_aging'
     #dataset = 'thermo_recovery'
 
     dtypes = FULL_SET[:-2]
@@ -209,6 +209,7 @@ if __name__ == '__main__':
     # defaults
     N_days = 5
     labels = ['all']
+    colors = None
 
     # labels for N2_aging
     if dataset == 'N2_aging':
@@ -224,8 +225,9 @@ if __name__ == '__main__':
         labels = [u'N2', u'NQ19', u'NQ67']
         #labels = ['N2', 'NQ67']
 
-
+    #colors = ['blue', 'red', 'green', 'black']
     plot_full_distribution_matrix(dataset, labels=labels, data_types=dtypes,
-                                  N_days=N_days, show_legend=show_legend)
+                                  N_days=N_days, show_legend=show_legend, colors=colors)
     #plot_worm_distribution_matrix(dataset, labels=labels, data_types=dtypes,
     #                              N_days=N_days, show_legend=show_legend)
+    plt.show()
