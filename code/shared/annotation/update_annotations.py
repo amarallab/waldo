@@ -118,7 +118,7 @@ def get_source_computers(inventory_path=DEFAULT_LOGISTICS_DIR):
     return source_computers
 
 def update_main(update_list=[], update_all=False, overwrite=False,
-                remove_missing=True, save_dir=DEFAULT_SAVE_DIR):
+                remove_missing=False, save_dir=DEFAULT_SAVE_DIR):
     """
     A two step process that (1) writes all currently annotated data (in google-docs) to json files and (2) Updates
     google-docs to contain entries for all raw data files.

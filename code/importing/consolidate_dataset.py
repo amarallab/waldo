@@ -31,7 +31,7 @@ sys.path.append(SHARED_DIR)
 # nonstandard imports
 from wio.plate_utilities import get_plate_files, read_plate_timeseries, organize_plate_metadata, \
     return_flattened_plate_timeseries, write_dset_summary, format_dset_summary_name
-from wio.file_manager import format_dirctory, ensure_dir_exists, read_table
+from wio.file_manager import format_dirctory, ensure_dir_exists, read_table, get_dset
 from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from annotation.experiment_index import Experiment_Attribute_Index2
 
@@ -185,7 +185,7 @@ def combine_worm_percentiles_for_dset(dataset):
                                           tag=tag)
 
 
-    expected_N_cols = 0 
+    expected_N_cols = 0
     percentiles = []
     for ex_id in ex_ids:
         #ex_id = pf.split('/')[-1].split('-')[0]
@@ -197,7 +197,7 @@ def combine_worm_percentiles_for_dset(dataset):
                           dset=get_dset(ex_id),
                           file_tag='worm_percentiles')
         percentiles.append(perc)
-        all_percentiles = np.concatenate(percentiles)        
+        all_percentiles = pd.concat(percentiles)        
         return all_percentiles
 
                     
@@ -308,9 +308,10 @@ def write_combined_worm_percentiles(dataset):
     # combine worm percentiles and indexes for worms
     percentiles = combine_worm_percentiles_for_dset(dataset)
     print percentiles.columns
+    blob_ids = percentiles.index
     #worm_index = create_full_worm_index(blob_ids)
-    ex_id_data, worm_index = {}, []    
-    for blob_id in percentiles.index:
+    ex_id_data, worm_index = {}, []        
+    for blob_id in blob_ids:
         ex_id = '_'.join(blob_id.split('_')[:2])
         #print ex_id
         if ex_id not in ex_id_data:
@@ -363,6 +364,7 @@ def write_dset_summaries(dataset, measurements=STANDARD_MEASUREMENTS):
 
 if __name__ == '__main__':
     dataset = 'disease_models'
+    dataset = 'N2_aging'
     #dataset = 'thermo_recovery'
     #dataset = 'copas_TJ3001_lifespan'
     #write_combined_worm_percentiles(dataset)

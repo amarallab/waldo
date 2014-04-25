@@ -128,11 +128,12 @@ def read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries'):
 
 def organize_plate_metadata(ex_id):
     ei = Experiment_Attribute_Index()
-
     m = ei.return_attributes_for_ex_id(ex_id)
+    if m == None:
+        m = {}
     label = m.get('label', 'label')
     sub_label = m.get('sublabel', 'set')
-    sub_label = '{l}-{sl}'.format(l=label, sl=sub_label)
+    sub_label = '{sl}'.format(sl=sub_label)
     pID = m.get('plate-id', 'set B')
     day = m.get('age', 'A0')
 

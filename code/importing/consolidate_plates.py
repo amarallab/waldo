@@ -244,6 +244,7 @@ if __name__ == '__main__':
     #data_type = 'length_mm'
     #data_type = 'curve_bl'
     eID = '20131211_145827'
+    eID = '20130414_140704'
     #write_plate_timeseries(ex_id=eID)
-    metrics = FULL_SET[:2]
+    metrics = FULL_SET[:]
     write_plate_percentiles(ex_id=eID, metrics=metrics)
