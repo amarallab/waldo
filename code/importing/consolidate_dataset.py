@@ -41,10 +41,9 @@ XLIMS = {'cent_speed_bl':[0.0, 0.04],
          'curve_bl': [0.0, 0.006], 
          'curve_w': [0.0, 0.04], 
          'width_mm': [0.0, .2], 
-         'angle_change': [-0.1, 0.1]}
-
-
-
+         'angle_change': [-0.1, 0.1],
+         'stop_dur': [0, 100], 
+         'go_dur': [0, 300]}
 
 def get_annotations(dataset, data_type, label='all'):
     ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
@@ -106,7 +105,7 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
                        data_type=data_type, dataset=dataset)
 
 def preprocess_distribution_set(dataset, labels=None, 
-                                             data_types=STANDARD_MEASUREMENTS):
+                                data_types=STANDARD_MEASUREMENTS):
 
     if labels == None:
         ei = Experiment_Attribute_Index2(dataset)
@@ -354,8 +353,8 @@ def write_combined_worm_percentiles2(dataset):
     for line in worm_index:
         print line
 
-def write_dset_summaries(dataset, measurements=STANDARD_MEASUREMENTS):
-    for data_type in measurements:
+def write_dset_summaries(dataset, data_types=STANDARD_MEASUREMENTS):
+    for data_type in data_types:
         print 'consolidating data for {dt}'.format(dt=data_type)
         data = consolidate_dset_from_plate_timeseries(dataset, data_type)
         print dataset, data_type, data

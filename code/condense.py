@@ -29,18 +29,19 @@ sys.path.append(SHARED_DIR)
 from importing.consolidate_dataset import write_combined_worm_percentiles, write_dset_summaries, \
     preprocess_distribution_set
 from dsets.check_dset import show_dset, show_dset_completeness
+from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
 def main(args):    
     for dset in args.dataset:
 
-
+        data_types = FULL_SET
         if args.run:
             # TODO: write a check to make dset is really a dataset.
             args.dist = args.perc = args.sum = True
         if args.dist:            
-            preprocess_distribution_set(dset)        
+            preprocess_distribution_set(dset, data_types=data_types)        
         if args.sum:
-            write_dset_summaries(dset)
+            write_dset_summaries(dset, data_types=data_types)        
         if args.perc:
             write_combined_worm_percentiles(dset)
 
