@@ -30,7 +30,6 @@ SHARED_DIR = os.path.abspath(os.path.join(HERE + 'shared'))
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-
 # nonstandard imports
 from initialize_recording import create_entries_from_blobs_files
 from centroid import process_centroid
@@ -38,14 +37,13 @@ from create_spine import create_spine_from_outline
 from compute_basic_measurements import compute_basic_measurements
 from flags_and_breaks import flag_blob_id, create_breaks_for_blob_id
 from smooth_spines_in_time import smooth_good_regions_repeatedly
-from consolidate_plates import write_plate_timeseries, write_plate_percentiles
-
+from plates import write_plate_timeseries, write_plate_percentiles
 
 from settings.local import FILTER
 from metrics.measurement_switchboard import pull_blob_data, quantiles_for_data, FULL_SET
 from wio.file_manager import write_timeseries_file, get_metadata
 from wio.file_manager import get_good_blobs, format_filename, get_dset
-from wio.plate_utilities import remove_plate_files
+from wio.file_manager import remove_plate_files
 
 def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     """

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 '''
-Filename: consolidate_dataset.py
+Filename: datasets.py
 Description:
 
 These functions are for consolidating plate summaries,
-The plate summaries were created using consolidate_plates.py
+The plate summaries were created using plates.py
 '''
 
 __author__ = 'Peter B. Winter'

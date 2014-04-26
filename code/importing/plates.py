@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Filename: consolidate_plates.py
+Filename: plates.py
 Description:
 
 either: 
@@ -28,18 +28,24 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.plate_utilities import get_plate_files,  \
-     write_dset_summary, \
-     return_flattened_plate_timeseries, organize_plate_metadata
-
+from annotation.experiment_index import organize_plate_metadata
 from metrics.measurement_switchboard import pull_blob_data, \
      FULL_SET, STANDARD_MEASUREMENTS
 from metrics.compute_metrics import quantiles_for_data
+
 from wio.file_manager import get_good_blobs, get_dset
 from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
 from wio.file_manager import write_table, read_table
+<<<<<<< local
+from wio.file_manager import get_plate_files, write_dset_summary, \
+     return_flattened_plate_timeseries
+=======
+>>>>>>> other
 
+<<<<<<< local
+=======
 
+>>>>>>> other
 def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
     """ this function joins timeseries from all blob_ids and returns the results.
     by default, this is two lists. times and data (a list of lists containin values
@@ -241,6 +247,9 @@ def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENT
                               file_tag='timeseries')                              
 
 
+<<<<<<< local
+        
+=======
 def write_plate_timeseries2(ex_id, blob_ids=[], measurements=FULL_SET[:1], index='default'):
     dataset = get_dset(ex_id)
     if len(blob_ids) == 0:
@@ -284,6 +293,7 @@ def write_plate_timeseries2(ex_id, blob_ids=[], measurements=FULL_SET[:1], index
                     file_tag='timeseries')
         '''
 
+>>>>>>> other
 if __name__ == '__main__':
     dataset = 'disease_models'
     #data_type = 'cent_speed_bl'

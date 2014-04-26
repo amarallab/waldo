@@ -14,6 +14,7 @@ ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_agi
 ei.return_attribute_for_ex_ids(['20130423_123836', '20130410_143246'], 'pixels-per-mm')
 ei.return_ex_ids_within_dates(start_date='20120300', end_date='20121000')
 '''
+import datetime
 import glob
 
 __author__ = 'Peter B. Winter'
@@ -44,6 +45,14 @@ def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
     if dataset != None:
         full_index = full_index[full_index['dataset'] == dataset]
     return full_index
+
+def return_experiment_attributes(ex_id, index_tsv_directory=INDEX_DIR):
+    search = os.path.join('{d}'.format(d=index_tsv_directory.rstrip('/')), '*.tsv')
+    for ifile in glob(search):
+        df = pd.read_csv(f, sep='\t', index_col=0)
+    full_index = pd.concat(data)
+
+
 
 # global default value
 class Experiment_Attribute_Index(object):
@@ -156,16 +165,49 @@ def list_ex_ids_with_raw_data(inventory_directory):
         print '{N} ex_ids present'.format(N=len(ex_ids))
     return ex_ids
 
-if __name__ == '__main__':
+def ex_id_to_datetime(ex_id):
+    ''' converts an experiment id to a datetime object '''
+    parts = ex_id.split('_')
+    if len(parts) != 2:
+        print 'Error: something is off with this ex_id', ex_id
+        return None
+    ymd, hms = parts
+    year, month, day = map(int, [ymd[:4], ymd[4:6], ymd[6:]])
+    h, m, s = map(int, [hms[:2], hms[2:-2], hms[-2:]])
+    return datetime.datetime(year, month, day, h, m, s)
+
+def organize_plate_metadata(ex_id):
     ei = Experiment_Attribute_Index()
+
+    m = ei.return_attributes_for_ex_id(ex_id)
+    label = m.get('label', 'label')
+    sub_label = m.get('sublabel', 'set')
+    sub_label = '{l}-{sl}'.format(l=label, sl=sub_label)
+    pID = m.get('plate-id', 'set B')
+    day = m.get('age', 'A0')
+
+    recording_time = ex_id
+    plating_time = m.get('l1-arrest', None)
+    #print 'plated at:', plating_time
+    #print 'recorded at:', recording_time
+    hours = 0
+    if recording_time and plating_time:
+        t0 = ex_id_to_datetime(plating_time)
+        t1 = ex_id_to_datetime(recording_time)
+        hours = (t1 - t0).total_seconds()/3600.
+    #age = '{et} - {pt}'.format(et=recording_time, pt=plating_time)
+    #for i in m:
+    #    print i
+    return hours, label, sub_label, pID, day
+
+if __name__ == '__main__':
+    ei = Experiment_Attribute_Index2()
 
     # examples of possible usages
     print len(ei.ex_ids), 'total'
-    print len(ei.unflagged_ex_ids), 'unflagged'
+    #print len(ei.unflagged_ex_ids), 'unflagged'
     '''
     print ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_aging')
     print ei.return_attribute_for_ex_ids(['20130423_123836', '20130410_143246', '20130413_150111', '20130325_152726'], 'pixels-per-mm')
     print ei.return_ex_ids_within_dates(start_date='20120300', end_date='20121000')
     '''
-
-
