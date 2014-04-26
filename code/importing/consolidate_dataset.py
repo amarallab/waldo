@@ -353,6 +353,7 @@ def write_combined_worm_percentiles2(dataset):
     for line in worm_index:
         print line
 
+
 def write_dset_summaries(dataset, data_types=STANDARD_MEASUREMENTS):
     for data_type in data_types:
         print 'consolidating data for {dt}'.format(dt=data_type)
@@ -360,6 +361,7 @@ def write_dset_summaries(dataset, data_types=STANDARD_MEASUREMENTS):
         print dataset, data_type, data
         write_dset_summary(data=data, sum_type='basic', 
                            data_type=data_type, dataset=dataset)
+
 
 if __name__ == '__main__':
     dataset = 'disease_models'

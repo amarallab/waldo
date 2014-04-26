@@ -60,8 +60,8 @@ def plot_full_distribution_row(ax_row, dataset, data_type, labels, ylim, colors=
                 color = ax_row[i]._get_lines.color_cycle.next()
                 #print color_cycle
                 #color = color_cycle()
-            ax_row[i].fill_between(x, y, alpha=0.5, color=color)
-            ax_row[i].plot(x, y, alpha=0.5, color=color, label=label)
+            #ax_row[i].fill_between(x, y, alpha=0.5, color=color)
+            ax_row[i].plot(x, y, alpha=0.9, color=color, label=label)
 
             #plt.tick_params(**label_settings)
             if max_x < max(x):

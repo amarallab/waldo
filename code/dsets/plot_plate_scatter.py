@@ -46,8 +46,10 @@ def plot_timeseries(ax, labels, xs, ys, bars):
 
 def plot_plate_scatter(ax, dataset, data_type, show_mean, age_range=[0,1000000], labels='all'):
 
-    df = pd.DataFrame(read_dset_summary(dataset=dataset, data_type=data_type))
-
+    data = read_dset_summary(dataset=dataset, data_type=data_type)
+    if len(data) == 0:
+        return
+    df = pd.DataFrame(data)
     # calculate two kinds of error bars
     df['std1'], df['std2'] = zip(*[[m-s, m+s] for (m,s) in izip(df['mean'], df['std'])])
     df['q1'], df['median'], df['q3'] = zip(*df['quartiles'])
@@ -86,7 +88,7 @@ def plot_dset(dataset, data_types=FULL_SET, show_mean=False,
               age_range=[0,1000000], labels='all'):
 
     N = len(data_types)
-    fig, axes = plt.subplots(N, 1)
+    fig, axes = plt.subplots(N, 1, sharex=True)
     for ax, data_type in zip(axes, data_types):
         plot_plate_scatter(ax, dataset, data_type, show_mean, 
                                       age_range=age_range, labels=labels)
