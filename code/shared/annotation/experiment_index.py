@@ -175,6 +175,10 @@ def ex_id_to_datetime(ex_id):
     return datetime.datetime(year, month, day, h, m, s)
 
 def organize_plate_metadata(ex_id):
+    '''
+    gets the most relevant features from the experiment index
+
+    '''
     ei = Experiment_Attribute_Index()
 
     m = ei.return_attributes_for_ex_id(ex_id)
