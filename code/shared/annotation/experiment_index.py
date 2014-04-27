@@ -14,19 +14,18 @@ ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_agi
 ei.return_attribute_for_ex_ids(['20130423_123836', '20130410_143246'], 'pixels-per-mm')
 ei.return_ex_ids_within_dates(start_date='20120300', end_date='20121000')
 '''
-import datetime
-import glob
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
 # standard imports
-from glob import glob
 import os
 import sys
 import pandas as pd
-# path definitions
+import datetime
+import glob
+
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
 CODE_DIR = os.path.abspath(HERE + '/../../')
@@ -40,18 +39,17 @@ INDEX_DIR = LOGISTICS['annotation']
 def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
     ''' returns a pandas dataframe with all the annotated indicies '''
     search = os.path.join('{d}'.format(d=index_tsv_directory.rstrip('/')),'*.tsv')
-    data = [pd.read_csv(f, sep='\t', index_col=0) for f in glob(search)]
+    data = [pd.read_csv(f, sep='\t', index_col=0) for f in glob.iglob(search)]
     full_index = pd.concat(data)
     if dataset != None:
         full_index = full_index[full_index['dataset'] == dataset]
     return full_index
 
-def return_experiment_attributes(ex_id, index_tsv_directory=INDEX_DIR):
-    search = os.path.join('{d}'.format(d=index_tsv_directory.rstrip('/')), '*.tsv')
-    for ifile in glob(search):
-        df = pd.read_csv(f, sep='\t', index_col=0)
-    full_index = pd.concat(data)
-
+# def return_experiment_attributes(ex_id, index_tsv_directory=INDEX_DIR):
+#     search = os.path.join('{d}'.format(d=index_tsv_directory.rstrip('/')), '*.tsv')
+#     for ifile in glob(search):
+#         df = pd.read_csv(ifile, sep='\t', index_col=0)
+#     full_index = pd.concat(data)
 
 
 # global default value
@@ -65,7 +63,7 @@ class Experiment_Attribute_Index(object):
         # make sure there is a backslash at the end of the directory name
         self.dir = '{dir}/'.format(dir=index_tsv_directory.rstrip('/'))
         #ensure_dir_exists(self.dir)
-        self.files = glob(self.dir + '*.tsv')
+        self.files = glob.glob(self.dir + '*.tsv')
         self.attribute_index = {}
         self.ex_ids = []
         self.unflagged_ex_ids = []
@@ -200,11 +198,13 @@ def organize_plate_metadata(ex_id):
     #    print i
     return hours, label, sub_label, pID, day
 
+
+
+
 if __name__ == '__main__':
     ei = Experiment_Attribute_Index2()
-
     # examples of possible usages
-    print len(ei.ex_ids), 'total'
+    print len(ei.index), 'total'
     #print len(ei.unflagged_ex_ids), 'unflagged'
     '''
     print ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_aging')
