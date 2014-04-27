@@ -118,7 +118,9 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     for day in sorted(data_by_days):
         all_data = []
         for eID in data_by_days[day][:]:
-            plate_data = return_flattened_plate_timeseries(eID, dataset, data_type)
+            #plate_data = return_flattened_plate_timeseries(eID, dataset, data_type)
+            plate_data = list(read_table(ID=eID, data_type=data_type, dset=dataset,
+                                         ID_type='p', file_tag='timeseries').unstack())
             all_data.extend(list(plate_data))
 
         if verbose:
@@ -133,9 +135,6 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
                               stats.scoreatpercentile(all_data, 75)]
 
     print 'writing'
-    #write_dset_summary(data=day_distributions, sum_type='dist', ID=label,
-    #                   data_type=data_type, dataset=dataset
-
     write_table(ID=label, ID_type='dset', dataframe=day_distributions, data_type=data_type,
                 dset=dataset, file_tag='dist')
 
@@ -273,7 +272,9 @@ def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):
 
     for i, ex_id in enumerate(ex_ids):
 
-        flat_data = return_flattened_plate_timeseries(ex_id, dataset, data_type)
+        #flat_data = return_flattened_plate_timeseries(ex_id, dataset, data_type)
+        flat_data = list(read_table(ID=eID, data_type=data_type, dset=dataset,
+                                    ID_type='p', file_tag='timeseries').unstack())
         if not len(flat_data):
             continue
 

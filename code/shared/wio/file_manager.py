@@ -437,30 +437,31 @@ def read_dset_summary(data_type, dataset, sum_type='basic', ID=None, dset_dir=No
 #         print '{N} nans removed'.format(N=N_w_nan-N_wo_nan)
 #     return flat_data
 
-def return_flattened_plate_timeseries(ex_id, dataset, data_type):
-    """
-    """
-    df = read_table(ID=ex_id, data_type=data_type, ID_type='p',
-                    file_type='h5', dset=dataset, file_tag='timeseries')
-    print df
-    s = df.unstack()
-    print s
-    '''
-    #times, data = parse_plate_timeseries_txt_file(dfile)
-    flat_data = []
-    if not len(times):
-        return []
-    for i, t_bin in enumerate(data):
-        flat_data.extend(list(t_bin))
-    # take data out of bins and remove nan values
-    flat_data = np.array(flat_data)
-    N_w_nan = len(flat_data)
-    flat_data = flat_data[np.logical_not(np.isnan(flat_data))]
-    N_wo_nan = len(flat_data)
-    if N_wo_nan != N_wo_nan:
-        print '{N} nans removed'.format(N=N_w_nan-N_wo_nan)
-    return flat_data
-    '''
+# def return_flattened_plate_timeseries(ex_id, dataset, data_type):
+#     """
+#     """
+#     df = read_table(ID=ex_id, data_type=data_type, ID_type='p',
+#                     dset=dataset, file_tag='timeseries')
+#     print df
+#     s = df.unstack()
+#     print s
+#     return list(s)
+#     '''
+#     #times, data = parse_plate_timeseries_txt_file(dfile)
+#     flat_data = []
+#     if not len(times):
+#         return []
+#     for i, t_bin in enumerate(data):
+#         flat_data.extend(list(t_bin))
+#     # take data out of bins and remove nan values
+#     flat_data = np.array(flat_data)
+#     N_w_nan = len(flat_data)
+#     flat_data = flat_data[np.logical_not(np.isnan(flat_data))]
+#     N_wo_nan = len(flat_data)
+#     if N_wo_nan != N_wo_nan:
+#         print '{N} nans removed'.format(N=N_w_nan-N_wo_nan)
+#     return flat_data
+#     '''
 
 
 def get_annotations(dataset, data_type, label='all'):
