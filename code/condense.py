@@ -34,7 +34,7 @@ from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 def main(args):    
     for dset in args.dataset:
 
-        data_types = FULL_SET
+        data_types = FULL_SET[:]
         if args.run:
             # TODO: write a check to make dset is really a dataset.
             args.dist = args.perc = args.sum = True
