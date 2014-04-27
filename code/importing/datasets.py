@@ -118,7 +118,9 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     for day in sorted(data_by_days):
         all_data = []
         for eID in data_by_days[day][:]:
-            plate_data = list(return_flattened_plate_timeseries(eID, dataset, data_type))
+            #plate_data = list(return_flattened_plate_timeseries(eID, dataset, data_type))
+            plate_data = list(read_table(ID=ex_id, data_type=data_type, ID_type='p', dset=dataset, file_tag='timeseries').unstack())
+                     
             if plate_data == None or len(plate_data) == 0:
                 continue
             all_data.extend(plate_data)
@@ -275,8 +277,10 @@ def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):
 
     for i, ex_id in enumerate(ex_ids):
 
-        flat_data = return_flattened_plate_timeseries(ex_id, dataset, data_type)
-        if not len(flat_data):
+        #flat_data = return_flattened_plate_timeseries(ex_id, dataset, data_type)
+        flat_data = list(read_table(ID=ex_id, data_type=data_type, ID_type='p', dset=dataset, file_tag='timeseries').unstack())
+
+        if flat_data == None or not len(flat_data):
             continue
 
         hour, label, sub_label, pID, day = organize_plate_metadata(ex_id)
