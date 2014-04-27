@@ -239,13 +239,13 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
 
 def write_plate_timeseries(ex_id, blob_ids=[], measurements=FULL_SET[:], index='default'):
 
-    if len(blob_ids) == 0:
+    if blob_ids == None or len(blob_ids) == 0:
         blob_ids = get_good_blobs(ex_id)
-    if len(blob_ids) == 0:
+    if blob_ids == None or len(blob_ids) == 0:
         return
             
     for metric in measurements:
-        print metric, len(blob_ids), blob_ids[:4]
+        print metric, len(blob_ids) #, blob_ids[:4]
         blobs = []
         blob_ids = list(set(blob_ids))
         if index ==  None:
@@ -255,15 +255,20 @@ def write_plate_timeseries(ex_id, blob_ids=[], measurements=FULL_SET[:], index='
         else:
             df = pd.DataFrame(index=index)
 
-        for blob_id in blob_ids[1:]:
+        N = len(blob_ids[1:])
+        for i, blob_id in enumerate(blob_ids[1:]):
             # calculate metric for blob, skip if empty list returned        
             btimes, bdata = pull_blob_data(blob_id, metric=metric)
             btimes = [round(t, ndigits=1) for t in btimes]
 
+            if bdata == None:
+                continue
             if len(bdata) == 0:
                 continue
             blob_series = pd.Series(bdata, index=btimes, name=blob_id)
-            print blob_id, len(blob_series)
+            print '\t{i} of {N} | {ID} | points: {p}'.format(i=i, N=N,
+                                                        ID=blob_id, p = len(blob_series))
+                                                        
             if type(df) == type(None):
                 df = pd.DataFrame(blob_series)
             elif len(blob_series) > 0:
