@@ -118,8 +118,10 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     for day in sorted(data_by_days):
         all_data = []
         for eID in data_by_days[day][:]:
-            plate_data = return_flattened_plate_timeseries(eID, dataset, data_type)
-            all_data.extend(list(plate_data))
+            plate_data = list(return_flattened_plate_timeseries(eID, dataset, data_type))
+            if plate_data == None or len(plate_data) == 0:
+                continue
+            all_data.extend(plate_data)
 
         if verbose:
             print '\tday {d} | recordings:{r} | timepoints: {t}'.format(d=day,
