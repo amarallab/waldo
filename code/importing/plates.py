@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Filename: consolidate_plates.py
+Filename: plates.py
 Description:
 
 either: 
@@ -28,67 +28,67 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.plate_utilities import get_plate_files,  \
-     write_dset_summary, \
-     return_flattened_plate_timeseries, organize_plate_metadata
-
+from annotation.experiment_index import organize_plate_metadata
 from metrics.measurement_switchboard import pull_blob_data, \
      FULL_SET, STANDARD_MEASUREMENTS
 from metrics.compute_metrics import quantiles_for_data
+
 from wio.file_manager import get_good_blobs, get_dset
 from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
 from wio.file_manager import write_table, read_table
-     
-def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
-    """ this function joins timeseries from all blob_ids and returns the results.
-    by default, this is two lists. times and data (a list of lists containin values
-    for all blobs at that given time.
+from wio.file_manager import get_plate_files, write_dset_summary, \
+     return_flattened_plate_timeseries
 
-    params
-    blob_ids: (list)
-       the list of all blob ids that should be joined into the plate timeseries
-    metric: (str)
-       a string denoting what data_type the timeseries are.
-    return_array: (bool)
-       if false, this returns a dictionary rather than the default output.
-    """
-    data_dict = {}
-    for blob_id in blob_ids:
-        # calculate metric for blob, skip if empty list returned        
-        btimes, bdata = pull_blob_data(blob_id, metric=metric)
-        if len(bdata) == 0:
-            continue
-        # store blob values in comiled dict.
-        for t, value in izip(btimes, bdata):
-            new_key = round(t, ndigits=1)
-            if new_key not in data_dict:
-                data_dict[new_key] = []
-            data_dict[new_key].append(value)    
-
-
-    if not return_array:
-        return data_dict        
-
-    times, data = [], []
-    N_cols = 0
-    for t in sorted(data_dict):
-        row = data_dict[t]
-        if len(row) > 0:
-            times.append(t)
-            data.append(row)
-            if len(row) > N_cols:
-                N_cols = len(row)
-        
-    # fill out array with NAs        
-    filled_data = []
-    for d in data:
-        d = d + [np.nan] * N_cols
-        d = d[:N_cols]
-        filled_data.append(d)
-
-    times = np.array(times, dtype=float)
-    data = np.array(filled_data, dtype=float)
-    return times, data
+# def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
+#     """ this function joins timeseries from all blob_ids and returns the results.
+#     by default, this is two lists. times and data (a list of lists containin values
+#     for all blobs at that given time.
+#
+#     params
+#     blob_ids: (list)
+#        the list of all blob ids that should be joined into the plate timeseries
+#     metric: (str)
+#        a string denoting what data_type the timeseries are.
+#     return_array: (bool)
+#        if false, this returns a dictionary rather than the default output.
+#     """
+#     data_dict = {}
+#     for blob_id in blob_ids:
+#         # calculate metric for blob, skip if empty list returned
+#         btimes, bdata = pull_blob_data(blob_id, metric=metric)
+#         if len(bdata) == 0:
+#             continue
+#         # store blob values in comiled dict.
+#         for t, value in izip(btimes, bdata):
+#             new_key = round(t, ndigits=1)
+#             if new_key not in data_dict:
+#                 data_dict[new_key] = []
+#             data_dict[new_key].append(value)
+#
+#
+#     if not return_array:
+#         return data_dict
+#
+#     times, data = [], []
+#     N_cols = 0
+#     for t in sorted(data_dict):
+#         row = data_dict[t]
+#         if len(row) > 0:
+#             times.append(t)
+#             data.append(row)
+#             if len(row) > N_cols:
+#                 N_cols = len(row)
+#
+#     # fill out array with NAs
+#     filled_data = []
+#     for d in data:
+#         d = d + [np.nan] * N_cols
+#         d = d[:N_cols]
+#         filled_data.append(d)
+#
+#     times = np.array(times, dtype=float)
+#     data = np.array(filled_data, dtype=float)
+#     return times, data
 
 # '''
 # def write_plate_percentiles_old(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
@@ -218,25 +218,64 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
     # print p2.head()
     # '''
 
-def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
-    if not blob_ids:
-        #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
-        blob_ids = get_good_blobs(ex_id)
-    if not blob_ids:
-        return
-    #metadata = get_metadata(ID=blob_ids[0], **kwargs)    
-    #dataset = metadata.get('dataset', 'none')
+# def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
+#     if not blob_ids:
+#         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)
+#         blob_ids = get_good_blobs(ex_id)
+#     if not blob_ids:
+#         return
+#     #metadata = get_metadata(ID=blob_ids[0], **kwargs)
+#     #dataset = metadata.get('dataset', 'none')
+#
+#     for metric in measurements:
+#         times, data = consolidate_plate_timeseries(blob_ids, metric, return_array=True)
+#         write_timeseries_file(ID=ex_id,
+#                               ID_type='plate',
+#                               times=times,
+#                               data=data,
+#                               data_type=metric,
+#                               dset=get_dset(ex_id),
+#                               file_tag='timeseries')
 
-    dataset = get_dset(ex_id)
+def write_plate_timeseries(ex_id, blob_ids=[], measurements=FULL_SET[:], index='default'):
+
+    if len(blob_ids) == 0:
+        blob_ids = get_good_blobs(ex_id)
+    if len(blob_ids) == 0:
+        return
+            
     for metric in measurements:
-        times, data = consolidate_plate_timeseries(blob_ids, metric, return_array=True)
-        write_timeseries_file(ID=ex_id,
-                              ID_type='plate',
-                              times=times,
-                              data=data,
-                              data_type=metric,
-                              dset=dataset,
-                              file_tag='timeseries')                              
+        print metric, len(blob_ids), blob_ids[:4]
+        blobs = []
+        blob_ids = list(set(blob_ids))
+        if index ==  None:
+            df = None
+        elif index == 'default':
+            df = pd.DataFrame(index=np.arange(0.1, 3600.1,0.1))
+        else:
+            df = pd.DataFrame(index=index)
+
+        for blob_id in blob_ids[1:]:
+            # calculate metric for blob, skip if empty list returned        
+            btimes, bdata = pull_blob_data(blob_id, metric=metric)
+            btimes = [round(t, ndigits=1) for t in btimes]
+
+            if len(bdata) == 0:
+                continue
+            blob_series = pd.Series(bdata, index=btimes, name=blob_id)
+            print blob_id, len(blob_series)
+            if type(df) == type(None):
+                df = pd.DataFrame(blob_series)
+            elif len(blob_series) > 0:
+                df = df.join(blob_series, how='outer')
+
+        write_table(ID=ex_id,
+                    ID_type='plate',
+                    dataframe=df,
+                    data_type=metric,
+                    dset=get_dset(ex_id),
+                    file_tag='timeseries')
+
 
 if __name__ == '__main__':
     dataset = 'disease_models'
@@ -245,6 +284,7 @@ if __name__ == '__main__':
     #data_type = 'curve_bl'
     eID = '20131211_145827'
     eID = '20130414_140704'
-    #write_plate_timeseries(ex_id=eID)
+    write_plate_timeseries(ex_id=eID)
     metrics = FULL_SET[:]
-    write_plate_percentiles(ex_id=eID, metrics=metrics)
+    #write_plate_percentiles(ex_id=eID, metrics=metrics)
+

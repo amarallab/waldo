@@ -26,7 +26,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from importing.consolidate_dataset import write_combined_worm_percentiles, write_dset_summaries, \
+from importing.datasets import write_combined_worm_percentiles, write_dset_summaries, \
     preprocess_distribution_set
 from dsets.check_dset import show_dset, show_dset_completeness
 from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS

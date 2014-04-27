@@ -28,16 +28,13 @@ from skeletonize_outline import compute_skeleton_from_outline
 from encoding.decode_outline import decode_outline
 from filtering.filter_utilities import savitzky_golay
 from settings.local import SMOOTHING
-from wio.file_manager import get_timeseries, insert_data_into_db, write_timeseries_file
+from wio.file_manager import get_timeseries, write_timeseries_file
 from metrics.compute_metrics import euclidean
 
 # set defaults from settings file
 DEFAULT_ORDER = SMOOTHING['spine_order']
 DEFAULT_WINDOW = SMOOTHING['spine_window']
 N_spine_pts = 50
-
-#NA = np.nan
-#NA_spine = [np.nan, np.nan] * N_spine_pts 
 
 def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     '''
@@ -112,35 +109,35 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
         #                      times=times, data=treated_spines)
     return times, treated_spines, flagged_timepoints
 
-def show_worm_video(spine_timedict):
-    '''
-    quick dirty way of sequentially looking at images in a spine timedict.
-    '''
-    import pylab as pl
-
-    times = sorted([(float(t.replace('?', '.')), t) for t in spine_timedict])
-    pl.ion()
-    for tf, t in times[:]:
-        spine = spine_timedict[t]
-
-        sx = [v[0] for v in spine] 
-        sy = [v[1] for v in spine]
-        pl.plot(sx, sy, color='blue')
-
-        center_x, center_y = spine[len(spine) / 2]
-        window_size = 2
-        pl.xlim([int(center_x) - window_size, int(center_x) + window_size])
-        pl.ylim([int(center_y) - window_size, int(center_y) + window_size])
-        pl.raw()
-        pl.clf()
-
-'''
-def smooth_and_space_xy_points(points, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WINDOW, point_num=50):
-    xs, ys = zip(*points)
-    filtered_xs = list(savitzky_golay(np.array(xs), window_size=window_size, order=poly_order))
-    filtered_ys = list(savitzky_golay(np.array(ys), window_size=window_size, order=poly_order))
-    return equally_space(zip(filtered_xs, filtered_ys), points=point_num)
-'''
+# def show_worm_video(spine_timedict):
+#     '''
+#     quick dirty way of sequentially looking at images in a spine timedict.
+#     '''
+#     import pylab as pl
+#
+#     times = sorted([(float(t.replace('?', '.')), t) for t in spine_timedict])
+#     pl.ion()
+#     for tf, t in times[:]:
+#         spine = spine_timedict[t]
+#
+#         sx = [v[0] for v in spine]
+#         sy = [v[1] for v in spine]
+#         pl.plot(sx, sy, color='blue')
+#
+#         center_x, center_y = spine[len(spine) / 2]
+#         window_size = 2
+#         pl.xlim([int(center_x) - window_size, int(center_x) + window_size])
+#         pl.ylim([int(center_y) - window_size, int(center_y) + window_size])
+#         pl.raw()
+#         pl.clf()
+#
+# '''
+# def smooth_and_space_xy_points(points, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WINDOW, point_num=50):
+#     xs, ys = zip(*points)
+#     filtered_xs = list(savitzky_golay(np.array(xs), window_size=window_size, order=poly_order))
+#     filtered_ys = list(savitzky_golay(np.array(ys), window_size=window_size, order=poly_order))
+#     return equally_space(zip(filtered_xs, filtered_ys), points=point_num)
+# '''
 
 def treat_spine(times, spines, poly_order=DEFAULT_ORDER,
                 window_size=DEFAULT_WINDOW, verbose=True):
@@ -190,7 +187,7 @@ def treat_spine(times, spines, poly_order=DEFAULT_ORDER,
     
     #treated_spines = map(lambda x: equally_space(x, points=50), treated_spines)
     treated_spines = [equally_space(x, points=50) for x in treated_spines]
-    # TODO: trouble shoot code to remove
+    # TODO: trouble shoot code and remove this
     '''
     spaced = []
     for spine in spines:
