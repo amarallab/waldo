@@ -30,12 +30,12 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import get_plate_files #, read_plate_timeseries
-from wio.file_manager import return_flattened_plate_timeseries, write_dset_summary
+#from wio.file_manager import write_dset_summary
 # format_dset_summary_name
 from wio.file_manager import format_dirctory, ensure_dir_exists, get_dset
 from wio.file_manager import write_table, read_table
 from metrics.measurement_switchboard import STANDARD_MEASUREMENTS
-from annotation.experiment_index import Experiment_Attribute_Index2
+from annotation.experiment_index import Experiment_Attribute_Index2, organize_plate_metadata
 from wio.file_manager import get_annotations
 
 # globals
@@ -112,14 +112,15 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
     # initialize data-frames
     xmin, xmax = xlim
     bins = np.linspace(xmin, xmax, 5000)
-    day_distributions = pd.DataFrame(index=bins)
+    #print len(bins), bins
+    day_distributions = pd.DataFrame(index=bins[1:])
     day_quartiles = pd.DataFrame(index=['q1', 'm', 'q3'])
     # calculate distributions across all days and add to dataframes
     for day in sorted(data_by_days):
         all_data = []
         for eID in data_by_days[day][:]:
             #plate_data = list(return_flattened_plate_timeseries(eID, dataset, data_type))
-            plate_data = list(read_table(ID=ex_id, data_type=data_type, ID_type='p', dset=dataset, file_tag='timeseries').unstack())
+            plate_data = list(read_table(ID=eID, data_type=data_type, ID_type='p', dset=dataset, file_tag='timeseries').unstack())
                      
             if plate_data == None or len(plate_data) == 0:
                 continue
@@ -131,6 +132,7 @@ def generate_distribution(dataset, data_type, label, xlim, verbose=True):
                                                                         t=len(all_data))
 
         Ns, bins = np.histogram(all_data, bins=bins)
+        #print len(Ns), 'hist values', len(day_distributions)
         day_distributions[day] = np.array(Ns, dtype=float) / sum(Ns)
         day_quartiles[day] = [stats.scoreatpercentile(all_data, 25),
                               stats.scoreatpercentile(all_data, 50),
