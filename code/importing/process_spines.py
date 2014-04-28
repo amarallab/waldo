@@ -140,7 +140,7 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, repro
     else: # excicute this code if for loop does not break        
         if just_centroid:
             write_plate_timeseries(ex_id, blob_ids=good_blobs, 
-                                   measurments=['cent_speed_bl',
+                                   data_types=['cent_speed_bl',
                                                 'angle_change',
                                                 'go_dur',
                                                 'stop_dur'], **kwargs)

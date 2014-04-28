@@ -28,7 +28,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-#from annotation.experiment_index import organize_plate_metadata
+from annotation.experiment_index import organize_plate_metadata
 from metrics.measurement_switchboard import pull_blob_data, \
      FULL_SET, STANDARD_MEASUREMENTS
 from metrics.compute_metrics import quantiles_for_data
@@ -36,6 +36,8 @@ from metrics.compute_metrics import quantiles_for_data
 from wio.file_manager import get_good_blobs, get_dset
 #from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
 from wio.file_manager import write_table, read_table
+#from wio.file_manager import get_plate_files, write_dset_summary, 
+#     return_flattened_plate_timeseries
 
 # def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
 #     """ this function joins timeseries from all blob_ids and returns the results.
@@ -235,15 +237,15 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
 #                               dset=get_dset(ex_id),
 #                               file_tag='timeseries')
 
-def write_plate_timeseries(ex_id, blob_ids=[], measurements=FULL_SET[:], index='default'):
+def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='default'):
 
     if blob_ids == None or len(blob_ids) == 0:
         blob_ids = get_good_blobs(ex_id)
     if blob_ids == None or len(blob_ids) == 0:
         return
             
-    for metric in measurements:
-        print metric, len(blob_ids) #, blob_ids[:4]
+    for data_type in data_types:
+        print data_type, len(blob_ids) #, blob_ids[:4]
         blobs = []
         blob_ids = list(set(blob_ids))
         if index ==  None:
@@ -255,27 +257,32 @@ def write_plate_timeseries(ex_id, blob_ids=[], measurements=FULL_SET[:], index='
 
         N = len(blob_ids[1:])
         for i, blob_id in enumerate(blob_ids[1:]):
-            # calculate metric for blob, skip if empty list returned        
-            btimes, bdata = pull_blob_data(blob_id, metric=metric)
+            # calculate data_type for blob, skip if empty list returned        
+            btimes, bdata = pull_blob_data(blob_id, data_type=data_type)
             btimes = [round(t, ndigits=1) for t in btimes]
 
             if bdata == None:
                 continue
             if len(bdata) == 0:
                 continue
-            blob_series = pd.Series(bdata, index=btimes, name=blob_id)
+            blob_data = pd.DataFrame(bdata, name=blob_id)
+            blob_data['time'] = btimes
+            blob_data['bID'] = blob_id
+            blob_data.set_index(keys=['bID', 'time'])
             print '\t{i} of {N} | {ID} | points: {p}'.format(i=i, N=N,
                                                         ID=blob_id, p = len(blob_series))
-                                                        
-            if type(df) == type(None):
-                df = pd.DataFrame(blob_series)
+
+            
+            if isinstance(df, None):
+                df = blob_data
             elif len(blob_series) > 0:
-                df = df.join(blob_series, how='outer')
+                #df = df.join(blob_series, how='outer')
+                df.append(blob_data)
 
         write_table(ID=ex_id,
                     ID_type='plate',
                     dataframe=df,
-                    data_type=metric,
+                    data_type=data_type,
                     dset=get_dset(ex_id),
                     file_tag='timeseries')
 

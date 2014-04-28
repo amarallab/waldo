@@ -7,7 +7,6 @@ Description: holds many low-level scripts for finding, sorting, and saving files
 in a rigid directory structure.
 '''
 
-
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
@@ -30,8 +29,6 @@ SHARED_DIR = CODE_DIR + '/shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-#for i in sys.path:
-#    print i
 # nonstandard imports
 from settings.local import LOGISTICS
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
@@ -232,9 +229,8 @@ def write_table(ID, data_type, dataframe,
                                file_dir=file_dir)    
     dataframe.to_hdf(filename, 'fixed', complib='zlib')
 
-def read_table(ID, data_type, ID_type='w', file_type='h5',
-                dset=None, file_tag='',
-                file_dir=None):
+def read_table(ID, data_type, ID_type='p', file_type='h5',
+               dset=None, file_tag='timeseries', file_dir=None):                   
     # universal file formatting
     filename = format_filename(ID=ID, 
                                ID_type=ID_type,
@@ -243,7 +239,12 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
                                dset=dset, 
                                file_tag=file_tag,
                                file_dir=file_dir)
-    return pd.read_hdf(filename, 'fixed')
+    if os.path.isfile(filename):
+        return pd.read_hdf(filename, 'fixed')
+    else:
+        print '{f} is missing'.format(f=os.path.abspath(filename))
+        return None
+
 
 def get_timeseries(ID, data_type, 
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
