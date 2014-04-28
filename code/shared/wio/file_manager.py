@@ -7,7 +7,6 @@ Description: holds many low-level scripts for finding, sorting, and saving files
 in a rigid directory structure.
 '''
 
-
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
@@ -30,8 +29,6 @@ SHARED_DIR = CODE_DIR + '/shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-#for i in sys.path:
-#    print i
 # nonstandard imports
 from settings.local import LOGISTICS
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
