@@ -150,9 +150,9 @@ def main(args, db_attribute):
 if __name__ == '__main__':
     # Toggles
     db_attribute = ('dataset', 'N2_aging')
-    #db_attribute = ('dataset', 'and')
-    #db_attribute = ('dataset', 'disease_models')
-    db_attribute = ('dataset', 'thermo_recovery')
+    db_attribute = ('dataset', 'and')
+    db_attribute = ('dataset', 'disease_models')
+    #db_attribute = ('dataset', 'thermo_recovery')
     #db_attribute = ('dataset', 'zoom_test')
     #db_attribute = ('dataset', 'copas_TJ3001_lifespan')
     parser = create_parser(for_qsub=True)

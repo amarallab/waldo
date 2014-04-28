@@ -28,16 +28,14 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from annotation.experiment_index import organize_plate_metadata
+#from annotation.experiment_index import organize_plate_metadata
 from metrics.measurement_switchboard import pull_blob_data, \
      FULL_SET, STANDARD_MEASUREMENTS
 from metrics.compute_metrics import quantiles_for_data
 
 from wio.file_manager import get_good_blobs, get_dset
-from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
+#from wio.file_manager import get_timeseries, get_metadata, write_timeseries_file
 from wio.file_manager import write_table, read_table
-from wio.file_manager import get_plate_files, write_dset_summary, \
-     return_flattened_plate_timeseries
 
 # def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
 #     """ this function joins timeseries from all blob_ids and returns the results.

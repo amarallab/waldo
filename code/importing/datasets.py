@@ -305,7 +305,8 @@ def consolidate_dset_from_plate_timeseries(dataset, data_type, verbose=True):
                                                                          N=len(flat_data),
                                                                          h=round(hour, ndigits=1),
                                                                          l=label)
-    return pd.DataFrame(data, index_col=['ex_ids'])
+    df = pd.DataFrame(data)
+    return df
 
 # MAIN FUNCTION
 def write_combined_worm_percentiles(dataset):
@@ -389,7 +390,7 @@ def write_dset_summaries(dataset, data_types=STANDARD_MEASUREMENTS):
 
         write_table(ID=dataset,
                     ID_type='dset',
-                    dataframe=df,
+                    dataframe=summary,
                     data_type=data_type,
                     dset=dataset,
                     file_tag='basic')
