@@ -229,9 +229,8 @@ def write_table(ID, data_type, dataframe,
                                file_dir=file_dir)    
     dataframe.to_hdf(filename, 'fixed', complib='zlib')
 
-def read_table(ID, data_type, ID_type='w', file_type='h5',
-                dset=None, file_tag='',
-                file_dir=None):
+def read_table(ID, data_type, ID_type='p', file_type='h5',
+               dset=None, file_tag='timeseries', file_dir=None):                   
     # universal file formatting
     filename = format_filename(ID=ID, 
                                ID_type=ID_type,
@@ -240,7 +239,12 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
                                dset=dset, 
                                file_tag=file_tag,
                                file_dir=file_dir)
-    return pd.read_hdf(filename, 'fixed')
+    if os.path.isfile(filename):
+        return pd.read_hdf(filename, 'fixed')
+    else:
+        print '{f} is missing'.format(f=os.path.abspath(filename))
+        return None
+
 
 def get_timeseries(ID, data_type, 
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
