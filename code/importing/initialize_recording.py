@@ -33,10 +33,9 @@ sys.path.append(JOINING_DIR)
 
 # nonstandard imports
 from settings.local import LOGISTICS, FILTER, JOINING
-
 from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
-from wio.file_manager import write_timeseries_file, write_metadata_file, format_dirctory
+from wio.file_manager import write_timeseries_file, write_metadata_file, format_directory
 
 
 DATA_DIR = LOGISTICS['filesystem_data']
@@ -51,7 +50,7 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
                                     data_dir=DATA_DIR, store_tmp=True, **kwargs):
 
     # remove existing directory if overwite == true
-    init_dir = os.path.abspath(format_dirctory(ID=ex_id,ID_type='worm'))
+    init_dir = os.path.abspath(format_directory(ID=ex_id,ID_type='worm'))
     print 'overwite previous data is: {o}'.format(o=overwrite)
     if overwrite and os.path.isdir(init_dir):
         print 'removing: {d}'.format(d=init_dir)                                       
