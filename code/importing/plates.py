@@ -272,7 +272,6 @@ def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='de
             print '\t{i} of {N} | {ID} | points: {p}'.format(i=i, N=N,
                                                         ID=blob_id, p = len(blob_series))
 
-            
             if isinstance(df, None):
                 df = blob_data
             elif len(blob_series) > 0:

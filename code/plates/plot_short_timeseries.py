@@ -26,7 +26,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import format_results_filename, get_dset
-from wio.plate_utilities import read_plate_timeseries, get_plate_files
+from wio.plate_utilities import read_table, get_plate_files
 from wormmetrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from annotation.experiment_index import Experiment_Attribute_Index2
 
@@ -80,7 +80,9 @@ def pick_ticks(maxdata, ndig=1, step_inc=0.1):
 
 def add_plate_median(ax, ex_id, dataset, data_type):
     print '\tadding', data_type
-    times, data = read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries')    
+    #times, data = read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries')
+    df = read_table(id=ex_id, data_type=data_type, dset=dataset)
+    print df.head()
     times, data = preprocess_plate_timeseries(times, data)
     if times == None or data == None:
         ax.set_yticks([])

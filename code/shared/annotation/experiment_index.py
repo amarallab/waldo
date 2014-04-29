@@ -173,7 +173,7 @@ def ex_id_to_datetime(ex_id):
     year, month, day = map(int, [ymd[:4], ymd[4:6], ymd[6:]])
     h, m, s = map(int, [hms[:2], hms[2:-2], hms[-2:]])
     return datetime.datetime(year, month, day, h, m, s)
-
+    
 def organize_plate_metadata(ex_id):
     '''
     gets the most relevant features from the experiment index

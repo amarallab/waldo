@@ -52,6 +52,7 @@ if TIME_SERIES_FILE_TYPE == 'hdf5':
 #ensure_dir_exists(WORM_DIR)
         
 def silent_remove(filename):
+    """ delete a file. if file does not exist, no error is raised. """
     try:
         os.remove(filename)
     except OSError:
@@ -69,26 +70,44 @@ def ensure_dir_exists(path):
                 print 'created:{d}'.format(d=savedir)
     return savedir
 
-def manage_save_path(out_dir, path_tag, ID, data_type):
-    ''' returns a unique descriptive file name to store data and makes sure path to it exists'''
-    # get directories in order
-    out_dir = '{d}/{tag}/'.format(d=out_dir.rstrip('/'), tag=path_tag.lstrip('/'))
-    out_dir = ensure_dir_exists(out_dir.rstrip('/'))
-
-    #now_string = time.ctime().replace('  ', '_').replace(' ', '_')
-    #now_string = now_string.replace(':', '.').strip()
-    save_name = '{path}/{ID}-{dt}'.format(path=out_dir, ID=ID, dt=data_type)
-    #print save_name
-    return save_name
-
+# def manage_save_path(out_dir, path_tag, ID, data_type):                            #
+#     # get directories in order                                                     #
+#     out_dir = '{d}/{tag}/'.format(d=out_dir.rstrip('/'), tag=path_tag.lstrip('/')) #
+#     out_dir = ensure_dir_exists(out_dir.rstrip('/'))                               #
+#                                                                                    #
+#     #now_string = time.ctime().replace('  ', '_').replace(' ', '_')                #
+#     #now_string = now_string.replace(':', '.').strip()                             #
+#     save_name = '{path}/{ID}-{dt}'.format(path=out_dir, ID=ID, dt=data_type)       #
+#     #print save_name                                                               #
+#     return save_name                                                               #
 
 def get_dset(ex_id):
+    """ returns the dataset that a ex_id belongs to. default is: 'something' """
     ei = Experiment_Attribute_Index()
     return ei.attribute_index.get(ex_id, {}).get('dataset', 'something')
 
 
 def format_dirctory(ID_type, dataset='', tag='', ID='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
+    """
+    returns the directory in which to find the file of given specifications.
+
+    params
+    ID: (str)
+        identification string. could be a blob_id, ex_id, or dataset name.
+    ID_type: (str)
+        the level of data aggregation 'plate', 'dset', or 'worm'
+    dataset: (str)
+        the group of recordings this data belongs to
+    tag: (str)
+        another, more arbitrary identification string.
+    worm_dir: (str)
+        the directory in which all worm level data should be saved
+    plate_dir: (str)
+        the directory in which all plate level data should be saved
+    dset_dir: (str)
+        the directory in which all dataset level data should be saved    
+    """
     if str(ID_type) in ['worm', 'w']:
         ex_id = '_'.join(ID.split('_')[:2])
         file_dir = '{path}/{eID}'.format(path=worm_dir.rstrip('/'), eID=ex_id)
@@ -125,6 +144,7 @@ def format_results_filename(ID, result_type, tag=None,
                             file_type='png',
                             file_dir = RESULT_DIR,
                             ensure=False):
+    
     # get fields in order before file creation
     if date_stamp == None:
         date_stamp = datetime.date.today()
@@ -165,7 +185,39 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
                     file_dir = None,
                     dset=None, file_tag='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
+    """
+    returns the name of a file which matches the specified parameters.
+    automatically creates the directory for that file if it does not exist.
 
+    the general form for worms is:
+        {dir}/{ex_id}/{blob_id}-{data_type}.{file_type}
+
+    the general form for plates and datasets is:
+        {dir}/{dataset}/{tag}/{id}-{data_type}.{file_type}
+    
+    params
+    ID: (str)
+        identification string. could be a blob_id, ex_id, or dataset name.
+    ID_type: (str)
+        the level of data aggregation 'plate', 'dset', or 'worm'
+    dataset: (str)
+        the group of recordings this data belongs to
+    file_tag: (str)
+        another, more arbitrary identification string.
+    file_dir: (str or None)
+        the path to a non-default directory you want to save the file in.
+    worm_dir: (str)
+        the default directory in which all worm level data should be saved
+    plate_dir: (str)
+        the default directory in which all plate level data should be saved
+    dset_dir: (str)
+        the default directory in which all dataset level data should be saved
+
+
+    returns:
+    filename: (str)
+        the name of the file.
+    """
     errmsg = 'id must be string, not {i}'.format(i=ID)
     assert isinstance(ID, basestring), errmsg
 
@@ -190,66 +242,27 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
                                                ID=ID,
                                                dt=data_type, 
                                                ft=file_type)
-     
-def write_timeseries_file(ID, data_type, times, data, 
-                          ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
-                          dset=None, file_tag='',
-                          file_dir=None, **kwargs):
-    # if data not provided. write will fail. return False.
-    if len(data) == 0:
-        return False
-
-    # universal file formatting
-    filename = format_filename(ID=ID, 
-                               ID_type=ID_type,
-                               data_type=data_type, 
-                               file_type=file_type,
-                               dset=dset, 
-                               file_tag=file_tag,
-                               file_dir=file_dir)
-    # save method depends on file_type
-    if file_type == 'json':
-        json.dump({'time':times, 'data':data}, open(filename, 'w'))
-    if file_type == 'h5':        
-        write_h5_timeseries_base(filename, times, data)
-    return True
-
-# TODO clean up read/write table
-def write_table(ID, data_type, dataframe, 
-                ID_type='w',
-                dset=None, file_tag='',
-                file_dir=None, **kwargs):
-    # universal file formatting
-    filename = format_filename(ID=ID, 
-                               ID_type=ID_type,
-                               data_type=data_type, 
-                               file_type='h5',
-                               dset=dset, 
-                               file_tag=file_tag,
-                               file_dir=file_dir)    
-    dataframe.to_hdf(filename, 'fixed', complib='zlib')
-
-def read_table(ID, data_type, ID_type='p', file_type='h5',
-               dset=None, file_tag='timeseries', file_dir=None):                   
-    # universal file formatting
-    filename = format_filename(ID=ID, 
-                               ID_type=ID_type,
-                               data_type=data_type, 
-                               file_type=file_type,
-                               dset=dset, 
-                               file_tag=file_tag,
-                               file_dir=file_dir)
-    if os.path.isfile(filename):
-        return pd.read_hdf(filename, 'fixed')
-    else:
-        print '{f} is missing'.format(f=os.path.abspath(filename))
-        return None
-
 
 def get_timeseries(ID, data_type, 
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE, 
                    dset=None, file_tag='',
-                   file_dir=None, **kwargs):                   
+                   file_dir=None, **kwargs):
+    """
+    reads a h5 file containing a pandas dataframe and returns the dataframe.
+    used for individual worms but not plates or datasets.
+            
+    params
+    ID: (str)
+        primary identification string.
+    ID_type: (str)
+        the level of data aggregation 'plate' or 'dset'
+    dataset: (str or None)
+        the group of recordings this data belongs to
+    file_tag: (str)
+        the name of the directory housing the file
+    file_dir: (str or None)
+        the full path the directory of the file you want to load
+    """    
     # universal file formatting
     filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,                               
                                dset=dset, file_tag=file_tag,
@@ -269,8 +282,139 @@ def get_timeseries(ID, data_type,
             print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
         return times, data
     return None, None
+         
+def write_timeseries_file(ID, data_type, times, data, 
+                          ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
+                          dset=None, file_tag='',
+                          file_dir=None, **kwargs):
+    """
+    writes a file containing timeseries data. currently only used for
+    individual worm timeseries.
+    
+    the general form for worms is:
+        {dir}/{ex_id}/{blob_id}-{data_type}.{file_type}
+
+    params
+    ID: (str)
+        identification string. could be a blob_id, ex_id, or dataset name.
+    ID_type: (str)
+        the level of data aggregation 'plate', 'dset', or 'worm'
+    times: (list or np.array)
+        a one dimensional array labeling rows. usually floats, but could be str.
+    data: (list of np.array)
+        an array containing the main data. must be same len as 'times'
+    dataset: (str)
+        the group of recordings this data belongs to
+    file_tag: (str)
+        another, more arbitrary identification string.        
+    file_type: (str)
+        can be 'h5' or 'json'
+    file_dir: (str or None)
+        the path to a non-default directory you want to save the file in.
+                
+    returns:
+    success: (bool)
+       returns true if data exists and file was written.
+    """    
+    # if data not provided. write will fail. return False.
+    if len(data) == 0:
+        return False
+
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type, 
+                               file_type=file_type,
+                               dset=dset, 
+                               file_tag=file_tag,
+                               file_dir=file_dir)
+    # save method depends on file_type
+    if file_type == 'json':
+        json.dump({'time':times, 'data':data}, open(filename, 'w'))
+    elif file_type == 'h5':        
+        write_h5_timeseries_base(filename, times, data)
+    else:
+        return false
+        
+    if os.path.isfile(filename):
+        return True
+    else:
+        return False
+    
+# TODO clean up read/write table
+def write_table(ID, data_type, dataframe, ID_type='p',                
+                dset=None, file_tag='', file_dir=None, **kwargs):                
+    """
+    writes an h5 file containing a pandas dataframe.
+    used for plate and dataset level aggregation, but not for individual worms.
+    
+    the general form for savenames is:
+        {dir}/{dataset}/{tag}/{id}-{data_type}.h5
+
+        
+    params
+    ID: (str)
+        primary identification string.
+    ID_type: (str)
+        the level of data aggregation 'plate' or 'dset'
+    dataframe: (pandas DataFrame)
+        the frame to be saved.
+    dataset: (str or None)
+        the group of recordings this data belongs to
+    file_tag: (str)
+        the name of the directory housing the file
+    file_dir: (str or None)
+        the path to a non-default directory you want to save the file in.
+    """        
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type, 
+                               file_type='h5',
+                               dset=dset, 
+                               file_tag=file_tag,
+                               file_dir=file_dir)    
+    dataframe.to_hdf(filename, 'fixed', complib='zlib')
+
+def read_table(ID, data_type, ID_type='p', file_type='h5',
+               dset=None, file_tag='timeseries', file_dir=None):
+    """
+    reads a h5 file containing a pandas dataframe and returns the dataframe.
+    used for plate and dataset level aggregation, but not for individual worms.
+    
+    the general form for savenames is:
+        {dir}/{dataset}/{tag}/{id}-{data_type}.h5
+        
+    params
+    ID: (str)
+        primary identification string.
+    ID_type: (str)
+        the level of data aggregation 'plate' or 'dset'
+    dataset: (str or None)
+        the group of recordings this data belongs to
+    file_tag: (str)
+        the name of the directory housing the file
+    file_dir: (str or None)
+        the full path the directory of the file you want to load
+    """
+
+    # universal file formatting
+    filename = format_filename(ID=ID, 
+                               ID_type=ID_type,
+                               data_type=data_type, 
+                               file_type=file_type,
+                               dset=dset, 
+                               file_tag=file_tag,
+                               file_dir=file_dir)
+    if os.path.isfile(filename):
+        return pd.read_hdf(filename, 'fixed')
+    else:
+        print '{f} is missing'.format(f=os.path.abspath(filename))
+        return None
+
 
 def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None, **kwargs):
+    
     # universal file formatting
     filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,                                                              
                                file_type='json', file_dir=file_dir)                               
@@ -284,19 +428,6 @@ def get_metadata(ID, data_type='metadata', ID_type='w', file_dir=None, **kwargs)
         return json.load(open(filename, 'r'))
     return None
 
-# def search_db_for_data(blob_id, data_type, **kwargs):
-#     try:
-#         db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
-#         print 'warning: could not find json file for', blob_id, data_type
-#         # either split data into times and data or leave alone
-#         # Stop everything if no to temp file or database doc.
-#         return db_doc
-#     except Exception as e:
-#         print '\nFailure! could not locate data'
-#         print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt=data_type)
-#         print e
-#         return None
-
 def get_ex_ids_in_worms(directory=WORM_DIR):
     search = '{path}/*'.format(path=directory.rstrip('/'))
     ex_ids = []
@@ -309,19 +440,6 @@ def get_ex_ids_in_worms(directory=WORM_DIR):
     for e1, e2 in zip(ex_ids, ex_ids2):
         assert e1 == e2, 'update get_ex_id code'
     return ex_ids
-
-def remove_plate_files(ex_id, file_tags):
-    dataset = get_dset(ex_id)
-
-    for tag in file_tags:
-        print tag
-        search_dir = os.path.abspath(format_dirctory(ID=ex_id, ID_type='plate',
-                                                     dataset=dataset, tag=tag))
-        search = '{d}/{eID}*'.format(d=search_dir, eID=ex_id)
-        for rfile in iglob(search):
-            print 'removing:', rfile
-            os.remove(rfile)
-
 
 def get_plate_files(dataset, data_type, tag='timeseries', path=None):
     if not path:
@@ -337,28 +455,18 @@ def get_plate_files(dataset, data_type, tag='timeseries', path=None):
                 file_paths.append(file_path)
     return ex_ids, file_paths
 
-# def format_plate_summary_name(ex_id, sum_type, dataset, data_type, path):
-#     filename = format_filename(ID=ex_id, ID_type='plate',
-#                                file_tag=sum_type,
-#                                dset=dataset,
-#                                data_type=data_type,
-#                                file_dir=path,
-#                                file_type='json')
-#     return filename
+def remove_plate_files(ex_id, file_tags):
+    dataset = get_dset(ex_id)
 
-# def format_dset_summary_name(data_type, dataset, sum_type, ID= None, dset_dir=None):
-#     if not ID:
-#         ID = dataset
-#     filename = format_filename(ID=ID, ID_type='dset',
-#                                data_type=data_type,
-#                                file_tag=sum_type,
-#                                dset=dataset,
-#                                file_dir=dset_dir,
-#                                file_type='json')
-#
-#     return filename
-
-
+    for tag in file_tags:
+        print tag
+        search_dir = os.path.abspath(format_dirctory(ID=ex_id, ID_type='plate',
+                                                     dataset=dataset, tag=tag))
+        search = '{d}/{eID}*'.format(d=search_dir, eID=ex_id)
+        for rfile in iglob(search):
+            print 'removing:', rfile
+            os.remove(rfile)
+'''
 def write_dset_summary(data, data_type, dataset, sum_type, ID=None, dset_dir=None):
     #filename = format_dset_summary_name(data_type, dataset, sum_type, ID, dset_dir)
     if not ID:
@@ -382,6 +490,50 @@ def read_dset_summary(data_type, dataset, sum_type='basic', ID=None, dset_dir=No
                                file_dir=dset_dir,
                                file_type='json')
     return json.load(open(filename, 'r'))
+'''
+            
+def get_annotations(dataset, data_type, label='all'):
+    ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
+    #print len(ex_ids), 'ex_ids found for', dataset, data_type
+    #print len(dfiles)
+    ids, days, files = [], [], []
+    labels = []
+    for eID, dfile in izip(ex_ids, dfiles):
+        #print eID, label
+        hours, elabel, sub_label, pID, day = organize_plate_metadata(eID)
+        if elabel not in labels:
+            labels.append(elabel)
+        if label == 'all' or str(label) == str(elabel):
+            #print elabel, eID, day
+            ids.append(eID)
+            files.append(dfile)
+            days.append(day)
+    #print labels
+    return ids, days, files
+
+
+
+# def format_plate_summary_name(ex_id, sum_type, dataset, data_type, path):
+#     filename = format_filename(ID=ex_id, ID_type='plate',
+#                                file_tag=sum_type,
+#                                dset=dataset,
+#                                data_type=data_type,
+#                                file_dir=path,
+#                                file_type='json')
+#     return filename
+
+# def format_dset_summary_name(data_type, dataset, sum_type, ID= None, dset_dir=None):
+#     if not ID:
+#         ID = dataset
+#     filename = format_filename(ID=ID, ID_type='dset',
+#                                data_type=data_type,
+#                                file_tag=sum_type,
+#                                dset=dataset,
+#                                file_dir=dset_dir,
+#                                file_type='json')
+#
+#     return filename
+
 
 
 # def write_plate_summary(data, ex_id, sum_type, dataset, data_type, path=None):
@@ -463,22 +615,3 @@ def read_dset_summary(data_type, dataset, sum_type='basic', ID=None, dset_dir=No
 #     return flat_data
 #     '''
 
-
-def get_annotations(dataset, data_type, label='all'):
-    ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)
-    #print len(ex_ids), 'ex_ids found for', dataset, data_type
-    #print len(dfiles)
-    ids, days, files = [], [], []
-    labels = []
-    for eID, dfile in izip(ex_ids, dfiles):
-        #print eID, label
-        hours, elabel, sub_label, pID, day = organize_plate_metadata(eID)
-        if elabel not in labels:
-            labels.append(elabel)
-        if label == 'all' or str(label) == str(elabel):
-            #print elabel, eID, day
-            ids.append(eID)
-            files.append(dfile)
-            days.append(day)
-    #print labels
-    return ids, days, files
