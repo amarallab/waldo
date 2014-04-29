@@ -68,7 +68,7 @@ def iter_through_worms(ex_id, data_type, blob_ids=None):
     for blob_id in blob_ids:
         times, data = pull_blob_data(blob_id, metric=data_type)
         if times != None and len(times):
-            print blob_id
+            #print blob_id
             yield blob_id, times, data
 
 def plot_all(ex_id, data_type):
