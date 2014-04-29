@@ -1,10 +1,13 @@
-
+#!/usr/bin/env python
 # coding: utf-8
+"""
+Look at data from a plate of worms
+"""
 
-# In[50]:
-
-import os
 import sys
+import os
+import argparse
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -40,7 +43,7 @@ def pull_plate_from_phoenix(ex_id, dataset, pull=True):
     cmd_p2 = 'scp -v {address}:{cmd} {dest}'.format(address=p_address, cmd=p2,  dest=d_p2)
     cmd_w1 = 'scp -rv {address}:{cmd} {dest}'.format(address=p_address, cmd=w1,  dest=d_w1)
     # run all the commands
-    for cmd in [cmd_p1, cmd_p2, cmd_w1]:    
+    for cmd in [cmd_p1, cmd_p2, cmd_w1]:
         print
         print cmd
         print
@@ -60,7 +63,7 @@ def iter_through_worms(ex_id, data_type, blob_ids=None):
        the blob_ids you would like to check for the datatype. by default all blobs with existing files are checked.
     '''
     if blob_ids == None:
-        blob_ids = get_good_blobs(ex_id=ex_id, data_type=data_type)
+        blob_ids = get_good_blobs(ex_id=ex_id, key=data_type)
     print '{N} blob_ids found'.format(N=len(blob_ids))
     for blob_id in blob_ids:
         times, data = pull_blob_data(blob_id, metric=data_type)
@@ -76,17 +79,22 @@ def plot_all(ex_id, data_type):
         ax.plot(times, data)
     plt.show()
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     # toggles
-    dataset = 'N2_aging'
-    #ex_id = '20130318_105559'
-    ex_id = '20130318_131111'    
-    data_type = 'length_mm'
-    
-    # if data not already local, run this command:
-    #pull_plate_from_phoenix(ex_id, dataset)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('dataset', type=str,
+        help='First classification of plate data (e.g. N2_aging)')
+    parser.add_argument('ex_id', type=str,
+        help='Experiment timestamp (e.g. 20130318_105559)')
+    parser.add_argument('data_type', type=str,
+        help='Type of data to view (e.g. length_mm)')
+    parser.add_argument('-f', '--fetch', action='store_true',
+        help='Fetch data from phoenix')
 
-    plot_all(ex_id, data_type)
+    args = parser.parse_args()
 
+    if args.fetch:
+        # if data not already local, run this command:
+        pull_plate_from_phoenix(args.ex_id, args.dataset)
 
-
+    plot_all(args.ex_id, args.data_type)

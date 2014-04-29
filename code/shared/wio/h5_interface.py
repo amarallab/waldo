@@ -30,79 +30,36 @@ sys.path.append(SHARED_DIR)
 
 OPTIONS = {}
 
-def write_h5_outlines(h5_file, h5_path, times, data):
-    pass
-    
 def write_h5_timeseries_base(h5_file, times, data):
     #print h5_file.split('/')[-1]
     #print type(times), type(data)
-    if type(times) != np.ndarray:
-        times = np.array(times) 
-    if type(data) != np.ndarray:
+    if not isinstance(times, np.ndarray):
+        times = np.array(times)
+    if not isinstance(data, np.ndarray):
         data = np.array(data)
     with h5py.File(h5_file, 'w') as f:
-        f.create_dataset(name='time',                           
+        f.create_dataset(name='time',
                            shape=times.shape,
                            dtype=times.dtype,
                            data=times,
                            chunks=True,
                            compression='lzf')
-        f.create_dataset(name='data',                           
+        f.create_dataset(name='data',
                            shape=data.shape,
                            dtype=data.dtype,
                            data=data,
                            chunks=True,
                            compression='lzf')
-                
-                                                               
+
+
 def read_h5_timeseries_base(h5_file):
-    times, data = [], []    
+    times, data = [], []
     with h5py.File(h5_file, 'r') as f:
         if u'time' in f.keys():
             times = np.array(f['time'])
         if u'data' in f.keys():
             data = np.array(f['data'])
     return times, data
-
-'''
-def write_h5_timeseries_base1(h5_file, h5_path, times, data):
-    times = np.array(times) 
-    data = np.array(data)
-    with h5py.File(h5_file, 'w') as f:
-        print 'writing', h5_path, h5_path in f
-        if h5_path in f:
-            grp = f[h5_path]
-        else:
-            grp = f.create_group(h5_path)
-        grp.create_dataset(name='time',                           
-                           shape=times.shape,
-                           dtype=times.dtype,
-                           data=times,
-                           chunks=True,
-                           compression='lzf')
-        grp.create_dataset(name='data',                           
-                           shape=data.shape,
-                           dtype=data.dtype,
-                           data=data,
-                           chunks=True,
-                           compression='lzf')
-                                                                               
-def read_h5_timeseries_base1(h5_file, h5_path):
-    times, data = [], []
-    print 'path', h5_path    
-    path_parts = map(unicode, h5_path.split('/'))
-    with h5py.File(h5_file, 'r') as f:
-        print 'read', path_parts[0], path_parts[0] in f        
-        print 'read', h5_path, h5_path in f
-        if h5_path in f:
-            grp = f[h5_path]
-            times = np.array(grp['time'])
-            data = np.array(grp['data'])
-    print len(times), len(data)
-    return times, data
-'''
-def delete_h5_dataset(h5_file, h5_path, times, data):
-    pass
 
 # main is purely for testing purposes
 if __name__ == '__main__':
@@ -113,17 +70,16 @@ if __name__ == '__main__':
     h5_file, h5_path = format_h5_path(blob_id=bID, data_type=data_type,
                                       h5_dir='./')
     times, data = get_timeseries(blob_id=bID, data_type=data_type)
-    
+
     times = np.array(times)
     #data = np.array(data)
     data = np.array(data, dtype=str)
     print data.dtype
     print times[:1]
-    print data[:1]    
+    print data[:1]
     write_h5_timeseries_base1(h5_file, h5_path, times, data)
-    write_h5_timeseries_base1(h5_file, 'A/A', times, data)        
+    write_h5_timeseries_base1(h5_file, 'A/A', times, data)
     times, data = read_h5_timeseries_base1(h5_file, h5_path)
     print times[:1]
-    print data[:1]    
+    print data[:1]
     #x, y, l, o = zip(*data)
-   
