@@ -132,10 +132,10 @@ def format_directory(ID_type, dataset='', tag='', ID='',
 def get_good_blobs(ex_id, data_type='spine'):
 
     search_dir = format_directory(ID=ex_id, ID_type='w')
-    search = '{path}/*{data_type}.*'.format(path=search_dir, key=data_type)
+    search = '{path}/*{dtype}.*'.format(path=search_dir, dtype=data_type)
     blobs = []
     for sf in iglob(search):
-        blob_id = sf.split('/')[-1].split('-{data_type}'.format(key=data_type))[0]
+        blob_id = sf.split('/')[-1].split('-{dtype}'.format(dtype=data_type))[0]
         blobs.append(blob_id)
     return blobs
 
