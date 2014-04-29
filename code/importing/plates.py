@@ -272,11 +272,11 @@ def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='de
             print '\t{i} of {N} | {ID} | points: {p}'.format(i=i, N=N,
                                                         ID=blob_id, p = len(blob_data))
 
-            if df == None:
-                df = blob_data
-            elif len(blob_series) > 0:
-                #df = df.join(blob_series, how='outer')
+            if isinstance(df, pd.DataFrame) and len(blob_data):
                 df.append(blob_data)
+            elif len(blob_data):
+                df = blob_data
+                #df = df.join(blob_series, how='outer')
 
         write_table(ID=ex_id,
                     ID_type='plate',
