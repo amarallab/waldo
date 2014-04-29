@@ -77,12 +77,14 @@ def plot_all(ex_id, data_type):
     plt.show()
 
 if __name__ == '__main__':    
+    # toggles
     dataset = 'N2_aging'
-    ex_id = '20130318_105559'
+    #ex_id = '20130318_105559'
+    ex_id = '20130318_131111'    
     data_type = 'length_mm'
-
+    
     # if data not already local, run this command:
-    #pull_plate_from_phoenix()
+    #pull_plate_from_phoenix(ex_id, dataset)
 
     plot_all(ex_id, data_type)
 
