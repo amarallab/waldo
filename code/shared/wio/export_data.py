@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 '''
@@ -18,6 +19,7 @@ import json
 from scipy.stats import scoreatpercentile
 import time
 from itertools import izip
+import pandas as pd
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -25,72 +27,93 @@ SHARED_DIR = os.path.abspath(HERE + '/../')
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wormmetrics.measurement_switchboard import pull_blob_data
-from database.mongo_retrieve import mongo_query
-from file_manager import EXPORT_PATH, manage_save_path, get_blob_ids, PLATE_DIR
-#from settings.local import LOGISTICS
-#PLATE_DIR = LOGISTICS['data'] + 'plate_timeseries'
-#from file_manager import manage_save_path, get_blob_ids, EXPORT_PATH
+from metrics.measurement_switchboard import pull_blob_data
+from file_manager import EXPORT_PATH, manage_save_path, get_good_blobs
+from file_manager import ensure_dir_exists, get_timeseries
+from annotation.experiment_index import Experiment_Attribute_Index2
 
-'''
-def export_blob_percentiles_by_ex_id(ex_id, out_dir=EXPORT_PATH, path_tag='', verbose=True, **kwargs):
-    """
-    write a json for an ex_id in which each blob has a dictionary of measurements containing
-    a list with the 10, 20, 30, ... 80, 90 th percentiles.
-
-    :param ex_id: the ex_id to write a json for.
-    :param out_dir: the directory to write to.
-    """
-    save_name = manage_save_path(out_dir, path_tag, ID=ex_id, data_type='percentiles')
-    blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type': 'smoothed_spine'}, **kwargs)
-    blob_data = {}
-    N = len(blob_ids)
-    for i, blob_id in enumerate(blob_ids):
-        if verbose:
-            print 'calculating metrics for {bID} ({i}/{N})'.format(bID=blob_id, i=i, N=N)
-        blob_data[blob_id] = {}
-        try:
-            for metric, data in sb.pull_all_for_blob_id(blob_id, **kwargs).iteritems():
-                #print len(data)
-                blob_data[blob_id][metric] = [scoreatpercentile(data, i) for i in xrange(10, 100, 10)]
-        except Exception as e:
-            print blob_id, 'not working', e
-
-    json.dump(blob_data, open(save_name, 'w'), indent=4, sort_keys=True)
-'''
-
-def export_index_files(props=['age', 'source-camera', 'label'], dataset='N2_aging',
-                       store_blobs=True, out_dir=EXPORT_PATH, tag='', **kwargs):
-    """
-    writes a json with a dictionary of ex_ids and the value of a correspoinding property
-    :param prop: the property to be exported (key string for database documents)
-    :param out_dir: the directory in which to save the json.
-    """
-
-    data = {}
-    if store_blobs:
-        id_type = 'blob_id'
+def create_direcotry_structure(dataset, path=EXPORT_PATH):
+    ei = Experiment_Attribute_Index2(dataset)
+    ex_ids = list(ei.index)
+    path = os.path.abspath(path)
+    columns = ['name', 'pixels-per-mm']
+    print columns
+    
+    ex_id_data = []
+    index = []
+    for ex_id, name in ei['name'].iteritems(): #ex_ids:
+        name = name.strip().replace(' ', '_')
+        save_dir = '{p}/{dset}/{e}-{n}'.format(p=path, dset=dataset, e=ex_id, n=name)
+        success = write_worm_exports_for_plate(ex_id, save_dir)
+        if success:
+            print ex_id, name, 'sucess'
+            #print ei.loc[ex_id][columns].head()
+            index.append(ex_id)
+            ex_id_data.append(ei.loc[ex_id][columns])
+            #second = ei.loc[ex_id][columns]
+            #second.name = '2'
+            #ex_id_data.append(second)            
+    ex_id_index = pd.concat(ex_id_data, axis=1).T
+    #print 'col', ex_id_index.columns
+    #print 'index', ex_id_index.index        
+    index_name = '{p}/{dset}/index.csv'.format(p=path, dset=dataset)
+    print index_name    
+    print ex_id_index.head()
+    ex_id_index.to_csv(index_name)
+            
+def write_worm_exports_for_plate(ex_id, save_dir):
+    blobs = get_good_blobs(ex_id, key = 'xy')
+    #print len(blobs), 'blobs found'
+    if not len(blobs):
+        return False
+    ensure_dir_exists(save_dir)
+    for blob_id in blobs:
+        success = write_worm_export(blob_id, save_dir)
+        #if success:
+        #    break
     else:
-        id_type = 'ex_id'
+        return False
+    return True
+               
+def write_worm_export(blob_id, save_dir):
+    #df = pd.DataFrame()
+    print blob_id
+    dtypes = ['xy_raw', 'xy']
+    mtypes = ['cent_speed_bl', 'cent_speed_mm']
 
-    for e in mongo_query({'dataset': dataset, 'data_type': 'smoothed_spine'}, 
-                         {'data': 0}, **kwargs):
-        if e[id_type] not in data:
-            data[e[id_type]] = {}
-        for prop in props:
-            data[e[id_type]][prop] = e.get(prop, 'none')
+    times, data = get_timeseries(blob_id, data_type='xy_raw')
+    if times != None and len(times) > 0:
+        xyraw = pd.DataFrame(data, index=times, columns=['x', 'y'])    
+        xyraw.index.name = 'time (s)'
+        savename = '{d}/raw_xy-{ID}.csv'.format(d=save_dir, ID=blob_id)
+        xyraw.to_csv(savename)
+        
+    times, data = get_timeseries(blob_id, data_type='xy')
+    if times != None and len(times) > 0:
+        xydata = pd.DataFrame(data, index=times, columns=['x', 'y'])    
+    else:
+        return False
+        
+    times, data = pull_blob_data(blob_id, metric='cent_speed_bl')        
+    if times != None and len(times) > 0:
+        bldata = pd.DataFrame(data, index=times, columns=['blps'])
+    else:
+        return False
 
-    save_name = '{d}/index{tag}.json'.format(d=out_dir, tag=tag)
-    json.dump(data, open(save_name, 'w'), indent=4, sort_keys=True)
+    times, data = pull_blob_data(blob_id, metric='cent_speed_mm')        
+    if times != None and len(times) > 0:
+        mmdata = pd.DataFrame(data, index=times, columns=['mmps'])    
+    else:
+        return False
 
-    save_name = '{d}/index{tag}.txt'.format(d=out_dir, tag=tag)
-    with open(save_name, 'w') as f:
-        headers = [id_type] + props
-        f.write(',\t'.join(headers))
-        for dID in sorted(data):
-            line = [dID] + [data[dID][i] for i in props]
-            f.write(','.join(map(str, line)) + '\n')
-
+    combined = pd.concat([xydata, bldata, mmdata], axis=1)
+    print combined.head()
+    savename = '{d}/worm_track-{ID}.csv'.format(d=save_dir, ID=blob_id)
+    print savename
+    combined.index.name = 'time (s)'
+    combined.to_csv(savename)
+    return True
+'''       
 def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='', 
                                 out_dir=PLATE_DIR, save_name=None, 
                                 as_json=False, blob_ids=[], **kwargs):
@@ -100,7 +123,7 @@ def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='',
                                      ID=ex_id, data_type=metric)
     if not blob_ids:
         # make list of all blobs
-        blob_ids = get_blob_ids(query={'ex_id': ex_id, 'data_type':'spine'}, **kwargs)
+        blob_ids = get_good_blobs(ex_id)
     # compile a dict containing values for all blobs. data binned every 10th second.
     data_dict = {}
     for blob_id in blob_ids:
@@ -125,7 +148,7 @@ def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='',
             for (tf, t) in times_sorted:
                 line = '{t},{l}'.format(t=t, l=','.join(map(str, data_dict[t])))
                 f.write(line + '\n')
-
+'''
 
 def pull_blob_timeseires_for_ex_id(ex_id, data_type, out_dir=EXPORT_PATH, path_tag='',
                                    **kwargs):
@@ -178,6 +201,11 @@ def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH,
 
 if __name__ == '__main__':
     # INDEX FILE EXAMPLES
+    dataset = 'N2_aging'
+    create_direcotry_structure(dataset)
+    
+
+    '''
     #export_index_files(props=['label', 'age'], tag='_')
     #export_index_files(props=['age'], tag='_N2ages', store_blobs=False)
     export_index_files(props=['midline_median'], tag='_N2ages_midlinemedian',
@@ -209,4 +237,4 @@ if __name__ == '__main__':
     # to export percentiles
     ex_id = '00000000_000001'
     #export_blob_percentiles_by_ex_id(ex_id)
-
+    '''
