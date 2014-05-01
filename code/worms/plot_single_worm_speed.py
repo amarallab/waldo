@@ -30,49 +30,12 @@ SHARED_DIR = CODE_DIR + '/shared/'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-
 # nonstandard imports
-#from Shared.Code.metrics.spine_measures import compute_spine_measures
-#from Shared.Code.metrics.centroid_measures import compute_centroid_measures
-#from Shared.Code.metrics.basic_measures import compute_basic_measures
-from wormmetrics.switchboard import pull_metric_for_blob_id
-#from Shared.Code.Database.mongo_retrieve import pull_data_type_for_blob
-#import Shared.Code.Database.mongo_support_functions as mongo
-#from Shared.Code.Settings.data_settings import mongo_settings
-#from Shared.Code.Database.mongo_retrieve import timedict_to_list
+from metrics.measurement_switchboard import pull_blob_data
+from wio.file_manager import get_timeseries
 from filtering.filter_utilities import savitzky_golay
 
 DATA_DIR = './../Data/Single-Speeds/'
-'''
-def smooth_in_spacetime(t, x, repeated_smoothings=5,
-                        space_poly_order=DEFAULT_POLY_ORDER, space_running_window_size=DEFAULT_WINDOW_SIZE,
-                        time_poly_order=DEFAULT_POLY_ORDER, time_running_window_size=DEFAULT_WINDOW_SIZE):
-    pass
-'''                                
-
-def write_speeds_for_blob_id(blob_id, savedir=DATA_DIR, **kwargs):
-    """
-    """
-    savename = '{path}{bID}_speeds.json'.format(path=savedir, bID=blob_id)
-    print savename
-    cent_timedict = pull_metric_for_blob_id(blob_id, metric='centroid_speed', **kwargs)
-    tc, cent = timedict_to_list(cent_timedict)
-    along_timedict = pull_metric_for_blob_id(blob_id, metric='speed_along', **kwargs)
-    ta, along = timedict_to_list(along_timedict)
-    perp_timedict = pull_metric_for_blob_id(blob_id, metric='speed_perp', **kwargs)
-    tp, perp = timedict_to_list(perp_timedict)
-    xy_timedict = pull_data_type_for_blob(blob_id, data_type='xy_raw', **kwargs)['data']
-    t, xy = timedict_to_list(xy_timedict)
-    times_and_speeds = tc, cent, ta, along, tp, perp, t ,xy
-    json.dump(times_and_speeds, open(savename, 'w'))
-    return times_and_speeds
-
-def write_spine_json(blob_id, savedir='./', **kwargs):
-    savename = '{path}{bID}_spine.json'.format(path=savedir, bID=blob_id)
-    xy_timedict = pull_data_type_for_blob(blob_id, data_type='smoothed_spine', **kwargs)['data']
-    t, spines = timedict_to_list(xy_timedict)
-    json.dump({'times':t, 'spines':spines}, open(savename, 'w'))
-
 
 def sample_worms():
     return ["20130423_100249_00317",
@@ -84,64 +47,14 @@ def sample_worms():
             "20130415_104153_00853",
             "20130611_151557_03751" ]
 
-def write_samples(blob_ids):
-    """
-    
-    Arguments:
-    - `blob_id`:
-    """
-    try:
-        # initialize the connection to the mongo client
-        mongo_client, _ = mongo.start_mongo_client(mongo_settings['mongo_ip'], mongo_settings['mongo_port'],
-                                                   mongo_settings['worm_db'], mongo_settings['blob_collection'])
-        
-        for blob_id in blob_ids:
-            try:
-                times_and_speeds= write_speeds_for_blob_id(blob_id, mongo_client=mongo_client)
-            except Exception as e:
-                print blob_id, e
-    finally:
-        mongo_client.close()
-
-def plot_dist_against_speed_along(blob_id, prange=None, data_dir=DATA_DIR):
-    files = glob.glob('{path}/{bID}*speeds.json'.format(path=data_dir, bID=blob_id))
-    if len(files) != 1:
-        print 'weird, while looking for one file, found:', files
-    speed_and_times = json.load(open(files[0], 'r'))
-    tc, cent, ta, along, tp, perp, t, xy  = speed_and_times
-
-    
-    x, y = zip(*xy)
-    dist = [0] 
-    d = 0
-    for i in range(1, len(xy)):
-        dx = (x[i] - x[i-1])
-        dy = (y[i] - y[i-1])
-        d += math.sqrt(dx**2 + dy**2)
-        dist.append(d)
-
-    if not prange:
-        prange = [min(tc), max(tc)]
-
-    plt.figure()
-
-    plt.subplot(2,1,1)
-    plt.plot(ta, along)
-    plt.plot([min(ta), max(ta)], [0, 0], color='black')
-    plt.xlim(prange)
-
-    plt.subplot(2,1,2)
-    plt.plot(t, dist)
-    plt.xlim(prange)
-
-    plt.show()
 
 def plot_xy_vs_speeds(blob_id, prange=None, data_dir=DATA_DIR):
-    files = glob.glob('{path}/{bID}*speeds.json'.format(path=data_dir, bID=blob_id))
-    if len(files) != 1:
-        print 'weird, while looking for one file, found:', files
-    speed_and_times = json.load(open(files[0], 'r'))
-    tc, cent, ta, along, tp, perp, t, xy  = speed_and_times
+
+    tc, cent = pull_blob_data(blob_id, metric='cent_speed')
+    #ta, along = pull_blob_data(blob_id, metric='speed_along', **kwargs)
+    #tp, perp = pull_blob_data(blob_id, metric='speed_perp', **kwargs)
+    t, xy = get_timeseries(blob_id, data_type='xy_raw')
+
 
     
     x, y = zip(*xy)
@@ -169,14 +82,9 @@ def plot_xy_vs_speeds(blob_id, prange=None, data_dir=DATA_DIR):
     plt.show()
 
 def multifilter_plot(blob_id, prange=None, data_dir=DATA_DIR):
-    files = glob.glob('{path}/{bID}*speeds.json'.format(path=data_dir, bID=blob_id))
-    if len(files) != 1:
-        print 'weird, while looking for one file, found:', files
-    speed_and_times = json.load(open(files[0], 'r'))
-    tc, cent, ta, along, tp, perp, time, xy  = speed_and_times
-    t = ta
-    s = along
 
+    t, s = pull_blob_data(blob_id, metric='cent_speed', **kwargs)
+    t, xy = get_timeseries(blob_id, data_type='xy_raw')
     if not prange:
         prange = [min(t), max(t)]
 
@@ -229,21 +137,15 @@ def multifilter_plot(blob_id, prange=None, data_dir=DATA_DIR):
 
 
 def plot_path(blob_id, prange=None, data_dir=DATA_DIR):
-    # read data
-    files = glob.glob('{path}/{bID}*speeds.json'.format(path=data_dir, bID=blob_id))
-    if len(files) != 1:
-        print 'weird, while looking for one file, found:', files
-    speed_and_times = json.load(open(files[0], 'r'))
-    tc, cent, ta, along, tp, perp, time, xy  = speed_and_times
+
+    t, s = pull_blob_data(blob_id, metric='cent_speed')
+    t, xy = get_timeseries(blob_id, data_type='xy')
     x, y = zip(*xy[1:])
     x, y = list(x), list(y)
 
     # choose speed, itialize 
-
-    t = ta
-    s = along
-    #t = tc
-    #s = cent
+    t = tc
+    s = cent
 
     interval = 30
     print 'xy', len(xy)
@@ -310,7 +212,7 @@ def plot_path(blob_id, prange=None, data_dir=DATA_DIR):
 if __name__ == '__main__':
     #blobs = sample_worms()
     blob_id = '20130415_104153_00853'
-    #write_samples([blob_id])
+    #blob_id = '20130318_131111'
     #plot_xy_vs_speeds(blob_id)
     #plot_dist_against_speed_along(blob_id)
     plot_path(blob_id)
