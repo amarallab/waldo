@@ -87,7 +87,7 @@ def get_dset(ex_id):
     ei = Experiment_Attribute_Index()
     return ei.attribute_index.get(ex_id, {}).get('dataset', 'something')
 
-def format_dirctory(ID_type, dataset='', tag='', ID='',
+def format_directory(ID_type, dataset='', tag='', ID='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
     if str(ID_type) in ['worm', 'w']:
         ex_id = '_'.join(ID.split('_')[:2])
@@ -111,7 +111,7 @@ def format_dirctory(ID_type, dataset='', tag='', ID='',
     return file_dir
 
 def get_good_blobs(ex_id, key='spine', worm_dir=WORM_DIR):
-    search_dir = format_dirctory(ID=ex_id, ID_type='w')
+    search_dir = format_directory(ID=ex_id, ID_type='w')
     search = '{path}/*{key}.*'.format(path=search_dir, key=key)
     blobs = []
     for sf in iglob(search):
@@ -170,7 +170,7 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
     assert isinstance(ID, basestring), errmsg
 
     if not file_dir:
-        file_dir = format_dirctory(ID_type, dataset=dset, tag=file_tag, ID=ID)
+        file_dir = format_directory(ID_type, dataset=dset, tag=file_tag, ID=ID)
 
     ensure_dir_exists(file_dir)
     # Format the name of the file
@@ -311,7 +311,7 @@ def remove_plate_files(ex_id, file_tags):
 
     for tag in file_tags:
         print tag
-        search_dir = os.path.abspath(format_dirctory(ID=ex_id, ID_type='plate',
+        search_dir = os.path.abspath(format_directory(ID=ex_id, ID_type='plate',
                                                      dataset=dataset, tag=tag))
         search = '{d}/{eID}*'.format(d=search_dir, eID=ex_id)
         for rfile in iglob(search):
@@ -321,7 +321,7 @@ def remove_plate_files(ex_id, file_tags):
 
 def get_plate_files(dataset, data_type, tag='timeseries', path=None):
     if not path:
-        path = format_dirctory(ID_type='plate', dataset=dataset, tag=tag)
+        path = format_directory(ID_type='plate', dataset=dataset, tag=tag)
     search = '{path}/*'.format(path=path.rstrip('/'))
     ex_ids, file_paths = [], []
     for file_path in iglob(search):

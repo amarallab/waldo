@@ -53,28 +53,31 @@ def create_direcotry_structure(dataset, path=EXPORT_PATH):
             #second = ei.loc[ex_id][columns]
             #second.name = '2'
             #ex_id_data.append(second)            
-    ex_id_index = pd.concat(ex_id_data, axis=1).T
+
     #print 'col', ex_id_index.columns
     #print 'index', ex_id_index.index        
     index_name = '{p}/{dset}/index.csv'.format(p=path, dset=dataset)
     print index_name    
+    ex_id_index = pd.concat(ex_id_data, axis=1).T
     print ex_id_index.head()
-    ex_id_index.to_csv(index_name)
-            
+    ex_id_index.to_csv(index_name)    
+
 def write_worm_exports_for_plate(ex_id, save_dir):
     blobs = get_good_blobs(ex_id, key = 'xy')
     #print len(blobs), 'blobs found'
     if not len(blobs):
         return False
     ensure_dir_exists(save_dir)
+    any_blobs = False
     for blob_id in blobs:
         success = write_worm_export(blob_id, save_dir)
-        #if success:
-        #    break
+        if success:
+            any_blob = True
+    if any_blob:
+        return True
     else:
         return False
-    return True
-               
+       
 def write_worm_export(blob_id, save_dir):
     #df = pd.DataFrame()
     print blob_id
@@ -105,14 +108,19 @@ def write_worm_export(blob_id, save_dir):
         mmdata = pd.DataFrame(data, index=times, columns=['mmps'])    
     else:
         return False
+    try:
+        combined = pd.concat([xydata, bldata, mmdata], axis=1)
+        print combined.head()
+        savename = '{d}/worm_track-{ID}.csv'.format(d=save_dir, ID=blob_id)
+        print savename
+        combined.index.name = 'time (s)'
+        combined.to_csv(savename)
+        return True
+    except Exception as e:
+        print 'Failure'
+        print e
+        return False
 
-    combined = pd.concat([xydata, bldata, mmdata], axis=1)
-    print combined.head()
-    savename = '{d}/worm_track-{ID}.csv'.format(d=save_dir, ID=blob_id)
-    print savename
-    combined.index.name = 'time (s)'
-    combined.to_csv(savename)
-    return True
 '''       
 def write_full_plate_timeseries(ex_id, metric='cent_speed_mm', path_tag='', 
                                 out_dir=PLATE_DIR, save_name=None, 
@@ -201,7 +209,7 @@ def pull_single_blob_timeseries(blob_id, data_type, out_dir=EXPORT_PATH,
 
 if __name__ == '__main__':
     # INDEX FILE EXAMPLES
-    dataset = 'N2_aging'
+    dataset = 'and'
     create_direcotry_structure(dataset)
     
 

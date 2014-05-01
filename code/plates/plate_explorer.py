@@ -82,19 +82,16 @@ def plot_all(ex_id, data_type):
 if __name__ == '__main__':
     # toggles
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('dataset', type=str,
-        help='First classification of plate data (e.g. N2_aging)')
     parser.add_argument('ex_id', type=str,
         help='Experiment timestamp (e.g. 20130318_105559)')
     parser.add_argument('data_type', type=str,
         help='Type of data to view (e.g. length_mm)')
     parser.add_argument('-f', '--fetch', action='store_true',
         help='Fetch data from phoenix')
-
     args = parser.parse_args()
 
     if args.fetch:
         # if data not already local, run this command:
-        pull_plate_from_phoenix(args.ex_id, args.dataset)
+        pull_plate_from_phoenix(args.ex_id, get_dset(args.ex_id))
 
     plot_all(args.ex_id, args.data_type)
