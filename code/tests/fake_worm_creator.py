@@ -26,7 +26,7 @@ sys.path.append(CODE_DIR)
 
 # nonstandard imports
 import filtering.filter_utilities as fu
-from wormmetrics.compute_clearmetrics import rescale_radians, angle_change_for_xy
+from metrics.compute_metrics import rescale_radians, angle_change_for_xy
 
 def generate_individual_series(N_points=3600):
     """
