@@ -18,13 +18,14 @@ print SHARED
 sys.path.append(SHARED)
 sys.path.append(CODES)
 
-from wio.file_manager import read_table, ensure_dir_exists, get_good_blobs, get_timeseries
+from wio.file_manager import read_table, ensure_dir_exists, get_good_blobs, get_timeseries, get_dset
 from settings.local import LOGISTICS
 from metrics.measurement_switchboard import pull_blob_data
 
 # TODO: eliminate redundency in function.
-def pull_plate_from_phoenix(ex_id, dataset, pull=True):
+def pull_plate_from_phoenix(ex_id, pull=True):
     ''' pulls all plate-level and worm-level data from phoenix to local version of waldo.'''
+    dataset = get_dset(ex_id)
     p_address = 'phoenix.research.northwestern.edu'
     # source
     p1 = '/home/projects/worm_movement/waldo/data/plates/{dset}/timeseries/{eid}*'.format(eid=ex_id, dset=dataset)
@@ -32,7 +33,7 @@ def pull_plate_from_phoenix(ex_id, dataset, pull=True):
     w1 = '/home/projects/worm_movement/waldo/data/worms/{eid}'.format(eid=ex_id)
     # destination
     d_p1 = '{p_dir}timeseries'.format(p_dir=LOGISTICS['plates'])
-    d_p2 = '{p_dir}percentils'.format(p_dir=LOGISTICS['plates'])
+    d_p2 = '{p_dir}percentiles'.format(p_dir=LOGISTICS['plates'])
     d_w1 = '{w_dir}'.format(w_dir=LOGISTICS['worms'])
     # make sure destination exists
     for d in [d_p1, d_p2, d_w1]:
@@ -92,6 +93,6 @@ if __name__ == '__main__':
 
     if args.fetch:
         # if data not already local, run this command:
-        pull_plate_from_phoenix(args.ex_id, get_dset(args.ex_id))
+        pull_plate_from_phoenix(args.ex_id)
 
     plot_all(args.ex_id, args.data_type)
