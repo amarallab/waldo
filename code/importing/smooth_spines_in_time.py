@@ -112,23 +112,6 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
                               times=smoothed_times, data=smoothed_spines)
     return smoothed_times, smoothed_spines
 
-'''
-def distance_between_spines(spines1, spines2):
-    """
-    returns total euclidian distance between all spines in one list and all spines in another list.
-    a spine is a list of tuples denoting the points in a spine [(x1,y1), (x2, y2), ... ].
-
-    :param spines1: first list of spines
-    :param spines2: second list of spines
-    :return: distance
-    """
-    dist = 0
-    for spine1, spine2 in zip(spines1, spines2):
-        for pt1, pt2 in zip(spine1, spine2):
-            dist += euclidean(pt1, pt2)
-    return dist
-'''
-
 if __name__ == "__main__":
     #blob_id ='20120914_172813_01708'
     #blob_id = '20121119_162934_07337'
