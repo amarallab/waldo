@@ -334,7 +334,6 @@ def get_flagged_times(blob_id):
     flags = consolidate_flags(all_flags)
     return [t for (t, f) in zip(times, flags) if f==False]
 
-
 def good_segments_from_data(break_list, times, data, flagged_times, verbose=True, null_flags=NULL_FLAGS):
     
     def remove_flagged_points(region, flagged_times, null_flags=null_flags):
