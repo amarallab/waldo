@@ -23,7 +23,7 @@ sys.path.append(PROJECT_DIR)
 # nonstandard imports
 from encoding.decode_outline import decode_outline
 from deviant.record_exceptions import write_pathological_input
-from shared.wio.file_manager import get_timeseries, write_timeseries_file
+from wio.file_manager import get_timeseries, write_timeseries_file
 
 def compute_basic_measurements(blob_id, verbose=True, **kwargs):
 
@@ -95,7 +95,7 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
     """
     # if temp data is cached, use that instead of querying database
     times, spines = get_timeseries(ID=blob_id, data_type='spine_rough')
-    times, encoded_outlines = get_timeseries(ID=blob_id, data_type='encoded_outline')    
+    times, encoded_outlines = get_timeseries(ID=blob_id, data_type='encoded_outline')
     width20, width50, width80 = [], [], []
     for spine, en_outline in izip(spines, encoded_outlines):
         # make sure to catch not a number. not sure if necessary.
@@ -108,7 +108,7 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
             p1, p2, flag3, w80 = calculate_width_for_timepoint(spine, outline, index_along_spine=40)
         else:
             w20 = w50 = w80 = 0
-                                                               
+
         width20.append(w20)
         width50.append(w50)
         width80.append(w80)

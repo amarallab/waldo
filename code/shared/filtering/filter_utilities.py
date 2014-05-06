@@ -3,7 +3,7 @@
 Filename: filter_utilities
 Description: functions involving smoothing of data.
 '''
-from shared.filtering.equally_space_old import equally_space_times, linear_interpolation
+from filtering.equally_space_old import equally_space_times, linear_interpolation
 
 __authors__ = 'Peter B. Winter and Andrea Lancanetti'
 __email__ = 'peterwinteriii@gmail.com'
@@ -71,14 +71,14 @@ def neighbor_calculation(distance_threshold, x, y, max_score=500):
         if i < 3:
             point_scores.append(0)
             continue
-            
+
         #short_list = xy[start:i]
         #xi, yi = zip(*short_list)
         xi, yi = x[start:i], y[start:i]
         dx = np.array(xi) - pt[0]
         dy = np.array(yi) - pt[1]
         dists = np.sqrt(dx**2 + dy**2)
-        
+
         score = 0
         for d in dists[::-1]:
             if d < distance_threshold:
@@ -88,13 +88,13 @@ def neighbor_calculation(distance_threshold, x, y, max_score=500):
         #print i, score, dists[0], dists[-1]
         point_scores.append(score)
     return point_scores
-    
+
 def domain_creator(point_scores, timepoint_threshold=30):
     """
     Calculates the domains, or regions along the worm path that exhibit zero movement. It does so by setting
     a threshold score for the number of nearby neighbors necessary to be considered an area of no movement, and
     then setting a domain behind that point to be considered non moving.
-    
+
     :param point_scores: The neighbor scores of each point in the worm path
     :param timepoint_threshold: The score threshold for a point to be considered the initiator of a non-moving domain
     :return: A list of domains
