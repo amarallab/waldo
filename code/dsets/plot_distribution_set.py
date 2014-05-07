@@ -25,7 +25,7 @@ SHARED_DIR = os.path.abspath(os.path.join(CODE_DIR, 'shared'))
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.plate_utilities import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries, read_dset_summary
+from wio.file_manager import organize_plate_metadata, get_plate_files, return_flattened_plate_timeseries, read_dset_summary
 from wio.file_manager import read_table
 from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from importing.datasets import XLIMS
@@ -211,6 +211,7 @@ if __name__ == '__main__':
     if dataset == 'N2_aging':
         N_days = 9
         labels = ['set A', 'set B']
+        labels = ['all']
 
     # labels for disease_models
     if dataset == 'disease_models':
