@@ -92,8 +92,9 @@ def process_centroid(blob_id, verbose=True, **kwargs):
                           times=times, data=angle_change)
 
     # write markov measures (ie, reversal, speed, accel, radial accel)
-    markov_measures = markov_measures_for_xy
-
+    markov_measures = markov_measures_for_xy(x, y, dt=0.1)
+    write_timeseries_file(ID=blob_id, data_type='markov_measures',
+                          times=times, data=markov_measures)
 
     # write is_moving durations
     if isinstance(domains, pd.DataFrame):
