@@ -185,7 +185,7 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
                                               ID=ID,
                                               dt=data_type,
                                               ft=file_type)
-    elif str(ID_type) in['dset', 's']:
+    elif str(ID_type) in['dataset', 'dset', 's']:
         return  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir,
                                                ID=ID,
                                                dt=data_type,
@@ -246,6 +246,42 @@ def get_timeseries(ID, data_type,
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
                    dset=None, file_tag='',
                    file_dir=None, **kwargs):
+    """
+    Parameters
+    ----------
+    ID : str
+      A blob ID, an experiment ID or a dataset name.
+        * Blob ID (ID_type: ``worm``, ``w``) is the extended experiment
+            timestamp + 5 digit 0-padded internal blob ID,
+        * experiment ID (ID_type: ``plate``, ``p``) is the timestamp, and the
+        * dataset (ID_type: ``dataset``, ``dset``, ``s``) name refers to a
+            collection of experiments annotated together
+    data_type : str
+      Data field
+        * `xy_raw': Unprocessed data from the MWT text files.  Anisochronous
+        * `xy': Smoothed and interpolated centroid position to be isochronous
+        * `cent_speed': Point-by-point derivative of 'xy'
+        * `cent_speed_bl': Above, scaled by body length
+        * `encoded_outline`: Start X, start y, contour length, encoded outline
+        * `spine`: 50 points fit to the centerline, smoothed and with suspicious data removed
+        * `spine_rough`: Raw spine after thinning
+
+    Keyword Arguments
+    -----------------
+    ID_type : str
+      **see ID**
+    file_type : str
+      ``h5`` or ``json``, depending on the source type to read
+    ...
+
+    Returns
+    -------
+    times : array-like
+      Time stamps for each point in the file
+    data : array-like
+      Data corresponding to each point in the time series
+    """
+
     # universal file formatting
     filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,
                                dset=dset, file_tag=file_tag,
