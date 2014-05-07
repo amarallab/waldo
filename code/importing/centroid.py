@@ -62,14 +62,14 @@ def process_centroid(blob_id, verbose=True, **kwargs):
     """
     """
     # retrieve raw xy positions
-    orig_times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)
-    x, y = zip(*xy)
+    orig_times, xy = get_timeseries(blob_id, data_type='xy_raw')
 
     if xy == None:
         return 
     if len(xy) == 0:
-        return 
-
+        return
+    
+    x, y = zip(*xy)
     dataframe, domains = full_package(orig_times, x, y)
     if verbose:
         print 'centroid measurements: \n'

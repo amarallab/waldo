@@ -56,19 +56,19 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
     kwargs['store_tmp'] = True
     if verbose:
         print 'Creating Rough Spine from Outline'
-    times, treated_spines, bad_times = create_spine_from_outline(blob_id, verbose=verbose, **kwargs)
+    times, treated_spines, bad_times = create_spine_from_outline(blob_id, verbose=verbose)
     if verbose:
         print '\tspine created with {N} time-points.'.format(N=len(treated_spines))
     # calculate necessary measurments to flag wrong shapes
         print 'Computing Rough Measurements'
-    compute_basic_measurements(blob_id, **kwargs)
+    compute_basic_measurements(blob_id)
     # flag parts of spine creation process
-    flag_blob_id(blob_id, **kwargs)
+    flag_blob_id(blob_id)
     # (flags + treated_spine) to (flagged_spine)
-    create_breaks_for_blob_id(blob_id, **kwargs)
+    create_breaks_for_blob_id(blob_id)
     if verbose:
         print 'Finalzing Spine for Good Regions'
-    smoothed_times, smoothed_spines = smooth_good_regions_repeatedly(blob_id, **kwargs)
+    smoothed_times, smoothed_spines = smooth_good_regions_repeatedly(blob_id)
     if verbose:
         print '\tfinished smoothing spine | N: {N}'.format(N=len(smoothed_times))
     return smoothed_times, smoothed_spines
@@ -84,7 +84,7 @@ def just_process_centroid(ex_id, **kwargs):
             return False
         
     # note: overwrite = false, so that all non centroid data is not deleted.
-    process_ex_id(ex_id, just_centroid=True, overwrite=False, reprocess=True, **kwargs)            
+    process_ex_id(ex_id, just_centroid=True, overwrite=False, reprocess=True)            
 
 def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, reprocess=True, **kwargs):
     '''
@@ -122,14 +122,14 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, repro
     good_blobs = []
     for i, blob_id in enumerate(sorted(blob_ids)[:], start=1):
         print '################### {id} ({i} of {N}) ###################'.format(i=i, N=N, id=blob_id)
-        process_centroid(blob_id, **kwargs)
+        process_centroid(blob_id)
         if just_centroid:
             continue
         
-        times, spines = basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
+        times, spines = basic_data_to_smoothspine(blob_id, verbose=True)
         if len(spines) > 0:
             good_blobs.append(blob_id)
-        measure_all(blob_id, **kwargs)
+        measure_all(blob_id)
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
             pass
@@ -143,23 +143,22 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, repro
                                    data_types=['cent_speed_bl',
                                                 'angle_change',
                                                 'go_dur',
-                                                'stop_dur'], **kwargs)
+                                                'stop_dur'])
             return
         plate_consolidation(ex_id, blob_ids=good_blobs, overwrite=overwrite)
         #write_plate_timeseries(ex_id, blob_ids=good_blobs, **kwargs)
         #write_plate_percentiles(ex_id, blob_ids=good_blobs, **kwargs)
 
-def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
+def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET):
     """
     Arguments:
     - `blob_id`:
-    - `**kwargs`:
     """    
     print 'Computing Standard Measurements'
     # prepare scaling factors to convert from pixels to units
-    metadata = get_metadata(blob_id, **kwargs)
-    lt, lengths = pull_blob_data(blob_id, metric='length', **kwargs)
-    wt, widths = pull_blob_data(blob_id, metric='width50', **kwargs)
+    metadata = get_metadata(blob_id)
+    lt, lengths = pull_blob_data(blob_id, metric='length')
+    wt, widths = pull_blob_data(blob_id, metric='width50')
     pixels_per_bl = float(np.median(lengths))
     pixels_per_w = float(np.median(widths))
     pixels_per_mm = float(metadata.get('pixels-per-mm', 1.0))
@@ -171,8 +170,8 @@ def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET, **kwargs):
         t, data = pull_blob_data(blob_id, metric=metric,
                                  pixels_per_bl=pixels_per_bl,
                                  pixels_per_mm=pixels_per_mm, 
-                                 pixels_per_w=pixels_per_w, 
-                                 **kwargs)
+                                 pixels_per_w=pixels_per_w)
+
         if store_tmp:
             write_timeseries_file(blob_id, data_type=metric,
                                   times=t, data=list(data))
