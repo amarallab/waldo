@@ -18,6 +18,7 @@ sys.path.append(MULTIWORM_DIR)
 from multiworm.experiment import Experiment
 import where
 
+from .adapter import WormDataAdapter
 from .util import harmonize_id
 
 def fetch_blob(*args):
@@ -41,4 +42,6 @@ def unified_blob(*args):
         'centroid': blob['centroid'],
     }
 
-
+class MultiwormAdapter(WormDataAdapter):
+    def locate(self):
+        self.experiment = Experiment(where.where(self.exp_id))
