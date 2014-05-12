@@ -50,14 +50,14 @@ SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
 
 # **** main function of the module. 
 def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, 
-                   pixels_per_w=0, **kwargs):
+                   pixels_per_w=0):
     ''' returns a list of times and a list of data for a given blob_id and metric.
 
     This function chooses which program to call in order to calculate or retrieve
     the desired metric.
     '''
     # get the data before skips removed, scaled to units
-    times, data, args = find_data(blob_id, metric, **kwargs)    
+    times, data, args = find_data(blob_id, metric)    
     # skips are a nuscence. for now, remove them permenantly    
     remove_skips = True
     if remove_skips:
@@ -73,15 +73,15 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0,
     scaling_factor_type = args.get('units', '')
     # make sure we have appropriate scaling factor
     if not pixels_per_mm and str(scaling_factor_type) in ['mm', 'mm2']:        
-        metadata = get_metadata(blob_id, **kwargs)
+        metadata = get_metadata(blob_id)
         pixels_per_mm = float(metadata.get('pixels-per-mm', 1.0))
         if pixels_per_mm == 1.0:
             print 'Warning, not getting appropriate pixels-per-mm for', blob_id
     if not pixels_per_bl and scaling_factor_type=='bl':        
-        _, lengths = compute_length(blob_id, **kwargs)
+        _, lengths = compute_length(blob_id)
         pixels_per_bl = np.median(lengths)
     if not pixels_per_w and scaling_factor_type=='bl':        
-        _, widths = compute_width(blob_id, **kwargs)
+        _, widths = compute_width(blob_id)
         pixels_per_w = np.median(widths)
 
     # implement that scaling factor.
@@ -100,11 +100,11 @@ def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0,
         data = np.array(data) * 180.0 / np.pi
     return times, data
 
-def find_data(blob_id, metric, **kwargs):
+def find_data(blob_id, metric):
     ''' order of operations for locating data.
     '''
     # check if result already cached locally
-    times, data = get_timeseries(blob_id, data_type=metric, search_db=False)
+    times, data = get_timeseries(blob_id, data_type=metric)
     #print 'not already cached'
     if times != None and data != None:
         return times, data, {}
@@ -113,11 +113,11 @@ def find_data(blob_id, metric, **kwargs):
     # TODO: bulild in args.
     if metric_computation_function:
         #print 'computing metric', metric, 'using', metric_computation_function
-        times, data = metric_computation_function(blob_id=blob_id, metric=metric, **kwargs)
+        times, data = metric_computation_function(blob_id=blob_id)
         return times, data, args
     #print 'metric not found'
     # check if it is cached locally or in db.
-    times, data = get_timeseries(blob_id, data_type=metric, **kwargs)
+    times, data = get_timeseries(blob_id, data_type=metric)
     return times, data, {}
 
 def measure_matches_metric(measure_type, metric):

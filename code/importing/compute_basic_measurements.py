@@ -70,7 +70,7 @@ def calculate_lengths_for_blob_id(blob_id, store_tmp=True, **kwargs):
     :param spine_entry: database document containing the list of spines.
     :return: list of lengths.
     """
-    times, spines = get_timeseries(ID=blob_id, data_type='spine_rough', **kwargs)
+    times, spines = get_timeseries(ID=blob_id, data_type='spine_rough')
     lengths = []
     for spine in spines:
         l = 0

@@ -32,9 +32,8 @@ from metrics.compute_metrics import txy_to_speeds, angle_change_for_xy
 ORDER = SMOOTHING['time_order']
 WINDOW = SMOOTHING['time_window']
 
+'''
 def process_centroid_old(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwargs):
-    """
-    """
     # retrieve raw xy positions
     orig_times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)
     x, y = map(np.array, zip(*xy))
@@ -57,19 +56,20 @@ def process_centroid_old(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **
         write_timeseries_file(ID=blob_id, data_type='xy',
                               times=eq_times, data=xy)
     return eq_times, xy
+'''
 
 def process_centroid(blob_id, verbose=True, **kwargs):
     """
     """
     # retrieve raw xy positions
-    orig_times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)
-    x, y = zip(*xy)
+    orig_times, xy = get_timeseries(blob_id, data_type='xy_raw')
 
     if xy == None:
         return 
     if len(xy) == 0:
-        return 
-
+        return
+    
+    x, y = zip(*xy)
     dataframe, domains = full_package(orig_times, x, y)
     if verbose:
         print 'centroid measurements: \n'
@@ -91,6 +91,11 @@ def process_centroid(blob_id, verbose=True, **kwargs):
     write_timeseries_file(ID=blob_id, data_type='angle_change',
                           times=times, data=angle_change)
 
+    # write markov measures (ie, reversal, speed, accel, radial accel)
+    markov_measures = markov_measures_for_xy(x, y, dt=0.1)
+    write_timeseries_file(ID=blob_id, data_type='markov_measures',
+                          times=times, data=markov_measures)
+
     # write is_moving durations
     if isinstance(domains, pd.DataFrame):
         write_timeseries_file(ID=blob_id, data_type='is_moving',
@@ -98,6 +103,52 @@ def process_centroid(blob_id, verbose=True, **kwargs):
                               data=np.array(domains[domains.columns], dtype=float))
 
     return
+
+def markov_measures_for_xy(x, y, dt=0.1, verbose=False):
+    vs = np.zeros((2, len(x)-1))
+    
+    vs[0] = np.diff(x) / dt
+    vs[1] = np.diff(y) / dt
+    vs = vs.T
+
+    data = []    
+    v23 = vs[0]
+    for v in vs[1:]:   
+        v12, v23 = v23, v
+
+        if np.dot(v12, v23) < 0:
+            r = 1
+            d = (v12 - v23) / np.linalg.norm(v12 - v23)
+            alpha = (v23 + v12) / dt
+            R = [[d[0], d[1]], [-d[1], d[0]]]            
+        else:
+            r = 0
+            d = (v12 + v23) / np.linalg.norm(v12 + v23)            
+            alpha = (v23 - v12) / dt
+            R = [[-d[0], -d[1]], [-d[1], d[0]]]
+
+        s = (np.linalg.norm(v12) + np.linalg.norm(v23)) / dt
+        if s == 0:
+            a, ar = 0, 0
+        else:
+            a = np.dot(R, alpha)
+            ar = a[1]
+            a = np.linalg.norm(a)
+            
+        if verbose:
+            print 'r={r} | s={s} | a={a} | ar={ar}'.format(r=r, s=s, a=a, ar=ar)
+        if np.isnan(a):
+            print 'nan'
+            
+        data.append((r, s, a, ar))
+        
+    data = np.array(data)
+    
+    for i,dat in enumerate(data):
+        if any(np.isnan(dat)):
+            print i, dat
+    return data
+
 
 def domains_to_dataframe(stop_domains, times):    
     first, last = times[0], times[-1]

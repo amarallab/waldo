@@ -29,8 +29,6 @@ SHARED_DIR = CODE_DIR + '/shared'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-#for i in sys.path:
-#    print i
 # nonstandard imports
 from settings.local import LOGISTICS
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
@@ -242,7 +240,25 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
                                file_dir=file_dir)
     return pd.read_hdf(filename, 'fixed')
 
-def get_timeseries(ID, data_type,
+def get_timeseries(ID, data_type):
+    
+    file_type=TIME_SERIES_FILE_TYPE    
+    filename = format_filename(ID=ID, data_type=data_type, ID_type='w',
+                               file_type=file_type)
+    if os.path.isfile(filename):
+        # retrval method depends on file_type
+        if file_type == 'json':
+            data_dict = json.load(open(filename, 'r'))
+            times, data = data_dict.get('time', []), data_dict.get('data', [])
+        elif file_type == 'h5':
+            times, data = read_h5_timeseries_base(filename)
+        # print warning if file is empty
+        if len(times)==0 and len(data)==0:
+            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
+        return times, data
+    return None, None
+
+def get_timeseries_old(ID, data_type,
                    ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
                    dset=None, file_tag='',
                    file_dir=None, **kwargs):
@@ -301,6 +317,7 @@ def get_timeseries(ID, data_type,
             print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
         return times, data
     return None, None
+
 
 def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None, **kwargs):
     # universal file formatting

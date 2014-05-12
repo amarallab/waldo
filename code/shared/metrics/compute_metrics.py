@@ -32,9 +32,9 @@ from importing.flags_and_breaks import consolidate_flags
 RAD_TO_DEG = 180.0 / np.pi
 
 # TODO? move remove flag functionality further upstream?
-def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
+def pull_basic_data_type(blob_id, data_type, remove_flags=True):
     ''' default option to remove flagged timepoints!'''
-    times, data = get_timeseries(blob_id, data_type=data_type, **kwargs)
+    times, data = get_timeseries(blob_id, data_type=data_type)
 
     # make sure things don't crash
     if type(times) == None or type(data) == None:
@@ -43,7 +43,7 @@ def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
         return [], []
 
     if remove_flags:
-        times_f, all_flags = get_timeseries(blob_id, data_type='flags', **kwargs)
+        times_f, all_flags = get_timeseries(blob_id, data_type='flags')
         flags = consolidate_flags(all_flags)
         #print data_type
         #print type(times), type(data), type(flags)
@@ -57,8 +57,8 @@ def pull_basic_data_type(blob_id, data_type, remove_flags=True, **kwargs):
 def euclidean(list1, list2):
     return math.sqrt(sum((x - y) ** 2 for x, y in izip(list1, list2)))
 
-def pull_is_moving(blob_id, moving=True, **kwargs):
-    times, data = get_timeseries(blob_id, data_type='is_moving', **kwargs)    
+def pull_is_moving(blob_id, moving=True):
+    times, data = get_timeseries(blob_id, data_type='is_moving')    
     if times == None or data == None:
         return [], []
 
@@ -81,12 +81,12 @@ def pull_is_moving(blob_id, moving=True, **kwargs):
     else:
         return [], []
 
-def compute_stopped_duratations(blob_id, **kwargs):
-    times, dur = pull_is_moving(blob_id, moving=False, **kwargs)
+def compute_stopped_duratations(blob_id):
+    times, dur = pull_is_moving(blob_id, moving=False)
     return times, dur
 
-def compute_moving_duratations(blob_id, **kwargs):
-    times, dur = pull_is_moving(blob_id, moving=True, **kwargs)
+def compute_moving_duratations(blob_id):
+    times, dur = pull_is_moving(blob_id, moving=True)
     return times, dur
 
 # todo
@@ -98,19 +98,19 @@ def quantiles_for_data(data, quantiles=range(10,91, 10)):
     data = [d for d in data if not np.isnan(d)]
     return [stats.scoreatpercentile(data, q) for q in quantiles]
 
-def compute_size(blob_id, **kwargs):    
+def compute_size(blob_id):    
     # size is a body shape property. if we've flagged the shape, don't measure size.
-    return pull_basic_data_type(blob_id, data_type='size',
-                                remove_flags=True, **kwargs)
+    return pull_basic_data_type(blob_id, data_type='size', remove_flags=True)
+                                
 
-def compute_width(blob_id, **kwargs):
+def compute_width(blob_id):
     # size is a body shape property. if we've flagged the shape, don't measure size.
-    return pull_basic_data_type(blob_id, data_type='width50', 
-                                remove_flags=True, **kwargs)
+    return pull_basic_data_type(blob_id, data_type='width50', remove_flags=True)
+                                
 
-def compute_centroid_speed(blob_id, **kwargs):
+def compute_centroid_speed(blob_id):
     # speed is not a body shape.
-    times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)
+    times, xy = get_timeseries(blob_id, data_type='xy')
 
     if times==None or len(times) ==0 or len(xy) ==0:
         return [], []
@@ -118,8 +118,8 @@ def compute_centroid_speed(blob_id, **kwargs):
     speeds = txy_to_speeds(t=times, x=x, y=y)
     return times, speeds
 
-def compute_angle_change(blob_id, **kwargs):
-    times, xy = get_timeseries(blob_id, data_type='xy', **kwargs)
+def compute_angle_change(blob_id):
+    times, xy = get_timeseries(blob_id, data_type='xy')
     if times == None or len(times) ==0 or len(xy) ==0:
         return [], []
     x, y = zip(*xy)
@@ -228,8 +228,8 @@ def displacement_along_curve(curve1, curve2, perpendicular=False):
         perp_projection = np.fabs(norm2 * sin_)
         return sum(perp_projection)
 
-def compute_length(blob_id, **kwargs):
-    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+def compute_length(blob_id):
+    times, spines = get_timeseries(blob_id, data_type='spine')
     if spines==None or len(spines) ==0:
         return [], []
     na_values = ['', -1, 'NA', 'NaN', None, []]
@@ -240,8 +240,8 @@ def compute_length(blob_id, **kwargs):
             lengths.append(length_of_spine(spine))
     return times, lengths
 
-def compute_speed_along(blob_id, **kwargs):
-    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+def compute_speed_along(blob_id):
+    times, spines = get_timeseries(blob_id, data_type='spine')
     if spines==None or len(spines) ==0:
         return [], []
     stimes, speeds = [], []
@@ -253,8 +253,8 @@ def compute_speed_along(blob_id, **kwargs):
             speeds.append(speed)
     return stimes, speeds
 
-def compute_speed_perp(blob_id, **kwargs):
-    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+def compute_speed_perp(blob_id):
+    times, spines = get_timeseries(blob_id, data_type='spine')
     if spines==None or len(spines) ==0:
         return [], []
     stimes, speeds = [], []
@@ -267,8 +267,8 @@ def compute_speed_perp(blob_id, **kwargs):
             speeds.append(speed)
     return stimes, speeds
 
-def compute_curvature(blob_id, **kwargs):
-    times, spines = get_timeseries(blob_id, data_type='spine', **kwargs)
+def compute_curvature(blob_id):
+    times, spines = get_timeseries(blob_id, data_type='spine')
     if spines==None or len(spines) ==0:
         return [], []
     ctimes, curvatures = [], []

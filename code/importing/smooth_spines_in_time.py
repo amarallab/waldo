@@ -63,8 +63,8 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
     """
 
     # get data into proper form
-    break_list = get_metadata(blob_id, data_type='breaks', **kwargs)
-    times, spines = get_timeseries(blob_id, data_type='spine_rough', **kwargs)
+    break_list = get_metadata(blob_id, data_type='breaks')
+    times, spines = get_timeseries(blob_id, data_type='spine_rough')
     flagged_times = get_flagged_times(blob_id)
     good_regions = good_segments_from_data(break_list, times=times, data=spines,
                                            flagged_times=flagged_times)
