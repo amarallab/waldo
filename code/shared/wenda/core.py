@@ -48,11 +48,33 @@ class WendasWorms(object):
         self.measurements.default_factory = None
 
     def available_measurements(self):
-        return list(six.iterkeys(self.measurements))
+        """
+        Returns a generator reflecting all measurement types saved into
+        files.  Each measurement may not exist for every worm.
+        """
+        return six.iterkeys(self.measurements)
 
     def available_worms(self):
-        return list(six.iterkeys(self.worms))
+        """
+        Returns a generator of all worm IDs.
+        """
+        return six.iterkeys(self.worms)
+
+    def get_worms(self):
+        """
+        Generator that produces the worm ID and a dictionary with the
+        measurement type as the key and payload as the value.  The type
+        and particular format of the value can vary based on the storage
+        type.
+        """
+        for worm_id, worm_measurements in six.iteritems(self.worms):
+            yield worm_id, {m: self.storage_adapter.Worm(fn) for (m, fn) in six.iteritems(worm_measurements)}
 
     def get_measurements(self, measurement):
+        """
+        Generator that produces the worm ID and *measurement* data loaded
+        from the target file.  The type and particular format of the data
+        can vary based on the storage type.
+        """
         for worm_id, datafile in six.iteritems(self.measurements[measurement]):
             yield worm_id, self.storage_adapter.Worm(datafile)

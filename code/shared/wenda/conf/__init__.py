@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Wanda configuration management
+Wanda configuration management.  Inspired by Django's settings module.
 """
 from __future__ import (
         absolute_import, division, print_function, unicode_literals)
