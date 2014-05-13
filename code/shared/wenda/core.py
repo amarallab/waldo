@@ -34,7 +34,7 @@ class WendasWorms(object):
         self.worms = collections.defaultdict(dict)
         self.measurements = collections.defaultdict(dict)
 
-        fn_format = re.compile('(^|/)' + self.experiment_id + '_(?P<worm_id>\d{5})-(?P<series>\w+)')
+        fn_format = re.compile(self.experiment_id + r'_(?P<worm_id>\d{5})-(?P<series>\w+)')
         for fn in glob.iglob(os.path.join(self.experiment_dir, '*.{}'.format(self.storage_adapter.FILE_EXT))):
             fn_parsed = fn_format.search(fn)
             if fn_parsed is not None:
