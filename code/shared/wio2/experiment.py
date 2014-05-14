@@ -11,6 +11,7 @@ import re
 import collections
 import pathlib # stdlib 3.4+, pip <=3.3
 import errno
+import contextlib
 
 from .conf import settings
 from .datafile import DataFile
@@ -19,7 +20,14 @@ FILE_EXT = 'h5'
 
 class Experiment(object):
     """
+    Object to represent stored data from an experiment, real or otherwise.
+    By default uses HDF5 to store time and data-series in a uniquely named
+    folder, given by *experiment_id*, in either the given *data_root*
+    directory or what is pulled from ``H5_DATA_ROOT`` in the configuration
+    module.
 
+    :class:`Experiment` can be opened to read or write data files, depending
+    on *mode*.
     """
     def __init__(self, experiment_id, mode='r', data_root=None):
         if data_root is None:
@@ -54,7 +62,6 @@ class Experiment(object):
                 if e.errno != errno.EEXIST:
                     raise
 
-
     def _index(self):
         """
         Finds and adds all data files in the experiment directory to a
@@ -70,17 +77,30 @@ class Experiment(object):
                 continue
 
             fn_parsed = fn_parsed.groupdict()
-            worm_id = fn_parsed['worm_id']
+            worm_id = int(fn_parsed['worm_id'])
             series = fn_parsed['series']
             self.worms[worm_id][series] = fn
             self.measurements[series][worm_id] = fn
 
-    def _filename(self, worm_id, field):
-        """UNTESTED
+    def _filename(self, tag, worm_id=None, ext=None):
         """
-        return '{exp_id}_{worm_id:05d}-{field}.{ext}'.format(
-                exp_id=self.experiment_id, worm_id=worm_id, field=field,
-                ext=FILE_EXT)
+        Returns a formatted filename using *tag*, often a measurement,
+        *worm_id*, a unique "blob" identifier, and *ext*, the file extension.
+
+        If *worm_id* is not provided, the filename will lack that field.
+        *ext* defaults to the global ``FILE_EXT``
+        """
+        if ext is None:
+            ext = FILE_EXT
+
+        if worm_id is not None:
+            fn = '{}_{:05d}-{}.{}'.format(
+                    self.experiment_id, worm_id, tag, ext)
+        else:
+            fn = '{}-{}.{}'.format(
+                    self.experiment_id, tag, ext)
+
+        return fn
 
     def read_worms(self):
         """
@@ -90,6 +110,7 @@ class Experiment(object):
         type.
         """
         for worm_id, worm_measurements in six.iteritems(self.worms):
+            # a context manager for all these files would be nice...
             worm_data = {
                     m: DataFile(str(filepath)) for (m, filepath)
                     in six.iteritems(worm_measurements)}
@@ -110,9 +131,43 @@ class Experiment(object):
         except KeyError:
             return # the specified measurement has no measurements.
 
-    def write_measurement(self, worm_id, measurement, time, data):
-        """UNTESTED
+    def write_measurement(self, worm_id, measurement, time, data, overwrite=False):
         """
-        filepath = self.experiment_dir / self._filename(worm_id, measurement)
-        with DataFile(str(filepath), 'w') as datafile:
-            datafile.dump(time, data)
+        Write a *measurement* for a specific *worm_id*.
+
+        Parameters
+        ----------
+        worm_id : int
+            Worm identifier specific to experiment.
+        measurement : str
+            Name of the measurement.
+        time : array-like
+            Time points.
+        data : array-like
+            Data at each time point.  Must equal *time* in length.
+
+        Keyword Arguments
+        -----------------
+        overwrite : bool
+            Overwrite existing data without throwing an error.  Default False.
+        """
+        filepath = self.experiment_dir / self._filename(measurement, worm_id)
+        with DataFile(str(filepath), 'w' if overwrite else 'w-') as datafile:
+            datafile.write(time, data)
+
+    @contextlib.contextmanager
+    def open_auxillary(self, tag, ext=None, mode='r'):
+        """
+        Context manager to write an experiment file
+        """
+        filepath = self.experiment_dir / self._filename(tag, ext=ext)
+        with filepath.open(mode) as f:
+            yield f
+
+    def write_auxillary(self, buf, *args, **kwargs):
+        """
+        Writes *buf* to an auxillary file.  See :func:`open_auxillary` for
+        further call signature.
+        """
+        with self.open_auxillary(*args, **kwargs) as f:
+            f.write(buf)

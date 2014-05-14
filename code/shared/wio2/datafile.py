@@ -16,7 +16,7 @@ class DataFile(h5py.File):
             kwargs['mode'] = 'r'
         super(DataFile, self).__init__(*args, **kwargs)
 
-    def dump(self, time, data):
+    def write(self, time, data):
         """
         Write a series of *data* points at associated *time* points.  The two
         series must be equal in length, but it doesn't matter if time is
@@ -27,8 +27,8 @@ class DataFile(h5py.File):
         self['time'] = time
         self['data'] = data
 
-    def load(self):
+    def read(self):
         """
         Load the data series from the file.
         """
-        return {key: self[key] for key in ['time', 'data']}
+        return (self[key] for key in ['time', 'data'])

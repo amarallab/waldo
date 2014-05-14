@@ -16,7 +16,7 @@ class ArcAndReorient(SyntheticWorm):
     and if stopped, can randomly reorient along any heading.
     """
 
-    REALIZATION_DEFAULTS = {
+    MODEL_DEFAULTS = {
         'speeds': [0, 0.01, 0.04],
         'angle_dist_mean': 0,
         'angle_dist_sd': 0.01,
