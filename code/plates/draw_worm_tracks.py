@@ -32,7 +32,7 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import format_results_filename, get_good_blobs, get_timeseries, get_dset
-from imagehandeling.grab_images import get_base_image_path
+from images.grab_images import get_base_image_path
 
 def get_all_worm_tracks(ex_id):
     ''' returns a list of blob_ids, a string denoting the dataset, and a list of lists (xy positions)
@@ -44,18 +44,32 @@ def get_all_worm_tracks(ex_id):
     tracks = []
     print '{ID}: {N} blobs found'.format(ID=ex_id, N=len(blobs))
     for blob_id in blobs:
-        t, xy = get_timeseries(blob_id, data_type='xy_raw', ID_type='w')
+        t, xy = get_timeseries(blob_id, data_type='xy_raw')
         tracks.append(xy)
     return blobs, dset, tracks
 
-def draw_plate_tracks(ex_id, save=True):
+def draw_plate_tracks(ex_id, blobs=[], save=True):
     ''' draws all blob tracks from ex_id onto one image.
     '''
 
-    blobs, dset, tracks = get_all_worm_tracks(ex_id)
-    if len(blobs) == 0:
+    blobs2, dset, tracks2 = get_all_worm_tracks(ex_id)
+
+    if len(blobs2) == 0:
         print 'no blobs found. exiting'
         return None
+
+    if len(blobs):
+        nblobs = []
+        tracks = []
+        for b, t in zip(blobs2, tracks2):
+            if b in blobs:
+                nblobs.append(b)
+                tracks.append(t)
+        blobs = nblobs
+
+    else:        
+        blobs = blobs2
+        tracks = tracks2
 
     im_path = get_base_image_path(ex_id)
     if im_path == None:
@@ -103,4 +117,7 @@ def draw_plate_tracks(ex_id, save=True):
 
 if __name__ == '__main__':
     ex_id = '20130614_120518'
-    draw_plate_tracks(ex_id)
+    blobs = ['20130614_120518_02263', '20130614_120518_03221', '20130614_120518_00910', '20130614_120518_02765', '20130614_120518_00020']
+
+    #ex_id = '20130318_131111'
+    draw_plate_tracks(ex_id, blobs=blobs)

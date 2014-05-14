@@ -23,13 +23,14 @@ sys.path.append(SHARED_DIR)
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from Encoding.decode_outline import decode_outline
-from database.mongo_retrieve import mongo_query, pull_data_type_for_blob
+from encoding.decode_outline import decode_outline
+#from database.mongo_retrieve import mongo_query, pull_data_type_for_blob
 from settings.local import LOGISTICS
 
 # Globals
 DATA_DIR = LOGISTICS['filesystem_data']
 
+'''
 def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, **kwargs):
     timekey = ('%.3f' % float(timepoint)).replace('.', '?')
     temp_filename = '{path}{ex_id}/timekey{tk}_blobs.tmp'.format(path=data_dir, ex_id=ex_id, tk=timekey)
@@ -61,11 +62,6 @@ def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, 
 
 
 def db_check(ex_id, pictime=500):
-    """
-    Arguments:
-    - `ex_id`:
-    - `pictime`:
-    """
     import grab_images as raw
 
     print 'time chosen:', pictime
@@ -78,6 +74,7 @@ def db_check(ex_id, pictime=500):
     outlines = grab_db_outlines(ex_id=ex_id, timepoint=timepoint)
     for i in outlines:
         print i
+'''
 
 def find_outlines_for_timepoint(ex_id, frame, data_dir=DATA_DIR, overwrite_temp=False):
     """
