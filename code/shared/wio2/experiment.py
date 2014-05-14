@@ -40,13 +40,13 @@ class Experiment(object):
 
             self._index()
 
-            # prevent key generation afterwards
+            # prevent key generation afterwards (throws KeyError on accessing
+            # a non-existant element instead of silently making a new item)
             self.worms.default_factory = None
             self.measurements.default_factory = None
 
         elif mode == 'w':
             # initalize folder
-            raise NotImplementedError()
             try:
                 self.experiment_dir.mkdir(parents=True)
             except OSError as e:
@@ -90,7 +90,9 @@ class Experiment(object):
         type.
         """
         for worm_id, worm_measurements in six.iteritems(self.worms):
-            worm_data = {m: DataFile(str(fn)) for (m, fn) in six.iteritems(worm_measurements)}
+            worm_data = {
+                    m: DataFile(str(filepath)) for (m, filepath)
+                    in six.iteritems(worm_measurements)}
             yield worm_id, worm_data
             for datafile in six.itervalues(worm_data):
                 datafile.close()
@@ -102,15 +104,15 @@ class Experiment(object):
         can vary based on the storage type.
         """
         try:
-            for worm_id, fn in six.iteritems(self.measurements[measurement]):
-                with DataFile(str(fn)) as df:
-                    yield worm_id, df
+            for worm_id, filepath in six.iteritems(self.measurements[measurement]):
+                with DataFile(str(filepath)) as datafile:
+                    yield worm_id, datafile
         except KeyError:
             return # the specified measurement has no measurements.
 
     def write_measurement(self, worm_id, measurement, time, data):
         """UNTESTED
         """
-        fn = self._filename(worm_id, measurement)
-        with DataFile(str(fn)) as df:
-            df.write_data(time, data)
+        filepath = self.experiment_dir / self._filename(worm_id, measurement)
+        with DataFile(str(filepath), 'w') as datafile:
+            datafile.dump(time, data)
