@@ -34,7 +34,6 @@ sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import get_timeseries, write_timeseries_file, write_metadata_file
-from centroid import markov_measures_for_xy
 
 ### Functions
 
@@ -45,11 +44,7 @@ def reskew_data(data,e=0.1):
     return np.sinh(np.array(data)) * e
 
 #### Calculation Functions
-
-# In[3]:
-
-def measure_xy(x, y, dt=0.1, verbose=False):
-
+def markov_measures_for_xy(x, y, dt=0.1, verbose=False):
     vs = np.zeros((2, len(x)-1))
     
     vs[0] = np.diff(x) / dt
@@ -93,7 +88,6 @@ def measure_xy(x, y, dt=0.1, verbose=False):
         if any(np.isnan(dat)):
             print i, dat
     return data
-
 
 # In[8]:
 

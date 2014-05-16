@@ -28,7 +28,7 @@ from settings.local import SMOOTHING
 from equally_space import equally_spaced_tenth_second_times
 from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
 from metrics.compute_metrics import txy_to_speeds, angle_change_for_xy
-from states import fit_hmm_for_blob
+from states import fit_hmm_for_blob, markov_measures_for_xy
 
 ORDER = SMOOTHING['time_order']
 WINDOW = SMOOTHING['time_window']
@@ -106,51 +106,6 @@ def process_centroid(blob_id, verbose=True, **kwargs):
                               data=np.array(domains[domains.columns], dtype=float))
 
     return
-
-def markov_measures_for_xy(x, y, dt=0.1, verbose=False):
-    vs = np.zeros((2, len(x)-1))
-    
-    vs[0] = np.diff(x) / dt
-    vs[1] = np.diff(y) / dt
-    vs = vs.T
-
-    data = []    
-    v23 = vs[0]
-    for v in vs[1:]:   
-        v12, v23 = v23, v
-
-        if np.dot(v12, v23) < 0:
-            r = 1
-            d = (v12 - v23) / np.linalg.norm(v12 - v23)
-            alpha = (v23 + v12) / dt
-            R = [[d[0], d[1]], [-d[1], d[0]]]            
-        else:
-            r = 0
-            d = (v12 + v23) / np.linalg.norm(v12 + v23)            
-            alpha = (v23 - v12) / dt
-            R = [[-d[0], -d[1]], [-d[1], d[0]]]
-
-        s = (np.linalg.norm(v12) + np.linalg.norm(v23)) / dt
-        if s == 0:
-            a, ar = 0, 0
-        else:
-            a = np.dot(R, alpha)
-            ar = a[1]
-            a = np.linalg.norm(a)
-            
-        if verbose:
-            print 'r={r} | s={s} | a={a} | ar={ar}'.format(r=r, s=s, a=a, ar=ar)
-        if np.isnan(a):
-            print 'nan'
-            
-        data.append((r, s, a, ar))
-        
-    data = np.array(data)
-    
-    for i,dat in enumerate(data):
-        if any(np.isnan(dat)):
-            print i, dat
-    return data
 
 
 def domains_to_dataframe(stop_domains, times):    
