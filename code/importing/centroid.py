@@ -28,6 +28,7 @@ from settings.local import SMOOTHING
 from equally_space import equally_spaced_tenth_second_times
 from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
 from metrics.compute_metrics import txy_to_speeds, angle_change_for_xy
+from states import fit_hmm_for_blob
 
 ORDER = SMOOTHING['time_order']
 WINDOW = SMOOTHING['time_window']
@@ -95,6 +96,8 @@ def process_centroid(blob_id, verbose=True, **kwargs):
     markov_measures = markov_measures_for_xy(x, y, dt=0.1)
     write_timeseries_file(ID=blob_id, data_type='markov_measures',
                           times=times, data=markov_measures)
+
+    fit_hmm_for_blob(blob_id)
 
     # write is_moving durations
     if isinstance(domains, pd.DataFrame):

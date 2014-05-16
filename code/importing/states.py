@@ -401,6 +401,7 @@ def fit_three_states(params2, observations, tau, dt=0.1):
 
 
 def initialize_data(blob_id):
+
     times, xy = get_timeseries(blob_id, data_type='xy')
     x, y = zip(*xy)
     observations = markov_measures_for_xy(x, y, dt=0.1)
@@ -431,6 +432,7 @@ def fit_hmm_for_blob(blob_id, tau=20000, dt=0.1):
     write_timeseries_file(blob_id, data_type='markov_prob3', times=times, data=rel_probs3)
     data = {'T':T3.tolist(), 'entropy':entropy3, 'params':params3.tolist()}
     write_metadata_file(blob_id, data_type='markov_states3', data=data)
+    print 'hhm fitting finished!'
 
 if __name__ == '__main__':
     blob_id = '20130318_131111_49044'
