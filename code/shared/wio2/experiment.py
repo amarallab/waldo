@@ -96,6 +96,10 @@ class Experiment(object):
         else:
             raise KeyError('Invalid key')
 
+    def __iter__(self):
+        for worm_id in six.iterkeys(self.worms):
+            yield worm_id, ExperimentWormView(self, worm_id)
+
     def _index(self):
         """
         Finds and adds all data files in the experiment directory to a

@@ -30,6 +30,12 @@ class SyntheticWorm(object):
         self.worms_true = np.empty((self.n_worms, self.n_points, 2))
         self.worms = None
 
+    def __iter__(self):
+        # make this look sorta like a wio2.Experiment
+        for worm_id, worm in enumerate(self.worms, start=1):
+            #yield worm_id, {'xy_raw': {'time': self.times, 'data': worm}}
+            yield worm_id, {'xy_raw': (self.times, worm)}
+
     def corrupt(self, noise_sd):
         worms = np.copy(self.worms_true)
         if noise_sd == 0:
