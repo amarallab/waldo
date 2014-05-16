@@ -5,6 +5,9 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 import h5py
+import numpy as np
+
+FIELDS = ['time', 'data']
 
 class DataFile(h5py.File):
     """
@@ -15,6 +18,16 @@ class DataFile(h5py.File):
         if len(args) < 2 and 'mode' not in kwargs:
             kwargs['mode'] = 'r'
         super(DataFile, self).__init__(*args, **kwargs)
+
+    def __getitem__(self, key):
+        if key not in FIELDS:
+            raise KeyError()
+        return super(DataFile, self).__getitem__(key)
+
+    def __setitem__(self, key, data):
+        if key not in FIELDS:
+            raise KeyError()
+        super(DataFile, self).__setitem__(key, data)
 
     def write(self, time, data):
         """
@@ -29,6 +42,13 @@ class DataFile(h5py.File):
 
     def read(self):
         """
-        Load the data series from the file.
+        Provide a lazy view to the file's datasets.
         """
-        return (self[key] for key in ['time', 'data'])
+        return [self[key] for key in ['time', 'data']]
+
+    def read_immediate(self):
+        """
+        Read the datasets into memory immediately
+        """
+        time, data = self.read()
+        return np.array(time), np.array(data)
