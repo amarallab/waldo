@@ -18,6 +18,32 @@ from .datafile import DataFile
 
 FILE_EXT = 'h5'
 
+class ExperimentAxisView(object):
+    def __init__(self, experiment, key):
+        self.experiment = experiment
+        self.fixed_key = key
+
+
+class ExperimentMeasurementView(ExperimentAxisView):
+    def __getitem__(self, key):
+        return self.experiment.read_measurement(key, self.fixed_key)
+
+    def __iter__(self):
+        # yields a tuple: (worm_id, DataFile)
+        for result in self.experiment.read_measurements(self.fixed_key):
+            yield result
+
+
+class ExperimentWormView(ExperimentAxisView):
+    def __getitem__(self, key):
+        return self.experiment.read_measurement(self.fixed_key, key)
+
+    def __iter__(self):
+        # yields a tuple: (worm_id, DataFile)
+        for result in self.experiment.read_worm(self.fixed_key):
+            yield result
+
+
 class Experiment(object):
     """
     Object to represent stored data from an experiment, real or otherwise.
@@ -61,6 +87,18 @@ class Experiment(object):
                 # ignore if the folder already existed.
                 if e.errno != errno.EEXIST:
                     raise
+
+    def __getitem__(self, key):
+        if isinstance(key, six.string_types):
+            return ExperimentMeasurementView(self, key)
+        elif isinstance(key, six.integer_types):
+            return ExperimentWormView(self, key)
+        else:
+            raise KeyError('Invalid key')
+
+    def __iter__(self):
+        for worm_id in six.iterkeys(self.worms):
+            yield worm_id, ExperimentWormView(self, worm_id)
 
     def _index(self):
         """
@@ -124,12 +162,19 @@ class Experiment(object):
         from the target file.  The type and particular format of the data
         can vary based on the storage type.
         """
-        try:
-            for worm_id, filepath in six.iteritems(self.measurements[measurement]):
-                with DataFile(str(filepath)) as datafile:
-                    yield worm_id, datafile
-        except KeyError:
-            return # the specified measurement has no measurements.
+        for worm_id, filepath in six.iteritems(self.measurements[measurement]):
+            with DataFile(str(filepath)) as datafile:
+                yield worm_id, datafile
+
+    def read_worm(self, worm_id):
+        for measurement, filepath in six.iteritems(self.worms[worm_id]):
+            with DataFile(str(filepath)) as datafile:
+                yield measurement, datafile
+
+    def read_measurement(self, worm_id, measurement):
+        filepath = self.measurements[measurement][worm_id]
+        with DataFile(str(filepath)) as datafile:
+            return datafile.read_immediate()
 
     def write_measurement(self, worm_id, measurement, time, data, overwrite=False):
         """
