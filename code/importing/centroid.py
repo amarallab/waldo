@@ -69,7 +69,9 @@ def process_centroid(blob_id, verbose=True, **kwargs):
         return 
     if len(xy) == 0:
         return
+
     
+    xy = fill_gaps(xy) # interpolate between missing values.
     x, y = zip(*xy)
     dataframe, domains = full_package(orig_times, x, y)
     if verbose:
@@ -186,6 +188,35 @@ def full_package(times, x, y,
     dataframe = xy_to_full_dataframe(times=eq_times, x=x, y=y)
     domain_df = domains_to_dataframe(domains, times=times)
     return dataframe, domain_df
+
+def fill_gaps(xy):
+    """
+    xy lists might contain values of np.nan or a -1 placeholder.
+    this function fills in the missing values by interpolating linearly            
+    
+    params
+    ----------
+    xy: (list of x,y tuples or 2d nparray)
+    
+    returns
+    checked_xy
+    """
+    checked_xy = []
+    badcount = 0
+    last_good = xy[0]
+    for (xi,yi) in xy:
+        #print xi, yi, badcount, last_good
+        if xi <= 0 or yi <= 0 or np.isnan(xi) or np.isnan(yi):
+            badcount += 1
+        elif badcount == 0:
+            last_good = (xi,yi)
+            checked_xy.append((xi, yi))
+        else:
+            new_x = np.linspace(last_good[0], xi, badcount+2)[1:]
+            new_y = np.linspace(last_good[1], yi, badcount+2)[1:]
+            checked_xy.extend(zip(new_x, new_y))
+            badcount = 0
+    return checked_xy
 
 def xy_to_full_dataframe(times, x, y):    
     speeds = txy_to_speeds(t=times, x=x, y=y)
