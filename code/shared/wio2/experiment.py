@@ -88,6 +88,10 @@ class Experiment(object):
                 if e.errno != errno.EEXIST:
                     raise
 
+    def __iter__(self):
+        for worm_id in six.iterkeys(self.worms):
+            yield worm_id
+
     def __getitem__(self, key):
         if isinstance(key, six.string_types):
             return ExperimentMeasurementView(self, key)
@@ -95,10 +99,6 @@ class Experiment(object):
             return ExperimentWormView(self, key)
         else:
             raise KeyError('Invalid key')
-
-    def __iter__(self):
-        for worm_id in six.iterkeys(self.worms):
-            yield worm_id, ExperimentWormView(self, worm_id)
 
     def _index(self):
         """
