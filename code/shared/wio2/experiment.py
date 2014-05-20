@@ -18,7 +18,7 @@ from .datafile import DataFile
 
 FILE_EXT = 'h5'
 
-class ExperimentAxisView(object):
+class ExperimentAxisView(collections.Mapping):
     def __init__(self, experiment, key):
         self.experiment = experiment
         self.fixed_key = key
@@ -28,23 +28,34 @@ class ExperimentMeasurementView(ExperimentAxisView):
     def __getitem__(self, key):
         return self.experiment.read_measurement(key, self.fixed_key)
 
+    # def __delitem__(self, key):
+    #     del self.experiment[self.fixed_key][key]
+
     def __iter__(self):
         # yields a tuple: (worm_id, DataFile)
         for result in self.experiment.read_measurements(self.fixed_key):
             yield result
+
+    def __len__(self):
+        return len(self.experiment.measurements[self.fixed_key])
 
 
 class ExperimentWormView(ExperimentAxisView):
     def __getitem__(self, key):
         return self.experiment.read_measurement(self.fixed_key, key)
 
+    # def __delitem__(self, key):
+    #     del self.worms[self.fixed_key][key]
+
     def __iter__(self):
         # yields a tuple: (worm_id, DataFile)
         for result in self.experiment.read_worm(self.fixed_key):
             yield result
 
+    def __len__(self):
+        return len(self.experiment.worms[self.fixed_key])
 
-class Experiment(object):
+class Experiment(collections.Mapping):
     """
     Object to represent stored data from an experiment, real or otherwise.
     By default uses HDF5 to store time and data-series in a uniquely named
@@ -99,6 +110,9 @@ class Experiment(object):
             return ExperimentWormView(self, key)
         else:
             raise KeyError('Invalid key')
+
+    def __len__(self):
+        return len(self.worms)
 
     def _index(self):
         """

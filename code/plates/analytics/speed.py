@@ -35,7 +35,7 @@ class SpeedEstimator(AnalysisMethod):
         self.speed_pctiles = []
 
     def process_blob(self, blob):
-        xy = list(zip(*blob['xy_raw'][1]))
+        xy = list(zip(*blob['xy_raw']['data']))
         xy_smoothed = [self.smoother(c) for c in xy]
         dxy = np.diff(np.array(xy_smoothed)[...,::SUBSAMPLE], axis=1)
         ds = np.linalg.norm(dxy, axis=0)

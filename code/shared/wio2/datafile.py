@@ -44,7 +44,7 @@ class DataFile(h5py.File):
         """
         Provide a lazy view to the file's datasets.
         """
-        return [self[key] for key in ['time', 'data']]
+        return [self[key] for key in FIELDS]
 
     def read_immediate(self):
         """

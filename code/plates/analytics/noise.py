@@ -73,7 +73,7 @@ class NoiseEstimator(AnalysisMethod):
         if blob is None:
             return
 
-        steps = centroid_steps(blob['xy_raw'][1])
+        steps = centroid_steps(blob['xy_raw']['data'])
         result = centroid_stats(steps)
         means, sds = zip(*result)
 
