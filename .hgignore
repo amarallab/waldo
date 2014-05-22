@@ -35,7 +35,7 @@ build/
 *.h5
 *.csv
 *.tsv
-
+*.tmp
 
 # Directory
 ./data/*
