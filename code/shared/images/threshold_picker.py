@@ -7,24 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import matplotlib.cm as cm
-<<<<<<< local
-import matplotlib.patches as mpatches
-import prettyplotlib as ppl
-import random
-import functools
-
-#import Image
-import numpy as np
-import scipy
-=======
->>>>>>> other
 from scipy import ndimage
 from skimage import morphology
 from skimage.measure import regionprops
-<<<<<<< local
-=======
-
->>>>>>> other
 
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -40,12 +25,7 @@ sys.path.append(PROJECT_DIR)
 from code.heltena import profiling
 
 # nonstandard imports
-<<<<<<< local
-from images.grab_images import grab_images_in_time_range
-#from wio.file_manager import get_good_blobs, get_timeseries
-=======
 from grab_images import grab_images_in_time_range
->>>>>>> other
 from settings.local import LOGISTICS
 
 MWT_DIR = LOGISTICS['filesystem_data']
@@ -137,16 +117,6 @@ def show_threshold_properties(img, background, thresholds):
 
 
 def show_threshold(img, background, threshold):
-<<<<<<< local
-    objects, N, mask = find_objects(img, background, threshold)
-    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey=True)
-    ax1.imshow(img, cmap=plt.cm.gray, interpolation='nearest')
-    ax1.contour(mask, [0.5], linewidths=1.2, colors='b')
-    ax2.imshow(objects, cmap=plt.cm.jet, interpolation='nearest')
-    ax2.set_title('threshold = {t}'.format(t=threshold))
-    ax1.axis('off')
-    ax2.axis('off')
-=======
     """
     plots an image with the outlines of all objects overlaid on top.
 
@@ -159,7 +129,6 @@ def show_threshold(img, background, threshold):
     threshold: (float)
         the threshold value used to create the binary mask after pixel intensities for (background - image) have been calculated.
     """ 
->>>>>>> other
 
     mask = create_binary_mask(img, background, threshold)
     fig, ax = plt.subplots()
@@ -198,13 +167,10 @@ if __name__ == '__main__':
     threshold = 0.0001
     threshold = 0.0003
 
-<<<<<<< local
     profiling.begin()
-=======
     # list of thresholds to try out
     thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
 
->>>>>>> other
     # grab images and times.
     times, impaths = grab_images_in_time_range(ex_id, start_time=0)
     times = [float(t) for t in times]
@@ -212,18 +178,11 @@ if __name__ == '__main__':
 
     background = create_backround(impaths)
 
-<<<<<<< local
-=======
     # pick an image to test. the middle one is good.
->>>>>>> other
     mid = mpimg.imread(impaths[int(len(impaths)/2)])
-<<<<<<< local
-    #threshold = pick_threshold_in_range(img=mid, background=background)
-=======
 
     # run functions.
     show_threshold_properties(img=mid, background=background, thresholds=thresholds)
->>>>>>> other
     show_threshold_spread(mid, background)
     show_threshold(mid, background, threshold)
 
