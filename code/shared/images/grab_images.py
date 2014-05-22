@@ -12,7 +12,7 @@ __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
 # standard imports
-import Image
+#import Image
 import glob
 import numpy as np
 import os

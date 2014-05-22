@@ -11,7 +11,6 @@ from scipy import ndimage
 from skimage import morphology
 from skimage.measure import regionprops
 
-
 # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
 SHARED_DIR = os.path.abspath(os.path.join(HERE, '..'))
@@ -22,6 +21,8 @@ print PROJECT_DIR
 
 sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR)
+
+from code.heltena import profiling
 
 # nonstandard imports
 from grab_images import grab_images_in_time_range
@@ -161,11 +162,12 @@ def show_threshold_spread(img, background, thresholds=[0.00004, 0.0001, 0.00015,
         ax[row, col].axis('off')
 
 if __name__ == '__main__':
-    ex_id = '20130614_120518'
+    ex_id = '20130610_161943'
     #ex_id = '20130318_131111'
     threshold = 0.0001
     threshold = 0.0003
 
+    profiling.begin()
     # list of thresholds to try out
     thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
 
@@ -173,6 +175,7 @@ if __name__ == '__main__':
     times, impaths = grab_images_in_time_range(ex_id, start_time=0)
     times = [float(t) for t in times]
     times, impaths = zip(*sorted(zip(times, impaths)))
+
     background = create_backround(impaths)
 
     # pick an image to test. the middle one is good.
@@ -183,4 +186,6 @@ if __name__ == '__main__':
     show_threshold_spread(mid, background)
     show_threshold(mid, background, threshold)
 
+    profiling.tag()
     plt.show()
+    profiling.end()
