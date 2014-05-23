@@ -30,6 +30,7 @@ def configure(configuration_name=None):
         base.SPREADSHEET['password'] = base.get_env_variable('WORM_SPREADSHEET_PASSWORD')
 
         base.LOGISTICS['filesystem_data'] = '/Users/heltena/src/waldo/data/heltena/'
+        base.LOGISTICS['pretreatment'] = '/Users/heltena/src/waldo/data/annotation/pretreatment/',
 
     elif configuration_name == 'peterwinter':
         # passwords
