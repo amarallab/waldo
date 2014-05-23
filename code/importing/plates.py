@@ -32,20 +32,18 @@ from annotation.experiment_index import organize_plate_metadata
 from metrics.measurement_switchboard import pull_blob_data, quantiles_for_data
 from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 from wio.file_manager import get_good_blobs, get_dset
-from wio.file_manager import write_table, read_table
+from wio.file_manager import write_table, read_table, df_equal
 
-
-def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
+def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, autotest_write=True):
     if not blob_ids:
-        #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)    
         blob_ids = get_good_blobs(ex_id)
-    if not blob_ids:
-        return
-
+        if not blob_ids:
+            return
     
     plate_dataset = {}
     bad_blobs = []
     metric_index = []
+    metrics_not_found = []
 
     for bID in blob_ids:
         blob_data = []
@@ -54,7 +52,8 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
         for metric in metrics:
             times, data = pull_blob_data(bID, metric=metric)
             if type(data) == None or len(data) == 0:
-                print bID, metric, 'not found'
+                metrics_not_found.append(metric)
+                #print bID, metric, 'not found'
                 blob_is_good = False
                 break
             Qs=range(10,91, 10)
@@ -73,9 +72,10 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
         else:
             bad_blobs.append(bID)
 
-    print metric_index
-    print len(blob_ids), 'all'
-    print len(bad_blobs), 'bad'
+    print '{N} metrics | {a} blobs complete | {b} blobs incomplete'.format(N=len(metrics), a=len(blob_ids), b=len(bad_blobs))
+    problem_metrics = sorted(list(set(metrics_not_found)))
+    mlist=  ' | '.join(['{i} : {N}'.format(i=i, N=metrics_not_found.count(i)) for i in problem_metrics])
+    print('missing types | {l}'.format(l=mlist))
 
     percentiles = pd.DataFrame(plate_dataset, index=metric_index)
     percentiles = percentiles.T
@@ -89,18 +89,24 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
                 file_tag='worm_percentiles')
 
 
-    p2 = read_table(ID=ex_id,
-                    ID_type='plate',
-                    data_type='percentiles',
-                    dset=get_dset(ex_id),
-                    file_tag='worm_percentiles')
+    if autotest_write:
+        p2 = read_table(ID=ex_id,
+                        ID_type='plate',
+                        data_type='percentiles',
+                        dset=get_dset(ex_id),
+                        file_tag='worm_percentiles')
 
-    print 'after reading'
-    print p2.head()
+        if df_equal(percentiles, p2):
+            print 'write successful'
+        else:
+            print 'WARNING: WRITE NOT REPRODUCABLE'
+            print 'before writing'
+            print percentiles.head()
+            print 'after reading'
+            print p2.head()
 
 
-
-def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='default'):
+def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], verbose=False, autotest_write=True):
 
     if blob_ids == None or len(blob_ids) == 0:
         blob_ids = get_good_blobs(ex_id)
@@ -111,13 +117,6 @@ def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='de
         print data_type, len(blob_ids) #, blob_ids[:4]
         blobs = []
         blob_ids = list(set(blob_ids))
-        if index ==  None:
-            df = None
-        #elif index == 'default':
-        #    df = pd.DataFrame(index=np.arange(0.1, 3600.1,0.1))
-        #else:
-
-        #df = pd.DataFrame()
         blob_series = []
         N = len(blob_ids[1:])
         for i, blob_id in enumerate(blob_ids[1:]):
@@ -132,174 +131,38 @@ def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='de
             blob_data = pd.DataFrame(bdata, columns=['data'])
             blob_data['time'] = btimes
             blob_data['bID'] = blob_id
-            print '\t{i} of {N} | {ID} | points: {p}'.format(i=i, N=N,
-                                                        ID=blob_id, p = len(blob_data))
+            if verbose:
+                print '\t{i} of {N} | {ID} | points: {p}'.format(i=i, N=N,
+                                                                 ID=blob_id, p = len(blob_data))
 
-            print type(blob_data)
             if len(blob_data):
                 blob_series.append(blob_data)
             
-            '''
-            if isinstance(df, pd.DataFrame) and len(blob_data):
-                print 'saveing?'
-                df.append(blob_data)
-            elif len(blob_data):
-                df = blob_data
-                #df = df.join(blob_series, how='outer')
-            '''
         df = pd.concat(blob_series, axis=0)
-        print df.head()
-        print len(df)
         write_table(ID=ex_id,
                     ID_type='plate',
                     dataframe=df,
                     data_type=data_type,
                     dset=get_dset(ex_id),
                     file_tag='timeseries')
-        
-        df2 = read_table(ID=ex_id,
-                         ID_type='plate',
-                         data_type=data_type,
-                         dset=get_dset(ex_id),
-                         file_tag='timeseries')
 
+        if autotest_write:
+            df2 = read_table(ID=ex_id,
+                             ID_type='plate',
+                             data_type=data_type,
+                             dset=get_dset(ex_id),
+                             file_tag='timeseries')
 
-        print df2.head()
+            if df_equal(df, df2):
+                print 'write successful'
+            else:
+                print 'WARNING: WRITE NOT REPRODUCABLE'
+                print 'before writing'
+                print df.head()
+                print 'after reading'
+                print df2.head()
 
-# def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
-#     if not blob_ids:
-#         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)
-#         blob_ids = get_good_blobs(ex_id)
-#     if not blob_ids:
-#         return
-#     #metadata = get_metadata(ID=blob_ids[0], **kwargs)
-#     #dataset = metadata.get('dataset', 'none')
-#
-#     for metric in measurements:
-#         times, data = consolidate_plate_timeseries(blob_ids, metric, return_array=True)
-#         write_timeseries_file(ID=ex_id,
-#                               ID_type='plate',
-#                               times=times,
-#                               data=data,
-#                               data_type=metric,
-#                               dset=get_dset(ex_id),
-#                               file_tag='timeseries')
-#
-# def consolidate_plate_timeseries(blob_ids, metric, return_array=True):
-#     """ this function joins timeseries from all blob_ids and returns the results.
-#     by default, this is two lists. times and data (a list of lists containin values
-#     for all blobs at that given time.
-#
-#     params
-#     blob_ids: (list)
-#        the list of all blob ids that should be joined into the plate timeseries
-#     metric: (str)
-#        a string denoting what data_type the timeseries are.
-#     return_array: (bool)
-#        if false, this returns a dictionary rather than the default output.
-#     """
-#     data_dict = {}
-#     for blob_id in blob_ids:
-#         # calculate metric for blob, skip if empty list returned
-#         btimes, bdata = pull_blob_data(blob_id, metric=metric)
-#         if len(bdata) == 0:
-#             continue
-#         # store blob values in comiled dict.
-#         for t, value in izip(btimes, bdata):
-#             new_key = round(t, ndigits=1)
-#             if new_key not in data_dict:
-#                 data_dict[new_key] = []
-#             data_dict[new_key].append(value)
-#
-#
-#     if not return_array:
-#         return data_dict
-#
-#     times, data = [], []
-#     N_cols = 0
-#     for t in sorted(data_dict):
-#         row = data_dict[t]
-#         if len(row) > 0:
-#             times.append(t)
-#             data.append(row)
-#             if len(row) > N_cols:
-#                 N_cols = len(row)
-#
-#     # fill out array with NAs
-#     filled_data = []
-#     for d in data:
-#         d = d + [np.nan] * N_cols
-#         d = d[:N_cols]
-#         filled_data.append(d)
-#
-#     times = np.array(times, dtype=float)
-#     data = np.array(filled_data, dtype=float)
-#     return times, data
-#
-# '''
-# def write_plate_percentiles_old(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
-#     if not blob_ids:
-#         #blob_ids = get_blob_ids(query={'ex_id':ex_id}, **kwargs)
-#         blob_ids = get_good_blobs(ex_id)
-#     if not blob_ids:
-#         return
-#
-#     #metadata = get_metadata(ID=blob_ids[0], **kwargs)
-#     #dataset = metadata.get('dataset', 'none')
-#     dataset = get_dset(ex_id)
-#
-#     plate_dataset = {}
-#     bad_blobs = []
-#     for bID in blob_ids:
-#         blob_data = []
-#         blob_is_good = True
-#         for metric in metrics:
-#             times, data = pull_blob_data(bID, metric=metric)
-#             if type(data) == None or len(data) == 0:
-#                 print bID, metric, 'not found'
-#                 blob_is_good = False
-#                 break
-#             quantiles = quantiles_for_data(data)
-#             if any(np.isnan(quantiles)):
-#                 blob_is_good = False
-#                 print bID, metric, 'quantiles bad'
-#                 break
-#             blob_data.extend(quantiles)
-#         if blob_is_good:
-#             plate_dataset[bID] = blob_data
-#         else:
-#             bad_blobs.append(bID)
-#
-#     print len(blob_ids), 'all'
-#     print len(bad_blobs), 'bad'
-#
-#     ids, data = plate_dataset.keys(), plate_dataset.values()
-#     # even though this is not writing a timeseries, the format is the same.
-#     write_timeseries_file(ID=ex_id,
-#                           ID_type='plate',
-#                           times=ids,
-#                           data=data,
-#                           data_type='percentiles',
-#                           dset=dataset,
-#                           file_tag='worm_percentiles')
-# '''
-# check to see if ids get written ok
-# '''
-#     ids2, data2 = get_timeseries(ID=ex_id,
-#                                  ID_type='plate',
-#                                  times=ids,
-#                                  data=data,
-#                                  data_type='percentiles',
-#                                  dset=dataset,
-#                                  file_tag='worm_percentiles')
-#
-#     print ids2
-#     #for i1, i2 in zip(ids, ids2):
-#     #    print i1, i2
-#     for d1, d2 in zip(data, data2):
-#         print d1, d2
-# '''
-
+            
 if __name__ == '__main__':
     dataset = 'disease_models'
     #data_type = 'cent_speed_bl'
@@ -307,8 +170,7 @@ if __name__ == '__main__':
     #data_type = 'curve_bl'
     eID = '20131211_145827'
     eID = '20130414_140704'
+
     write_plate_timeseries(ex_id=eID, data_types=['cent_speed_bl'])
     metrics = FULL_SET[:]
-    #write_plate_percentiles(ex_id=eID, metrics=metrics)
-
-
+    write_plate_percentiles(ex_id=eID, metrics=metrics)

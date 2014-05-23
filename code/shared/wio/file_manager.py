@@ -33,13 +33,12 @@ sys.path.append(SHARED_DIR)
 from settings.local import LOGISTICS
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
 
-INDEX_DIR = LOGISTICS['annotation']
+INDEX_DIR = os.path.abspath(LOGISTICS['annotation'])
 RESULT_DIR = os.path.abspath(LOGISTICS['results'])
-EXPORT_PATH = LOGISTICS['export']
-WORM_DIR = LOGISTICS['worms']
-PLATE_DIR = LOGISTICS['plates']
-DSET_DIR = LOGISTICS['dsets']
-
+EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
+WORM_DIR = os.path.abspath(LOGISTICS['worms'])
+PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
+DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
 
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
@@ -53,13 +52,15 @@ DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
 
-#ensure_dir_exists(WORM_DIR)
-
 def silent_remove(filename):
     try:
         os.remove(filename)
     except OSError:
         pass
+
+def df_equal( df1, df2 ):
+    """ Check if two DataFrames are equal, ignoring nans """
+    return df1.fillna(1).sort(axis=1).eq(df2.fillna(1).sort(axis=1)).all().all()
 
 def ensure_dir_exists(path):
     ''' recursivly creates path in filesystem, if it does not exist '''
@@ -73,8 +74,9 @@ def ensure_dir_exists(path):
                 print 'created:{d}'.format(d=savedir)
     return savedir
 
+"""
 def manage_save_path(out_dir, path_tag, ID, data_type):
-    ''' returns a unique descriptive file name to store data and makes sure path to it exists'''
+    #''' returns a unique descriptive file name to store data and makes sure path to it exists'''
     # get directories in order
     out_dir = '{d}/{tag}/'.format(d=out_dir.rstrip('/'), tag=path_tag.lstrip('/'))
     out_dir = ensure_dir_exists(out_dir.rstrip('/'))
@@ -84,14 +86,16 @@ def manage_save_path(out_dir, path_tag, ID, data_type):
     save_name = '{path}/{ID}-{dt}'.format(path=out_dir, ID=ID, dt=data_type)
     #print save_name
     return save_name
+"""
 
 def get_dset(ex_id):
     ei = Experiment_Attribute_Index()
     return ei.attribute_index.get(ex_id, {}).get('dataset', 'something')
-
+'''
 def format_directory(ID_type, dataset='', tag='', ID='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
-    if str(ID_type) in ['worm', 'w']:
+
+    if str(ID_type) in WORM_OPTIONS:
         ex_id = '_'.join(ID.split('_')[:2])
         file_dir = '{path}/{eID}'.format(path=worm_dir.rstrip('/'), eID=ex_id)
 
@@ -111,6 +115,33 @@ def format_directory(ID_type, dataset='', tag='', ID='',
         assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type)
 
     return file_dir
+'''
+
+def format_directory(ID_type, dataset='', tag='', ID=''):
+
+    plate_or_dataset = list(RECORDING_OPTIONS).extend(DSET_OPTIONS)
+
+    if str(ID_type) in WORM_OPTIONS:
+        ex_id = '_'.join(ID.split('_')[:2])
+        return '{path}/{eID}'.format(path=WORM_DIR.rstrip('/'), eID=ex_id)
+    
+    elif str(ID_type) in plate_or_dataset:
+        # make sure we know which dset this plate belongs too
+
+        if str(ID_type) in RECORDING_OPTIONS:
+            path = PLATE_DIR
+            if not dataset:
+                dataset = get_dset(ex_id=ID)
+        else:
+            path = DSET_DIR
+
+        return '{path}/{dset}/{tag}'.format(path=path,
+                                            dset=dataset.rstrip('/'),
+                                            tag=tag.rstrip('/'))
+
+
+    assert False, 'ID_type not found. cannot use: {IDt}'.format(IDt=ID_type)
+
 
 def get_good_blobs(ex_id, key='spine', worm_dir=WORM_DIR):
     search_dir = format_directory(ID=ex_id, ID_type='w')
@@ -162,6 +193,7 @@ def format_results_filename(ID, result_type, tag=None,
     filename = '{path}{ID}{tag}.{ft}'.format(path=save_dir, ID=ID, tag=tag, ft=file_type)
     return filename
 
+
 def format_filename(ID, ID_type='worm', data_type='cent_speed',
                     file_type='json',
                     file_dir = None,
@@ -176,39 +208,41 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
 
     ensure_dir_exists(file_dir)
     # Format the name of the file
-    if str(ID_type) in ['worm', 'w']:
-        return '{path}/{ID}-{dt}.{ft}'.format(path=file_dir,
-                                              ID=ID,
-                                              dt=data_type,
-                                              ft=file_type)
-    elif str(ID_type) in ['plate', 'p']:
-        # make sure we know which dset this plate belongs too
-        return '{path}/{ID}-{dt}.{ft}'.format(path=file_dir,
-                                              ID=ID,
-                                              dt=data_type,
-                                              ft=file_type)
-    elif str(ID_type) in['dataset', 'dset', 's']:
-        return  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir,
-                                               ID=ID,
-                                               dt=data_type,
-                                               ft=file_type)
+    return  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, ID=ID,                                           
+                                           dt=data_type, ft=file_type)
 
-def write_timeseries_file(ID, data_type, times, data,
-                          ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
-                          dset=None, file_tag='',
-                          file_dir=None, **kwargs):
+def format_worm_filename(blob_id, data_type, file_type, worm_dir=WORM_DIR, ensure=False):
+    ex_id = '_'.join(blob_id.split('_')[:2])
+    file_dir = '{path}/{eID}'.format(path=worm_dir.rstrip('/'), eID=ex_id)
+    if ensure:
+        ensure_dir_exists(file_dir)
+    filename =  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, ID=blob_id,  
+                                               dt=data_type, ft=file_type)
+    return filename
+
+def get_timeseries(ID, data_type, worm_dir=WORM_DIR):    
+    file_type=TIME_SERIES_FILE_TYPE    
+    filename = format_worm_filename(ID, data_type, file_type, worm_dir) 
+    if os.path.isfile(filename):
+        # retrval method depends on file_type
+        if file_type == 'json':
+            data_dict = json.load(open(filename, 'r'))
+            times, data = data_dict.get('time', []), data_dict.get('data', [])
+        elif file_type == 'h5':
+            times, data = read_h5_timeseries_base(filename)
+        # print warning if file is empty
+        if len(times)==0 and len(data)==0:
+            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
+        return times, data
+    return None, None
+
+
+def write_timeseries_file(ID, data_type, times, data, worm_dir=WORM_DIR):                          
     # if data not provided. write will fail. return False.
     if len(data) == 0:
         return False
-
-    # universal file formatting
-    filename = format_filename(ID=ID,
-                               ID_type=ID_type,
-                               data_type=data_type,
-                               file_type=file_type,
-                               dset=dset,
-                               file_tag=file_tag,
-                               file_dir=file_dir)
+    file_type = TIME_SERIES_FILE_TYPE
+    filename = format_worm_filename(ID, data_type, file_type, worm_dir, ensure=True) 
     # save method depends on file_type
     if file_type == 'json':
         json.dump({'time':times, 'data':data}, open(filename, 'w'))
@@ -235,8 +269,9 @@ def write_table(ID, data_type, dataframe,
                                dset=dset,
                                file_tag=file_tag,
                                file_dir=file_dir)
-    print filename
+
     dataframe.to_hdf(filename, 'table', complib='zlib')
+
 
 def read_table(ID, data_type, ID_type='w', file_type='h5',
                 dset=None, file_tag='',
@@ -251,29 +286,7 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
                                file_dir=file_dir)
     return pd.read_hdf(filename, 'table')
 
-def get_timeseries(ID, data_type):
-    
-    file_type=TIME_SERIES_FILE_TYPE    
-    filename = format_filename(ID=ID, data_type=data_type, ID_type='w',
-                               file_type=file_type)
-    if os.path.isfile(filename):
-        # retrval method depends on file_type
-        if file_type == 'json':
-            data_dict = json.load(open(filename, 'r'))
-            times, data = data_dict.get('time', []), data_dict.get('data', [])
-        elif file_type == 'h5':
-            times, data = read_h5_timeseries_base(filename)
-        # print warning if file is empty
-        if len(times)==0 and len(data)==0:
-            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
-        return times, data
-    return None, None
-
-def get_timeseries_old(ID, data_type,
-                   ID_type='w', file_type=TIME_SERIES_FILE_TYPE,
-                   dset=None, file_tag='',
-                   file_dir=None, **kwargs):
-    """
+"""
     Parameters
     ----------
     ID : str
@@ -301,61 +314,17 @@ def get_timeseries_old(ID, data_type,
       ``h5`` or ``json``, depending on the source type to read
     ...
 
-    Returns
-    -------
-    times : array-like
-      Time stamps for each point in the file
-    data : array-like
-      Data corresponding to each point in the time series
-    """
+"""
 
-    # universal file formatting
-    filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,
-                               dset=dset, file_tag=file_tag,
-                               file_type=file_type, file_dir=file_dir)
-    #print os.path.abspath(filename), os.path.isfile(filename)
-    #print 'tag', file_tag
-
-    if os.path.isfile(filename):
-        # retrval method depends on file_type
-        if file_type == 'json':
-            data_dict = json.load(open(filename, 'r'))
-            times, data = data_dict.get('time', []), data_dict.get('data', [])
-        elif file_type == 'h5':
-            times, data = read_h5_timeseries_base(filename)
-        # print warning if file is empty
-        if len(times)==0 and len(data)==0:
-            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
-        return times, data
-    return None, None
-
-
-def write_metadata_file(ID, data_type, data, ID_type='w', file_dir=None, **kwargs):
-    # universal file formatting
-    filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,
-                               file_type='json', file_dir=file_dir)
+def write_metadata_file(ID, data_type, data, worm_dir=WORM_DIR):
+    filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir, ensure=True)  
     json.dump(data, open(filename, 'w'))
 
-def get_metadata(ID, data_type='metadata', ID_type='w', file_dir=None, **kwargs):
-    filename = format_filename(ID=ID, ID_type=ID_type, data_type=data_type,
-                               file_type='json', file_dir=file_dir)
-
+def get_metadata(ID, data_type='metadata', worm_dir=WORM_DIR):
+    filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir) 
     if os.path.isfile(filename):
         return json.load(open(filename, 'r'))
     return None
-
-# def search_db_for_data(blob_id, data_type, **kwargs):
-#     try:
-#         db_doc = pull_data_type_for_blob(blob_id, data_type, **kwargs)
-#         print 'warning: could not find json file for', blob_id, data_type
-#         # either split data into times and data or leave alone
-#         # Stop everything if no to temp file or database doc.
-#         return db_doc
-#     except Exception as e:
-#         print '\nFailure! could not locate data'
-#         print 'blob: {bID}\t type:{dt}\n'.format(bID=blob_id, dt=data_type)
-#         print e
-#         return None
 
 def get_ex_ids_in_worms(directory=WORM_DIR):
     search = '{path}/*'.format(path=directory.rstrip('/'))
@@ -397,27 +366,6 @@ def get_plate_files(dataset, data_type, tag='timeseries', path=None):
                 file_paths.append(file_path)
     return ex_ids, file_paths
 
-# def format_plate_summary_name(ex_id, sum_type, dataset, data_type, path):
-#     filename = format_filename(ID=ex_id, ID_type='plate',
-#                                file_tag=sum_type,
-#                                dset=dataset,
-#                                data_type=data_type,
-#                                file_dir=path,
-#                                file_type='json')
-#     return filename
-
-# def format_dset_summary_name(data_type, dataset, sum_type, ID= None, dset_dir=None):
-#     if not ID:
-#         ID = dataset
-#     filename = format_filename(ID=ID, ID_type='dset',
-#                                data_type=data_type,
-#                                file_tag=sum_type,
-#                                dset=dataset,
-#                                file_dir=dset_dir,
-#                                file_type='json')
-#
-#     return filename
-
 
 def write_dset_summary(data, data_type, dataset, sum_type, ID=None, dset_dir=None):
     #filename = format_dset_summary_name(data_type, dataset, sum_type, ID, dset_dir)
@@ -442,86 +390,6 @@ def read_dset_summary(data_type, dataset, sum_type='basic', ID=None, dset_dir=No
                                file_dir=dset_dir,
                                file_type='json')
     return json.load(open(filename, 'r'))
-
-
-# def write_plate_summary(data, ex_id, sum_type, dataset, data_type, path=None):
-#     #filename = format_plate_summary_name(ex_id, sum_type, dataset, data_type, path)
-#     filename = format_filename(ID=ex_id, ID_type='plate',
-#                                file_tag=sum_type,
-#                                dset=dataset,
-#                                data_type=data_type,
-#                                file_dir=path,
-#                                file_type='json')
-#     json.dump(data, open(filename, 'w'))
-#
-#
-# def read_plate_summary(sum_type, dataset, data_type, path=None):
-#     filename = format_filename(ID=ex_id, ID_type='plate',
-#                                file_tag=sum_type,
-#                                dset=dataset,
-#                                data_type=data_type,
-#                                file_dir=path,
-#                                file_type='json')
-#     #filename = format_plate_summary_name(ex_id, sum_type, dataset, data_type, path)
-#     if os.path.isfile(filename):
-#         return json.load(open(filename, 'r'))
-#     return None
-#
-# def read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries'):
-#     times, data = get_timeseries(ID=ex_id,
-#                                  data_type=data_type,
-#                                  ID_type='p',
-#                                  dset=dataset,
-#                                  file_tag=tag)
-#     #print len(times), len(data)
-#     return times, data
-
-# pre pandas
-# def return_flattened_plate_timeseries(ex_id, dataset, data_type):
-#     """
-#     """
-#     #times, data = parse_plate_timeseries_txt_file(dfile)
-#     times, data = read_plate_timeseries(ex_id, dataset, data_type, tag='timeseries')
-#     #times, data = parse_plate_timeseries_txt_file(dfile)
-#     flat_data = []
-#     if not len(times):
-#         return []
-#     for i, t_bin in enumerate(data):
-#         flat_data.extend(list(t_bin))
-#     # take data out of bins and remove nan values
-#     flat_data = np.array(flat_data)
-#     N_w_nan = len(flat_data)
-#     flat_data = flat_data[np.logical_not(np.isnan(flat_data))]
-#     N_wo_nan = len(flat_data)
-#     if N_wo_nan != N_wo_nan:
-#         print '{N} nans removed'.format(N=N_w_nan-N_wo_nan)
-#     return flat_data
-
-# def return_flattened_plate_timeseries(ex_id, dataset, data_type):
-#     """
-#     """
-#     df = read_table(ID=ex_id, data_type=data_type, ID_type='p',
-#                     dset=dataset, file_tag='timeseries')
-#     print df
-#     s = df.unstack()
-#     print s
-#     return list(s)
-#     '''
-#     #times, data = parse_plate_timeseries_txt_file(dfile)
-#     flat_data = []
-#     if not len(times):
-#         return []
-#     for i, t_bin in enumerate(data):
-#         flat_data.extend(list(t_bin))
-#     # take data out of bins and remove nan values
-#     flat_data = np.array(flat_data)
-#     N_w_nan = len(flat_data)
-#     flat_data = flat_data[np.logical_not(np.isnan(flat_data))]
-#     N_wo_nan = len(flat_data)
-#     if N_wo_nan != N_wo_nan:
-#         print '{N} nans removed'.format(N=N_w_nan-N_wo_nan)
-#     return flat_data
-#     '''
 
 def get_annotations(dataset, data_type, label='all'):
     ex_ids, dfiles = get_plate_files(dataset=dataset, data_type=data_type)

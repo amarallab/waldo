@@ -50,7 +50,7 @@ SWITCHES = {'width': {'func': compute_width, 'units': ['mm', 'bl']},
 
 # **** main function of the module. 
 def pull_blob_data(blob_id, metric, pixels_per_mm=0, pixels_per_bl=0, 
-                   pixels_per_w=0):
+                   pixels_per_w=0, verbose=True):
     ''' returns a list of times and a list of data for a given blob_id and metric.
 
     This function chooses which program to call in order to calculate or retrieve
