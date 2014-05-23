@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 from matplotlib.widgets import Button, Slider
+import json
 
 import matplotlib.image as mpimg
 import matplotlib.cm as cm
@@ -107,16 +108,72 @@ def circle_3pt(a, b, c):
     radius = np.linalg.norm(a - center)
     return center, radius
 
+INCR_X = 1
+INCR_Y = 1
+INCR_RADIUS = 1
 
 class InteractivePlot:
-    def __init__(self, ids, annotation_dir, initial_threshold=0.0005):
+    def __init__(self, ids, annotation_filename, initial_threshold=0.0005):
         self.ids = ids
-        self.current_id = ids[0]
-        self.annotation_dir = annotation_dir
+        self.current_index = 0
+        self.current_id = None
+        self.annotation_filename = annotation_filename
         self.current_threshold = initial_threshold
         self.thresholds = []
-        self.threshold_cache = {}
-        self.binary_mask_cache = {} # must be clear when the id has changed
+
+        self.data = None
+        self.load_data()
+
+        self.fig = plt.figure()
+        self.fig.canvas.mpl_connect('button_press_event', self.on_button_pressed)
+        self.fig.canvas.mpl_connect('button_release_event', self.on_button_released)
+
+        gs = grd.GridSpec(14, 3)
+        gs.update(left=0.05, right=0.95, wspace=0.05, hspace=0.15)
+        self.ax_objects = self.fig.add_subplot(gs[0:7, 0])
+        self.ax_area = self.fig.add_subplot(gs[7:13, 0], sharex=self.ax_objects)
+        self.ax_image = self.fig.add_subplot(gs[0:13, 1:3])
+
+        ax_title = plt.axes([0, 0.95, 1, 0.05])
+        self.title = Button(ax_title, 'Title')
+
+        ax_prev = plt.axes([0, 0, 0.1, 0.05])
+        self.prev = Button(ax_prev, 'Prev')
+        self.prev.on_clicked(self.on_prev_clicked)
+
+        ax_next = plt.axes([0.1, 0, 0.1, 0.05])
+        self.next = Button(ax_next, 'Next')
+        self.next.on_clicked(self.on_next_clicked)
+
+        ax_save = plt.axes([0.3, 0, 0.1, 0.05])
+        self.save = Button(ax_save, 'Save')
+        self.save.on_clicked(self.on_save_clicked)
+
+        ax_centerx = plt.axes([0.5, 0, 0.1, 0.05])
+        self.centerx = Button(ax_centerx, '< X >')
+        self.centerx.on_clicked(self.on_centerx_clicked)
+
+        ax_centery = plt.axes([0.65, 0, 0.1, 0.05])
+        self.centery = Button(ax_centery, '< Y >')
+        self.centery.on_clicked(self.on_centery_clicked)
+
+        ax_radius = plt.axes([0.8, 0, 0.1, 0.05])
+        self.radius = Button(ax_radius, '< R >')
+        self.radius.on_clicked(self.on_radius_clicked)
+
+        self.circle = None
+        self.circle_pos = (0, 0)
+        self.circle_radius = 1
+
+        # list of thresholds to try out
+        self.load_index(0)
+
+    def load_index(self, index):
+        self.current_index = index
+        self.current_id = self.ids[index]
+
+        self.title.label.set_text('Current: %s' % self.current_id)
+        self.fig.canvas.draw()
 
         # grab images and times.
         times, impaths = grab_images_in_time_range(self.current_id, start_time=0)
@@ -125,23 +182,44 @@ class InteractivePlot:
 
         self.background = InteractivePlot.create_background(impaths)
 
+        if self.current_id in self.data:
+            d = self.data[self.current_id]
+            self.current_threshold = d['threshold']
+            self.circle_pos = (d['center_x'], d['center_y'])
+            self.circle_radius = d['radius']
+        else:
+            self.circle_pos = (0, 0)
+            self.circle_radius = max(self.background.shape)/2
+
+        self.centerx.label.set_text("< X: %d >" % self.circle_pos[0])
+        self.centery.label.set_text("< Y: %d >" % self.circle_pos[1])
+        self.radius.label.set_text("< R: %d >" % self.circle_radius)
+
         # pick an image to test. the middle one is good.
         self.mid_image = mpimg.imread(impaths[int(len(impaths)/2)])
 
-        self.fig = None
-        self.ax_objects = None
-        self.ax_area = None
-        self.ax_image = None
-        self.line_objects = None
-        self.line_area = None
-        self.circle = None
-        self.circle_pos = (self.background.shape[0] / 2, self.background.shape[1] / 2)
-        self.circle_rad = max(10, min(self.circle_pos) - 50)
-
         self.mouse_points = [] # for generate circle from 3 points
-        self.centerx = None
-        self.centery = None
-        self.radius = None
+        # run functions.
+        thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
+        self.show_threshold_properties(thresholds)
+        #NO UNCOMMENT show_threshold_spread(mid, background)
+        self.show_threshold()
+
+    def load_data(self):
+        try:
+            with open(self.annotation_filename, "rt") as f:
+                self.data = json.loads(f.read())
+        except IOError, ex:
+            self.data = {}
+            print "E: %s (%s)" % (os.strerror(ex.errno), self.annotation_filename)
+
+    def save_data(self):
+        self.data[self.current_id] = {'threshold': self.current_threshold,
+                                      'center_x': self.circle_pos[0],
+                                      'center_y': self.circle_pos[1],
+                                      'radius': self.circle_radius}
+        with open(self.annotation_filename, "wt") as f:
+            f.write(json.dumps(self.data))
 
     @staticmethod
     def create_background(impaths):
@@ -175,18 +253,11 @@ class InteractivePlot:
         minsize: (int)
             the fewest allowable pixels for an object. objects with an area containing fewer pixels are removed.
         """
-        key = (threshold, minsize)
-        if key in self.binary_mask_cache:
-            return self.binary_mask_cache[key]
-        else:
-            mask = (background - img) > threshold
-            result = morphology.remove_small_objects(mask, minsize)
-            self.binary_mask_cache[key] = result
-            return result
+        mask = (background - img) > threshold
+        result = morphology.remove_small_objects(mask, minsize)
+        return result
 
     def data_from_threshold(self, threshold):
-        if threshold in self.threshold_cache:
-            return self.threshold_cache[threshold]
         mask = self.create_binary_mask(self.mid_image, self.background, threshold=threshold)
         labels, N = ndimage.label(mask)
         sizes = [r.area for r in regionprops(labels)]
@@ -216,23 +287,12 @@ class InteractivePlot:
             valid, N, m, s = self.data_from_threshold(t)
             if valid:
                self.thresholds.append((t, N, m, s))
-            # # create the masks and calculate the size of all objects found
-            # mask = InteractivePlot.create_binary_mask(self.mid_image, self.background, threshold=t)
-            # labels, N = ndimage.label(mask)
-            # sizes = [r.area for r in regionprops(labels)]
-            # m, s =  np.mean(sizes), np.std(sizes)
-            # # if we don't find any objects at this threshold, dont bother calculating for remaining thresholds.
-            # if len(sizes) == 0:
-            #     thresholds = thresholds[:i]
-            #     break
-            # ns.append(N)
-            # means.append(m)
-            # stds.append(s)
-        final_t = t
 
         x, ns, means, stds = zip(*self.thresholds)
+        final_t = x[-1]
 
         # make the plot
+        self.ax_objects.clear()
         self.ax_objects.plot(x, ns, '.--')
         self.ax_objects.set_ylabel('N objects')
         self.ax_objects.set_ylim([0, 150])
@@ -240,6 +300,7 @@ class InteractivePlot:
         top = np.array(means) + np.array(stds)
         bottom = np.array(means) - np.array(stds)
 
+        self.ax_area.clear()
         self.ax_area.plot(x, means, '.--', color='blue')
         self.ax_area.plot(x, top, '--', color='green')
         self.ax_area.plot(x, bottom, '--', color='green')
@@ -276,32 +337,71 @@ class InteractivePlot:
     def update_image_circle(self):
         if self.circle is not None:
             self.circle.center = self.circle_pos
-            self.circle.radius = self.circle_rad
+            self.circle.radius = self.circle_radius
             self.fig.canvas.draw()
         else:
-            self.circle = plt.Circle(self.circle_pos, self.circle_rad, color=(1, 0, 0, 0.25))
+            self.circle = plt.Circle(self.circle_pos, self.circle_radius, color=(1, 0, 0, 0.25))
             self.ax_image.add_artist(self.circle)
+        self.centerx.label.set_text("< X: %d >" % self.circle_pos[0])
+        self.centery.label.set_text("< Y: %d >" % self.circle_pos[1])
+        self.radius.label.set_text("< R: %d >" % self.circle_radius)
+        self.fig.canvas.draw()
 
     def on_prev_clicked(self, ev):
-        print ("Prev button clicked: " % ev)
+        self.save_data()
+        if self.current_index > 0:
+            self.load_index(self.current_index - 1)
 
     def on_next_clicked(self, ev):
-        print ("Next button clicked: " % ev)
+        self.save_data()
+        if self.current_index < len(self.ids) - 1:
+            self.load_index(self.current_index + 1)
 
     def on_save_clicked(self, ev):
-        print ("Save button clicked: " % ev)
+        self.save_data()
 
-    def on_centerx_changed(self, val):
-        self.circle_pos = (val, self.circle_pos[1])
-        self.update_image_circle()
+    def on_centerx_clicked(self, ev):
+        if ev.xdata is None:
+            return
+        if ev.xdata < 0.5:
+            newx = self.circle_pos[0] - INCR_X
+            if newx < 0:
+                newx = 0
+        else:
+            newx = self.circle_pos[0] + INCR_X
+            if newx > self.background.shape[1]:
+                newx = self.background.shape[1]
+        if newx != self.circle_pos[0]:
+            self.circle_pos = (newx, self.circle_pos[1])
+            self.update_image_circle()
 
-    def on_centery_changed(self, val):
-        self.circle_pos = (self.circle_pos[0], val)
-        self.update_image_circle()
+    def on_centery_clicked(self, ev):
+        if ev.xdata is None:
+            return
+        if ev.xdata < 0.5:
+            newy = self.circle_pos[1] - INCR_Y
+            if newy < 0:
+                newy = 0
+        else:
+            newy = self.circle_pos[1] + INCR_Y
+            if newy > self.background.shape[0]:
+                newy = self.background.shape[0]
+        if newy != self.circle_pos[1]:
+            self.circle_pos = (self.circle_pos[0], newy)
+            self.update_image_circle()
 
-    def on_radius_changed(self, val):
-        self.circle_rad = val
-        self.update_image_circle()
+    def on_radius_clicked(self, ev):
+        if ev.xdata is None:
+            return
+        if ev.xdata < 0.5:
+            newradius = self.circle_radius - INCR_RADIUS
+            if newradius < 0:
+                newradius = 0
+        else:
+            newradius = self.circle_radius + INCR_RADIUS
+        if newradius != self.circle_radius:
+            self.circle_radius = newradius
+            self.update_image_circle()
 
     def on_button_pressed(self, ev):
         if ev.xdata is None or ev.ydata is None:
@@ -320,22 +420,16 @@ class InteractivePlot:
                 self.show_threshold()
                 self.fig.canvas.draw()
         elif ax == self.ax_image:
-            print "SLIDER ", dir(self.centerx)
             if ev.button == 3:
                 self.mouse_points = []
                 self.circle_pos = (ev.xdata, ev.ydata)
-                self.centerx.set_val(self.circle_pos[0])
-                self.centery.set_val(self.circle_pos[1])
                 self.update_image_circle()
             else:
                 self.mouse_points.append((ev.xdata, ev.ydata))
                 if len(self.mouse_points) == 3:
                     center, radius = circle_3pt(*self.mouse_points)
                     self.circle_pos = center
-                    self.circle_rad = radius
-                    self.centerx.set_val(self.circle_pos[0])
-                    self.centery.set_val(self.circle_pos[1])
-                    self.radius.set_val(self.circle_rad)
+                    self.circle_radius = radius
                     self.update_image_circle()
                     self.mouse_points = []
 
@@ -344,54 +438,16 @@ class InteractivePlot:
         pass
 
     def run_plot(self):
-        self.fig = plt.figure()
-        self.fig.canvas.mpl_connect('button_press_event', self.on_button_pressed)
-        self.fig.canvas.mpl_connect('button_release_event', self.on_button_released)
-
-        gs = grd.GridSpec(14, 3)
-        gs.update(left=0.05, right=0.95, wspace=0.05, hspace=0.15)
-        self.ax_objects = self.fig.add_subplot(gs[0:7, 0])
-        self.ax_area = self.fig.add_subplot(gs[7:13, 0], sharex=self.ax_objects)
-        self.ax_image = self.fig.add_subplot(gs[0:13, 1:3])
-
-        ax_prev = plt.axes([0, 0, 0.1, 0.05])
-        prev = Button(ax_prev, 'Prev')
-        prev.on_clicked(self.on_prev_clicked)
-
-        ax_next = plt.axes([0.1, 0, 0.1, 0.05])
-        next = Button(ax_next, 'Next')
-        next.on_clicked(self.on_next_clicked)
-
-        ax_save = plt.axes([0.3, 0, 0.1, 0.05])
-        save = Button(ax_save, 'Save')
-        save.on_clicked(self.on_save_clicked)
-
-        ax_centerx = plt.axes([0.5, 0, 0.05, 0.05])
-        self.centerx = Slider(ax_centerx, 'X', 0, self.background.shape[1], self.background.shape[1]/2, '%1.0f')
-        self.centerx.on_changed(self.on_centerx_changed)
-
-        ax_centery = plt.axes([0.65, 0, 0.05, 0.05])
-        self.centery = Slider(ax_centery, 'Y', 0, self.background.shape[0], self.background.shape[0]/2, '%1.0f')
-        self.centery.on_changed(self.on_centery_changed)
-
-        default_radius = max(self.background.shape)/2
-        ax_radius = plt.axes([0.8, 0, 0.05, 0.05])
-        self.radius = Slider(ax_radius, 'Rad', 0, default_radius*2, default_radius/2, '%1.0f')
-        self.radius.on_changed(self.on_radius_changed)
-
-        # run functions.
-        # list of thresholds to try out
-        thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
-        self.show_threshold_properties(thresholds)
-        #NO UNCOMMENT show_threshold_spread(mid, background)
-        self.show_threshold()
-
         plt.show()
 
 
 if __name__ == '__main__':
+    try:
+        os.makedirs(PRETREATMENT_DIR)
+    except:
+        pass
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
-    ip = InteractivePlot(dirs, PRETREATMENT_DIR, 0.0005)
+    ip = InteractivePlot(dirs, PRETREATMENT_DIR + "threshold_picker_data.json", 0.0005)
     ip.run_plot()
 
     #ex_id = '20130318_131111'
