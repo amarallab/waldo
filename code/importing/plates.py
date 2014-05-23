@@ -88,15 +88,16 @@ def write_plate_percentiles(ex_id, blob_ids=[], metrics=FULL_SET, **kwargs):
                 dset=get_dset(ex_id),
                 file_tag='worm_percentiles')
 
-    # '''
-    # p2 = read_table(ID=ex_id,
-    #                 ID_type='plate',
-    #                 data_type='percentiles',
-    #                 dset=get_dset(ex_id),
-    #                 file_tag='worm_percentiles')
-    #
-    # print p2.head()
-    # '''
+
+    p2 = read_table(ID=ex_id,
+                    ID_type='plate',
+                    data_type='percentiles',
+                    dset=get_dset(ex_id),
+                    file_tag='worm_percentiles')
+
+    print 'after reading'
+    print p2.head()
+
 
 
 def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='default'):
@@ -112,11 +113,12 @@ def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='de
         blob_ids = list(set(blob_ids))
         if index ==  None:
             df = None
-        elif index == 'default':
-            df = pd.DataFrame(index=np.arange(0.1, 3600.1,0.1))
-        else:
-            df = pd.DataFrame(index=index)
+        #elif index == 'default':
+        #    df = pd.DataFrame(index=np.arange(0.1, 3600.1,0.1))
+        #else:
 
+        #df = pd.DataFrame()
+        blob_series = []
         N = len(blob_ids[1:])
         for i, blob_id in enumerate(blob_ids[1:]):
             # calculate data_type for blob, skip if empty list returned        
@@ -127,25 +129,42 @@ def write_plate_timeseries(ex_id, blob_ids=[], data_types=FULL_SET[:], index='de
                 continue
             if len(bdata) == 0:
                 continue
-            blob_data = pd.DataFrame(bdata)
+            blob_data = pd.DataFrame(bdata, columns=['data'])
             blob_data['time'] = btimes
             blob_data['bID'] = blob_id
-            blob_data.set_index(keys=['bID', 'time'])
             print '\t{i} of {N} | {ID} | points: {p}'.format(i=i, N=N,
                                                         ID=blob_id, p = len(blob_data))
 
+            print type(blob_data)
+            if len(blob_data):
+                blob_series.append(blob_data)
+            
+            '''
             if isinstance(df, pd.DataFrame) and len(blob_data):
+                print 'saveing?'
                 df.append(blob_data)
             elif len(blob_data):
                 df = blob_data
                 #df = df.join(blob_series, how='outer')
-
+            '''
+        df = pd.concat(blob_series, axis=0)
+        print df.head()
+        print len(df)
         write_table(ID=ex_id,
                     ID_type='plate',
                     dataframe=df,
                     data_type=data_type,
                     dset=get_dset(ex_id),
                     file_tag='timeseries')
+        
+        df2 = read_table(ID=ex_id,
+                         ID_type='plate',
+                         data_type=data_type,
+                         dset=get_dset(ex_id),
+                         file_tag='timeseries')
+
+
+        print df2.head()
 
 # def write_plate_timeseries(ex_id, blob_ids=[], measurements=STANDARD_MEASUREMENTS, **kwargs):
 #     if not blob_ids:
@@ -288,7 +307,7 @@ if __name__ == '__main__':
     #data_type = 'curve_bl'
     eID = '20131211_145827'
     eID = '20130414_140704'
-    write_plate_timeseries(ex_id=eID)
+    write_plate_timeseries(ex_id=eID, data_types=['cent_speed_bl'])
     metrics = FULL_SET[:]
     #write_plate_percentiles(ex_id=eID, metrics=metrics)
 

@@ -49,6 +49,10 @@ if TIME_SERIES_FILE_TYPE == 'hdf5':
     from h5_interface import write_h5_timeseries_base
     from h5_interface import read_h5_timeseries_base
 
+DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
+RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
+WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
+
 #ensure_dir_exists(WORM_DIR)
 
 def silent_remove(filename):
@@ -217,6 +221,12 @@ def write_table(ID, data_type, dataframe,
                 ID_type='p',
                 dset=None, file_tag='',
                 file_dir=None, **kwargs):
+
+    if dset==None and ID_type in ['p', 'plate']:
+        dset=get_dset(ID)
+    if dset==None and ID_type in ['s', 'dset',]:
+        dset=get_dset(ID)
+
     # universal file formatting
     filename = format_filename(ID=ID,
                                ID_type=ID_type,
