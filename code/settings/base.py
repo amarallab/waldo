@@ -41,6 +41,8 @@ LOGISTICS = {
     'results': PROJECT_HOME + 'results/',
     'inventory': PROJECT_HOME + 'data/annotation/inventory/',
     'annotation': PROJECT_HOME + 'data/annotation/experiment_index',
+    'pretreatment': PROJECT_HOME + 'data/annotation/pretreatment/',
+
     'scaling-factors': PROJECT_HOME + 'data/annotation/scaling_factor_images',
     'export': PROJECT_HOME + 'data/export/',
 
