@@ -15,9 +15,6 @@ from skimage.measure import regionprops
 HERE = os.path.dirname(os.path.realpath(__file__))
 SHARED_DIR = os.path.abspath(os.path.join(HERE, '..'))
 PROJECT_DIR = os.path.abspath(os.path.join(SHARED_DIR, '..'))
-print HERE
-print SHARED_DIR
-print PROJECT_DIR
 
 sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR)
@@ -26,44 +23,11 @@ from code.heltena import profiling
 
 # nonstandard imports
 from grab_images import grab_images_in_time_range
+from manipulations import create_backround, create_binary_mask
 from settings.local import LOGISTICS
 
 MWT_DIR = LOGISTICS['filesystem_data']
 print(MWT_DIR)
-
-def create_backround(impaths):
-    """
-    create a background image for background subtraction.
-    The background image is the maximum pixel values from three grayscale images.
-
-    params
-    ---------
-    impaths: (list)
-       this is a sorted list containing paths to all the image files from one recording.
-    """
-    first = mpimg.imread(impaths[0])
-    mid = mpimg.imread(impaths[int(len(impaths)/2)])
-    last = mpimg.imread(impaths[-1])
-    return np.maximum(np.maximum(first, mid), last)
-
-def create_binary_mask(img, background, threshold, minsize=100):
-    """
-    creates a binary array the same size as the image with 1s denoting objects
-    and 0s denoting background.
-
-    params
-    --------
-    img: (image ie. numpy array)
-        each pixel denotes greyscale pixel intensities.
-    background: (image ie. numpy array)
-        the background image with maximum pixel intensities (made with create_background)
-    threshold: (float)
-        the threshold value used to create the binary mask after pixel intensities for (background - image) have been calculated.
-    minsize: (int)
-        the fewest allowable pixels for an object. objects with an area containing fewer pixels are removed.       
-    """
-    mask = (background - img) > threshold
-    return morphology.remove_small_objects(mask, minsize)
 
 def show_threshold_properties(img, background, thresholds):
     """

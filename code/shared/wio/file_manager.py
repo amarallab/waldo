@@ -214,7 +214,7 @@ def write_timeseries_file(ID, data_type, times, data,
 
 # TODO clean up read/write table
 def write_table(ID, data_type, dataframe,
-                ID_type='w',
+                ID_type='p',
                 dset=None, file_tag='',
                 file_dir=None, **kwargs):
     # universal file formatting
@@ -225,7 +225,8 @@ def write_table(ID, data_type, dataframe,
                                dset=dset,
                                file_tag=file_tag,
                                file_dir=file_dir)
-    dataframe.to_hdf(filename, 'fixed', complib='zlib')
+    print filename
+    dataframe.to_hdf(filename, 'table', complib='zlib')
 
 def read_table(ID, data_type, ID_type='w', file_type='h5',
                 dset=None, file_tag='',
@@ -238,7 +239,7 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
                                dset=dset,
                                file_tag=file_tag,
                                file_dir=file_dir)
-    return pd.read_hdf(filename, 'fixed')
+    return pd.read_hdf(filename, 'table')
 
 def get_timeseries(ID, data_type):
     

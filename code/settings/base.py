@@ -39,6 +39,7 @@ LOGISTICS = {
     'plates': PROJECT_HOME + 'data/plates/',
     'dsets': PROJECT_HOME + 'data/dsets/',
     'results': PROJECT_HOME + 'results/',
+    'validation':PROJECT_HOME + 'data/annotation/validation/',
     'inventory': PROJECT_HOME + 'data/annotation/inventory/',
     'annotation': PROJECT_HOME + 'data/annotation/experiment_index',
     'scaling-factors': PROJECT_HOME + 'data/annotation/scaling_factor_images',
