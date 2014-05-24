@@ -7,6 +7,9 @@ from __future__ import (
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
+import itertools
+import collections
+
 import networkx as nx
 
 def check_assumptions(graph):
@@ -31,6 +34,21 @@ def check_assumptions(graph):
         elif len(predecessors) == 1:
             assert graph.out_degree(predecessors[0]) == 2, "Fusion parent has unexpected number of children (not 2)"
 
+def flatten(l, *no_recurse_types):
+    for el in l:
+        if isinstance(el, collections.Iterable) and not isinstance(el, six.string_types + no_recurse_types):
+            for sub in flatten(el):
+                yield sub
+        else:
+            yield el
+
+def frame_filter(threshold):
+    def conditional(graph, nodes):
+        for node in nodes:
+            if graph.node[node]['died'] - graph.node[node]['born'] > threshold:
+                return False
+        return True
+    return conditional
 
 def remove_chains(graph, conditional=None):
     """
@@ -50,13 +68,14 @@ def remove_chains(graph, conditional=None):
             |
            ~~~
 
-    The hidden data will be attached to the nodes in a simple list, for
-    example from above: ``[A, (B, C), D]``.
+    The hidden data will be attached to the nodes as a set, for example from
+    above: ``{A, B, C, D}``.
 
     """
     all_nodes = graph.nodes()
 
-    for node in all_nodes:
+    while all_nodes:
+        node = all_nodes.pop()
         if node not in graph:
             continue # node was already removed/abridged
 
@@ -78,8 +97,24 @@ def remove_chains(graph, conditional=None):
         grandchild = grandchildren.pop()
         greatgrandchildren = set(graph.successors(grandchild))
 
-        cnode = '{}-{}'.format(node, grandchild)
-        cnode_data = {'components': [node, children, grandchild]}
+        try:
+            cnode = (node, grandchild[-1])
+        except TypeError:
+            try:
+                cnode = (node[0], grandchild)
+            except TypeError:
+                cnode = (node, grandchild)
+
+        components = set()
+        for n in flatten([node, children, grandchild], tuple):
+            try:
+                components.update(graph.node[n]['components'])
+            except KeyError:
+                components.add(n)
+
+        cnode_data = {'components': components,
+                      'born': graph.node[node]['born'],
+                      'died': graph.node[grandchild]['died']}
 
         graph.add_node(cnode, **cnode_data)
         graph.add_edges_from((p, cnode) for p in parents)
@@ -89,7 +124,16 @@ def remove_chains(graph, conditional=None):
         graph.remove_nodes_from(children)
         graph.remove_node(grandchild)
 
+        all_nodes.append(cnode)
+
     #return graph
 
-
-
+def family_tree(digraph, target):
+    """
+    Subsets graph to return predecessors and successors with a blood relation
+    to the target node
+    """
+    all_successors = nx.bfs_tree(digraph, target, reverse=False)
+    all_predecessors = nx.bfs_tree(digraph, target, reverse=True)
+    subdig = digraph.subgraph(itertools.chain([target], all_successors, all_predecessors))
+    return subdig
