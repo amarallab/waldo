@@ -21,9 +21,11 @@ venv*/
 # Mac stuff
 *.DS_Store
 
+# Hg cruft
+*.orig
+
 # binaries
 build/
-
 
 # data and results files
 *.txt
@@ -36,6 +38,7 @@ build/
 *.csv
 *.tsv
 *.tmp
+*.gv
 
 # Directory
 ./data/*

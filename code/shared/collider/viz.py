@@ -36,8 +36,7 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png', colormap='jet_r', 
     for node, node_data in nxgraph.nodes_iter(data=True):
         try:
             life = node_data['died'] - node_data['born']
-            if 100 <= node <= 110:
-                print(life)
+            #if 100 <= node <= 110: print(life)
             gvgraph.node(str(node), penwidth='5', color=get_color(life, logrange, colormap))
         except KeyError:
             pass
