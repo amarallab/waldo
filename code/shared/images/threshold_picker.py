@@ -29,13 +29,12 @@ sys.path.append(PROJECT_DIR)
 # nonstandard imports
 from grab_images import grab_images_in_time_range
 from settings.local import LOGISTICS
+from wio.file_manager import ensure_dir_exists
 
 MWT_DIR = LOGISTICS['filesystem_data']
-print(MWT_DIR)
-
 DATA_DIR = LOGISTICS['filesystem_data']
-PRETREATMENT_DIR = LOGISTICS['pretreatment']
-
+PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
+ensure_dir_exists(PRETREATMENT_DIR)
 #
 # def show_threshold_spread(img, background, thresholds=[0.00004, 0.0001, 0.00015, 0.0002]):
 #     """
@@ -447,7 +446,8 @@ if __name__ == '__main__':
     except:
         pass
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
-    ip = InteractivePlot(dirs, PRETREATMENT_DIR + "threshold_picker_data.json", 0.0005)
+    picker_data_file = os.path.join(PRETREATMENT_DIR, "threshold_picker_data.json")
+    ip = InteractivePlot(dirs, picker_data_file, 0.0005)
     ip.run_plot()
 
     #ex_id = '20130318_131111'
