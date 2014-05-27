@@ -237,7 +237,7 @@ class TestBlobReading(unittest.TestCase):
             self.fail('Node (20, 60) not present in expected output')
 
     def test_join_after_join(self):
-        """From ex_id = '20130318_131111', target=930, strangeness happens..."""
+        #"""From ex_id = '20130318_131111', target=930, strangeness happens..."""
         nodes = [[288], [289, 290], [293, 172], [349], [350, 351]]
         Go = node_generate(nodes, range(len(nodes) + 1))
         Go.add_path([288, 289, 293])
