@@ -1,6 +1,7 @@
 # This notebook is for finding the segmentation threshold that most clearly finds worms in a recording.
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
+# standard imports
 import os
 import sys
 import numpy as np
@@ -10,6 +11,36 @@ import matplotlib.cm as cm
 from scipy import ndimage
 from skimage import morphology
 from skimage.measure import regionprops
+
+def outline_to_outline_matrix(outline, bbox=None):
+    """
+    returns a filled in binary image of a list of outline points
+
+    params
+    -----
+    outline: (list of tuples)
+       the list of points to be turned into a filled in image [(x1, y1), (x2, y2) ... etc.]
+    bbox: (tuple of four ints)
+       the bounding box for the image to be created in the form of (xmin, ymin, xmax, ymax)
+       if not specified, just takes smallest bounding box around outline points.
+    returns
+    ------
+    outline_matrix: (np.array)
+        an np array containing boolean values denoting the filled in outline shape.
+    """
+    x, y = zip(*outline)    
+    if bbox == None:
+        bbox = (min(x), min(y), max(x), max(y))
+    minx, miny, maxx, maxy = bbox
+    x = [i - minx for i in x]
+    y = [i - miny for i in y]
+    shape = (maxx - minx + 1, maxy - miny + 1)
+    outline_matrix = np.zeros(shape)
+    for i, j in zip(x, y):
+        #print(i, j)
+        outline_matrix[i, j] = 1
+    return ndimage.morphology.binary_fill_holes(outline_matrix)
+
 
 def create_backround(impaths):
     """
@@ -125,6 +156,52 @@ def do_boxes_overlap(box1, box2, show=False):
         plt.show()
     return check
 
+def align_outline_matricies(outline_matricies, bboxes):
+    """
+    aligns a list of outline matricies so that all of them are on the same coordinate system.
+
+    params
+    ------
+    outline_matricies: (list)        
+       each outline matrix is a binary np.ndarray containing the shape of a blob. (1 = blob, 0 = background)
+    bboxes: (list)
+       this list contains bounding boxes corresponding to each of the outline matricies.
+       a bounding box consists of a tuple of four ints (min(x), min(y), max(x), max(y))
+
+    returns
+    ------
+    aligned_matricies: (list of np.ndarrays)
+        the list of outline matricies all aligned onto a common coordinate system
+    bbox: (tuple containing four ints)
+       the new common bounding box for all images
+    """
+    
+    aligned_matricies, aligned_bboxes = [], []
+    primary_matrix = outline_matricies[0]
+    primary_bbox = bboxes[0]
+
+    #fig, ax = plt.subplots()
+    #ax.imshow(primary_matrix)
+ 
+    # the loop creates a primary with a bbox that encompasses all other boxes.
+    for om, bb in zip(outline_matricies[1:], bboxes[1:]):
+        primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
+        #print primary_bbox
+    aligned_matricies = [primary_matrix]
+
+    #fig, ax = plt.subplots()
+    #ax.imshow(primary_matrix)
+    #plt.show()
+
+    # the loop ensures all boxes match the primary.
+    for om, bb in zip(outline_matricies[1:], bboxes[1:]):
+        primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
+        aligned_matricies.append(om)
+        #print(primary_bbox)
+    return aligned_matricies, primary_bbox
+
+
+
 def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
     """
     given two image regions with slightly different bounding boxes.
@@ -188,3 +265,5 @@ def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
 # TODO: make this transformation happen.
 def filled_image_to_outline_points(bbox, img):
     return 'x', 'y', 'len', 'code'
+
+
