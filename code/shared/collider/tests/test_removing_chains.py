@@ -4,12 +4,12 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 import unittest
+import itertools
 import random
 
 import networkx as nx
 
 from .. import collider
-
 
 def check_graphs_equal(Gtest, Gexpect):
     # # check topologies
@@ -23,11 +23,23 @@ def check_graphs_equal(Gtest, Gexpect):
     #     raise AssertionError("Unexpected node present: {}".format(ntest-nexpect))
     # if nexpect - ntest:
     #     raise AssertionError("Expected node missing: {}".format(nexpect-ntest))
+    node_mismatch = set()
+    edge_mismatch = set()
     for n, (A, B) in enumerate([(Gtest, Gexpect), (Gexpect, Gtest)], start=1):
         for node in A:
-            assert B.has_node(node), "Missing node in graph {}".format(n)
+            if not B.has_node(node):
+                node_mismatch.add(node)
         for edge in A.edges_iter():
-            assert B.has_edge(*edge), "Missing edge in graph {}".format(n)
+            if not B.has_edge(*edge):
+                edge_mismatch.add(edge)
+
+    errors = []
+    if node_mismatch:
+        errors.append('Node mismatch: {}'.format(node_mismatch))
+    if edge_mismatch:
+        errors.append('Edge mismatch: {}'.format(edge_mismatch))
+    if errors:
+        raise AssertionError(', '.join(str(e) for e in errors))
 
 def node_generate(nodes, timepoints, graph=None):
     """
@@ -35,9 +47,14 @@ def node_generate(nodes, timepoints, graph=None):
     spanning each gap in *timepoints*, an iterable of numbers.  *timepoints*
     must be 1 longer than nodes.
     """
-    timepoints = list(timepoints)
-    if len(nodes) != len(timepoints) - 1:
-        raise ValueError('nodes is not one less in length than timepoints')
+    len_nodes = len(nodes)
+    try:
+        if len_nodes != len(timepoints) - 1:
+            raise ValueError('nodes is not one less in length than timepoints')
+    except TypeError:
+        # assuming timepoints is a generator which may or may not be
+        # limitless
+        pass
 
     if graph is None:
         graph = nx.DiGraph()
@@ -107,9 +124,70 @@ class TestGraphChecking(unittest.TestCase):
         else:
             self.fail('Graph checker passed bad graph (excess edges in 1st graph)')
 
+class TestDirectDescendents(unittest.TestCase):
+    def test_basic_pass(self):
+        Go = node_generate(
+            [[10, 11], [20], [30], [40, 41]],
+            itertools.count(start=100, step=100))
+        Go.add_path([10, 20, 30, 40])
+        Go.add_edge(11, 20)
+        Go.add_edge(30, 41)
+        Gtest = Go.copy()
 
-class TestBlobReading(unittest.TestCase):
-    def test_basic_structure(self):
+        collider.remove_single_descendents(Gtest)
+
+        Gexpect = nx.DiGraph()
+        Gexpect.add_path([10, (20, 30), 40])
+        Gexpect.add_path([11, (20, 30), 41])
+
+        check_graphs_equal(Gtest, Gexpect)
+
+    def test_multi_descendent_abort(self):
+        Go = node_generate(
+            [[10, 11], [20], [30, 31], [40]],
+            itertools.count(start=100, step=100))
+        Go.add_path([10, 20, 30, 40])
+        Go.add_path([11, 20, 31, 40])
+        Gtest = Go.copy()
+
+        collider.remove_single_descendents(Gtest)
+
+        check_graphs_equal(Gtest, Go)
+
+    def test_descendent_multiparent_abort(self):
+        Go = node_generate(
+            [[10, 11], [20, 21], [30], [40, 41]],
+            itertools.count(start=100, step=100))
+        Go.add_path([10, 20, 30, 40])
+        Go.add_edge(11, 20)
+        Go.add_edge(21, 30)
+        Go.add_edge(30, 41)
+        Gtest = Go.copy()
+
+        collider.remove_single_descendents(Gtest)
+
+        check_graphs_equal(Gtest, Go)
+
+    def test_consecutive(self):
+        Go = node_generate(
+            [[10, 11], [20], [30], [40], [50, 51]],
+            itertools.count(start=100, step=100))
+        Go.add_path([10, 20, 30, 40, 50])
+        Go.add_edge(11, 20)
+        Go.add_edge(40, 51)
+        Gtest = Go.copy()
+
+        collider.remove_single_descendents(Gtest)
+
+        Gexpect = nx.DiGraph()
+        Gexpect.add_path([10, (20, 40), 50])
+        Gexpect.add_path([11, (20, 40), 51])
+
+        check_graphs_equal(Gtest, Gexpect)
+
+
+class TestFissionFusion(unittest.TestCase):
+    def test_basic(self):
         Go = node_generate(
             [[10, 11], [20], [30, 31], [40], [50, 51]],
             range(100, 700, 100))
@@ -117,7 +195,7 @@ class TestBlobReading(unittest.TestCase):
         Go.add_path([11, 20, 31, 40, 51])
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest)
+        collider.remove_fission_fusion(Gtest)
 
         Gexpect = nx.DiGraph()
         Gexpect.add_path([10, (20, 40), 50])
@@ -126,18 +204,19 @@ class TestBlobReading(unittest.TestCase):
         check_graphs_equal(Gtest, Gexpect)
 
     def test_linear(self):
+        """
+        Don't do anything with linear succession, that's not our problem.
+        (see remove_single_descendents)
+        """
         Go = node_generate(
             [[10], [20], [30]],
             range(100, 500, 100))
         Go.add_path([10, 20, 30])
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest)
+        collider.remove_fission_fusion(Gtest)
 
-        Gexpect = nx.DiGraph()
-        Gexpect.add_node((10, 30))
-
-        check_graphs_equal(Gtest, Gexpect)
+        check_graphs_equal(Gtest, Go)
 
     def test_component_conservation(self):
         Go = node_generate(
@@ -147,7 +226,7 @@ class TestBlobReading(unittest.TestCase):
         Go.add_path([11, 20, 31, 40, 51])
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest)
+        collider.remove_fission_fusion(Gtest)
 
         self.assertTrue(Gtest.node[(20, 40)]['components'] == set([20, 31, 30, 40]))
 
@@ -159,7 +238,7 @@ class TestBlobReading(unittest.TestCase):
         Go.add_path([11, 20, 31, 40, 51])
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest, conditional=collider.frame_filter(50))
+        collider.remove_fission_fusion(Gtest, max_frames=50)
 
         check_graphs_equal(Gtest, Go)
 
@@ -172,7 +251,7 @@ class TestBlobReading(unittest.TestCase):
 
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest, conditional=collider.frame_filter(50))
+        collider.remove_fission_fusion(Gtest, max_frames=50)
 
         Gexpect = nx.DiGraph()
         Gexpect.add_path([10, (20, 40), 50])
@@ -188,7 +267,7 @@ class TestBlobReading(unittest.TestCase):
         Go.add_path([11, 20, 31, 40, 51, 60, 71])
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest)
+        collider.remove_fission_fusion(Gtest)
 
         Gexpect = nx.DiGraph()
         Gexpect.add_path([10, (20, 60), 70])
@@ -213,7 +292,7 @@ class TestBlobReading(unittest.TestCase):
             Go.add_path([n[-1] for n in nodes])
             Gtest = Go.copy()
 
-            collider.remove_chains(Gtest)
+            collider.remove_fission_fusion(Gtest)
 
             Gexpect = nx.DiGraph()
             Gexpect.add_path([nodes[0][0], (nodes[1][0], nodes[-2][0]), nodes[-1][0]])
@@ -229,7 +308,7 @@ class TestBlobReading(unittest.TestCase):
         Go.add_path([11, 20, 31, 40, 51, 60, 71])
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest)
+        collider.remove_fission_fusion(Gtest)
 
         try:
             self.assertTrue(Gtest.node[(20, 60)]['components'] == set([20, 31, 30, 40, 51, 50, 60]))
@@ -245,10 +324,37 @@ class TestBlobReading(unittest.TestCase):
         Go.add_path([172, 349, 350])
         Gtest = Go.copy()
 
-        collider.remove_chains(Gtest)
+        collider.remove_fission_fusion(Gtest)
 
         Gexpect = nx.DiGraph()
         Gexpect.add_path([(288, 293), 349, 351])
-        Gexpect.add_path([172, 349, 351])
+        Gexpect.add_path([172, 349, 350])
 
         check_graphs_equal(Gtest, Gexpect)
+
+    def test_child_swap(self):
+        """
+        This happened:
+
+                 A
+                / \
+               B   \
+                    C   ==>  (A, E)
+             D     /
+              \   /
+               \ /
+                E
+
+        It shouldn't.
+        """
+        Go = node_generate(
+            [[10, 11], [20], [29, 30, 31], [40], [50, 51]],
+            itertools.count(start=100, step=100))
+        Go.add_path([10, 20, 30, 40, 50])
+        Go.add_path([11, 20, 29])
+        Go.add_path([31, 40, 51])
+        Gtest = Go.copy()
+
+        collider.remove_fission_fusion(Gtest)
+
+        check_graphs_equal(Gtest, Go)
