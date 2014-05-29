@@ -15,11 +15,10 @@ import networkx as nx
 __all__ = [
     'remove_fission_fusion',
     'remove_single_descendents',
-    'family_tree',
-    'nearby'
+    'remove_offshoots',
 ]
 
-def check_assumptions(graph):
+def _check_assumptions(graph):
     for node in graph:
         successors = graph.successors(node)
         predecessors = graph.predecessors(node)
@@ -41,9 +40,9 @@ def check_assumptions(graph):
         elif len(predecessors) == 1:
             assert graph.out_degree(predecessors[0]) == 2, "Fusion parent has unexpected number of children (not 2)"
 
-def flatten(l, *no_recurse_types):
+def flatten(l):
     for el in l:
-        if isinstance(el, collections.Iterable) and not isinstance(el, six.string_types + no_recurse_types):
+        if isinstance(el, collections.Iterable) and not isinstance(el, six.string_types):
             for sub in flatten(el):
                 yield sub
         else:
@@ -133,7 +132,9 @@ def remove_single_descendents(graph):
 
         all_nodes.append(new_node)
 
-def remove_fission_fusion(graph, max_frames=None):
+    # graph is modified in-place
+
+def remove_fission_fusion(graph, max_split_frames=None):
     """
     Strip out fission-fusion events (and repetitions thereof) from the
     graph.
@@ -155,10 +156,10 @@ def remove_fission_fusion(graph, max_frames=None):
     above: ``{A, B, C, D}``.
 
     """
-    if max_frames is None:
+    if max_split_frames is None:
         conditional = None
     else:
-        conditional = frame_filter(max_frames)
+        conditional = frame_filter(max_split_frames)
 
     all_nodes = graph.nodes()
 
@@ -208,30 +209,7 @@ def remove_fission_fusion(graph, max_frames=None):
 
         all_nodes.append(new_node)
 
-    #return graph
+    # graph is modified in-place
 
-def family_tree(digraph, target):
-    """
-    Subsets graph to return predecessors and successors with a blood relation
-    to the target node
-    """
-    all_successors = nx.bfs_tree(digraph, target, reverse=False)
-    all_predecessors = nx.bfs_tree(digraph, target, reverse=True)
-    subdig = digraph.subgraph(itertools.chain([target], all_successors, all_predecessors))
-    return subdig
-
-def nearby(digraph, target, max_distance):
-    """
-    Return a subgraph containing nodes within *max_distance* of *target* in
-    *digraph*.
-    """
-    graph = digraph.to_undirected()
-    lengths = nx.single_source_shortest_path_length(graph, target, max_distance + 1)
-    nearby_nodes = set(node for node, length in six.iteritems(lengths) if length <= max_distance)
-    nearby_plus = set(node for node, length in six.iteritems(lengths) if length == max_distance + 1)
-
-    subdig = digraph.subgraph(nearby_nodes | nearby_plus).copy()
-    for node in nearby_plus:
-        subdig.node[node]['more'] = True
-
-    return subdig
+def remove_offshoots(digraph, threshold):
+    pass
