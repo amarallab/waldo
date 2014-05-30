@@ -20,7 +20,8 @@ def get_color(value, scalerange, cmap='jet'):
     color = mplcolors.rgb2hex(cm(val)[:3])
     return color
 
-def render_nx_as_dot(nxgraph, output_file=None, format='png', colormap='jet_r', logrange=(-0.5, 4)):
+def render_nx_as_dot(nxgraph, output_file=None, format='png',
+                     colormap='jet_r', logrange=(-0.5, 4), ref=True):
     if output_file is None:
         output_file = 'graph.gv'
 
@@ -41,22 +42,22 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png', colormap='jet_r', 
         except KeyError:
             pass
 
-    # reference
-    reference = [0, 1, 3, 10, 30, 100, 300, 1000, 3000]
-    ref_nodes = ['{} frames'.format(r) for r in reference]
-    iterref = iter(ref_nodes)
-    source = six.next(iterref)
-    for dest in iterref:
-        gvgraph.edge(source, dest)
-        source = dest
-    for ref, ref_node in zip(reference, ref_nodes):
-        gvgraph.node(ref_node, penwidth='5', color=get_color(ref, logrange, colormap))
+    if ref:
+        # reference
+        reference = [0, 1, 3, 10, 30, 100, 300, 1000, 3000]
+        ref_nodes = ['{} frames'.format(r) for r in reference]
+        iterref = iter(ref_nodes)
+        source = six.next(iterref)
+        for dest in iterref:
+            gvgraph.edge(source, dest)
+            source = dest
+        for ref, ref_node in zip(reference, ref_nodes):
+            gvgraph.node(ref_node, penwidth='5', color=get_color(ref, logrange, colormap))
 
     return gvgraph.render(filename=output_file)
 
-def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap=None):
-    if cmap is None:
-        cmap = plt.cm.Blues
+def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blues'):
+    cmap = plt.get_cmap(cmap)
 
     degrees = np.zeros(tuple(m+1 for m in maximums), dtype=int)
     for (in_node, in_deg), (out_node, out_deg) in zip(

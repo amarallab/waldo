@@ -3,7 +3,6 @@ from __future__ import (
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
-import unittest
 import itertools
 
 import networkx as nx

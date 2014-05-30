@@ -69,8 +69,11 @@ def condense_nodes(graph, start, end, *others):
       * components
     """
     # come up with new node name
-    start_and_end = list(flatten([start, end]))
-    new_node = start_and_end[0], start_and_end[-1]
+    if start != end:
+        start_and_end = list(flatten([start, end]))
+        new_node = start_and_end[0], start_and_end[-1]
+    else:
+        new_node = start
 
     # repackage data
     components = set()
@@ -172,7 +175,8 @@ def remove_fission_fusion(graph, max_split_frames=None):
         children = set(graph.successors(node))
 
         if len(children) != 2:
-            continue # no fission occured.
+            continue # no fission occured
+            # (probably a job for remove_single_descendents())
 
         grandchildren = set()
         abort = False
@@ -189,9 +193,7 @@ def remove_fission_fusion(graph, max_split_frames=None):
             continue # skip doing anything
 
         if conditional is not None:
-            if conditional(graph, children):
-                pass
-            else:
+            if not conditional(graph, children):
                 continue # children fail conditional testing
 
         grandchild = grandchildren.pop()
@@ -212,4 +214,25 @@ def remove_fission_fusion(graph, max_split_frames=None):
     # graph is modified in-place
 
 def remove_offshoots(digraph, threshold):
-    pass
+    """
+    Remove small dead-ends from *digraph* that last less than *threshold*
+    frames.
+    """
+    all_nodes = digraph.nodes()
+    filt = frame_filter(threshold)
+
+    while all_nodes:
+        node = all_nodes.pop()
+        if digraph.in_degree(node) != 1 or digraph.out_degree(node) != 0:
+            continue # topology wrong
+
+        if not filt(digraph, [node]):
+            continue # lasts too long
+
+        # add to components of parent then remove node
+        parent = digraph.predecessors(node)[0]
+
+        _, new_node_data = condense_nodes(digraph, parent, parent, node)
+        digraph.node[parent] = new_node_data
+
+        digraph.remove_node(node)
