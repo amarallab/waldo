@@ -69,7 +69,6 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
             logging.exception("HELTENA")
     return True
 
-
 def main(args):
     """ all arguments are parsed here and the appropriate functions are called.
     :param args: arguments from argparse (namespace object)

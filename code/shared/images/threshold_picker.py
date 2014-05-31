@@ -305,6 +305,7 @@ class InteractivePlot:
         self.ax_area.plot(x, bottom, '--', color='green')
         self.ax_area.axvline(x=.5, ymin=0, ymax=1)
 
+        self.ax_area.set_ylim([0, 600])
         self.ax_area.set_ylabel('mean area')
         self.ax_objects.set_xlim([0, final_t])
 
@@ -453,4 +454,3 @@ if __name__ == '__main__':
     #ex_id = '20130318_131111'
     #threshold = 0.0001
     #threshold = 0.0003
-

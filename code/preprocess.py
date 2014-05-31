@@ -18,15 +18,16 @@ import logging
 import json
 
 # path definitions
-CODE_DIR = os.path.dirname(os.path.realpath(__file__))
+CODE_DIR = os.path.dirname('.')
 PROJECT_DIR = os.path.abspath(CODE_DIR + '/../')
-SHARED_DIR = CODE_DIR + '/shared/'
+SHARED_DIR = os.path.join(CODE_DIR, 'shared')
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
+
 from images.threshold_picker import InteractivePlot
 from annotation.experiment_index import Experiment_Attribute_Index2
-from wio.file_manager import ensure_dir_exists
+from wio.file_manager import ensure_dir_exists, get_dset
 from settings.local import LOGISTICS
 
 PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
@@ -57,10 +58,23 @@ def main(args):
         ip = InteractivePlot(to_do, threshold_file, 0.005)
         ip.run_plot()
 
+def short_circuit_preproccessing(ex_ids):
+    for ex_id in ex_ids:
+        dset = get_dset(ex_id)
+        filename = 'threshold-{ds}.json'.format(ds=dset)
+        threshold_file = os.path.join(PRETREATMENT_DIR, filename)
+        print ex_id
+        print json.load(open(threshold_file))[ex_id]
+        ip = InteractivePlot([ex_id], threshold_file, 0.005)
+        ip.run_plot()
+
+
+#short_circuit_preproccessing(ex_ids=['20130318_131111','20130614_120518','20130414_140704'])
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prefix_chars='-',
                                      description="by default it does nothing. but you can specify if it should import, "
                                                  "processes, or aggregate your data.")
     parser.add_argument('dataset', metavar='N', type=str, nargs='+', help='dataset name')
     parser.add_argument('-c', help='configuration username')
-    main(args=parser.parse_args())    
+    main(args=parser.parse_args())
