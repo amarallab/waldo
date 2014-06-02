@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
 """
-Filename: pull_all_data_for_worm.py
+Filename: pick_worm_images.py
 Description:
-
-The purpose of this code is to consolodate all required data to make
-a discriptive figure focused on a single worm. This includes an image of the plate
-and several timeseries.
+grab and plot several images of the same worm.
 """
 
 __author__ = 'Peter B. Winter'

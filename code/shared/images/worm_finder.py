@@ -15,17 +15,17 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+<<<<<<< local
+=======
 #import matplotlib.cm as cm
 #import matplotlib.patches as mpatches
 import prettyplotlib as ppl
 import cv2
+>>>>>>> other
 
-import scipy
+
 from scipy import ndimage
-import skimage
-from skimage import morphology
 from skimage.measure import regionprops
-from skimage.filter.rank import entropy
 
 # Path definitions
 HERE = os.path.dirname('.')
@@ -66,19 +66,80 @@ def frame_parser(blob_lines, frame):
 
     # blindly consume as many lines as needed
     try:
-	for dummy in range(frame_offset):
-	    line = six.next(blob_lines)
+        for dummy in range(frame_offset):
+            line = six.next(blob_lines)
     except MWTDataError:
-	pass
+        pass
 
     # parse the line and return
     blob = blob_reader.parse([line])
     if blob['frame'][0] != frame:
-	raise multiworm.core.MWTDataError("Blob line offset failure")
+        raise multiworm.core.MWTDataError("Blob line offset failure")
     return blob
 
 def frame_parser_spec(frame):
     return functools.partial(frame_parser, frame=frame)
+
+
+def outline_to_oubline_matrix(bbox, outline):
+    """
+    returns a filled in binary image of a list of outline points
+    =======
+
+    returns
+    ------
+    outline_matrix: (np.array)
+        an np array containing boolean values denoting the filled in outline shape.
+    """
+
+    def outlines_for_ids(experiment, frame, bids):
+        ''' returns lists of bids and outlines for all bids with
+        an outline found at the specified frame.
+
+        params
+        -------
+
+        experiment: (experiment object from multiworm)
+            cooresponds to a specific ex_id
+        fame: (int)
+            the frame number
+        bids: (list of blob ids)
+
+        returns
+        ------
+        a tuple containing three lists:
+        1) all blob ids for which outlines could be located
+        2) a list of all outlines (in point for ie [(x1, y1), (x2, y2) ... ])
+        3 a list of bounding boxes
+        '''
+        parser = frame_parser_spec(frame)
+        bids_w_outline, outlines, bboxes = [], [], []
+        for bid in bids:
+            blob = experiment.parse_blob(bid, parser)
+            if blob['contour_encode_len'][0]:
+                bids_w_outline.append(bid)
+                outline = blob_reader.decode_outline(
+                        blob['contour_start'][0],
+                        blob['contour_encode_len'][0],
+                        blob['contour_encoded'][0],
+                        )
+                outlines.append(outline)
+                x, y = zip(*outline)
+                bboxes.append((min(x), min(y), max(x), max(y)))
+        return bids_w_outline, outlines, bboxes
+
+
+    minx, miny, maxx, maxy = bbox
+    x, y = zip(*outline)
+    x = [i - minx for i in x]
+    y = [i - miny for i in y]
+    shape = (maxx - minx + 1, maxy - miny + 1)
+    outline_matrix = np.zeros(shape)
+    for i, j in zip(x, y):
+        #print(i, j)
+        outline_matrix[i, j] = 1
+    return ndimage.morphology.binary_fill_holes(outline_matrix)
+
 
 def before_and_after(experiment, frame1, frame2, ids1, ids2):
     ''' creates two plots showing filled shapes for blobs
@@ -87,52 +148,16 @@ def before_and_after(experiment, frame1, frame2, ids1, ids2):
     params
     -------
     experiment: (experiment object from multiworm)
-	cooresponds to a specific ex_id
+        cooresponds to a specific ex_id
     fame1: (int)
-	the frame number for pannel 1
+        the frame number for pannel 1
     ids1: (list of blob ids)
-	the blobs to be dispayed on pannel 1
+        the blobs to be dispayed on pannel 1
     fame2: (int)
-	the frame number for pannel 2
+        the frame number for pannel 2
     ids2: (list of blob ids)
-	the blobs to be dispayed on pannel 2
+        the blobs to be dispayed on pannel 2
     '''
-
-    def outlines_for_ids(experiment, frame, bids):
-	''' returns lists of bids and outlines for all bids with
-	an outline found at the specified frame.
-
-	params
-	-------
-
-	experiment: (experiment object from multiworm)
-	    cooresponds to a specific ex_id
-	fame: (int)
-	    the frame number
-	bids: (list of blob ids)
-
-	returns
-	------
-	a tuple containing three lists:
-	1) all blob ids for which outlines could be located
-	2) a list of all outlines (in point for ie [(x1, y1), (x2, y2) ... ])
-	3 a list of bounding boxes
-	'''
-	parser = frame_parser_spec(frame)
-	bids_w_outline, outlines, bboxes = [], [], []
-	for bid in bids:
-	    blob = experiment.parse_blob(bid, parser)
-	    if blob['contour_encode_len'][0]:
-		bids_w_outline.append(bid)
-		outline = blob_reader.decode_outline(
-			blob['contour_start'][0],
-			blob['contour_encode_len'][0],
-			blob['contour_encoded'][0],
-			)
-		outlines.append(outline)
-		x, y = zip(*outline)
-		bboxes.append((min(x), min(y), max(x), max(y)))
-	return bids_w_outline, outlines, bboxes
 
     # organize data
     bids1, outlines1, bboxes1 = outlines_for_ids(experiment, frame1, ids1)
@@ -163,9 +188,9 @@ def before_and_after(experiment, frame1, frame2, ids1, ids2):
     panel1 = np.zeros(o1[0].shape, dtype=int)
     panel2 = np.zeros(o2[0].shape, dtype=int)
     for o in o1:
-	panel1 += o
+        panel1 += o
     for o in o2:
-	panel2 += o
+        panel2 += o
 
     # plot result
     fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey=True)
@@ -180,7 +205,6 @@ def before_and_after(experiment, frame1, frame2, ids1, ids2):
 
     plt.show()
 
-
 def match_objects(bids, blob_centroids, blob_outlines, image_objects, maxdist=20, verbose=False):
     """
     workhorse function, working hard so that you don't have to.
@@ -193,87 +217,129 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects, maxdist=20
     blobs_by_object = {}
     key_outlines = {}
     for bid, c1, outline in zip(bids, blob_centroids, blob_outlines):
+<<<<<<< local
 
-	# prepare blob outline and bounding box.
-	x, y = zip(*outline)
-	blob_bbox = (min(x), min(y), max(x), max(y))
-	# calculate distances to all image object centroids.
-	dx = img_centroids[:, 0] - c1[0]
-	dy = img_centroids[:, 1] - c1[1]
-	dists = np.sqrt(dx** 2 + dy** 2)
+        # prepare blob outline and bounding box.
+        x, y = zip(*outline)
+        blob_bbox = (min(x), min(y), max(x), max(y))
+        # calculate distances to all image object centroids.
+        dx = img_centroids[:, 0] - c1[0]
+        dy = img_centroids[:, 1] - c1[1]
+        dists = np.sqrt(dx** 2 + dy** 2)
+=======
+>>>>>>> other
 
-	# initialize dummy variables and loop over image objects.
-	closest_dist = 10 *  maxdist
-	closest_obj = -1
-	overlap_exists = False
-	#for i, d in enumerate(dists):
-	for im_obj, d in zip(image_objects, dists):
-	    if d < maxdist and d < closest_dist:
-		# ok blob is sufficiently close, test if bounding boxes overlap.
-		#img_bbox = img_bboxes[i]
-		img_bbox = im_obj.bbox
-		# if boxes overlap, store match.
-		if do_boxes_overlap(img_bbox, blob_bbox):
-		    closest_obj = im_obj
-		    closest_cent = im_obj.centroid
-		    closest_dist = d
+<<<<<<< local
+        # initialize dummy variables and loop over image objects.
+        closest_dist = 10 *  maxdist
+        closest_obj = -1
+        overlap_exists = False
+        #for i, d in enumerate(dists):
+        for im_obj, d in zip(image_objects, dists):
+            if d < maxdist and d < closest_dist:
+                # ok blob is sufficiently close, test if bounding boxes overlap.
+                #img_bbox = img_bboxes[i]
+                img_bbox = im_obj.bbox
+                # if boxes overlap, store match.
+                if do_boxes_overlap(img_bbox, blob_bbox):
+                    closest_obj = im_obj
+                    closest_cent = im_obj.centroid
+                    closest_dist = d
+=======
+        # prepare blob outline and bounding box.
+        x, y = zip(*outline)
+        blob_bbox = (min(x), min(y), max(x), max(y))
+        # calculate distances to all image object centroids.
+        dx = img_centroids[:, 0] - c1[0]
+        dy = img_centroids[:, 1] - c1[1]
+        dists = np.sqrt(dx** 2 + dy** 2)
+>>>>>>> other
 
-	if closest_obj != -1:
-	    # we have a single closest match for this blob. lets do the calculations.
-	    # the final validation step: bid outline must have more overlapping pixels than overreaching.
-	    # ie. object must be mostly on top of the image_object
-	    outline_mat = outline_to_outline_matrix(blob_bbox, outline)
-	    obj_bbox, obj_img = closest_obj.bbox, closest_obj.image
-	    outline_arr, img_arr, bbox = coordiate_match_offset_arrays(blob_bbox, outline_mat,
-								       obj_bbox, obj_img)
-	    img_arr = img_arr * 2
-	    overlay = img_arr + outline_arr
-	    # keep just to look every once in a while.
-	    if False:
-		fig, ax = plt.subplots(1,3)
-		ax[0].imshow(outline_arr)
-		ax[1].imshow(img_arr)
-		ax[2].imshow(overlay)
-		plt.show()
+        # initialize dummy variables and loop over image objects.
+        closest_dist = 10 *  maxdist
+        closest_obj = -1
+        overlap_exists = False
+        #for i, d in enumerate(dists):
+        for im_obj, d in zip(image_objects, dists):
+            if d < maxdist and d < closest_dist:
+                # ok blob is sufficiently close, test if bounding boxes overlap.
+                #img_bbox = img_bboxes[i]
+                img_bbox = im_obj.bbox
+                # if boxes overlap, store match.
+                if do_boxes_overlap(img_bbox, blob_bbox):
+                    closest_obj = im_obj
+                    closest_cent = im_obj.centroid
+                    closest_dist = d
 
-	    # calculate pixel matches.
-	    overlaps = (overlay == 3).sum()
-	    underlaps = (overlay == 2).sum()
-	    overreaches = (overlay == 1).sum()
+        if closest_obj != -1:
+            # we have a single closest match for this blob. lets do the calculations.
+            # the final validation step: bid outline must have more overlapping pixels than overreaching.
+            # ie. object must be mostly on top of the image_object
+            outline_mat = outline_to_outline_matrix(blob_bbox, outline)
+            obj_bbox, obj_img = closest_obj.bbox, closest_obj.image
+            outline_arr, img_arr, bbox = coordiate_match_offset_arrays(blob_bbox, outline_mat,
+                                                                       obj_bbox, obj_img)
+            img_arr = img_arr * 2
+            overlay = img_arr + outline_arr
+            # keep just to look every once in a while.
+            if False:
+                fig, ax = plt.subplots(1,3)
+                ax[0].imshow(outline_arr)
+                ax[1].imshow(img_arr)
+                ax[2].imshow(overlay)
+                plt.show()
 
-	    # if the objects are mostly on top of one another: count as validated match.
-	    if overlaps > overreaches:
-		# this blob is officially validated.
-		matches.append(bid)
+<<<<<<< local
+            # if the objects are mostly on top of one another: count as validated match.
+            if overlaps > overreaches:
+                # this blob is officially validated.
+                matches.append(bid)
 
-		# save for potential joins.
-		l = closest_obj.label
-		if l not in blobs_by_object:
-		    blobs_by_object[l] = []
-		blobs_by_object[l].append(bid)
+                # save for potential joins.
+                l = closest_obj.label
+                if l not in blobs_by_object:
+                    blobs_by_object[l] = []
+                blobs_by_object[l].append(bid)
+=======
+            # calculate pixel matches.
+            overlaps = (overlay == 3).sum()
+            underlaps = (overlay == 2).sum()
+            overreaches = (overlay == 1).sum()
+>>>>>>> other
 
-		# save a connecting line for visual validation.
-		xs = [c1[0], closest_cent[0]]
-		ys = [c1[1], closest_cent[1]]
-		lines.append((xs, ys))
+            # if the objects are mostly on top of one another: count as validated match.
+            if overlaps > overreaches:
+                # this blob is officially validated.
+                matches.append(bid)
 
-		# Todo: make this real data.
-		key_outlines[bid] = filled_image_to_outline_points(obj_bbox, obj_img)
+                # save for potential joins.
+                l = closest_obj.label
+                if l not in blobs_by_object:
+                    blobs_by_object[l] = []
+                blobs_by_object[l].append(bid)
 
-	else:
-	    # this is officially a bad blob.
-	    failures.append(bid)
+                # save a connecting line for visual validation.
+                xs = [c1[0], closest_cent[0]]
+                ys = [c1[1], closest_cent[1]]
+                lines.append((xs, ys))
+
+                # Todo: make this real data.
+                key_outlines[bid] = filled_image_to_outline_points(obj_bbox, obj_img)
+
+        else:
+            # this is officially a bad blob.
+            failures.append(bid)
 
     # reformat joins
     blobs_to_join = []
     for l in blobs_by_object.values():
-	if len(l) > 1:
-	    blobs_to_join.append(l)
+        if len(l) > 1:
+            blobs_to_join.append(l)
 
     if verbose:
-	print(len(blob_centroids), 'blobs tracked by MWT')
-	print(len(failures), 'blobs without matches')
-	print(len(matches), 'blobs matched to image objects')
+        print(len(blob_centroids), 'blobs tracked by MWT')
+        print(len(failures), 'blobs without matches')
+        print(len(matches), 'blobs matched to image objects')
 
     return matches, failures, blobs_to_join, key_outlines, lines
 
@@ -285,17 +351,22 @@ def grab_blob_data(experiment, time):
     params
     -------
     experiment: (experiment object from multiworm)
-	cooresponds to a specific ex_id
+        cooresponds to a specific ex_id
     time: (float)
-	the closest time in seconds for which we would like to retrieve data
+        the closest time in seconds for which we would like to retrieve data
 
     returns
     -------
     frame: (int)
-	the frame number that most closely matches the given time.
+        the frame number that most closely matches the given time.
     blob_data: (list of tuples)
-	the list contains the (blob_id [str], centroid [xy tuple], outlines [list of points])
-	for all blobs tracked during that particular frame.
+<<<<<<< local
+        the list contains the (blob_id [str], centroid [xy tuple], outlines [list of points])
+        for all blobs tracked during that particular frame.
+=======
+        the list contains the (blob_id [str], centroid [xy tuple], outlines [list of points])
+        for all blobs tracked during that particular frame.
+>>>>>>> other
     """
 
     # get the objects from MWT blobs files.
@@ -305,14 +376,14 @@ def grab_blob_data(experiment, time):
     parser = frame_parser_spec(frame)
     blob_data = []
     for bid in bids:
-	blob = experiment.parse_blob(bid, parser)
-	if blob['contour_encode_len'][0]:
-	    outline = blob_reader.decode_outline(
-		blob['contour_start'][0],
-		blob['contour_encode_len'][0],
-		blob['contour_encoded'][0],
-		)
-	    blob_data.append((bid, blob['centroid'][0], outline))
+        blob = experiment.parse_blob(bid, parser)
+        if blob['contour_encode_len'][0]:
+            outline = blob_reader.decode_outline(
+                blob['contour_start'][0],
+                blob['contour_encode_len'][0],
+                blob['contour_encoded'][0],
+                )
+            blob_data.append((bid, blob['centroid'][0], outline))
     return frame, blob_data
 
 
@@ -331,16 +402,16 @@ def analyze_image(experiment, time, img, background, threshold, show=False):
 
     # show how well blobs are matched at this threshold.
     if show:
-	f, ax = plt.subplots()
-	ax.imshow(img.T, cmap=plt.cm.Greys_r)
+        f, ax = plt.subplots()
+        ax.imshow(img.T, cmap=plt.cm.Greys_r)
 
-	ax.contour(mask.T, [0.5], linewidths=1.2, colors='b')
-	for outline in outlines:
-	    ax.plot(*outline.T, color='red')
-	for line in lines:
-	    x, y = line
-	    ax.plot(x, y, '.-', color='green', lw=2)
-	plt.show()
+        ax.contour(mask.T, [0.5], linewidths=1.2, colors='b')
+        for outline in outlines:
+            ax.plot(*outline.T, color='red')
+        for line in lines:
+            x, y = line
+            ax.plot(x, y, '.-', color='green', lw=2)
+        plt.show()
 
     # compile matches/failures
     compile_all = [(frame, bid, bid in matches) for bid in bids]
@@ -348,11 +419,19 @@ def analyze_image(experiment, time, img, background, threshold, show=False):
     image_check['join'] = ''
 
     for bs in blobs_to_join:
-	join_key = '-'.join([str(i) for i in bs])
-	#print(bs, join_key)
-	for b in bs:
-	    #print(image_check['bid'] == b)
-	    image_check['join'][image_check['bid'] == b] = join_key
+<<<<<<< local
+        join_key = '-'.join([str(i) for i in bs])
+        #print(bs, join_key)
+        for b in bs:
+            #print(image_check['bid'] == b)
+            image_check['join'][image_check['bid'] == b] = join_key
+=======
+        join_key = '-'.join([str(i) for i in bs])
+        #print(bs, join_key)
+        for b in bs:
+            #print(image_check['bid'] == b)
+            image_check['join'][image_check['bid'] == b] = join_key
+>>>>>>> other
 
     # order outlines.
     image_outlines = pd.DataFrame(key_outlines, index=['x', 'y', 'l', 'code']).T
@@ -369,9 +448,9 @@ def analyze_ex_id_images(ex_id, threshold):
     params
     -------
     ex_id: (str)
-	experiment id
+        experiment id
     threshold: (float)
-	threshold to use when analyzing images.
+        threshold to use when analyzing images.
     """
 
     # grab images and times.
@@ -396,16 +475,16 @@ def analyze_ex_id_images(ex_id, threshold):
     all_image_outlines = []
 
     for i, (time, impath) in enumerate(zip(times, impaths)):
-	# get the objects from the image
-	#print(impath)
-	img = mpimg.imread(impath)
-	image_check, image_outlines = analyze_image(experiment, time, img, background, threshold, False)
-	full_experiment_check.append(image_check)
-	all_image_outlines.append(image_outlines)
+        # get the objects from the image
+        #print(impath)
+        img = mpimg.imread(impath)
+        image_check, image_outlines = analyze_image(experiment, time, img, background, threshold, False)
+        full_experiment_check.append(image_check)
+        all_image_outlines.append(image_outlines)
 
-	# TODO: remove this failsafe.
-	#if i > 3:
-	#    break
+        # TODO: remove this failsafe.
+        #if i > 3:
+        #    break
 
     # save comprehensive
     image_check = pd.concat(full_experiment_check)
@@ -467,44 +546,44 @@ def dev():
     print(bids)
 
     for i, o in enumerate(outlines):
-	#x, y = zip(*o)
-	#bbox = (min(x), min(y), max(x), max(y))
-	outline_mat = outline_to_outline_matrix(o)
-	#out = binary_outline_to_points(outline_mat)
-	thresh = np.uint8(outline_mat)
-	#contours, hierarchy =  cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE
-	#contours, hierarchy =  cv2.findContours(thresh, 2, 1)
-	contours, hierarchy =  cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-	print(contours)
+        #x, y = zip(*o)
+        #bbox = (min(x), min(y), max(x), max(y))
+        outline_mat = outline_to_outline_matrix(o)
+        #out = binary_outline_to_points(outline_mat)
+        thresh = np.uint8(outline_mat)
+        #contours, hierarchy =  cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE
+        #contours, hierarchy =  cv2.findContours(thresh, 2, 1)
+        contours, hierarchy =  cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        print(contours)
 
 
-	fig, ax = plt.subplots(1,2)
-	points = contours[0][:, 0, :]
-	x , y = zip(*points)
+        fig, ax = plt.subplots(1,2)
+        points = contours[0][:, 0, :]
+        x , y = zip(*points)
 
-	ppl.pcolormesh(fig, ax[1], outline_mat)
-	#ax[1].plot(x, y)
+        ppl.pcolormesh(fig, ax[1], outline_mat)
+        #ax[1].plot(x, y)
 
-	bbox = (min(x), min(y), max(x), max(y))
-	minx, miny, maxx, maxy = bbox
+        bbox = (min(x), min(y), max(x), max(y))
+        minx, miny, maxx, maxy = bbox
 
 
-	#x = [i - minx for i in x]
-	#y = [i - miny for i in y]
-	#shape = (maxx - minx + 1, maxy - miny + 1)
-	shape = (0, 0, max(x), max(y))
-	cont = np.zeros(shape, dtype=int) # + np.int(outline_matrix))
-	for i, j in zip(x, y):
-	    #print(i, j)
-	    cont[i, j] = 1
-	cont = cont.T
+        #x = [i - minx for i in x]
+        #y = [i - miny for i in y]
+        #shape = (maxx - minx + 1, maxy - miny + 1)
+        shape = (0, 0, max(x), max(y))
+        cont = np.zeros(shape, dtype=int) # + np.int(outline_matrix))
+        for i, j in zip(x, y):
+            #print(i, j)
+            cont[i, j] = 1
+        cont = cont.T
 
-	ppl.pcolormesh(fig, ax[0], cont + outline_mat)
-	ax[0].plot(x, y)
+        ppl.pcolormesh(fig, ax[0], cont + outline_mat)
+        ax[0].plot(x, y)
 
-	plt.show()
+        plt.show()
 
-	return outline_mat
+        return outline_mat
 
 
 outline_matrix = dev()

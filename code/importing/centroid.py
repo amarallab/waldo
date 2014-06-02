@@ -24,8 +24,8 @@ sys.path.append(PROJECT_DIR)
 from encoding.decode_outline import decode_outline
 from deviant.record_exceptions import write_pathological_input
 from wio.file_manager import get_timeseries, write_timeseries_file
-from settings.local import SMOOTHING 
-from equally_space import equally_spaced_tenth_second_times
+from settings.local import SMOOTHING
+import equally_space as eq_sp
 from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
 from metrics.compute_metrics import txy_to_speeds, angle_change_for_xy
 from states import fit_hmm_for_blob, markov_measures_for_xy
@@ -47,7 +47,7 @@ def process_centroid_old(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **
     #print orig_times[0], orig_times[-1]
     #print eq_times[0], eq_times[-1]
     interp_x = interpolate.interp1d(orig_times, x1, kind=kind)
-    interp_y = interpolate.interp1d(orig_times, y1, kind=kind)        
+    interp_y = interpolate.interp1d(orig_times, y1, kind=kind)
     x_new = interp_x(eq_times)
     y_new = interp_y(eq_times)
     xy = zip(list(x_new), list(y_new))
@@ -66,11 +66,11 @@ def process_centroid(blob_id, verbose=True, **kwargs):
     orig_times, xy = get_timeseries(blob_id, data_type='xy_raw')
 
     if xy == None:
-        return 
+        return
     if len(xy) == 0:
         return
 
-    
+
     xy = fill_gaps(xy) # interpolate between missing values.
     x, y = zip(*xy)
     dataframe, domains = full_package(orig_times, x, y)
@@ -104,13 +104,13 @@ def process_centroid(blob_id, verbose=True, **kwargs):
     # write is_moving durations
     if isinstance(domains, pd.DataFrame):
         write_timeseries_file(ID=blob_id, data_type='is_moving',
-                              times=np.array(domains.index, dtype=float), 
+                              times=np.array(domains.index, dtype=float),
                               data=np.array(domains[domains.columns], dtype=float))
 
     return
 
 
-def domains_to_dataframe(stop_domains, times):    
+def domains_to_dataframe(stop_domains, times):
     first, last = times[0], times[-1]
 
     if len(stop_domains) > 0:
@@ -147,6 +147,48 @@ def domains_to_dataframe(stop_domains, times):
 
     return df
 
+def smooth_and_space(times, x, y, smooth=(25, 5), dt=1.0):
+    """
+    returns a dataframe with smoothed and equally spaced in time data for x, y, speed,
+    and angle change.
+
+    params
+    ----------
+    times: (list or np.array)
+        the time points of the origional data
+    x, y : (lists or np.arrays)
+        the x and y coordinates of an object
+    smooth: (tuple of 2 ints)
+        the window-size and order parameters for savitzky golay smoothing.
+        set as None for no smoothing.
+    dt: (float)
+        for interpolation, the inter timepoint interval in seconds.
+    ndigits: (int)
+        for interpolation, the decmal place to round times to before interpolation.
+
+    returns
+    ----------
+    dataframe with rows corresponding to x, y, speed, dt
+
+    """
+
+    # perform preliminary smoothing on the xy data.
+    if smooth != None:
+        window, order = smooth
+        x = savitzky_golay(y=np.array(x), window_size=window, order=order)
+        y = savitzky_golay(y=np.array(y), window_size=window, order=order)
+
+    # equally space
+    kind = 'linear'
+    eq_times = eq_sp.equally_spaced_times(times[0], times[-1], dt=dt, ndigits=0)
+    interp_x = interpolate.interp1d(times, x, kind=kind)
+    interp_y = interpolate.interp1d(times, y, kind=kind)
+    x = interp_x(eq_times)
+    y = interp_y(eq_times)
+
+    # change to dataframe
+    dataframe = xy_to_full_dataframe(times=eq_times, x=x, y=y)
+    return dataframe
 
 def full_package(times, x, y,
                  pre_smooth=(25, 5),
@@ -154,12 +196,12 @@ def full_package(times, x, y,
                  distance_threshold = 0.25,
                  max_score=500,
                  prime_smooth=(75, 5)):
-    
+
     # perform preliminary smoothing on the xy data.
     window, order = pre_smooth
     x = savitzky_golay(y=np.array(x), window_size=window, order=order)
     y = savitzky_golay(y=np.array(y), window_size=window, order=order)
-    
+
     # calculate stationary regions
     point_scores = neighbor_calculation(distance_threshold, x, y, max_score)
     domains = domain_creator(point_scores, timepoint_threshold=time_threshold)
@@ -175,12 +217,12 @@ def full_package(times, x, y,
     x = savitzky_golay(y=np.array(x), window_size=window, order=order)
     y = savitzky_golay(y=np.array(y), window_size=window, order=order)
 
-    # equally space 
+    # equally space
     eq_times = times
     kind = 'linear'
-    eq_times = equally_spaced_tenth_second_times(times[0], times[-1])
+    eq_times = eq_sp.equally_spaced_tenth_second_times(times[0], times[-1])
     interp_x = interpolate.interp1d(times, x, kind=kind)
-    interp_y = interpolate.interp1d(times, y, kind=kind)        
+    interp_y = interpolate.interp1d(times, y, kind=kind)
     x = interp_x(eq_times)
     y = interp_y(eq_times)
 
@@ -192,12 +234,12 @@ def full_package(times, x, y,
 def fill_gaps(xy):
     """
     xy lists might contain values of np.nan or a -1 placeholder.
-    this function fills in the missing values by interpolating linearly            
-    
+    this function fills in the missing values by interpolating linearly
+
     params
     ----------
     xy: (list of x,y tuples or 2d nparray)
-    
+
     returns
     checked_xy
     """
@@ -218,7 +260,7 @@ def fill_gaps(xy):
             badcount = 0
     return checked_xy
 
-def xy_to_full_dataframe(times, x, y):    
+def xy_to_full_dataframe(times, x, y):
     speeds = txy_to_speeds(t=times, x=x, y=y)
     angles = angle_change_for_xy(x, y, units='rad')
     #print len(times), len(x), len(y), len(speeds), len(angles)
