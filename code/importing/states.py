@@ -1,11 +1,10 @@
-
 # coding: utf-8
 
 # Description:
 # This notebook is an attempt to implement the state behaivior model from
 # The Geometry of Locomotive Behavioral States in C. elegans
 # Gallagher et al.
-# 
+#
 
 ### Imports
 
@@ -45,25 +44,33 @@ def reskew_data(data,e=0.1):
 
 #### Calculation Functions
 def markov_measures_for_xy(x, y, dt=0.1, verbose=False):
+    """
+
+    reversal
+    speed
+    acceleration
+    angular acceleration
+
+    """
     vs = np.zeros((2, len(x)-1))
-    
+
     vs[0] = np.diff(x) / dt
     vs[1] = np.diff(y) / dt
     vs = vs.T
 
-    data = []    
+    data = []
     v23 = vs[0]
-    for v in vs[1:]:   
+    for v in vs[1:]:
         v12, v23 = v23, v
 
         if np.dot(v12, v23) < 0:
             r = 1
             d = (v12 - v23) / np.linalg.norm(v12 - v23)
             alpha = (v23 + v12) / dt
-            R = [[d[0], d[1]], [-d[1], d[0]]]            
+            R = [[d[0], d[1]], [-d[1], d[0]]]
         else:
             r = 0
-            d = (v12 + v23) / np.linalg.norm(v12 + v23)            
+            d = (v12 + v23) / np.linalg.norm(v12 + v23)
             alpha = (v23 - v12) / dt
             R = [[-d[0], -d[1]], [-d[1], d[0]]]
 
@@ -74,16 +81,16 @@ def markov_measures_for_xy(x, y, dt=0.1, verbose=False):
             a = np.dot(R, alpha)
             ar = a[1]
             a = np.linalg.norm(a)
-            
+
         if verbose:
             print 'r={r} | s={s} | a={a} | ar={ar}'.format(r=r, s=s, a=a, ar=ar)
         if np.isnan(a):
             print 'nan'
-            
+
         data.append((r, s, a, ar))
-        
+
     data = np.array(data)
-    
+
     for i,dat in enumerate(data):
         if any(np.isnan(dat)):
             print i, dat
@@ -119,13 +126,13 @@ def estimate_params(N_states, rel_probs, observations, verbose=False):
         var_s = Ci * (np.sum((s**2) * wi) - mean_s)
         # tangential acceleration
         mean_a = np.sum(a * wi)
-        var_a = Ci * (np.sum((a**2) * wi) - mean_a)        
+        var_a = Ci * (np.sum((a**2) * wi) - mean_a)
         # radial acceleration
         # mean = 0
         var_ar = np.sum((ar**2) * wi)
         # speed acceleration coovariance
-        covar_as = Ci * (np.sum(a * s * wi) - (mean_a * mean_s)) 
-        
+        covar_as = Ci * (np.sum(a * s * wi) - (mean_a * mean_s))
+
         if verbose:
             print i
             print '\tpr', pr
@@ -169,7 +176,7 @@ def probablity_of_observation(params, observation):
     A = Pr
     B = 4 / ((np.pi ** 2) * np.sqrt(np.linalg.det(E)))
     C = (1 / (1 + np.dot(np.dot(x.T, np.linalg.inv(E)), x))) **3
-    
+
     #print A
     #print B
     #print C
@@ -177,7 +184,7 @@ def probablity_of_observation(params, observation):
     return P
 
 def calculate_state_probabilities_no_memory(N_states, params, observations):
-    probs = np.zeros((len(observations), N_states))  
+    probs = np.zeros((len(observations), N_states))
     for i, par in enumerate(params):
         probs[:, i] = [probablity_of_observation(par, obs) for obs in observations]
     return probs
@@ -188,21 +195,21 @@ def calculate_state_probabilities_no_memory(N_states, params, observations):
 def baum_welch(probs, T, initial=None):
     N_obs, N_states = probs.shape
     assert (N_states, N_states) == T.shape, 'rel_probs and Transition matrix do not have matching numbers of states'
-    
+
     print N_states ** 2, 'transitions'
     all_transition_points = np.ones(shape=(N_obs-1, N_states**2))
 
-    
+
     if initial == None:
         initial = (1.0 / N_states) * np.ones(N_states)
-        
+
     p = probs[1, :]
     for i, p_new in enumerate(probs[1:,:]):
         p, p_old = p_new, p # step forward
         if p_old == None: # skip first value.
             continue
         current = np.array(T) * p
-        current = (current.T * p_old * initial).T    
+        current = (current.T * p_old * initial).T
         all_transition_points[i,:] = current.flatten()
 
     highest_prob = np.amax(all_transition_points, axis=1).sum()
@@ -217,9 +224,9 @@ def test_baum_welch():
     p = np.array([[.3, .8], [.3, .8], [.3, .8], [.3, .8], [.3, .8],
                   [.7, .2], [.7, .2], [.3, .8], [.3, .8], [.3, .8]])
     initial = np.array([0.2, 0.8])
-    solution_T = np.array([[0.39726027,  0.60273973], 
+    solution_T = np.array([[0.39726027,  0.60273973],
                            [ 0.18333333,  0.81666667]])
-    T2 = baum_welch(p, T, initial) 
+    T2 = baum_welch(p, T, initial)
     print 'solution'
     print solution_T
     print 'T'
@@ -241,7 +248,7 @@ print baum_welch(probs, T)
 # In[12]:
 
 def forward_backward(N_states, probs, trans_mat, start_probs, end_probs):
-    
+
     def forward(N_states, probs, trans_mat, start_probs):
         last_p = start_probs
         forward_p = np.zeros(probs.shape)
@@ -257,7 +264,7 @@ def forward_backward(N_states, probs, trans_mat, start_probs, end_probs):
         probs = probs[::-1,:] # reverse row order
         backward_p = np.zeros(probs.shape)
         last_p = end_probs
-        for i, p in enumerate(probs[:]):  
+        for i, p in enumerate(probs[:]):
             p = p * np.identity(N_states)
             new_p = np.dot(np.dot(trans_mat, p), last_p) # reverse trans and p from forward algorithm
             new_p = new_p / sum(new_p) # normalize
@@ -268,9 +275,9 @@ def forward_backward(N_states, probs, trans_mat, start_probs, end_probs):
             #             print i, last_p
             #             print i, new_p
         backward_p = backward_p[::-1,:]
-        return backward_p           
-    
-    
+        return backward_p
+
+
     f = forward(N_states, probs, trans_mat, start_probs)
     b = backward(N_states, probs, trans_mat, end_probs)
     posterior = f * b
@@ -288,36 +295,36 @@ def closed_loop_fit(params, observations, T, start_probs, end_probs, max_iterati
     history = []
     for it in range(max_iterations):
         #print 'itteration ', it
-        # calculate probailities each observation 
+        # calculate probailities each observation
         # comes from each state completely independent of one another
         probs = calculate_state_probabilities_no_memory(N_states, params, observations)
 
-        # use forward backward algorithm to calculate relative probailities 
+        # use forward backward algorithm to calculate relative probailities
         # of each point being in each state with transition pentality
         rel_probs = forward_backward(N_states, probs, T, start_probs, end_probs)
 
         # recalculate what the parameters should be, given the current split of the data.
         params = estimate_params(N_states, rel_probs, observations, verbose=False)
-        
+
         # TODO! Turn into weighted average... rather than just standard
         #         if len(states) > 1:
         #             for i in range(3,7):
         #                 params[:,i] = np.mean(params[:,i])
-        weights = rel_probs[:, :].sum(axis=0) / rel_probs.sum()        
+        weights = rel_probs[:, :].sum(axis=0) / rel_probs.sum()
         for i in range(3,7):
             params[:,i] = np.average(params[:,i], weights=weights)
-                            
+
         if it >= 1:
             diff = history[-1] - params
             if diff.sum().sum() <= 0.1:
                 break
         history.append(params)
-    
+
     print it, 'itterations'
     # estimate params one final time with variances unconstrained.
     params = estimate_params(N_states, rel_probs, observations, verbose=False)
     history.append(params)
-    
+
     # run baum-welch to estimate T now that we have decent state params.
     probs = calculate_state_probabilities_no_memory(N_states, params, observations)
     T = baum_welch(probs, T)
@@ -336,7 +343,7 @@ def add_parameter_row(params, step=0.5):
     p[-1, :] = params[-1, :]
     p[-1, 1] += step
     return p
-    
+
 def excess_entropy(rel_probs):
     N, M = rel_probs.shape
     A = sum([(rel_probs[:,i] * np.log2(rel_probs[:,i])).sum() for i in range(M)]) / N
@@ -365,12 +372,12 @@ def fit_two_states(params1, observations, tau, dt=0.1):
     T = initialize_transition_mat(tau=tau, dt=0.1, m=N_states)
     start_probs = np.ones((N_states,)) * (1.0/N_states)
     end_probs = np.ones((N_states,))
-    params, T, rel_probs, history = closed_loop_fit(params=params, 
-                                                    observations=observations, 
+    params, T, rel_probs, history = closed_loop_fit(params=params,
+                                                    observations=observations,
                                                     T=T,
-                                                    start_probs=start_probs, 
-                                                    end_probs=end_probs, 
-                                                    max_iterations=30)  
+                                                    start_probs=start_probs,
+                                                    end_probs=end_probs,
+                                                    max_iterations=30)
     return params, T, rel_probs, history
 
 def fit_three_states(params2, observations, tau, dt=0.1):
@@ -384,12 +391,12 @@ def fit_three_states(params2, observations, tau, dt=0.1):
     T = initialize_transition_mat(tau=tau, dt=0.1, m=N_states)
     start_probs = np.ones((N_states,)) * (1.0/N_states)
     end_probs = np.ones((N_states,))
-    params, T, rel_probs, history = closed_loop_fit(params=params, 
-                                                    observations=observations, 
+    params, T, rel_probs, history = closed_loop_fit(params=params,
+                                                    observations=observations,
                                                     T=T,
-                                                    start_probs=start_probs, 
-                                                    end_probs=end_probs, 
-                                                    max_iterations=30)  
+                                                    start_probs=start_probs,
+                                                    end_probs=end_probs,
+                                                    max_iterations=30)
     return params, T, rel_probs, history
 
 
@@ -421,7 +428,7 @@ def fit_hmm_for_blob(blob_id, tau=20000, dt=0.1):
     write_metadata_file(blob_id, data_type='markov_states2', data=data)
 
     params3, T3, rel_probs3, history3 = fit_three_states(params2, ds_observations, tau=tau)
-    entropy3 = excess_entropy(rel_probs3)    
+    entropy3 = excess_entropy(rel_probs3)
 
     write_timeseries_file(blob_id, data_type='markov_prob3', times=times, data=rel_probs3)
     data = {'T':T3.tolist(), 'entropy':entropy3, 'params':params3.tolist()}
@@ -430,4 +437,4 @@ def fit_hmm_for_blob(blob_id, tau=20000, dt=0.1):
 
 if __name__ == '__main__':
     blob_id = '20130318_131111_49044'
-    fit_hmm_for_blob(blob_id)    
+    fit_hmm_for_blob(blob_id)
