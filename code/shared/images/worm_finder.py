@@ -15,17 +15,17 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-<<<<<<< local
-=======
 #import matplotlib.cm as cm
 #import matplotlib.patches as mpatches
 import prettyplotlib as ppl
 import cv2
->>>>>>> other
 
-
+import scipy
 from scipy import ndimage
+import skimage
+from skimage import morphology
 from skimage.measure import regionprops
+from skimage.filter.rank import entropy
 
 # Path definitions
 HERE = os.path.dirname('.')
@@ -66,6 +66,8 @@ def frame_parser(blob_lines, frame):
 
     # blindly consume as many lines as needed
     try:
+	for dummy in range(frame_offset):
+	    line = six.next(blob_lines)
         for dummy in range(frame_offset):
             line = six.next(blob_lines)
     except MWTDataError:

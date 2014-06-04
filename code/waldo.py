@@ -76,7 +76,6 @@ def main(args):
 
     if args.c is not None:
         print 'Error with -c argument'
-    if args.centroid:
         run_function_for_ex_ids(f=just_process_centroid, name='centroid', ex_ids=args.ex_ids)
         return
     if args.all:
