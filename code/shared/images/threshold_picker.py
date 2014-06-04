@@ -15,16 +15,16 @@ from scipy import ndimage
 from skimage import morphology
 from skimage.measure import regionprops
 
-# Path definitions
-HERE = os.path.dirname(os.path.realpath(__file__))
-SHARED_DIR = os.path.abspath(os.path.join(HERE, '..'))
-PROJECT_DIR = os.path.abspath(os.path.join(SHARED_DIR, '..'))
-print HERE
-print SHARED_DIR
-print PROJECT_DIR
+# # Path definitions
+# HERE = os.path.dirname(os.path.realpath(__file__))
+# SHARED_DIR = os.path.abspath(os.path.join(HERE, '..'))
+# PROJECT_DIR = os.path.abspath(os.path.join(SHARED_DIR, '..'))
+# print HERE
+# print SHARED_DIR
+# print PROJECT_DIR
 
-sys.path.append(SHARED_DIR)
-sys.path.append(PROJECT_DIR)
+# sys.path.append(SHARED_DIR)
+# sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
 from grab_images import grab_images_in_time_range

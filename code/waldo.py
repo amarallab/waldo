@@ -19,12 +19,12 @@ import json
 import cProfile as profile
 import logging
 
+import setpath
+
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))
 PROJECT_DIR = os.path.abspath(CODE_DIR + '/../')
 SHARED_DIR = CODE_DIR + '/shared/'
-sys.path.append(CODE_DIR)
-sys.path.append(SHARED_DIR)
 
 # nonstandard imports
 from wio.file_manager import ensure_dir_exists
@@ -76,7 +76,7 @@ def main(args):
 
     if args.c is not None:
         print 'Error with -c argument'
-    if args.centroid:        
+    if args.centroid:
         run_function_for_ex_ids(f=just_process_centroid, name='centroid', ex_ids=args.ex_ids)
         return
     if args.all:

@@ -22,12 +22,7 @@ from itertools import izip
 import numpy as np
 
 # path definitions
-HERE = os.path.dirname(os.path.realpath(__file__))
-CODE_DIR = os.path.abspath(HERE + '/../../')
-PROJECT_HOME = os.path.abspath(CODE_DIR + '/../')
-SHARED_DIR = CODE_DIR + '/shared'
-sys.path.append(CODE_DIR)
-sys.path.append(SHARED_DIR)
+#
 
 # nonstandard imports
 from settings.local import LOGISTICS
@@ -124,7 +119,7 @@ def format_directory(ID_type, dataset='', tag='', ID=''):
     if str(ID_type) in WORM_OPTIONS:
         ex_id = '_'.join(ID.split('_')[:2])
         return '{path}/{eID}'.format(path=WORM_DIR.rstrip('/'), eID=ex_id)
-    
+
     elif str(ID_type) in plate_or_dataset:
         # make sure we know which dset this plate belongs too
 
@@ -208,7 +203,7 @@ def format_filename(ID, ID_type='worm', data_type='cent_speed',
 
     ensure_dir_exists(file_dir)
     # Format the name of the file
-    return  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, ID=ID,                                           
+    return  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, ID=ID,
                                            dt=data_type, ft=file_type)
 
 def format_worm_filename(blob_id, data_type, file_type, worm_dir=WORM_DIR, ensure=False):
@@ -216,13 +211,13 @@ def format_worm_filename(blob_id, data_type, file_type, worm_dir=WORM_DIR, ensur
     file_dir = '{path}/{eID}'.format(path=worm_dir.rstrip('/'), eID=ex_id)
     if ensure:
         ensure_dir_exists(file_dir)
-    filename =  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, ID=blob_id,  
+    filename =  '{path}/{ID}-{dt}.{ft}'.format(path=file_dir, ID=blob_id,
                                                dt=data_type, ft=file_type)
     return filename
 
-def get_timeseries(ID, data_type, worm_dir=WORM_DIR):    
-    file_type=TIME_SERIES_FILE_TYPE    
-    filename = format_worm_filename(ID, data_type, file_type, worm_dir) 
+def get_timeseries(ID, data_type, worm_dir=WORM_DIR):
+    file_type=TIME_SERIES_FILE_TYPE
+    filename = format_worm_filename(ID, data_type, file_type, worm_dir)
     if os.path.isfile(filename):
         # retrval method depends on file_type
         if file_type == 'json':
@@ -237,12 +232,12 @@ def get_timeseries(ID, data_type, worm_dir=WORM_DIR):
     return None, None
 
 
-def write_timeseries_file(ID, data_type, times, data, worm_dir=WORM_DIR):                          
+def write_timeseries_file(ID, data_type, times, data, worm_dir=WORM_DIR):
     # if data not provided. write will fail. return False.
     if len(data) == 0:
         return False
     file_type = TIME_SERIES_FILE_TYPE
-    filename = format_worm_filename(ID, data_type, file_type, worm_dir, ensure=True) 
+    filename = format_worm_filename(ID, data_type, file_type, worm_dir, ensure=True)
     # save method depends on file_type
     if file_type == 'json':
         json.dump({'time':times, 'data':data}, open(filename, 'w'))
@@ -317,11 +312,11 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
 """
 
 def write_metadata_file(ID, data_type, data, worm_dir=WORM_DIR):
-    filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir, ensure=True)  
+    filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir, ensure=True)
     json.dump(data, open(filename, 'w'))
 
 def get_metadata(ID, data_type='metadata', worm_dir=WORM_DIR):
-    filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir) 
+    filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir)
     if os.path.isfile(filename):
         return json.load(open(filename, 'r'))
     return None

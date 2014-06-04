@@ -1,4 +1,5 @@
-# this package contains functions for modifying
+# This notebook is for finding the segmentation threshold that most clearly finds worms in a recording.
+# It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
 # standard imports
 import os
@@ -25,19 +26,19 @@ def outline_to_outline_matrix(outline, bbox=None):
     returns
     ------
     outline_matrix: (np.array)
-	an np array containing boolean values denoting the filled in outline shape.
+        an np array containing boolean values denoting the filled in outline shape.
     """
     x, y = zip(*outline)
     if bbox == None:
-	bbox = (min(x), min(y), max(x), max(y))
+        bbox = (min(x), min(y), max(x), max(y))
     minx, miny, maxx, maxy = bbox
     x = [i - minx for i in x]
     y = [i - miny for i in y]
     shape = (maxx - minx + 1, maxy - miny + 1)
     outline_matrix = np.zeros(shape)
     for i, j in zip(x, y):
-	#print(i, j)
-	outline_matrix[i, j] = 1
+        #print(i, j)
+        outline_matrix[i, j] = 1
     return ndimage.morphology.binary_fill_holes(outline_matrix)
 
 
@@ -64,13 +65,13 @@ def create_binary_mask(img, background, threshold, minsize=100):
     params
     --------
     img: (image ie. numpy array)
-	each pixel denotes greyscale pixel intensities.
+        each pixel denotes greyscale pixel intensities.
     background: (image ie. numpy array)
-	the background image with maximum pixel intensities (made with create_background)
+        the background image with maximum pixel intensities (made with create_background)
     threshold: (float)
-	the threshold value used to create the binary mask after pixel intensities for (background - image) have been calculated.
+        the threshold value used to create the binary mask after pixel intensities for (background - image) have been calculated.
     minsize: (int)
-	the fewest allowable pixels for an object. objects with an area containing fewer pixels are removed.
+        the fewest allowable pixels for an object. objects with an area containing fewer pixels are removed.
     """
     mask = (background - img) > threshold
     return morphology.remove_small_objects(mask, minsize)
@@ -82,11 +83,11 @@ def show_threshold(img, background, threshold):
     params
     --------
     img: (image ie. numpy array)
-	each pixel denotes greyscale pixel intensities.
+        each pixel denotes greyscale pixel intensities.
     background: (image ie. numpy array)
-	the background image with maximum pixel intensities (made with create_background)
+        the background image with maximum pixel intensities (made with create_background)
     threshold: (float)
-	the threshold value used to create the binary mask after pixel intensities for (background - image) have been calculated.
+        the threshold value used to create the binary mask after pixel intensities for (background - image) have been calculated.
     """
 
     mask = create_binary_mask(img, background, threshold)
@@ -104,7 +105,7 @@ def check_entropy(img):
     params
     ------
     img: (image or array)
-	the image.
+        the image.
     """
     fig, ax = plt.subplots(2,2, sharex=True, sharey=True)
     ax[0, 0].imshow(img, cmap=plt.cm.Greys_r)
@@ -142,17 +143,17 @@ def do_boxes_overlap(box1, box2, show=False):
     check = (r12 <= np.array(r1) + np.array(r2)).all()
     # show to make sure
     if show:
-	fig, ax = plt.subplots()
-	rect1 = mpatches.Rectangle((xmin1, ymin1), xmax1 - xmin1, ymax1 - ymin1,
-				   fill=True, alpha=0.3, color='red', linewidth=0.5)
-	rect2 = mpatches.Rectangle((xmin2, ymin2), xmax2 - xmin2, ymax2 - ymin2,
-				   fill=True, alpha=0.3, color='blue', linewidth=0.5)
+        fig, ax = plt.subplots()
+        rect1 = mpatches.Rectangle((xmin1, ymin1), xmax1 - xmin1, ymax1 - ymin1,
+                                   fill=True, alpha=0.3, color='red', linewidth=0.5)
+        rect2 = mpatches.Rectangle((xmin2, ymin2), xmax2 - xmin2, ymax2 - ymin2,
+                                   fill=True, alpha=0.3, color='blue', linewidth=0.5)
 
-	ax.add_patch(rect1)
-	ax.add_patch(rect2)
-	ax.set_xlim([0, 20])
-	ax.set_ylim([0, 20])
-	plt.show()
+        ax.add_patch(rect1)
+        ax.add_patch(rect2)
+        ax.set_xlim([0, 20])
+        ax.set_ylim([0, 20])
+        plt.show()
     return check
 
 def align_outline_matricies(outline_matricies, bboxes):
@@ -170,7 +171,7 @@ def align_outline_matricies(outline_matricies, bboxes):
     returns
     ------
     aligned_matricies: (list of np.ndarrays)
-	the list of outline matricies all aligned onto a common coordinate system
+        the list of outline matricies all aligned onto a common coordinate system
     bbox: (tuple containing four ints)
        the new common bounding box for all images
     """
@@ -184,8 +185,8 @@ def align_outline_matricies(outline_matricies, bboxes):
 
     # the loop creates a primary with a bbox that encompasses all other boxes.
     for om, bb in zip(outline_matricies[1:], bboxes[1:]):
-	primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
-	#print primary_bbox
+        primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
+        #print primary_bbox
     aligned_matricies = [primary_matrix]
 
     #fig, ax = plt.subplots()
@@ -194,9 +195,9 @@ def align_outline_matricies(outline_matricies, bboxes):
 
     # the loop ensures all boxes match the primary.
     for om, bb in zip(outline_matricies[1:], bboxes[1:]):
-	primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
-	aligned_matricies.append(om)
-	#print(primary_bbox)
+        primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
+        aligned_matricies.append(om)
+        #print(primary_bbox)
     return aligned_matricies, primary_bbox
 
 
@@ -241,16 +242,16 @@ def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
     # initialize new array shapes
     box_shape = (xmax - xmin + 1, ymax - ymin + 1)
     def fit_old_array_into_new_shape(a, off, shape):
-	new = np.zeros(shape, dtype=int)
-	xoff, yoff = np.array(off)
-	off2 = off + np.array(a.shape)
-	xoff2, yoff2 = off2
-	#print('new', shape)
-	#print(off, list(off2), list(off2 - off))
-	#print('x', xoff, ':', xoff2, len(new[xoff:xoff2, 0]))
-	#print('broadcast', new[xoff:xoff2, yoff:yoff2].shape, a.shape)
-	new[xoff:xoff2, yoff:yoff2] = a
-	return new
+        new = np.zeros(shape, dtype=int)
+        xoff, yoff = np.array(off)
+        off2 = off + np.array(a.shape)
+        xoff2, yoff2 = off2
+        #print('new', shape)
+        #print(off, list(off2), list(off2 - off))
+        #print('x', xoff, ':', xoff2, len(new[xoff:xoff2, 0]))
+        #print('broadcast', new[xoff:xoff2, yoff:yoff2].shape, a.shape)
+        new[xoff:xoff2, yoff:yoff2] = a
+        return new
 
     # calculate first offsets.
     #print('array 1')
@@ -264,3 +265,5 @@ def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
 # TODO: make this transformation happen.
 def filled_image_to_outline_points(bbox, img):
     return 'x', 'y', 'len', 'code'
+
+
