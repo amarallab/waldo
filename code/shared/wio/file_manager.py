@@ -33,7 +33,9 @@ RESULT_DIR = os.path.abspath(LOGISTICS['results'])
 EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
 WORM_DIR = os.path.abspath(LOGISTICS['worms'])
 PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
+PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
 DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
+
 
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
@@ -46,6 +48,9 @@ if TIME_SERIES_FILE_TYPE == 'hdf5':
 DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
+
+
+
 
 def silent_remove(filename):
     try:
@@ -146,6 +151,15 @@ def get_good_blobs(ex_id, key='spine', worm_dir=WORM_DIR):
         blob_id = sf.split('/')[-1].split('-{key}'.format(key=key))[0]
         blobs.append(blob_id)
     return blobs
+
+def preprocessing_data(ex_id):
+    ''' returns a dict of preprocess data for an ex_id,
+    or an empty dict if nothing was found. '''
+    dset = get_dset(ex_id)
+    filename = 'threshold-{ds}.json'.format(ds=dset)
+    threshold_file = os.path.join(PRETREATMENT_DIR, filename)
+    data = json.load(open(threshold_file)).get(ex_id, {})
+    return data
 
 def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
