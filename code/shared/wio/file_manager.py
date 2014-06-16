@@ -49,7 +49,51 @@ DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
 
+class Preprocess_File(object):
+    def __init__(self, dset=None, ex_id=None):
+        # checks
+        assert dset or ex_id, 'user must specify dset or ex_id'
+        if dset and ex_id:
+            err = 'dset does not match recorded dset for ex_id'
+            assert dset == get_dset(ex_id), err
+        if not dset:
+            dset = get_dset(ex_id)
 
+        self.path = PRETREATMENT_DIR
+        self.dset = dset
+        self.ex_id = ex_id
+        self.data = None
+
+        #print(self.path)
+        #print(self.dset)
+
+        self.file = os.path.join(self.path,
+                                 'threshold-{d}.json'.format(d=dset))
+
+    def dump(self, data, ex_id=None):
+        return json.dump(open(self.file, 'r'), data)
+
+    def load(self):
+        self.data = json.load(open(self.file, 'r'))
+        return self.data
+
+    def pull_data(self, ex_id):
+        if not ex_id:
+            ex_id = self.ex_id
+        if not self.data:
+            self.load()
+        data = self.data[ex_id]
+        return data
+
+    def roi(self, ex_id=None):
+        data = self.pull_data(ex_id)
+        print(data.keys())
+        return {'x':data['center_x'], 'y':data['center_y'],
+                'r':data['radius']}
+
+    def threshold(self, ex_id=None):
+        data = self.pull_data(ex_id)
+        return data['threshold']
 
 
 def silent_remove(filename):

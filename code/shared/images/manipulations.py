@@ -12,6 +12,8 @@ from scipy import ndimage
 from skimage import morphology
 from skimage.measure import regionprops
 
+
+
 def outline_to_outline_matrix(outline, bbox=None):
     """
     returns a filled in binary image of a list of outline points
@@ -28,7 +30,17 @@ def outline_to_outline_matrix(outline, bbox=None):
     outline_matrix: (np.array)
         an np array containing boolean values denoting the filled in outline shape.
     """
-    x, y = zip(*outline)
+    if len(outline) == 4:
+        print('precaution, a len 4 outline is usually something else by accident')
+        print(outline)
+    # prepare blob outline and bounding box.
+    if isinstance(outline, np.ndarray):
+        x = outline[:,0]
+        y = outline[:,1]
+    else:
+        x, y = zip(*outline)
+
+
     if bbox == None:
         bbox = (min(x), min(y), max(x), max(y))
     minx, miny, maxx, maxy = bbox
