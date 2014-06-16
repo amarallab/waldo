@@ -17,20 +17,24 @@ import argparse
 import json
 
 # path definitions
+'''
 CODE_DIR = os.path.dirname('.')
 PROJECT_DIR = os.path.abspath(CODE_DIR + '/../')
 SHARED_DIR = os.path.join(CODE_DIR, 'shared')
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
+'''
 
-
+import setpath
 from images.threshold_picker import InteractivePlot
 from annotation.experiment_index import Experiment_Attribute_Index2
 from wio.file_manager import ensure_dir_exists, get_dset
 from settings.local import LOGISTICS
 
 PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
+CACHE_DIR = os.path.join(PRETREATMENT_DIR, 'cache')
 ensure_dir_exists(PRETREATMENT_DIR)
+ensure_dir_exists(CACHE_DIR)
 
 def main(args):
     """ all arguments are parsed here and the appropriate functions are called.
@@ -38,6 +42,8 @@ def main(args):
     """
     if args.c is not None:
         print 'Error with -c argument'
+
+
 
     for dset in args.dataset:
         print dset
@@ -54,8 +60,12 @@ def main(args):
             print len(finished_thresholds), 'already finished'
 
         to_do = list(set(ex_ids) - set(finished_thresholds))
-        ip = InteractivePlot(to_do, threshold_file, 0.005)
-        ip.run_plot()
+        print len(to_do), 'still to go'
+        ip = InteractivePlot(to_do, threshold_file, CACHE_DIR)
+        if args.p:
+            ip.precalculate_threshold_data()
+        else:
+            ip.run_plot()
 
 def short_circuit_preproccessing(ex_ids):
     for ex_id in ex_ids:
@@ -76,4 +86,5 @@ if __name__ == '__main__':
                                                  "processes, or aggregate your data.")
     parser.add_argument('dataset', metavar='N', type=str, nargs='+', help='dataset name')
     parser.add_argument('-c', help='configuration username')
+    parser.add_argument('-p', action='store_true', help='preprocess')
     main(args=parser.parse_args())

@@ -15,6 +15,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from itertools import izip
+from .manpulations import align_outline_matricies
+
 
 # nonstandard imports
 from grab_images import create_image_directory, get_closest_image
@@ -61,6 +63,114 @@ def draw_outlines_on_single_image(image_path, outlines, savename=''):
     else:
         plt.show()
     plt.clf()
+
+
+def plot_merged_outlines(outline_list, ids):
+
+
+
+
+def before_and_after(experiment, frame1, frame2, ids1, ids2):
+    ''' creates two plots showing filled shapes for blobs
+    taken from two different frames.
+
+    params
+    -------
+    experiment: (experiment object from multiworm)
+        cooresponds to a specific ex_id
+    fame1: (int)
+        the frame number for pannel 1
+    ids1: (list of blob ids)
+        the blobs to be dispayed on pannel 1
+    fame2: (int)
+        the frame number for pannel 2
+    ids2: (list of blob ids)
+        the blobs to be dispayed on pannel 2
+    '''
+
+    def outlines_for_ids(experiment, frame, bids):
+        ''' returns lists of bids and outlines for all bids with
+        an outline found at the specified frame.
+
+        params
+        -------
+
+        experiment: (experiment object from multiworm)
+            cooresponds to a specific ex_id
+        fame: (int)
+            the frame number
+        bids: (list of blob ids)
+
+        returns
+        ------
+        a tuple containing three lists:
+        1) all blob ids for which outlines could be located
+        2) a list of all outlines (in point for ie [(x1, y1), (x2, y2) ... ])
+        3 a list of bounding boxes
+        '''
+        parser = frame_parser_spec(frame)
+        bids_w_outline, outlines, bboxes = [], [], []
+        for bid in bids:
+            blob = experiment.parse_blob(bid, parser)
+            if blob['contour_encode_len'][0]:
+                bids_w_outline.append(bid)
+                outline = blob_reader.decode_outline(
+                        blob['contour_start'][0],
+                        blob['contour_encode_len'][0],
+                        blob['contour_encoded'][0],
+                        )
+                outlines.append(outline)
+                x, y = zip(*outline)
+                bboxes.append((min(x), min(y), max(x), max(y)))
+        return bids_w_outline, outlines, bboxes
+
+    # organize data
+    bids1, outlines1, bboxes1 = outlines_for_ids(experiment, frame1, ids1)
+    bids2, outlines2, bboxes2 = outlines_for_ids(experiment, frame2, ids2)
+    N1, N2 = len(bids1), len(bids2)
+
+    # convert to matricies
+    o1 = [outline_to_outline_matrix(o) for o in outlines1]
+    o2 = [outline_to_outline_matrix(o) for o in outlines2]
+
+    # align all the matricies to be on common coordinates.
+    aligned_matricies, bbox = align_outline_matricies(o1 + o2, bboxes1 + bboxes2)
+    o1 = aligned_matricies[:N1]
+    o2 = aligned_matricies[N1:]
+
+    print('frame1:', frame1, '| bids:', bids1)
+    print('frame2:', frame2, '| bids:', bids2)
+
+    # plots for debugging
+    #print('none of second group lost?', len(o2) == len(bids2))
+    #for o in o1 + o2:
+    #    fig, ax = plt.subplots()
+    #    ax.imshow(o)
+    #    break
+    #plt.show()
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey=True)
+    # add all entries togther into same pannel
+    if len(o1):
+        panel1 = np.zeros(o1[0].shape, dtype=int)
+        for o in o1:
+            panel1 += o
+        ax1.pcolormesh(panel1, cmap=plt.cm.YlOrBr)
+        ymax, xmax = o1[0].shape
+    if len(o2):
+        panel2 = np.zeros(o2[0].shape, dtype=int)
+        for o in o2:
+           panel2 += o
+        ymax, xmax = o2[0].shape
+        ax2.pcolormesh(panel2, cmap=plt.cm.YlOrBr)
+
+    ax2.set_xlim([0, xmax])
+    ax2.set_ylim([0, ymax])
+    ax1.set_title('frame {f}'.format(f=frame1))
+    ax2.set_title('frame {f}'.format(f=frame2))
+
+    plt.show()
+    return bbox
 
 
 def draw_outlines_on_double_image(image_path1, image_path2, outlines1, outlines2, savename=''):

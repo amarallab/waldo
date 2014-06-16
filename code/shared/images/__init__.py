@@ -10,4 +10,4 @@
 # sys.path.append(PROJECT_DIR)
 # print(sys.path)
 
-from .worm_finder import main
+#from .worm_finder import main

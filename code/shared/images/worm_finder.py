@@ -10,7 +10,7 @@ import os
 import sys
 import itertools
 
-import random
+#import random
 import functools
 import numpy as np
 import pandas as pd
@@ -37,7 +37,6 @@ from wio.file_manager import get_good_blobs, get_timeseries, ensure_dir_exists #
 
 import multiworm
 from multiworm.readers import blob as blob_reader
-
 from settings.local import LOGISTICS
 
 MWT_DIR = os.path.abspath(LOGISTICS['filesystem_data'])
@@ -69,7 +68,6 @@ def frame_parser(blob_lines, frame):
     if blob['frame'][0] != frame:
         raise multiworm.core.MWTDataError("Blob line offset failure")
     return blob
-
 
 
 def frame_parser_spec(frame):

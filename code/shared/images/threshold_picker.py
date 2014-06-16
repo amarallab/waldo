@@ -285,7 +285,8 @@ class InteractivePlot:
             a list of threshold values to calculate. should be sorted from least to greatest.
         """
         cache_thresholds = {}
-        filename = os.path.join(self.cache_dir, "cache-%s.json" % self.current_id)
+        filename = os.path.join(self.cache_dir,
+                                "cache-{cid}.json".format(cid=self.current_id))
         try:
             with open(filename, "r") as f:
                 x = json.load(f)

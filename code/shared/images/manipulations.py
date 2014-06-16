@@ -156,6 +156,15 @@ def do_boxes_overlap(box1, box2, show=False):
         plt.show()
     return check
 
+def points_to_aligned_matrix(outline_points):
+    outline_matricies, bboxes = [], []
+    for outline in outline_points:
+        x, y = zip(*outline)
+        bboxes.append((min(x), min(y), max(x), max(y)))
+        outline_matricies.append(outline_to_outline_matrix(outline))
+    return align_outline_matricies(outline_matricies, bboxes)
+
+
 def align_outline_matricies(outline_matricies, bboxes):
     """
     aligns a list of outline matricies so that all of them are on the same coordinate system.
@@ -175,8 +184,7 @@ def align_outline_matricies(outline_matricies, bboxes):
     bbox: (tuple containing four ints)
        the new common bounding box for all images
     """
-
-    aligned_matricies, aligned_bboxes = [], []
+    aligned_matricies = []
     primary_matrix = outline_matricies[0]
     primary_bbox = bboxes[0]
 
@@ -265,5 +273,3 @@ def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
 # TODO: make this transformation happen.
 def filled_image_to_outline_points(bbox, img):
     return 'x', 'y', 'len', 'code'
-
-
