@@ -49,9 +49,28 @@ DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
 
+def preprocessing_data(ex_id):
+    ''' returns a dict of preprocess data for an ex_id,
+    or an empty dict if nothing was found. '''
+    dset = get_dset(ex_id)
+    filename = 'threshold-{ds}.json'.format(ds=dset)
+    threshold_file = os.path.join(PRETREATMENT_DIR, filename)
+    data = json.load(open(threshold_file)).get(ex_id, {})
+    return data
+
+
 class Preprocess_File(object):
+    """
+    a class for interacting with preprocessing data
+    for an recording (ie. experiment id or ex_id)
+    or for a dataset (ie. dataset name or dset)
+
+    this gives access to region of interest data
+    (x, y, and radius) and threshold data
+    """
     def __init__(self, dset=None, ex_id=None):
-        # checks
+        """ specifiy either the experiment or the dataset. """
+        # consistancy checks.
         assert dset or ex_id, 'user must specify dset or ex_id'
         if dset and ex_id:
             err = 'dset does not match recorded dset for ex_id'
@@ -87,7 +106,6 @@ class Preprocess_File(object):
 
     def roi(self, ex_id=None):
         data = self.pull_data(ex_id)
-        print(data.keys())
         return {'x':data['center_x'], 'y':data['center_y'],
                 'r':data['radius']}
 
@@ -196,14 +214,6 @@ def get_good_blobs(ex_id, key='spine', worm_dir=WORM_DIR):
         blobs.append(blob_id)
     return blobs
 
-def preprocessing_data(ex_id):
-    ''' returns a dict of preprocess data for an ex_id,
-    or an empty dict if nothing was found. '''
-    dset = get_dset(ex_id)
-    filename = 'threshold-{ds}.json'.format(ds=dset)
-    threshold_file = os.path.join(PRETREATMENT_DIR, filename)
-    data = json.load(open(threshold_file)).get(ex_id, {})
-    return data
 
 def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
