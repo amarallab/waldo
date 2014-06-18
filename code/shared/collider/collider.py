@@ -15,13 +15,17 @@ except ImportError:
     def mean(x):
         return sum(x) / len(x)
 
+import numpy as np
 import networkx as nx
+
+import wio.file_manager as fm
 
 __all__ = [
     'remove_fission_fusion',
     'remove_fission_fusion_rel',
     'remove_single_descendents',
     'remove_offshoots',
+    'remove_nodes_outside_roi'
 ]
 
 def _check_assumptions(graph):
@@ -302,6 +306,64 @@ def remove_fission_fusion_rel(digraph, split_rel_time):
         all_nodes.append(new_node)
 
     # graph is modified in-place
+
+def remove_nodes_outside_roi(graph, experiment, ex_id):
+    """
+    removes nodes that are outside of a precalculated
+    circle or 'region of interest'.
+
+    params
+    -----
+    graph: (networkx graph)
+       nodes are blob ids
+    experiment: (multiworm Experiment)
+       the experiment object corresponding to the same recording
+    ex_id: (str)
+       the experiment id (ie. timestamp) used to look up roi.
+    """
+
+    def box_centers(experiment):
+        bids, boxes = [], []
+        for (bid, blob_data) in experiment.all_blobs():
+            if not blob_data:
+                continue
+            if u'centroid' in blob_data:
+                xy = blob_data['centroid']
+                #print(bid, len(xy))
+                if xy != None and len(xy) > 0:
+                    x, y = zip(*xy)
+                    xmin, xmax = min(x), max(x)
+                    ymin, ymax = min(y), max(y)
+                    box = [xmin, ymin, xmax, ymax]
+                    bids.append(bid)
+                    boxes.append(box)
+
+        xmin, ymin, xmax, ymax = zip(*boxes)
+        box_centers = np.zeros((len(boxes), 2), dtype=float)
+        box_centers[:, 0] = (np.array(xmin) + np.array(xmax)) / 2
+        box_centers[:, 1] = (np.array(ymin) + np.array(ymax)) / 2
+        return bids, box_centers
+
+
+    # get region of interest
+    prep_file = fm.Preprocess_File(ex_id=ex_id)
+    roi = prep_file.roi()
+    assert len(roi) > 0
+    x, y, r = roi['x'], roi['y'], roi['r']
+
+    #calculate
+    bids, box_centers = box_centers(experiment)
+    dists = np.sqrt((box_centers[:, 0] - x)**2 +
+                   (box_centers[:, 1] - y)**2)
+
+    are_inside = r < dists
+
+    outside_nodes = []
+    for bid, in_roi in zip(bids, are_inside):
+        if not in_roi:
+            outside_nodes.append(bid)
+    print(len(outside_nodes))
+    graph.remove_nodes_from(outside_nodes)
 
 def remove_offshoots(digraph, threshold):
     """
