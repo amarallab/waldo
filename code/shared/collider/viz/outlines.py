@@ -58,4 +58,5 @@ def show_before_and_after(experiment, target):
         axs[0].plot(*zip(*p), lw=3)
     for c in children:
         axs[1].plot(*zip(*c), lw=3)
-    plt.show()
+
+    return f, axs
