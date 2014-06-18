@@ -106,8 +106,8 @@ class Preprocess_File(object):
 
     def roi(self, ex_id=None):
         data = self.pull_data(ex_id)
-        return {'x':data['center_x'], 'y':data['center_y'],
-                'r':data['radius']}
+        return {'x':data['x'], 'y':data['y'],
+                'r':data['r']}
 
     def threshold(self, ex_id=None):
         data = self.pull_data(ex_id)

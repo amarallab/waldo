@@ -36,31 +36,6 @@ DATA_DIR = LOGISTICS['filesystem_data']
 PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
 ensure_dir_exists(PRETREATMENT_DIR)
 
-#
-# def show_threshold_spread(img, background, thresholds=[0.00004, 0.0001, 0.00015, 0.0002]):
-#     """
-#     plots an image four times with the outlines of objects calculated at four different thresholds
-#     overlaid on them.
-#
-#     params
-#     --------
-#     img: (image ie. numpy array)
-#         each pixel denotes greyscale pixel intensities.
-#     background: (image ie. numpy array)
-#         the background image with maximum pixel intensities (made with create_background)
-#     thresholds: (list of floats, len=4)
-#         the threshold values plotted.
-#     """
-#     fig, ax = plt.subplots(2, 2, sharex=True, sharey=True)
-#     for i, t in enumerate(thresholds):
-#         row = int(i / 2)
-#         col = int(i % 2)
-#         mask = create_binary_mask(img, background, threshold=t)
-#         ax[row, col].imshow(img, cmap=plt.cm.gray, interpolation='nearest')
-#         ax[row, col].contour(mask, [0.5], linewidths=1.2, colors='b')
-#         ax[row, col].set_title('threshold = {t}'.format(t=t))
-#         ax[row, col].axis('off')
-
 
 def perp(v):
     # adapted from http://stackoverflow.com/a/3252222/194586
@@ -216,12 +191,14 @@ class InteractivePlot:
             print "E: %s (%s)" % (os.strerror(ex.errno), self.annotation_filename)
 
     def save_data(self):
+        # note: the image is usually transposed. we didn't here,
+        # so x and y are flipped during saving process.
         self.data[self.current_id] = {'threshold': self.current_threshold,
-                                      'center_x': self.circle_pos[0],
-                                      'center_y': self.circle_pos[1],
-                                      'radius': self.circle_radius}
+                                      'x': self.circle_pos[1],
+                                      'y': self.circle_pos[0],
+                                      'r': self.circle_radius}
         with open(self.annotation_filename, "wt") as f:
-            f.write(json.dumps(self.data))
+            f.write(json.dumps(self.data), indent=4)
 
     @staticmethod
     def create_background(impaths):

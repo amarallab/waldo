@@ -24,6 +24,7 @@ import prettyplotlib as ppl
 import scipy
 from scipy import ndimage
 import skimage
+from math import fabs
 from skimage import morphology
 from skimage.measure import regionprops
 from skimage.filter.rank import entropy
@@ -73,108 +74,6 @@ def frame_parser(blob_lines, frame):
 def frame_parser_spec(frame):
     return functools.partial(frame_parser, frame=frame)
 
-# def before_and_after(experiment, frame1, frame2, ids1, ids2):
-#     ''' creates two plots showing filled shapes for blobs
-#     taken from two different frames.
-
-#     params
-#     -------
-#     experiment: (experiment object from multiworm)
-#         cooresponds to a specific ex_id
-#     fame1: (int)
-#         the frame number for pannel 1
-#     ids1: (list of blob ids)
-#         the blobs to be dispayed on pannel 1
-#     fame2: (int)
-#         the frame number for pannel 2
-#     ids2: (list of blob ids)
-#         the blobs to be dispayed on pannel 2
-#     '''
-
-#     def outlines_for_ids(experiment, frame, bids):
-#         ''' returns lists of bids and outlines for all bids with
-#         an outline found at the specified frame.
-
-#         params
-#         -------
-
-#         experiment: (experiment object from multiworm)
-#             cooresponds to a specific ex_id
-#         fame: (int)
-#             the frame number
-#         bids: (list of blob ids)
-
-#         returns
-#         ------
-#         a tuple containing three lists:
-#         1) all blob ids for which outlines could be located
-#         2) a list of all outlines (in point for ie [(x1, y1), (x2, y2) ... ])
-#         3 a list of bounding boxes
-#         '''
-#         parser = frame_parser_spec(frame)
-#         bids_w_outline, outlines, bboxes = [], [], []
-#         for bid in bids:
-#             blob = experiment.parse_blob(bid, parser)
-#             if blob['contour_encode_len'][0]:
-#                 bids_w_outline.append(bid)
-#                 outline = blob_reader.decode_outline(
-#                         blob['contour_start'][0],
-#                         blob['contour_encode_len'][0],
-#                         blob['contour_encoded'][0],
-#                         )
-#                 outlines.append(outline)
-#                 x, y = zip(*outline)
-#                 bboxes.append((min(x), min(y), max(x), max(y)))
-#         return bids_w_outline, outlines, bboxes
-
-#     # organize data
-#     bids1, outlines1, bboxes1 = outlines_for_ids(experiment, frame1, ids1)
-#     bids2, outlines2, bboxes2 = outlines_for_ids(experiment, frame2, ids2)
-#     N1, N2 = len(bids1), len(bids2)
-
-#     # convert to matricies
-#     o1 = [outline_to_outline_matrix(o) for o in outlines1]
-#     o2 = [outline_to_outline_matrix(o) for o in outlines2]
-
-#     # align all the matricies to be on common coordinates.
-#     aligned_matricies, bbox = align_outline_matricies(o1 + o2, bboxes1 + bboxes2)
-#     o1 = aligned_matricies[:N1]
-#     o2 = aligned_matricies[N1:]
-
-#     print('frame1:', frame1, '| bids:', bids1)
-#     print('frame2:', frame2, '| bids:', bids2)
-
-#     # plots for debugging
-#     #print('none of second group lost?', len(o2) == len(bids2))
-#     #for o in o1 + o2:
-#     #    fig, ax = plt.subplots()
-#     #    ax.imshow(o)
-#     #    break
-#     #plt.show()
-
-#     fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey=True)
-#     # add all entries togther into same pannel
-#     if len(o1):
-#         panel1 = np.zeros(o1[0].shape, dtype=int)
-#         for o in o1:
-#             panel1 += o
-#         ax1.pcolormesh(panel1, cmap=plt.cm.YlOrBr)
-#         ymax, xmax = o1[0].shape
-#     if len(o2):
-#         panel2 = np.zeros(o2[0].shape, dtype=int)
-#         for o in o2:
-#            panel2 += o
-#         ymax, xmax = o2[0].shape
-#         ax2.pcolormesh(panel2, cmap=plt.cm.YlOrBr)
-
-#     ax2.set_xlim([0, xmax])
-#     ax2.set_ylim([0, ymax])
-#     ax1.set_title('frame {f}'.format(f=frame1))
-#     ax2.set_title('frame {f}'.format(f=frame2))
-
-#     plt.show()
-#     return bbox
-
 
 def match_objects(bids, blob_centroids, blob_outlines, image_objects,
                   roi=None, maxdist=20, verbose=False):
@@ -183,12 +82,17 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
 
 
     """
-
+    #print('matching roi', roi)
     # initialize everything.
     img_labels = [r.label for r in image_objects]
     img_centroids = np.array([r.centroid for r in image_objects])
     img_roi_check = np.array([True for r in image_objects])
-
+    #print('len', len(img_roi_check))
+    #print('sum', sum(img_roi_check))
+    #print('all', all(img_roi_check))
+    img_outside_roi = len(img_roi_check) - sum(img_roi_check)
+    bid_outside_roi = []
+    #print(img_outside_roi)
     if roi != None:
         dx = img_centroids[:, 0] - roi['x']
         dy = img_centroids[:, 1] - roi['y']
@@ -214,6 +118,7 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
             dx, dy = (cent[0] - roi['x']), (cent[1] - roi['y'])
             inside_roi = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
             if not inside_roi:
+                bid_outside_roi.append(bid)
                 continue
 
         # remove this cruft if working properly.
@@ -309,13 +214,18 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
         print(len(blob_centroids), 'blobs tracked by MWT')
         print(len(false_pos), 'blobs without matches')
         print(len(matches), 'blobs matched to image objects')
+        print(len(bid_outside_roi), 'bid outsid roi')
+        print(img_outside_roi, 'img outsid roi')
 
     more = {'blobs_by_object': blobs_by_object,
             'false-neg': false_neg,
             'false-pos': len(false_pos),
             'true-pos': len(matches),
             'lines': lines,
-            'roi':roi}
+            'roi':roi,
+            'bid-outside':len(bid_outside_roi),
+            'img-outside':img_outside_roi}
+
 
     return matches, false_pos, blobs_to_join, more
 
@@ -357,7 +267,6 @@ def grab_blob_data(experiment, time):
             blob_data.append((bid, blob['centroid'][0], outline))
     return frame, blob_data
 
-
 def analyze_image(experiment, time, img, background, threshold,
                   roi=None, show=False):
     """
@@ -374,11 +283,6 @@ def analyze_image(experiment, time, img, background, threshold,
                           image_objects, roi=roi)
     matches, false_neg, blobs_to_join, more = match
 
-    #key_outlines, lines now in more
-
-    #print('time', time)
-    #print(len(matches), 'matches')
-    #print(len(false_neg), 'failures')
     # show how well blobs are matched at this threshold.
     if show:
         f, ax = plt.subplots()
@@ -392,7 +296,7 @@ def analyze_image(experiment, time, img, background, threshold,
             ax.plot(x, y, '.-', color='green', lw=2)
         plt.show()
 
-    base_accuracy = {'frame':frame,
+    base_accuracy = {'frame':frame, 'time':time,
                      'false-neg':more['false-neg'],
                      'false-pos':more['false-pos'],
                      'true-pos':more['true-pos']}
@@ -413,19 +317,49 @@ def analyze_image(experiment, time, img, background, threshold,
     # were added, this would be a good place.
     return bid_matching, base_accuracy
 
-def binary_outline_to_points(outline_matrix):
-    f = ndimage.morphology.binary_fill_holes(outline_matrix)
-    bigger_shape = (f.shape[0] + 2, f.shape[1] + 2)
+# def binary_outline_to_points(outline_matrix):
+#     f = ndimage.morphology.binary_fill_holes(outline_matrix)
+#     bigger_shape = (f.shape[0] + 2, f.shape[1] + 2)
 
-    up = np.zeros(bigger_shape, dtype=bool)
-    mid = np.zeros(bigger_shape, dtype=bool)
-    down = left = right = np.zeros(bigger_shape)
+#     up = np.zeros(bigger_shape, dtype=bool)
+#     mid = np.zeros(bigger_shape, dtype=bool)
+#     down = left = right = np.zeros(bigger_shape)
 
-    mid[1:-1, 1:-1] = f
-    up[1:-1, 2:] = f
-    down[1:-1, :-2] = f
-    left[:-2, 1:-1] = f
-    right[2:, 1:-1] = f
+#     mid[1:-1, 1:-1] = f
+#     up[1:-1, 2:] = f
+#     down[1:-1, :-2] = f
+#     left[:-2, 1:-1] = f
+#     right[2:, 1:-1] = f
+
+def show_matched_image(ex_id, threshold, time, roi=None):
+
+    # grab images and times.
+    times, impaths = grab_images_in_time_range(ex_id, start_time=0)
+    times = [float(t) for t in times]
+    times, impaths = zip(*sorted(zip(times, impaths)))
+
+    closest_time, closest_image = 1000000.0, None
+    for i, (t, impath) in enumerate(zip(times, impaths)):
+        if fabs(t - time) < fabs(closest_time - time):
+            closest_time = t
+            closest_image = impath
+
+    print('closest image is at time {t}'.format(t=closest_time))
+    # create recording background
+    background = create_backround(impaths)
+
+    # initialize experiment
+    path = os.path.join(MWT_DIR, ex_id)
+    experiment = multiworm.Experiment(path)
+    experiment.load_summary()
+
+    time = closest_time
+    img = mpimg.imread(impath)
+    bid_matching, base_acc = analyze_image(experiment, time, img,
+                                           background, threshold,
+                                           roi=roi, show=True)
+    return bid_matching, base_acc
+
 
 def analyze_ex_id_images(ex_id, threshold, roi=None):
     """
@@ -470,69 +404,22 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
         #if i > 3:
         #    break
 
-    # save comprehensive
-    bid_matching = pd.concat(full_experiment_check)
-    print('full', accuracy)
-    base_accuracy = pd.DataFrame(accuracy)
-    #print(bid_matching)
-    print(base_accuracy)
 
+    bid_matching = pd.concat(full_experiment_check)
+    base_accuracy = pd.DataFrame(accuracy)
+
+    # save comprehensive
     ensure_dir_exists(VALIDATION_DIR)
     s1 = os.path.join(VALIDATION_DIR,
                       'matching-{eid}.csv'.format(eid=ex_id))
     print(s1)
-    bid_matching.to_csv(s1)
+    bid_matching.to_csv(s1, index=False)
 
     s2 = os.path.join(VALIDATION_DIR,
-                      'matching-{eid}.csv'.format(eid=ex_id))
+                      'check-{eid}.csv'.format(eid=ex_id))
     print(s2)
-    base_accuracy.to_csv(s2)
+    base_accuracy.to_csv(s2, index=False)
     return bid_matching, base_accuracy
-
-# def dev():
-#     ex_id = '20130318_131111'
-#     time = 1201
-
-#     path = os.path.join(MWT_DIR, ex_id)
-#     experiment = multiworm.Experiment(path)
-#     experiment.load_summary()
-
-
-#     frame, blob_data = grab_blob_data(experiment, time)
-#     bids, blob_centroids, outlines = zip(*blob_data)
-#     print('frame', frame)
-#     print(bids)
-
-
-
-#     for i, o in enumerate(outlines):
-#         x, y = zip(*o)
-#         bbox = (min(x), min(y), max(x), max(y))
-#         outline_mat = outline_to_outline_matrix(o)
-#         out = binary_outline_to_points(outline_mat)
-#         '''
-#         fig, ax = plt.subplots(2,2)
-#         ax[0, 0].plot(y, x)
-#         ppl.pcolormesh(fig, ax[0, 1], outline_mat)
-#         ppl.pcolormesh(fig, ax[1, 0], out)
-
-#         plt.show()
-#         '''
-#         break
-
-# def example_plot():
-#     ex_id = '20130318_131111'
-#     frame1 = 18059
-#     ids1 = [8791, 17740]
-#     #ids1 = [9858, 17740]
-#     frame2 = 18074
-#     #ids2 = [9858, 17740]
-#     ids2 = [8791, 17740]
-
-#     path = os.path.join(MWT_DIR, ex_id)
-#     experiment = multiworm.Experiment(path)
-#     experiment.load_summary()
-#     before_and_after(experiment, frame1, frame2, ids1, ids2)
 
 def main():
 
