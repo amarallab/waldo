@@ -9,12 +9,20 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import itertools
 import collections
+try:
+    from statistics import mean # stdlib 3.4+
+except ImportError:
+    def mean(x):
+        return sum(x) / len(x)
+
 import numpy as np
 import networkx as nx
+
 import wio.file_manager as fm
 
 __all__ = [
     'remove_fission_fusion',
+    'remove_fission_fusion_rel',
     'remove_single_descendents',
     'remove_offshoots',
     'remove_nodes_outside_roi'
@@ -57,6 +65,9 @@ def frame_filter(threshold):
                 return False
         return True
     return conditional
+
+def lifespan(node):
+    return node['died'] - node['born']
 
 def condense_nodes(graph, start, end, *others):
     """
@@ -210,6 +221,87 @@ def remove_fission_fusion(graph, max_split_frames=None):
         graph.remove_node(node)
         graph.remove_nodes_from(children)
         graph.remove_node(grandchild)
+
+        all_nodes.append(new_node)
+
+    # graph is modified in-place
+
+def remove_fission_fusion_rel(digraph, split_rel_time):
+    """
+    Strip out fission-fusion events (and repetitions thereof) from the
+    digraph.
+
+    ..
+           ~~~
+            |
+            A
+           / \           ~~~
+          /   \           |
+         B     C   ==>   A-D
+          \   /           |
+           \ /           ~~~
+            D
+            |
+           ~~~
+
+    The hidden data will be attached to the nodes as a set, for example from
+    above: ``{A, B, C, D}``.
+
+    """
+    def conditional(digraph, node, children, grandchild):
+        # average age of focal node/gchild
+        endpoint_avg = mean([lifespan(digraph.node[node]),
+                        lifespan(digraph.node[grandchild])])
+        # average age of children
+        split_avg = mean([lifespan(digraph.node[c]) for c in children])
+
+        return split_avg / endpoint_avg <= split_rel_time
+
+    all_nodes = digraph.nodes()
+    all_nodes.sort() # order matters here, random key hashes...yadda yadda.
+
+    while all_nodes:
+        node = all_nodes.pop() # pop latest node, work end to start
+        if node not in digraph:
+            continue # node was already removed/abridged
+
+        parents = set(digraph.predecessors(node))
+        children = set(digraph.successors(node))
+
+        if len(children) != 2:
+            continue # no fission occured
+            # (probably a job for remove_single_descendents())
+
+        grandchildren = set()
+        abort = False
+        for child in children:
+            new_gc = digraph.successors(child)
+            if len(new_gc) != 1:
+                abort = True
+                break
+            grandchildren.update(new_gc)
+        if abort:
+            continue # see TestFissionFusion.test_child_swap
+
+        if len(grandchildren) != 1:
+            continue # skip doing anything
+
+        grandchild = grandchildren.pop()
+
+        if not conditional(digraph, node, children, grandchild):
+            continue # failed conditional testing
+
+        greatgrandchildren = set(digraph.successors(grandchild))
+
+        new_node, new_node_data = condense_nodes(digraph, node, grandchild, *children)
+
+        digraph.add_node(new_node, **new_node_data)
+        digraph.add_edges_from((p, new_node) for p in parents)
+        digraph.add_edges_from((new_node, ggc) for ggc in greatgrandchildren)
+
+        digraph.remove_node(node)
+        digraph.remove_nodes_from(children)
+        digraph.remove_node(grandchild)
 
         all_nodes.append(new_node)
 

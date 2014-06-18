@@ -169,13 +169,30 @@ def do_boxes_overlap(box1, box2, show=False):
     return check
 
 def points_to_aligned_matrix(outline_points):
+    """
+    this function takes a list of outlines (in point form)
+    and makes filled binary matrices for all of them in the same
+    coordinate system.
+
+    params
+    -----
+    outline_points: (list of lists)
+    each list in outline_points is a list of xy tuples for the contour
+    of a blob.
+
+    returns
+    -----
+    aligned_matricies: (list of ndarrays)
+    bbox: (tuple of four ints)
+        bounding box for all arrays in the form (xmin, ymin, xmax, ymax)
+    """
     outline_matricies, bboxes = [], []
     for outline in outline_points:
         x, y = zip(*outline)
         bboxes.append((min(x), min(y), max(x), max(y)))
         outline_matricies.append(outline_to_outline_matrix(outline))
-    return align_outline_matricies(outline_matricies, bboxes)
-
+    aligned_matricies, bbox = align_outline_matricies(outline_matricies, bboxes)
+    return aligned_matricies, bbox
 
 def align_outline_matricies(outline_matricies, bboxes):
     """
