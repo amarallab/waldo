@@ -7,8 +7,8 @@ import itertools
 
 import networkx as nx
 
-from ..collider import remove_single_descendents
 from .test_util import node_generate, GraphCheck
+from ..collider import remove_single_descendents
 
 class TestDirectDescendents(GraphCheck):
     def test_basic_pass(self):

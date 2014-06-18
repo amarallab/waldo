@@ -8,8 +8,8 @@ import itertools
 
 import networkx as nx
 
-from ..collider import remove_offshoots
 from .test_util import node_generate, GraphCheck
+from ..collider import remove_offshoots
 
 class TestPruneOffshoots(GraphCheck):
     def setUp(self):
