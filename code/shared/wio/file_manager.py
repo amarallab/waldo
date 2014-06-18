@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-
 '''
 Filename: file_manager.py
 
 Description: holds many low-level scripts for finding, sorting, and saving files
 in a rigid directory structure.
 '''
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
+import six
+from six.moves import (zip, filter, map, reduce, input, range)
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -17,12 +20,9 @@ import sys
 import json
 from glob import iglob
 import datetime
-import pandas as pd
-from itertools import izip
-import numpy as np
 
-# path definitions
-#
+import pandas as pd
+import numpy as np
 
 # nonstandard imports
 from settings.local import LOGISTICS
@@ -133,7 +133,7 @@ def ensure_dir_exists(path):
             savedir += '/{d}'.format(d=d)
             if not os.path.isdir(savedir):
                 os.mkdir(savedir)
-                print 'created:{d}'.format(d=savedir)
+                print('created:{d}'.format(d=savedir))
     return savedir
 
 """
@@ -237,11 +237,11 @@ def format_results_filename(ID, result_type, tag=None,
         ID_type = 'worm'
     else:
         ID_type = 'unknown'
-        print 'warning: ID_type is unknown'
+        print('warning: ID_type is unknown')
 
     if dset == None:
         dset = 'unknown'
-        print 'warning: data set is unknown'
+        print('warning: data set is unknown')
 
     if tag == None:
         tag = ''
@@ -295,7 +295,7 @@ def get_timeseries(ID, data_type, worm_dir=WORM_DIR):
             times, data = read_h5_timeseries_base(filename)
         # print warning if file is empty
         if len(times)==0 and len(data)==0:
-            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
+            print('No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID))
         return times, data
     return None, None
 
@@ -406,12 +406,12 @@ def remove_plate_files(ex_id, file_tags):
     dataset = get_dset(ex_id)
 
     for tag in file_tags:
-        print tag
+        print(tag)
         search_dir = os.path.abspath(format_directory(ID=ex_id, ID_type='plate',
                                                      dataset=dataset, tag=tag))
         search = '{d}/{eID}*'.format(d=search_dir, eID=ex_id)
         for rfile in iglob(search):
-            print 'removing:', rfile
+            print('removing:', rfile)
             os.remove(rfile)
 
 
@@ -440,7 +440,7 @@ def write_dset_summary(data, data_type, dataset, sum_type, ID=None, dset_dir=Non
                                dset=dataset,
                                file_dir=dset_dir,
                                file_type='json')
-    print filename
+    print(filename)
     json.dump(data, open(filename, 'w'))
 
 
@@ -460,7 +460,7 @@ def get_annotations(dataset, data_type, label='all'):
     #print len(dfiles)
     ids, days, files = [], [], []
     labels = []
-    for eID, dfile in izip(ex_ids, dfiles):
+    for eID, dfile in zip(ex_ids, dfiles):
         #print eID, label
         hours, elabel, sub_label, pID, day = organize_plate_metadata(eID)
         if elabel not in labels:
