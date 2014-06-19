@@ -3,10 +3,15 @@ File: settings.py
 Author: Peter Winter
 Description:
 '''
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
+import six
+from six.moves import (zip, filter, map, reduce, input, range)
+
+import sys
 
 # import everything from settings.base and overwrite what is necessary
-import base
-import sys
+from . import base
 
 # testing sheets
 base.SPREADSHEET['scaling-factors'] = 'testsf'
@@ -15,9 +20,9 @@ configured = False
 
 def configure(configuration_name=None):
     if configuration_name is None:
-        print "Default configuration."
+        print("Default configuration.")
     else:
-        print "Configuring name: '%s'" % configuration_name
+        print("Configuring name: '{}'".format(configuration_name))
 
     if configuration_name is None:
         pass
@@ -39,8 +44,8 @@ def configure(configuration_name=None):
         base.SPREADSHEET['user'] = base.get_env_variable('WORM_SPREADSHEET_USER')
         base.SPREADSHEET['password'] = base.get_env_variable('WORM_SPREADSHEET_PASSWORD')
         base.JOINING['method'] = None
-        #base.JOINING['method'] = 'tapeworm'        
-        
+        #base.JOINING['method'] = 'tapeworm'
+
     global configured
     configured = True
 

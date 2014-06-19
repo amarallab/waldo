@@ -5,6 +5,10 @@ Filename: h5_interface.py
 
 Description:
 '''
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
+import six
+from six.moves import (zip, filter, map, reduce, input, range)
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -15,7 +19,6 @@ import os
 import sys
 import json
 from glob import glob
-from itertools import izip
 import h5py
 import numpy as np
 '''
@@ -74,12 +77,12 @@ if __name__ == '__main__':
     times = np.array(times)
     #data = np.array(data)
     data = np.array(data, dtype=str)
-    print data.dtype
-    print times[:1]
-    print data[:1]
+    print(data.dtype)
+    print(times[:1])
+    print(data[:1])
     write_h5_timeseries_base1(h5_file, h5_path, times, data)
     write_h5_timeseries_base1(h5_file, 'A/A', times, data)
     times, data = read_h5_timeseries_base1(h5_file, h5_path)
-    print times[:1]
-    print data[:1]
+    print(times[:1])
+    print(data[:1])
     #x, y, l, o = zip(*data)

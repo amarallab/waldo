@@ -42,8 +42,8 @@ TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 if TIME_SERIES_FILE_TYPE == 'hdf5':
     TIME_SERIES_FILE_TYPE = 'h5'
     # dont import if hdf5 not chosen. h5py may not be installed.
-    from h5_interface import write_h5_timeseries_base
-    from h5_interface import read_h5_timeseries_base
+    from .h5_interface import write_h5_timeseries_base
+    from .h5_interface import read_h5_timeseries_base
 
 DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']

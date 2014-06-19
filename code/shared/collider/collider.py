@@ -18,7 +18,7 @@ except ImportError:
 import numpy as np
 import networkx as nx
 
-import wio.file_manager as fm
+#import wio.file_manager as fm
 
 __all__ = [
     'remove_fission_fusion',
@@ -307,10 +307,11 @@ def remove_fission_fusion_rel(digraph, split_rel_time):
 
     # graph is modified in-place
 
-def remove_nodes_outside_roi(graph, experiment, ex_id):
+def remove_nodes_outside_roi(graph, experiment, x, y, r):
     """
-    removes nodes that are outside of a precalculated
-    circle or 'region of interest'.
+    Removes nodes that are outside of a precalculated
+    circle or 'region of interest'.  Must run before other simplifications;
+    does not tolerate compound blob IDs
 
     params
     -----
@@ -321,13 +322,12 @@ def remove_nodes_outside_roi(graph, experiment, ex_id):
     ex_id: (str)
        the experiment id (ie. timestamp) used to look up roi.
     """
-
     def box_centers(experiment):
         bids, boxes = [], []
         for (bid, blob_data) in experiment.all_blobs():
             if not blob_data:
                 continue
-            if u'centroid' in blob_data:
+            if 'centroid' in blob_data:
                 xy = blob_data['centroid']
                 #print(bid, len(xy))
                 if xy != None and len(xy) > 0:
@@ -344,25 +344,18 @@ def remove_nodes_outside_roi(graph, experiment, ex_id):
         box_centers[:, 1] = (np.array(ymin) + np.array(ymax)) / 2
         return bids, box_centers
 
-
-    # get region of interest
-    prep_file = fm.Preprocess_File(ex_id=ex_id)
-    roi = prep_file.roi()
-    assert len(roi) > 0
-    x, y, r = roi['x'], roi['y'], roi['r']
-
     #calculate
     bids, box_centers = box_centers(experiment)
     dists = np.sqrt((box_centers[:, 0] - x)**2 +
                    (box_centers[:, 1] - y)**2)
 
-    are_inside = r < dists
+    are_inside = dists < r
 
     outside_nodes = []
     for bid, in_roi in zip(bids, are_inside):
         if not in_roi:
             outside_nodes.append(bid)
-    print(len(outside_nodes))
+
     graph.remove_nodes_from(outside_nodes)
 
 def remove_offshoots(digraph, threshold):

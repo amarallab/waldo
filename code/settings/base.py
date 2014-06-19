@@ -12,7 +12,7 @@ def get_env_variable(var_name):
     try:
         return os.environ[var_name]
     except KeyError:
-        print msg
+        print(msg)
 
 #set relative paths.
 PROJECT_HOME = os.path.dirname(os.path.realpath(__file__)) + '/../../'
@@ -35,7 +35,7 @@ LOGISTICS = {
     'time-series-file-type': 'hdf5', # supports 'hdf5' or 'json'
     # directories for annotation and organization
     'data': PROJECT_HOME + 'data/',
-    'worms': PROJECT_HOME + 'data/worms/',    
+    'worms': PROJECT_HOME + 'data/worms/',
     'plates': PROJECT_HOME + 'data/plates/',
     'dsets': PROJECT_HOME + 'data/dsets/',
     'results': PROJECT_HOME + 'results/',
@@ -80,4 +80,4 @@ SMOOTHING = {'spine_order': 5, 'spine_window': 13,
 
 JOINING = {'method': 'tapeworm' #None
 }
-    
+
