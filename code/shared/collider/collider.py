@@ -18,8 +18,6 @@ except ImportError:
 import numpy as np
 import networkx as nx
 
-#import wio.file_manager as fm
-
 __all__ = [
     'remove_fission_fusion',
     'remove_fission_fusion_rel',
@@ -259,7 +257,8 @@ def remove_fission_fusion_rel(digraph, split_rel_time):
         return split_avg / endpoint_avg <= split_rel_time
 
     all_nodes = digraph.nodes()
-    all_nodes.sort() # order matters here, random key hashes...yadda yadda.
+    # order matters here, random key hashes...yadda yadda.
+    all_nodes.sort(key=lambda x: x[1] if isinstance(x, tuple) else x) 
 
     while all_nodes:
         node = all_nodes.pop() # pop latest node, work end to start
@@ -310,9 +309,9 @@ def remove_fission_fusion_rel(digraph, split_rel_time):
 
 def remove_nodes_outside_roi(graph, experiment, x, y, r):
     """
-    Removes nodes that are outside of a precalculated
-    circle or 'region of interest'.  Must run before other simplifications;
-    does not tolerate compound blob IDs
+    Removes nodes that are outside of a precalculated circle denoting a 
+    'region of interest'.  Must run before other simplifications; does not 
+    tolerate compound blob IDs
 
     params
     -----
