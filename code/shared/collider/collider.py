@@ -25,7 +25,8 @@ __all__ = [
     'remove_fission_fusion_rel',
     'remove_single_descendents',
     'remove_offshoots',
-    'remove_nodes_outside_roi'
+    'remove_nodes_outside_roi',
+    'flat_node_list'
 ]
 
 def _check_assumptions(graph):
@@ -381,3 +382,21 @@ def remove_offshoots(digraph, threshold):
         digraph.node[parent] = new_node_data
 
         digraph.remove_node(node)
+
+def flat_node_list(graph):
+    """
+    returns list of all non-compund nodes in a graph, inculding
+    all the nodes that are inside compound nodes.
+    """
+    node_ids = []
+    for node in graph.nodes():
+        if type(node) != tuple:
+            node_ids.append(node)
+        else:
+            node_data = graph.node[node]
+            if 'components' in node_data:
+                internal_nodes = list(node)
+            else:
+                internal_nodes = list(node)
+            node_ids.extend(internal_nodes)
+    return list(set(node_ids))

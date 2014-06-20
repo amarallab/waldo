@@ -73,12 +73,12 @@ def short_circuit_preproccessing(ex_ids):
         filename = 'threshold-{ds}.json'.format(ds=dset)
         threshold_file = os.path.join(PRETREATMENT_DIR, filename)
         print ex_id
-        print json.load(open(threshold_file))[ex_id]
-        ip = InteractivePlot([ex_id], threshold_file, 0.005)
+
+        #print json.load(open(threshold_file))[ex_id]
+        ip = InteractivePlot([ex_id], threshold_file, CACHE_DIR)
         ip.run_plot()
 
-
-#short_circuit_preproccessing(ex_ids=['20130318_131111','20130614_120518','20130414_140704'])
+short_circuit_preproccessing(ex_ids=['20130614_120518'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prefix_chars='-',

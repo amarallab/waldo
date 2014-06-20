@@ -49,14 +49,14 @@ DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
 
-def preprocessing_data(ex_id):
-    ''' returns a dict of preprocess data for an ex_id,
-    or an empty dict if nothing was found. '''
-    dset = get_dset(ex_id)
-    filename = 'threshold-{ds}.json'.format(ds=dset)
-    threshold_file = os.path.join(PRETREATMENT_DIR, filename)
-    data = json.load(open(threshold_file)).get(ex_id, {})
-    return data
+# def preprocessing_data(ex_id):
+#     ''' returns a dict of preprocess data for an ex_id,
+#     or an empty dict if nothing was found. '''
+#     dset = get_dset(ex_id)
+#     filename = 'threshold-{ds}.json'.format(ds=dset)
+#     threshold_file = os.path.join(PRETREATMENT_DIR, filename)
+#     data = json.load(open(threshold_file)).get(ex_id, {})
+#     return data
 
 
 class Preprocess_File(object):

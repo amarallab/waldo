@@ -161,8 +161,8 @@ class InteractivePlot:
         if self.current_id in self.data:
             d = self.data[self.current_id]
             self.current_threshold = d['threshold']
-            self.circle_pos = (d['center_x'], d['center_y'])
-            self.circle_radius = d['radius']
+            self.circle_pos = (d['y'], d['x']) #note xy are purposely switched
+            self.circle_radius = d['r']
         else:
             self.circle_pos = (0, 0)
             self.circle_radius = max(self.background.shape)/2
@@ -198,7 +198,7 @@ class InteractivePlot:
                                       'y': self.circle_pos[0],
                                       'r': self.circle_radius}
         with open(self.annotation_filename, "wt") as f:
-            f.write(json.dumps(self.data), indent=4)
+            f.write(json.dumps(self.data, indent=4))
 
     @staticmethod
     def create_background(impaths):

@@ -74,12 +74,48 @@ def frame_parser(blob_lines, frame):
 def frame_parser_spec(frame):
     return functools.partial(frame_parser, frame=frame)
 
+def grab_blob_data(experiment, time):
+    """
+    pull the frame number and a list of tuples (bid, centroid, outline)
+    for a given time and experiment.
+
+    params
+    -------
+    experiment: (experiment object from multiworm)
+        cooresponds to a specific ex_id
+    time: (float)
+        the closest time in seconds for which we would like to retrieve data
+
+    returns
+    -------
+    frame: (int)
+        the frame number that most closely matches the given time.
+    blob_data: (list of tuples)
+        the list contains the (blob_id [str], centroid [xy tuple], outlines [list of points])
+        for all blobs tracked during that particular frame.
+    """
+
+    # get the objects from MWT blobs files.
+    frame = find_nearest_index(experiment.frame_times, time) + 1
+    bids = experiment.blobs_in_frame(frame)
+    #outlines, centroids, outline_ids = [], [], []
+    parser = frame_parser_spec(frame)
+    blob_data = []
+    for bid in bids:
+        blob = experiment.parse_blob(bid, parser)
+        if blob['contour_encode_len'][0]:
+            outline = blob_reader.decode_outline(
+                blob['contour_start'][0],
+                blob['contour_encode_len'][0],
+                blob['contour_encoded'][0],
+                )
+            blob_data.append((bid, blob['centroid'][0], outline))
+    return frame, blob_data
+
 
 def match_objects(bids, blob_centroids, blob_outlines, image_objects,
                   roi=None, maxdist=20, verbose=False):
     """
-
-
 
     """
     #print('matching roi', roi)
@@ -121,11 +157,8 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
                 bid_outside_roi.append(bid)
                 continue
 
-        # remove this cruft if working properly.
-        #if isinstance(outline, np.ndarray):
-        #    x, y = outline[:,0], outline[:,1]
-        #else:
 
+        is_matched_to_object = False
         x, y = zip(*outline)
         blob_bbox = (min(x), min(y), max(x), max(y))
 
@@ -182,9 +215,10 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
             overreaches = (overlay == 1).sum()
 
             # if the objects are mostly on top of one another,
-            #ount as validated match.
+            #count as validated match.
             if overlaps > overreaches:
                 # this blob is officially validated.
+                is_matched_to_object = True
                 matches.append(bid)
 
                 # save for false neg and joins calculations
@@ -195,9 +229,16 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
                 ys = [cent[1], closest_cent[1]]
                 lines.append((xs, ys))
 
-        else:
-            # this is officially a bad blob.
+        if not is_matched_to_object:
+            # this is officially a false positive.
+            # no object in image analysis corresponed to it.
             false_pos.append(bid)
+            # remove this check when I'm sure it is not happening
+            if roi != None:
+                dx, dy = (cent[0] - roi['x']), (cent[1] - roi['y'])
+                inside_roi = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
+                if not inside_roi:
+                    print ('Warning! obj outside roi counted as FP')
 
 
     blobs_to_join = []              # reformat joins
@@ -223,52 +264,13 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
             'true-pos': len(matches),
             'lines': lines,
             'roi':roi,
-            'bid-outside':len(bid_outside_roi),
+            'bid-outside':bid_outside_roi,
             'img-outside':img_outside_roi}
-
 
     return matches, false_pos, blobs_to_join, more
 
-def grab_blob_data(experiment, time):
-    """
-    pull the frame number and a list of tuples (bid, centroid, outline)
-    for a given time and experiment.
-
-    params
-    -------
-    experiment: (experiment object from multiworm)
-        cooresponds to a specific ex_id
-    time: (float)
-        the closest time in seconds for which we would like to retrieve data
-
-    returns
-    -------
-    frame: (int)
-        the frame number that most closely matches the given time.
-    blob_data: (list of tuples)
-        the list contains the (blob_id [str], centroid [xy tuple], outlines [list of points])
-        for all blobs tracked during that particular frame.
-    """
-
-    # get the objects from MWT blobs files.
-    frame = find_nearest_index(experiment.frame_times, time) + 1
-    bids = experiment.blobs_in_frame(frame)
-    #outlines, centroids, outline_ids = [], [], []
-    parser = frame_parser_spec(frame)
-    blob_data = []
-    for bid in bids:
-        blob = experiment.parse_blob(bid, parser)
-        if blob['contour_encode_len'][0]:
-            outline = blob_reader.decode_outline(
-                blob['contour_start'][0],
-                blob['contour_encode_len'][0],
-                blob['contour_encoded'][0],
-                )
-            blob_data.append((bid, blob['centroid'][0], outline))
-    return frame, blob_data
-
 def analyze_image(experiment, time, img, background, threshold,
-                  roi=None, show=False):
+                  roi=None, show=True):
     """
     analyze a single image and return results.
 
@@ -278,23 +280,38 @@ def analyze_image(experiment, time, img, background, threshold,
     image_objects = regionprops(labels)
 
     frame, blob_data = grab_blob_data(experiment, time)
+    print(frame)
     bids, blob_centroids, outlines = zip(*blob_data)
     match = match_objects(bids, blob_centroids, outlines,
                           image_objects, roi=roi)
-    matches, false_neg, blobs_to_join, more = match
+    matches, false_pos, blobs_to_join, more = match
 
     # show how well blobs are matched at this threshold.
     if show:
         f, ax = plt.subplots()
         ax.imshow(img.T, cmap=plt.cm.Greys_r)
-
         ax.contour(mask.T, [0.5], linewidths=1.2, colors='b')
         for outline in outlines:
             ax.plot(*outline.T, color='red')
-        for line in more['lines']:
+
+        lines = more['lines']
+        print(len(lines), 'lines')
+        for line in lines:
             x, y = line
             ax.plot(x, y, '.-', color='green', lw=2)
-        plt.show()
+
+        if roi != None:
+            # draw full circle region of interest
+            roi_t = np.linspace(0, 2* np.pi, 500)
+            roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+            roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
+            ax.plot(roi_x, roi_y)
+            # resize figure
+            ymax, xmax = img.T.shape
+            ax.set_xlim([0, xmax])
+            ax.set_ylim([0, ymax])
+
+        return f, ax
 
     base_accuracy = {'frame':frame, 'time':time,
                      'false-neg':more['false-neg'],
@@ -302,9 +319,17 @@ def analyze_image(experiment, time, img, background, threshold,
                      'true-pos':more['true-pos']}
 
     # consolidate history of matching objects.
-    matching_history = [(frame, bid, bid in matches) for bid in bids]
+    outside = []
+    if roi != None:
+        outside = more['bid-outside']
+
+    cols = ['frame', 'bid', 'good', 'roi']
+    matching_history = [(frame, bid,
+                         bid in matches,
+                         bid not in outside)
+                        for bid in bids]
     bid_matching = pd.DataFrame(matching_history,
-                               columns=['frame', 'bid', 'good'])
+                                columns=cols)
     bid_matching['join'] = ''
     for bs in blobs_to_join:
         join_key = '-'.join([str(i) for i in bs])
@@ -313,23 +338,18 @@ def analyze_image(experiment, time, img, background, threshold,
             #print(bid_matching['bid'] == b)
             bid_matching['join'][bid_matching['bid'] == b] = join_key
 
-    #TODO: if saving the outlines of image objects
-    # were added, this would be a good place.
+
+    assert more['true-pos'] == len(matches)
+
+    A = more['false-pos']
+    B = len(bids) - len(matches) -len(outside)
+    C = len([b for b in bids
+             if (b not in matches and b not in outside)])
+    print('false pos', frame, A, B, C)
+
+    #assert more['false-pos'] == len(bids) - len(matches)
+
     return bid_matching, base_accuracy
-
-# def binary_outline_to_points(outline_matrix):
-#     f = ndimage.morphology.binary_fill_holes(outline_matrix)
-#     bigger_shape = (f.shape[0] + 2, f.shape[1] + 2)
-
-#     up = np.zeros(bigger_shape, dtype=bool)
-#     mid = np.zeros(bigger_shape, dtype=bool)
-#     down = left = right = np.zeros(bigger_shape)
-
-#     mid[1:-1, 1:-1] = f
-#     up[1:-1, 2:] = f
-#     down[1:-1, :-2] = f
-#     left[:-2, 1:-1] = f
-#     right[2:, 1:-1] = f
 
 def show_matched_image(ex_id, threshold, time, roi=None):
 
@@ -344,7 +364,10 @@ def show_matched_image(ex_id, threshold, time, roi=None):
             closest_time = t
             closest_image = impath
 
+
+    print('looking for {t}'.format(t=time))
     print('closest image is at time {t}'.format(t=closest_time))
+    print(closest_image)
     # create recording background
     background = create_backround(impaths)
 
@@ -354,7 +377,7 @@ def show_matched_image(ex_id, threshold, time, roi=None):
     experiment.load_summary()
 
     time = closest_time
-    img = mpimg.imread(impath)
+    img = mpimg.imread(closest_image)
     bid_matching, base_acc = analyze_image(experiment, time, img,
                                            background, threshold,
                                            roi=roi, show=True)
