@@ -16,9 +16,9 @@ __all__ = [
     'flat_node_list',
     'lifespan',
     'component_size_summary',
+    'suspected_collisions',
     'consolidate_node_data'
 ]
-
 def _check_assumptions(graph):
     for node in graph:
         successors = graph.successors(node)
@@ -107,7 +107,7 @@ def flat_node_list(graph):
     all the nodes that are inside compound nodes.
     """
     node_ids = []
-    for node in graph.nodes():
+    for node in graph:
         if type(node) != tuple:
             node_ids.append(node)
         else:
@@ -126,6 +126,30 @@ def component_size_summary(graph):
         print("{:>2d}. {:>5d} nodes : {}...".format(
                 n, len(G), ', '.join([str(node) for node, _ in zip(G.nodes_iter(), range(5))])))
 
+def suspected_collisions(digraph, relative_threshold):
+    """
+    From *digraph*, return a list of possible collision nodes.  The average
+    duration of both parent and children nodes must exceed the suspected
+    collision node times *relative_threshold*.
+    """
+    suspects = []
+    for node in digraph:
+        #print(node)
+        parents = digraph.predecessors(node)
+        children = digraph.successors(node)
+        if len(parents) != 2 or len(children) != 2:
+            continue
+
+        node_life = collider.lifespan(digraph, node)
+        parents_life = [collider.lifespan(digraph, p) for p in parents]
+        children_life = [collider.lifespan(digraph, c) for c in children]
+
+        #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > relative_threshold:
+        if (sum(parents_life) / (2 * node_life) > relative_threshold and
+                sum(children_life) / (2 * node_life) > relative_threshold):
+            suspects.append(node)
+
+    return suspects
 
 
 def consolidate_node_data(graph, experiment, node):
