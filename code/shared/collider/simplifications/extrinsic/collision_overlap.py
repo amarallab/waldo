@@ -17,7 +17,7 @@ __all__ = [
     'resolve_collisions',
 ]
 
-def grab_outline(node, experiment, first=True):
+def grab_outline_orig(node, experiment, first=True):
     """
     return the first or last complete outline for a given node
     as a list of points.
@@ -72,6 +72,45 @@ def grab_outline(node, experiment, first=True):
         print('Failed to find outline')
         print('grabbing', node, type(node))
 
+def grab_outline(node, graph, experiment, first=True):
+    """
+    return the first or last complete outline for a given node
+    as a list of points.
+
+    params
+    -----
+    node: (int or tuple)
+       the id (from graph) for a node.
+    graph: (networkx graph object)
+       a directed graph of node interactions
+    experiment: (multiworm experiment object)
+       the experiment from which data can be exctracted.
+    first: (bool)
+       toggle that deterimines if first or last outline is returned
+
+    returns
+    ----
+    outline: (list of tuples)
+       a list of (x,y) points
+    """
+
+    df = consolidate_node_data(graph, experiment, node)
+
+    if not first:
+        df.sort(reverse=True)
+
+    for frame, row in df.iterrows():
+        x, y = row['contour_start']
+        l = row['contour_encode_len']
+        enc = row['contour_encoded']
+        if enc and l:
+            outline_points = de.decode_outline([x, y, l, enc])
+            #print(outline_points)
+            return outline_points
+    else:
+        print('Failed to find outline')
+        print('grabbing', node, type(node))
+
 
 # TODO make this function agnostic to the number of parents.
 def create_collision_masks(graph, experiment, node, verbose=False):
@@ -104,12 +143,16 @@ def create_collision_masks(graph, experiment, node, verbose=False):
     p = list(set(graph.predecessors(node)))
     c = list(set(graph.successors(node)))
     #grab relevant outlines.
-    p0 = grab_outline(p[0], experiment, first=False)
-    p1 = grab_outline(p[1], experiment, first=False)
-    #m0 = grab_outline(node, experiment, first=True)
-    #m1 = grab_outline(node, experiment, first=False)
-    c0 = grab_outline(c[0], experiment, first=True)
-    c1 = grab_outline(c[1], experiment, first=True)
+    # p0 = grab_outline(p[0], experiment, first=False)
+    # p1 = grab_outline(p[1], experiment, first=False)
+    # #m0 = grab_outline(node, experiment, first=True)
+    # #m1 = grab_outline(node, experiment, first=False)
+    # c0 = grab_outline(c[0], experiment, first=True)
+    # c1 = grab_outline(c[1], experiment, first=True)
+    p0 = grab_outline(p[0], graph, experiment, first=False)
+    p1 = grab_outline(p[1], graph, experiment, first=False)
+    c0 = grab_outline(c[0], graph, experiment, first=True)
+    c1 = grab_outline(c[1], graph, experiment, first=True)
     if verbose:
         print('parents:{p}'.format(p=p))
         print('children:{c}'.format(c=c))

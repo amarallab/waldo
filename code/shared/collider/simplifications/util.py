@@ -9,13 +9,14 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import itertools
 import collections
-
+import pandas as pd
 import networkx as nx
 
 __all__ = [
     'flat_node_list',
     'lifespan',
     'component_size_summary',
+    'consolidate_node_data'
 ]
 
 def _check_assumptions(graph):
@@ -124,3 +125,50 @@ def component_size_summary(graph):
     for n, G in enumerate(Gcc[:10], start=1):
         print("{:>2d}. {:>5d} nodes : {}...".format(
                 n, len(G), ', '.join([str(node) for node, _ in zip(G.nodes_iter(), range(5))])))
+
+
+
+def consolidate_node_data(graph, experiment, node):
+    """
+    Returns a pandas DataFrame with all blob data for a node.
+    Accepts both compound and single nodes.
+    For compound nodes, data includes all components.
+
+    params
+    -----
+    graph: (networkx graph object)
+       a directed graph of node interactions
+    experiment: (multiworm experiment object)
+       the experiment from which data can be exctracted.
+    node: (int or tuple)
+       the id (from graph) for a node.
+
+    returns
+    -----
+    all_data: (pandas DataFrame)
+       index is 'frame'
+       columns are:
+       'area', 'centroid'
+       'contour_encode_len', 'contour_encoded', 'contour_start',
+       'midline', 'size', 'std_ortho', 'std_vector', 'time'
+    """
+
+    if type(node) == tuple:
+        components = list(graph.node[node]['components'])
+    else:
+        components = [node]
+
+    #print('{n} components in {node}'.format(n=len(components),
+    #                                        node=node))
+
+    data = []
+    for i, subnode in enumerate(components):
+        blob_data = experiment.parse_blob(subnode)
+        if blob_data.get('frame', []):
+            df = pd.DataFrame(blob_data)
+            df.set_index('frame', inplace=True)
+            data.append(df)
+        #data.append(df)
+    all_data = pd.concat(data)
+    all_data.sort()
+    return all_data
