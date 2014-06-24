@@ -313,6 +313,123 @@ def write_timeseries_file(ID, data_type, times, data, worm_dir=WORM_DIR):
         write_h5_timeseries_base(filename, times, data)
     return True
 
+
+'''
+class BaseTable(object):
+
+    def __init__(self):
+        self.dtype = ''
+        self.ex_id = ''
+        self.dset = ''
+        self.basedir = ''
+        self.ID_type = ''
+        self.subdir = ''
+        self.filedir = ''
+        self.filename = ''
+        self.filetype = ''
+
+    def format_directory(self):
+        base = self.basedir
+        dset = self.dset
+        if self.subdir:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}/{sd}'.format(base=base,
+                                                   dset=dset,
+                                                   sd=sd)
+        else:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}'.format(base=base, dset=dset)
+        return filedir
+
+    def format_filename(self, ID):
+        #errmsg = 'id must be string, not {i}'.format(i=ID)
+        #assert isinstance(self.dset, basestring), errmsg
+        path = self.filedir
+        dt = self.dtype
+        ft = self.filetype
+        return '{path}/{ID}-{dt}.{ft}'.format(path=path, ID=ID,
+                                              dt=dt, ft=ft)
+
+    def dump(self, dataframe):
+        ensure_dir_exists(self.file_dir)
+        dataframe.to_hdf(self.filename, 'table', complib='zlib')
+
+    def load(self):
+        return pd.read_hdf(self.filename, 'table')
+
+
+class DatasetTable(BaseTable):
+
+    def __init__(self, dset, data_type, subdir=None):
+        self.dtype = data_type
+        self.ex_id = ''
+        self.dset = dset
+        self.basedir = DSET_DIR
+        self.ID_type = 'dset'
+        self.subdir = subdir
+        self.filedir = self.format_directory()
+        self.filename = self.format_filename(ID=dset)
+        self.filetype = 'h5'
+
+
+class PlateTable(BaseTable):
+
+    def __init__(self, ex_id, data_type, subdir=None):
+        self.dtype = data_type
+        self.ex_id = ex_id
+        self.dset = get_dset(ex_id)
+        self.basedir = PLATE_DIR
+        self.ID_type = 'plate'
+        self.subdir = subdir
+        self.filedir = self.format_directory()
+        self.filename = self.format_filename(ID=ex_id)
+        self.filetype = 'h5'
+
+
+class BaseBlobDataFile(object):
+
+    def __init__(self, bid, data_type):
+        self.dtype = ''
+        self.ex_id = ''
+        self.dset = ''
+        self.basedir = ''
+        self.ID_type = ''
+        self.subdir = ''
+        self.filedir = ''
+        self.filename = ''
+        self.filetype = ''
+
+    def format_directory(self):
+        base = self.basedir
+        dset = self.dset
+        if self.subdir:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}/{sd}'.format(base=base,
+                                                   dset=dset,
+                                                   sd=sd)
+        else:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}'.format(base=base, dset=dset)
+        return filedir
+
+    def format_filename(self, ID):
+        #errmsg = 'id must be string, not {i}'.format(i=ID)
+        #assert isinstance(self.dset, basestring), errmsg
+        path = self.filedir
+        dt = self.dtype
+        ft = self.filetype
+        return '{path}/{ID}-{dt}.{ft}'.format(path=path, ID=ID,
+                                              dt=dt, ft=ft)
+
+    def dump(self, dataframe):
+        ensure_dir_exists(self.file_dir)
+        dataframe.to_hdf(self.filename, 'table', complib='zlib')
+
+    def load(self):
+        return pd.read_hdf(self.filename, 'table')
+'''
+
+
 # TODO clean up read/write table
 def write_table(ID, data_type, dataframe,
                 ID_type='p',
@@ -349,35 +466,6 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
                                file_dir=file_dir)
     return pd.read_hdf(filename, 'table')
 
-"""
-    Parameters
-    ----------
-    ID : str
-      A blob ID, an experiment ID or a dataset name.
-        * Blob ID (ID_type: ``worm``, ``w``) is the extended experiment
-            timestamp + 5 digit 0-padded internal blob ID,
-        * experiment ID (ID_type: ``plate``, ``p``) is the timestamp, and the
-        * dataset (ID_type: ``dataset``, ``dset``, ``s``) name refers to a
-            collection of experiments annotated together
-    data_type : str
-      Data field
-        * `xy_raw': Unprocessed data from the MWT text files.  Anisochronous
-        * `xy': Smoothed and interpolated centroid position to be isochronous
-        * `cent_speed': Point-by-point derivative of 'xy'
-        * `cent_speed_bl': Above, scaled by body length
-        * `encoded_outline`: Start X, start y, contour length, encoded outline
-        * `spine`: 50 points fit to the centerline, smoothed and with suspicious data removed
-        * `spine_rough`: Raw spine after thinning
-
-    Keyword Arguments
-    -----------------
-    ID_type : str
-      **see ID**
-    file_type : str
-      ``h5`` or ``json``, depending on the source type to read
-    ...
-
-"""
 
 def write_metadata_file(ID, data_type, data, worm_dir=WORM_DIR):
     filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir, ensure=True)
