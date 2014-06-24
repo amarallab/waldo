@@ -13,6 +13,8 @@ import pandas as pd
 import encoding.decode_outline as de
 from images.manipulations import points_to_aligned_matrix
 
+from ..util import condense_nodes
+
 __all__ = [
     'resolve_collisions',
 ]
@@ -54,7 +56,7 @@ def grab_outline(node, experiment, first=True):
     x, y = zip(*data['contour_start'])
     contour_encode_len = data['contour_encode_len']
     contour_encoded = data['contour_encoded']
-    encoded_outline = zip(x, y, contour_encode_len,contour_encoded)
+    encoded_outline = zip(x, y, contour_encode_len, contour_encoded)
 
     if go_backwards:
         # needs to be a list, not an iterable if I want to go backwards
@@ -158,7 +160,6 @@ def compare_masks(parents, children, err_margin=10, verbose=True):
     verbose: (bool)
        a toggle to turn on/off print statements
 
-
     returns
     -----
     parent_child_matches: (list of lists)
@@ -166,8 +167,9 @@ def compare_masks(parents, children, err_margin=10, verbose=True):
        determined by the best set of overlapping
     """
     # TODO: remove assertation when number of comparisions irrelevant
-    err = 'parents and children must be lists with two elements'
-    assert len(parents) == len(children) == 2, err
+    if len(parents) != 2 or len(children) != 2:
+        raise ValueError('parents and children must be lists with two elements')
+
     d1_sum, d2_sum= 0, 0
     d1, d2 = [], []
     p_nodes, _ = zip(*parents)
@@ -221,7 +223,7 @@ def resolve_collisions(graph, experiment, collision_nodes):
         parent_masks, children_masks = create_collision_masks(graph, experiment, node)
         collision_result = compare_masks(parent_masks, children_masks)
         #print(node, 'is', collision_result)
-        if len(collision_result):
+        if collision_result:
             collision_results[node] = collision_result
             untangle_collision(graph, node, collision_result)
 
@@ -255,8 +257,9 @@ def untangle_collision(graph, collision_node, collision_result):
        [[node_A, node_B], [node_C, node_D]]
     """
 
-    if len(collision_result):
+    if collision_result:
         graph.remove_node(collision_node)
+
     #print(col)
     for cr in collision_result:
         #print(cr)

@@ -24,6 +24,7 @@ venv*/
 
 # Hg cruft
 *.orig
+*.rej
 
 # binaries
 build/
@@ -40,6 +41,7 @@ build/
 *.tsv
 *.tmp
 *.gv
+*.pkl
 
 # Directory
 ./data/*
