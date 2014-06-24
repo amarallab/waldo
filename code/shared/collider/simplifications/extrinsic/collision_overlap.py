@@ -13,7 +13,7 @@ import pandas as pd
 import encoding.decode_outline as de
 from images.manipulations import points_to_aligned_matrix
 
-from ..util import condense_nodes
+from ..util import condense_nodes, consolidate_node_data
 
 __all__ = [
     'resolve_collisions',
