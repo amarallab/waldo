@@ -16,6 +16,7 @@ __all__ = [
     'flat_node_list',
     'lifespan',
     'component_size_summary',
+    'suspected_collisions',
 ]
 
 def _check_assumptions(graph):
