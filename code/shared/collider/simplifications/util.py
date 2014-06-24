@@ -10,9 +10,12 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import itertools
 import collections
 
+import networkx as nx
+
 __all__ = [
     'flat_node_list',
     'lifespan',
+    'component_size_summary',
 ]
 
 def _check_assumptions(graph):
@@ -114,3 +117,10 @@ def flat_node_list(graph):
                 internal_nodes = list(node)
             node_ids.extend(internal_nodes)
     return list(set(node_ids))
+
+def component_size_summary(graph):
+    Gcc = nx.connected_component_subgraphs(graph.to_undirected())
+    print("Component sizes and example nodes in descending order")
+    for n, G in enumerate(Gcc[:10], start=1):
+        print("{:>2d}. {:>5d} nodes : {}...".format(
+                n, len(G), ', '.join([str(node) for node, _ in zip(G.nodes_iter(), range(5))])))
