@@ -151,13 +151,17 @@ def suspected_collisions(digraph, relative_threshold):
 
     return suspects
 
+
 def is_offshoot(graph, node, subnode):
-    """ returns True if subnode is offshoot
+    """ returns True if subnode is offshoot.
 
     params
     ----
     graph: (networkx graph object)
-    node: the name of the node from which the subnode belongs.
+       MUST BE NETWORK BEFORE COMPOUND NODES
+    node: (tuple)
+       the name of the compound node which the subnode is part of.
+
     subnode: the name of the subnode we are testing.
     """
     if type(node) != tuple: #node not compound. not offshoot.
@@ -172,8 +176,8 @@ def is_offshoot(graph, node, subnode):
     else: # has children and parents. not offshoot.
         return False
 
-def consolidate_node_data(graph, experiment, node,
-                          remove_offshoots=True):
+#TODO:
+def consolidate_node_data(graph, experiment, node):
     """
     Returns a pandas DataFrame with all blob data for a node.
     Accepts both compound and single nodes.
@@ -187,7 +191,6 @@ def consolidate_node_data(graph, experiment, node,
        the experiment from which data can be exctracted.
     node: (int or tuple)
        the id (from graph) for a node.
-    remove_offshoots: (bool)
 
     returns
     -----
@@ -211,10 +214,15 @@ def consolidate_node_data(graph, experiment, node,
 
     data = []
     for i, subnode in enumerate(components):
-        if remove_offshoots and not is_compound:
-            if is_offshoot(graph, node, subnode):
-                print(subnode, 'is offshoot')
-                continue
+        # NOTE: the following comment of remove offshoots code
+        # did not work, because the graph passed in
+        # has compound nodes. We cannot use it to check the parents
+        # and children of internal nodes.
+        #
+        #if remove_offshoots and not is_compound:
+        #    if is_offshoot(graph, node, subnode):
+        #        print(subnode, 'is offshoot')
+        #        continue
 
         blob_data = experiment.parse_blob(subnode)
         if blob_data.get('frame', []):
