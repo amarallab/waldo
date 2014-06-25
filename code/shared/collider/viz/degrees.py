@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blues'):
+def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blues', nonzero=False):
     cmap = plt.get_cmap(cmap)
 
     degrees = np.zeros(tuple(m+1 for m in maximums), dtype=int)
@@ -22,6 +22,9 @@ def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blu
 
     f, ax = plt.subplots()
     heatmap = ax.pcolor(degrees.T, cmap=cmap)
+
+    if nonzero:
+        degrees[0][0] = 0
 
     # http://stackoverflow.com/questions/11917547/how-to-annotate-heatmap-with-text-in-matplotlib
     for x in range(degrees.shape[0]):

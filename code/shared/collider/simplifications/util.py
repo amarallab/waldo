@@ -140,9 +140,9 @@ def suspected_collisions(digraph, relative_threshold):
         if len(parents) != 2 or len(children) != 2:
             continue
 
-        node_life = collider.lifespan(digraph, node)
-        parents_life = [collider.lifespan(digraph, p) for p in parents]
-        children_life = [collider.lifespan(digraph, c) for c in children]
+        node_life = lifespan(digraph, node)
+        parents_life = [lifespan(digraph, p) for p in parents]
+        children_life = [lifespan(digraph, c) for c in children]
 
         #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > relative_threshold:
         if (sum(parents_life) / (2 * node_life) > relative_threshold and
@@ -223,14 +223,17 @@ def consolidate_node_data(graph, experiment, node):
         #    if is_offshoot(graph, node, subnode):
         #        print(subnode, 'is offshoot')
         #        continue
-
         blob_data = experiment.parse_blob(subnode)
+        if blob_data is None:
+            print("components:", components, "subnode:", subnode)
+            continue
         if blob_data.get('frame', []):
             df = pd.DataFrame(blob_data)
             df.set_index('frame', inplace=True)
             df['blob'] = subnode
             data.append(df)
         #data.append(df)
-    all_data = pd.concat(data)
-    all_data.sort(inplace=True)
-    return all_data
+    if data:
+        all_data = pd.concat(data)
+        all_data.sort(inplace=True)
+        return all_data

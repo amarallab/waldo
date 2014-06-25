@@ -19,6 +19,9 @@ __all__ = [
     'resolve_collisions',
 ]
 
+class CollisionException(Exception):
+    pass
+
 # def grab_outline(node, graph, experiment, first=True):
 #     """
 #     return the first or last complete outline for a given node
@@ -98,7 +101,10 @@ def grab_outline(node, graph, experiment, first=True):
     """
 
     df = consolidate_node_data(graph, experiment, node)
-
+    if df is None:
+        print('Failed to find node data')
+        print('grabbing', node, type(node))
+        raise CollisionException
     if not first:
         df.sort(ascending=False, inplace=True)
 
@@ -108,14 +114,14 @@ def grab_outline(node, graph, experiment, first=True):
         enc = row['contour_encoded']
         if enc and l:
 
-            print(node, x, y, l, enc)
+            #print(node, x, y, l, enc)
             outline_points = de.decode_outline([x, y, l, enc])
             #print(outline_points)
             return outline_points
     else:
         print('Failed to find outline')
         print('grabbing', node, type(node))
-
+        raise CollisionException
 
 # TODO make this function agnostic to the number of parents.
 def create_collision_masks(graph, experiment, node, verbose=False):
@@ -147,15 +153,15 @@ def create_collision_masks(graph, experiment, node, verbose=False):
     """
     p = list(set(graph.predecessors(node)))
     c = list(set(graph.successors(node)))
+    if verbose:
+        print('parents:{p}'.format(p=p))
+        print('children:{c}'.format(c=c))
+        #print('beginning:end pixel overlap')
     #grab relevant outlines.
     p0 = grab_outline(p[0], graph, experiment, first=False)
     p1 = grab_outline(p[1], graph, experiment, first=False)
     c0 = grab_outline(c[0], graph, experiment, first=True)
     c1 = grab_outline(c[1], graph, experiment, first=True)
-    if verbose:
-        print('parents:{p}'.format(p=p))
-        print('children:{c}'.format(c=c))
-        #print('beginning:end pixel overlap')
 
     # align outline masks
     outline_list = [p0, p1, c0, c1]
@@ -167,7 +173,7 @@ def create_collision_masks(graph, experiment, node, verbose=False):
 
 
 #TODO: make agnostic to number of parents/children
-def compare_masks(parents, children, err_margin=10, verbose=True):
+def compare_masks(parents, children, err_margin=10, verbose=False):
     """
     returns a list of [parent, child] matches that maximize the
     amount of pixel overlap between parents and children.
@@ -260,8 +266,12 @@ def resolve_collisions(graph, experiment, collision_nodes):
     """
     collision_results = {}
     for node in collision_nodes:
-        parent_masks, children_masks = create_collision_masks(graph, experiment, node)
-        collision_result = compare_masks(parent_masks, children_masks)
+        try:
+            parent_masks, children_masks = create_collision_masks(graph, experiment, node)
+            collision_result = compare_masks(parent_masks, children_masks)
+        except CollisionException:
+            print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
+            continue
         #print(node, 'is', collision_result)
         if collision_result:
             collision_results[node] = collision_result
@@ -301,24 +311,23 @@ def untangle_collision(graph, collision_node, collision_result):
         graph.remove_node(collision_node)
 
     #print(col)
-    for cr in collision_result:
+    for (n1, n2) in collision_result:
         #print(cr)
-        n1, n2 = cr
 
-        parents = set(graph.predecessors(n1))
-        children = set(graph.successors(n2))
+        #parents = set(graph.predecessors(n1))
+        #children = set(graph.successors(n2))
 
         # combine data
-        new_node, new_node_data = condense_nodes(graph, n1, n2)
-        if 'collision' not in new_node_data:
-            new_node_data['collisions'] = set()
-        new_node_data['collisions'].add(collision_node)
+        #new_node, new_node_data = condense_nodes(graph, n1, n2)
+        if 'collision' not in graph.node[n1]:
+            graph.node[n1]['collisions'] = set()
+        graph.node[n1]['collisions'].add(collision_node)
 
         # add merged node and link to previous parents/children
-        graph.add_node(new_node, **new_node_data)
-        graph.add_edges_from((p, new_node) for p in parents)
-        graph.add_edges_from((c, new_node) for c in children)
-
+        #graph.add_node(new_node, **new_node_data)
+        #graph.add_edges_from((p, new_node) for p in parents)
+        #graph.add_edges_from((c, new_node) for c in children)
+        graph.add_edge(n1, n2)
         # remove old nodes.
-        graph.remove_node(n1)
-        graph.remove_node(n2)
+        #graph.remove_node(n1)
+        #graph.remove_node(n2)
