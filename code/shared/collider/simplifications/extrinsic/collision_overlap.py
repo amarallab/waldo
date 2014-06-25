@@ -19,60 +19,61 @@ __all__ = [
     'resolve_collisions',
 ]
 
-def grab_outline_orig(node, experiment, first=True):
-    """
-    return the first or last complete outline for a given node
-    as a list of points.
+# def grab_outline(node, graph, experiment, first=True):
+#     """
+#     return the first or last complete outline for a given node
+#     as a list of points.
 
-    params
-    -----
-    node: (int or tuple)
-       the id (from graph) for a node.
-    experiment: (multiworm experiment object)
-       the experiment from which data can be exctracted.
-    first: (bool)
-       toggle that deterimines if first or last outline is returned
+#     params
+#     -----
+#     node: (int or tuple)
+#        the id (from graph) for a node.
+#     experiment: (multiworm experiment object)
+#        the experiment from which data can be exctracted.
+#     first: (bool)
+#        toggle that deterimines if first or last outline is returned
 
-    returns
-    ----
-    outline: (list of tuples)
-       a list of (x,y) points
-    """
+#     returns
+#     ----
+#     outline: (list of tuples)
+#        a list of (x,y) points
+#     """
 
-    #print('grabbing', node)
-    i =0
-    go_backwards = False
-    if not first:
-        i = -1
-        go_backwards = True
+#     #print('grabbing', node)
+#     i =0
+#     go_backwards = False
+#     if not first:
+#         i = -1
+#         go_backwards = True
 
-    if type(node) == tuple:
-        node = node[i]
-    if type(node) == str and '-' in node:
-        node = node.split('-')[i]
+#     if type(node) == tuple:
+#         node = node[i]
+#     if type(node) == str and '-' in node:
+#         node = node.split('-')[i]
 
-    data  = experiment.parse_blob(node)
+#     data  = experiment.parse_blob(node)
 
-    x, y = zip(*data['contour_start'])
-    contour_encode_len = data['contour_encode_len']
-    contour_encoded = data['contour_encoded']
-    encoded_outline = zip(x, y, contour_encode_len, contour_encoded)
+#     x, y = zip(*data['contour_start'])
+#     contour_encode_len = data['contour_encode_len']
+#     contour_encoded = data['contour_encoded']
+#     encoded_outline = zip(x, y, contour_encode_len, contour_encoded)
 
-    if go_backwards:
-        # needs to be a list, not an iterable if I want to go backwards
-        encoded_outline = list(encoded_outline)
-        encoded_outline.reverse()
+#     if go_backwards:
+#         # needs to be a list, not an iterable if I want to go backwards
+#         encoded_outline = list(encoded_outline)
+#         encoded_outline.reverse()
 
-    for i, o in enumerate(encoded_outline):
-        if not o:
-            continue  #to avoid None from breaking the loop
-        if o[2] != None:
-            outline_points = de.decode_outline(o)
-            #print(outline_points)
-            return outline_points
-    else:
-        print('Failed to find outline')
-        print('grabbing', node, type(node))
+#     for i, o in enumerate(encoded_outline):
+#         if not o:
+#             continue  #to avoid None from breaking the loop
+#         if o[2] != None:
+#             #print(node, i, o)
+#             outline_points = de.decode_outline(o)
+#             #print(outline_points)
+#             return outline_points
+#     else:
+#         print('Failed to find outline')
+#         print('grabbing', node, type(node))
 
 def grab_outline(node, graph, experiment, first=True):
     """
@@ -99,13 +100,15 @@ def grab_outline(node, graph, experiment, first=True):
     df = consolidate_node_data(graph, experiment, node)
 
     if not first:
-        df.sort(reverse=True)
+        df.sort(ascending=False, inplace=True)
 
     for frame, row in df.iterrows():
         x, y = row['contour_start']
         l = row['contour_encode_len']
         enc = row['contour_encoded']
         if enc and l:
+
+            print(node, x, y, l, enc)
             outline_points = de.decode_outline([x, y, l, enc])
             #print(outline_points)
             return outline_points
@@ -145,12 +148,6 @@ def create_collision_masks(graph, experiment, node, verbose=False):
     p = list(set(graph.predecessors(node)))
     c = list(set(graph.successors(node)))
     #grab relevant outlines.
-    # p0 = grab_outline(p[0], experiment, first=False)
-    # p1 = grab_outline(p[1], experiment, first=False)
-    # #m0 = grab_outline(node, experiment, first=True)
-    # #m1 = grab_outline(node, experiment, first=False)
-    # c0 = grab_outline(c[0], experiment, first=True)
-    # c1 = grab_outline(c[1], experiment, first=True)
     p0 = grab_outline(p[0], graph, experiment, first=False)
     p1 = grab_outline(p[1], graph, experiment, first=False)
     c0 = grab_outline(c[0], graph, experiment, first=True)

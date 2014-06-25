@@ -151,8 +151,29 @@ def suspected_collisions(digraph, relative_threshold):
 
     return suspects
 
+def is_offshoot(graph, node, subnode):
+    """ returns True if subnode is offshoot
 
-def consolidate_node_data(graph, experiment, node):
+    params
+    ----
+    graph: (networkx graph object)
+    node: the name of the node from which the subnode belongs.
+    subnode: the name of the subnode we are testing.
+    """
+    if type(node) != tuple: #node not compound. not offshoot.
+        return False
+    elif subnode in node: #node is start or end. not offshoot.
+        return False
+    # since start/end gone.  no children or parents = offshoot
+    elif len(set(graph.successors(subnode))) == 0:
+        return True
+    elif len(set(graph.predecessors(subnode))) == 0:
+        return True
+    else: # has children and parents. not offshoot.
+        return False
+
+def consolidate_node_data(graph, experiment, node,
+                          remove_offshoots=True):
     """
     Returns a pandas DataFrame with all blob data for a node.
     Accepts both compound and single nodes.
@@ -166,6 +187,7 @@ def consolidate_node_data(graph, experiment, node):
        the experiment from which data can be exctracted.
     node: (int or tuple)
        the id (from graph) for a node.
+    remove_offshoots: (bool)
 
     returns
     -----
@@ -177,7 +199,9 @@ def consolidate_node_data(graph, experiment, node):
        'midline', 'size', 'std_ortho', 'std_vector', 'time'
     """
 
-    if type(node) == tuple:
+    is_compound = (type(node) == tuple)
+
+    if is_compound:
         components = list(graph.node[node]['components'])
     else:
         components = [node]
@@ -187,12 +211,18 @@ def consolidate_node_data(graph, experiment, node):
 
     data = []
     for i, subnode in enumerate(components):
+        if remove_offshoots and not is_compound:
+            if is_offshoot(graph, node, subnode):
+                print(subnode, 'is offshoot')
+                continue
+
         blob_data = experiment.parse_blob(subnode)
         if blob_data.get('frame', []):
             df = pd.DataFrame(blob_data)
             df.set_index('frame', inplace=True)
+            df['blob'] = subnode
             data.append(df)
         #data.append(df)
     all_data = pd.concat(data)
-    all_data.sort()
+    all_data.sort(inplace=True)
     return all_data
