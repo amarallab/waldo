@@ -11,9 +11,27 @@ import pandas as pd
 
 from ..util import is_isolated
 
+from annotation import image_validation as iv
+
 __all__ = [
+    'add_validation',
     'validate_nodes',
 ]
+
+def add_validation(graph, ex_id):
+    valid = iv.Validator(ex_id)
+    good_list = valid.good_list()
+    bad_list = valid.bad_list()
+
+    for node in graph:
+        nodes = [node]
+        if type(node) == tuple:
+            nodes = graph.node[node]['components']
+
+        good = set([n for n in nodes if n in good_list])
+        bad = set([n for n in nodes if n in bad_list])
+        graph.node[node]['good'] = good
+        graph.node[node]['bad'] = bad
 
 def validate_nodes(graph, good_list, bad_list):
     """
@@ -105,8 +123,6 @@ def remove_isolated_bad(graph, good_list=[], bad_list=[]):
 
     for node in bad_nodes:
         graph.remove_node(node)
-
-
 
 
 def check_node(graph, node, good_list, bad_list=[]):

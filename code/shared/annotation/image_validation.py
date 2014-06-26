@@ -24,6 +24,7 @@ sys.path.append(CODE_DIR)
 # nonstandard imports
 from settings.local import LOGISTICS
 
+
 VALIDATION_DIR = os.path.abspath(LOGISTICS['validation'])
 
 class Validator(object):
@@ -47,8 +48,8 @@ class Validator(object):
         return self.frames
 
     def full_check(self):
-        """ returns a list specifying which blobs legitimate.
-            If frame is not present, return an empty list.
+        """ returns a list of tuples specifying which blobs legitimate
+            for all data regardless of frame.
 
         returns
         -----
@@ -58,6 +59,33 @@ class Validator(object):
         tuples = [tuple(i) for i in self.df[['bid', 'good']].values]
         tuples = [(int(a), bool(b)) for (a,b) in tuples]
         return tuples
+
+    def good_list(self):
+        """ returns a list containing only good nodes.
+
+        returns
+        -----
+        good_list: (list)
+            a list containing blob_ids
+        """
+        tuples = [tuple(i) for i in self.df[['bid', 'good']].values]
+        tuples = [(int(a), bool(b)) for (a,b) in tuples]
+        good_list = [n for (n, g) in tuples if g]
+        return good_list
+
+    def bad_list(self):
+        """ returns a list containing only bad nodes.
+
+        returns
+        -----
+        bad_list: (list)
+            a list containing blob_ids
+        """
+        tuples = [tuple(i) for i in self.df[['bid', 'good']].values]
+        tuples = [(int(a), bool(b)) for (a,b) in tuples]
+        bad_list = [n for (n, g) in tuples if not g]
+        return bad_list
+
 
     def frame_check(self, frame):
         """ returns a list specifying which blobs in a given frame are legitimate.
