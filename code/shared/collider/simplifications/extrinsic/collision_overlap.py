@@ -22,62 +22,6 @@ __all__ = [
 class CollisionException(Exception):
     pass
 
-# def grab_outline(node, graph, experiment, first=True):
-#     """
-#     return the first or last complete outline for a given node
-#     as a list of points.
-
-#     params
-#     -----
-#     node: (int or tuple)
-#        the id (from graph) for a node.
-#     experiment: (multiworm experiment object)
-#        the experiment from which data can be exctracted.
-#     first: (bool)
-#        toggle that deterimines if first or last outline is returned
-
-#     returns
-#     ----
-#     outline: (list of tuples)
-#        a list of (x,y) points
-#     """
-
-#     #print('grabbing', node)
-#     i =0
-#     go_backwards = False
-#     if not first:
-#         i = -1
-#         go_backwards = True
-
-#     if type(node) == tuple:
-#         node = node[i]
-#     if type(node) == str and '-' in node:
-#         node = node.split('-')[i]
-
-#     data  = experiment.parse_blob(node)
-
-#     x, y = zip(*data['contour_start'])
-#     contour_encode_len = data['contour_encode_len']
-#     contour_encoded = data['contour_encoded']
-#     encoded_outline = zip(x, y, contour_encode_len, contour_encoded)
-
-#     if go_backwards:
-#         # needs to be a list, not an iterable if I want to go backwards
-#         encoded_outline = list(encoded_outline)
-#         encoded_outline.reverse()
-
-#     for i, o in enumerate(encoded_outline):
-#         if not o:
-#             continue  #to avoid None from breaking the loop
-#         if o[2] != None:
-#             #print(node, i, o)
-#             outline_points = de.decode_outline(o)
-#             #print(outline_points)
-#             return outline_points
-#     else:
-#         print('Failed to find outline')
-#         print('grabbing', node, type(node))
-
 def grab_outline(node, graph, experiment, first=True):
     """
     return the first or last complete outline for a given node

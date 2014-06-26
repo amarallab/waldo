@@ -7,5 +7,6 @@ from .intrinsic.suite import *
 
 from .extrinsic.roi import *
 from .extrinsic.collision_overlap import *
+from .extrinsic.node_validation import *
 
 from .util import *

@@ -151,6 +151,12 @@ def suspected_collisions(digraph, relative_threshold):
 
     return suspects
 
+def is_isolated(graph, node):
+    """ returns True if node does not have any parents or children
+    """
+    n_parents = len(set(graph.predecessors(node)))
+    n_children = len(set(graph.successors(node)))
+    return (n_parents + n_children) == 0
 
 def is_offshoot(graph, node, subnode):
     """ returns True if subnode is offshoot.
@@ -176,7 +182,7 @@ def is_offshoot(graph, node, subnode):
     else: # has children and parents. not offshoot.
         return False
 
-#TODO:
+#TODO: add remove offshoots?
 def consolidate_node_data(graph, experiment, node):
     """
     Returns a pandas DataFrame with all blob data for a node.
