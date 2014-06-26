@@ -10,7 +10,7 @@ import random
 import networkx as nx
 
 from .test_util import node_generate, GraphCheck
-from ..collider import remove_fission_fusion
+from .. import remove_fission_fusion
 
 class TestFissionFusion(GraphCheck):
     def threshold_compare(self, Gtest, Gexpect, just_enough):

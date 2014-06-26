@@ -3,7 +3,10 @@
 Filename: filter_utilities
 Description: functions involving smoothing of data.
 '''
-from filtering.equally_space_old import equally_space_times, linear_interpolation
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
+import six
+from six.moves import zip
 
 __authors__ = 'Peter B. Winter and Andrea Lancanetti'
 __email__ = 'peterwinteriii@gmail.com'
@@ -12,10 +15,12 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
+
 import numpy as np
 import scipy
 import scipy.signal
-from itertools import izip
+
+from filtering.equally_space_old import equally_space_times, linear_interpolation
 
 # manage paths
 project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../../'
@@ -37,7 +42,7 @@ sys.path.append(shared_directory)
 #         expansions[start - shift] = end - start
 #         shift += end - start - 1
 #
-#     #print expansions
+#     #print(expansions)
 #     expanded = []
 #     for i, val in enumerate(xy):
 #         if i in expansions:
@@ -66,7 +71,7 @@ def neighbor_calculation(distance_threshold, x, y, max_score=500):
     :return: A list of positive integer scores for each point in the worm path.
     """
     point_scores = []
-    for i, pt in enumerate(izip(x,y)):
+    for i, pt in enumerate(zip(x,y)):
         start = max([0, i-max_score])
         if i < 3:
             point_scores.append(0)
@@ -85,7 +90,7 @@ def neighbor_calculation(distance_threshold, x, y, max_score=500):
                 score += 1
             else:
                 break
-        #print i, score, dists[0], dists[-1]
+        #print(i, score, dists[0], dists[-1])
         point_scores.append(score)
     return point_scores
 
@@ -99,7 +104,7 @@ def domain_creator(point_scores, timepoint_threshold=30):
     :param timepoint_threshold: The score threshold for a point to be considered the initiator of a non-moving domain
     :return: A list of domains
     """
-    #print 'Calculating Domains'
+    #print('Calculating Domains')
     threshold_indices = []
     for a, score in enumerate(point_scores):
         if score > timepoint_threshold:
@@ -128,7 +133,7 @@ def domain_creator(point_scores, timepoint_threshold=30):
     if not new_domains:
         new_domains = domains
 
-    #print 'Number of domains: {d}'.format(d=len(domains))
+    #print('Number of domains: {d}'.format(d=len(domains)))
     return new_domains
 
 
@@ -198,7 +203,7 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     try:
         window_size = np.abs(np.int(window_size))
         order = np.abs(np.int(order))
-    except ValueError, msg:
+    except ValueError as msg:
         raise ValueError("window_size and order have to be of type int")
     if window_size % 2 != 1 or window_size < 1:
         raise TypeError("window_size size must be a positive odd number")
@@ -303,9 +308,9 @@ def compute_polynomial_xy_smoothing_by_index(unfiltered_outline, window_size=23,
 #         for xy in ps:
 #             value.append(xy[0])
 #             value.append(xy[1])
-#             #print len(value)
+#             #print(len(value))
 #         values.append(value)
-#         #print len(values)
+#         #print(len(values))
 #     times, snapshots_eq, filtered_snapshots = smooth_and_equally_space(ids, values,
 #                                                                        running_window_size=running_window_size,
 #                                                                        order=order, filter_method=filter_method)
@@ -345,26 +350,26 @@ def compute_polynomial_xy_smoothing_by_index(unfiltered_outline, window_size=23,
 
 
 if __name__ == '__main__':
-    print 'hello'
+    print('hello')
 
     #running this script shows a simple example
 
 
-    print 'testing filtering...'
+    print('testing filtering...')
 
     import random
     # EXAMPLE: define times with some noise
     times = list(np.linspace(0, 30, num=31))
     times = [t + random.uniform(-0.2, 0.2) for t in times]
 
-    print times
+    print(times)
 
     # EXAMPLE: define time series with some noise
     values = [np.sin(0.1 * t) + np.sin(10 * t) + random.uniform(-0.2, 0.2) for t in times]
     ids = [str(t) for t in times] # times could be string (or not)
 
-    print ids
-    print values
+    print(ids)
+    print(values)
 
     # todo: finish example
     #
@@ -424,15 +429,15 @@ if __name__ == '__main__':
 #         else:
 #             left_index -= 1
 #             right_index = left_index + 1
-#             #print left_index, right_index, len(ids_eq), len(ids_not_eq), len(values)
+#             #print(left_index, right_index, len(ids_eq), len(ids_not_eq), len(values))
 #             eq_values.append(linear_interpolation( \
 #                 ids_eq[k],
 #                 (ids_not_eq[left_index], values[left_index]), \
 #                 (ids_not_eq[right_index], values[right_index])) \
 #                 )
 #
-#             #print ids_eq[k], ids_not_eq[left_index], ids_not_eq[right_index], 'III', left_index, right_index, k
-#             #print eq_values[-1], values[left_index], values[right_index]
+#             #print(ids_eq[k], ids_not_eq[left_index], ids_not_eq[right_index], 'III', left_index, right_index, k)
+#             #print(eq_values[-1], values[left_index], values[right_index])
 #             assert ids_eq[k] >= ids_not_eq[left_index] and ids_eq[k] < ids_not_eq[right_index], 'bisection is wrong'
 #
 #     return eq_values

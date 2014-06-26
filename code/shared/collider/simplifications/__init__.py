@@ -4,6 +4,7 @@ from __future__ import (
 from .intrinsic.degree_one import *
 from .intrinsic.fission_fusion import *
 from .intrinsic.suite import *
+from .intrinsic.assimilator import *
 
 from .extrinsic.roi import *
 from .extrinsic.collision_overlap import *

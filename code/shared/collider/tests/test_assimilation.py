@@ -9,5 +9,5 @@ import networkx as nx
 
 from .test_util import node_generate, GraphCheck
 
-from ..collider import assimilate
+from .. import assimilate
 

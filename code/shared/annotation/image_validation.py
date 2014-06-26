@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-
 '''
 Filename: image_validation.py
 
 Description: This class is used to get information about which
-
 '''
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -14,6 +14,7 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
+
 import pandas as pd
 
 # path definitions
@@ -23,7 +24,6 @@ sys.path.append(CODE_DIR)
 
 # nonstandard imports
 from settings.local import LOGISTICS
-
 
 VALIDATION_DIR = os.path.abspath(LOGISTICS['validation'])
 
@@ -124,7 +124,7 @@ class Validator(object):
 if __name__ == '__main__':
     ex_id = '20130318_131111'
     v = Validator(ex_id)
-    #print v.show_frames()
-    #print v.frame_check(450)
-    print v.full_check()
-    #print v.joins()
+    #print(v.show_frames())
+    #print(v.frame_check(450))
+    print(v.full_check())
+    #print(v.joins())
