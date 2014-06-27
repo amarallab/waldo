@@ -123,8 +123,8 @@ class TestFissionFusion(GraphCheck):
             Gtest2 = Go2.copy()
 
             Gexpect = nx.DiGraph()
-            Gexpect.add_path([nodes[0][0], (nodes[1][0], nodes[-2][0]), nodes[-1][0]])
-            Gexpect.add_path([nodes[0][-1], (nodes[1][0], nodes[-2][0]), nodes[-1][-1]])
+            Gexpect.add_path([nodes[0][0], nodes[1][0], nodes[-1][0]])
+            Gexpect.add_path([nodes[0][-1], nodes[1][0], nodes[-1][-1]])
 
             remove_fission_fusion_rel(Gtest1, 1)
             remove_fission_fusion_rel(Gtest2, 1)

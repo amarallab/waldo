@@ -153,8 +153,8 @@ class TestFissionFusion(GraphCheck):
             remove_fission_fusion(Gtest)
 
             Gexpect = nx.DiGraph()
-            Gexpect.add_path([nodes[0][0], (nodes[1][0], nodes[-2][0]), nodes[-1][0]])
-            Gexpect.add_path([nodes[0][-1], (nodes[1][0], nodes[-2][0]), nodes[-1][-1]])
+            Gexpect.add_path([nodes[0][0], nodes[1][0], nodes[-1][0]])
+            Gexpect.add_path([nodes[0][-1], nodes[1][0], nodes[-1][-1]])
 
             self.check_graphs_equal(Gtest, Gexpect)
 
