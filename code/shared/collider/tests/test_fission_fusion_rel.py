@@ -36,8 +36,8 @@ class TestFissionFusion(GraphCheck):
         Gtest = Go.copy()
 
         Gexpect = nx.DiGraph()
-        Gexpect.add_path([10, (20, 40), 50])
-        Gexpect.add_path([11, (20, 40), 51])
+        Gexpect.add_path([10, 20, 50])
+        Gexpect.add_path([11, 20, 51])
 
         self.threshold_compare(Gtest, Gexpect, 0.1)
 
@@ -66,7 +66,10 @@ class TestFissionFusion(GraphCheck):
 
         remove_fission_fusion_rel(Gtest, 0.1)
 
-        self.assertTrue(Gtest.node[(20, 40)]['components'] == set([20, 31, 30, 40]))
+        try:
+            self.assertTrue(Gtest.node[20]['components'] == set([20, 31, 30, 40]))
+        except KeyError:
+            self.fail('Expected node 20 not present in output')
 
     def test_chain(self):
         Go = node_generate(
@@ -77,8 +80,8 @@ class TestFissionFusion(GraphCheck):
         Gtest = Go.copy()
 
         Gexpect = nx.DiGraph()
-        Gexpect.add_path([10, (20, 60), 70])
-        Gexpect.add_path([11, (20, 60), 71])
+        Gexpect.add_path([10, 20, 70])
+        Gexpect.add_path([11, 20, 71])
 
         just_enough = 1
         self.threshold_compare(Gtest, Gexpect, just_enough)
@@ -139,9 +142,9 @@ class TestFissionFusion(GraphCheck):
         remove_fission_fusion_rel(Gtest, 1e100)
 
         try:
-            self.assertTrue(Gtest.node[(20, 60)]['components'] == set([20, 31, 30, 40, 51, 50, 60]))
+            self.assertTrue(Gtest.node[20]['components'] == set([20, 31, 30, 40, 51, 50, 60]))
         except KeyError:
-            self.fail('Node (20, 60) not present in expected output')
+            self.fail('Expected node 20 not present in output')
 
     # def test_join_after_join(self):
     #     #"""From ex_id = '20130318_131111', target=930, strangeness happens..."""
@@ -203,7 +206,7 @@ class TestFissionFusion(GraphCheck):
         Gtest = Go.copy()
 
         Gexpect = nx.DiGraph()
-        Gexpect.add_path([0, (10, 50), 60])
+        Gexpect.add_path([0, 10, 60])
 
         just_enough = 1
         self.threshold_compare(Gtest, Gexpect, just_enough)
@@ -218,8 +221,8 @@ class TestFissionFusion(GraphCheck):
         Gtest = Go.copy()
 
         Gexpect = nx.DiGraph()
-        Gexpect.add_path([0, 10, (20, 40), 50, 60])
-        Gexpect.add_path([10, (21, 41), 50])
+        Gexpect.add_path([0, 10, 20, 50, 60])
+        Gexpect.add_path([10, 21, 50])
 
         just_enough = 1
         self.threshold_compare(Gtest, Gexpect, just_enough)
