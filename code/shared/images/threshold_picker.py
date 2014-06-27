@@ -33,8 +33,10 @@ from wio.file_manager import ensure_dir_exists
 
 MWT_DIR = LOGISTICS['filesystem_data']
 DATA_DIR = LOGISTICS['filesystem_data']
-PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
-ensure_dir_exists(PRETREATMENT_DIR)
+PREP_DIR = os.path.abspath(LOGISTICS['prep'])
+CACHE_DIR = os.path.join(PREP_DIR, 'cache')
+ANNOTATION_DIR = os.path.join(PREP_DIR, 'annotation')
+ensure_dir_exists(PREP_DIR)
 
 
 def perp(v):
@@ -88,12 +90,14 @@ INCR_Y = 1
 INCR_RADIUS = 1
 
 class InteractivePlot:
-    def __init__(self, ids, annotation_filename, cache_dir, initial_threshold=0.0005):
+    def __init__(self, ids, annotation_filename, cache_dir=CACHE_DIR,
+                 initial_threshold=0.0005):
         self.ids = ids
         self.current_index = 0
         self.current_id = None
         self.annotation_filename = annotation_filename
         self.cache_dir = cache_dir
+        print('cache:', cache_dir)
         self.current_threshold = initial_threshold
         self.thresholds = []
 
@@ -452,12 +456,12 @@ class InteractivePlot:
 
 if __name__ == '__main__':
     try:
-        os.makedirs(PRETREATMENT_DIR)
+        os.makedirs(PREP_DIR)
     except:
         pass
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
-    picker_data_file = os.path.join(PRETREATMENT_DIR, "threshold_picker_data.json")
-    ip = InteractivePlot(dirs, picker_data_file, PRETREATMENT_DIR, 0.0005)
+    picker_data_file = os.path.join(ANNOTATION_DIR_DIR, "threshold_picker_data.json")
+    ip = InteractivePlot(dirs, picker_data_file, 0.0005)
     ip.run_plot()
     #ip.precalculate_threshold_data()
 

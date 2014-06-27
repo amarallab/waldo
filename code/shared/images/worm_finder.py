@@ -41,7 +41,9 @@ from multiworm.readers import blob as blob_reader
 from settings.local import LOGISTICS
 
 MWT_DIR = os.path.abspath(LOGISTICS['filesystem_data'])
-VALIDATION_DIR = os.path.abspath(LOGISTICS['validation'])
+
+MATCH_DIR = os.path.abspath(LOGISTICS['matches'])
+ACCURACY_DIR = os.path.abspath(LOGISTICS['accuracy'])
 
 # Derived from http://stackoverflow.com/a/2566508/194586
 # However, I claim these as below the threshold of originality
@@ -427,25 +429,23 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
         #if i > 3:
         #    break
 
-
     bid_matching = pd.concat(full_experiment_check)
     base_accuracy = pd.DataFrame(accuracy)
 
-    # save comprehensive
-    ensure_dir_exists(VALIDATION_DIR)
-    s1 = os.path.join(VALIDATION_DIR,
-                      'matching-{eid}.csv'.format(eid=ex_id))
+    # save matches.
+    ensure_dir_exists(MATCH_DIR)
+    s1 = os.path.join(MATCH_DIR, '{eid}.csv'.format(eid=ex_id))
     print(s1)
     bid_matching.to_csv(s1, index=False)
 
-    s2 = os.path.join(VALIDATION_DIR,
-                      'check-{eid}.csv'.format(eid=ex_id))
+    # save accuracy
+    ensure_dir_exists(ACCURACY_DIR)
+    s2 = os.path.join(accuracy, '{eid}.csv'.format(eid=ex_id))
     print(s2)
     base_accuracy.to_csv(s2, index=False)
     return bid_matching, base_accuracy
 
 def main():
-
     ex_id = '20130614_120518'
     pfile = Preprocess_File(ex_id=ex_id)
     threshold = pfile.threshold()

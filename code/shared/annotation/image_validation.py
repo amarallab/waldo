@@ -37,7 +37,9 @@ class Validator(object):
     def __init__(self, ex_id, directory=VALIDATION_DIR):
         """ ex_id """
         filename = os.path.join(directory, '{eid}.csv'.format(eid=ex_id))
-        input_err_msg = '{eid} does not have validatoin file at: {p}'.format(eid=ex_id, p=filename)
+        input_err_msg = '{eid} does not have validation file at: \
+                         {p}'.format(eid=ex_id, p=filename)
+
         assert os.path.isfile(filename), input_err_msg
         self.df = pd.read_csv(filename, index_col=0)
         self.df.fillna('', inplace=True)
