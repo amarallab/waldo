@@ -60,46 +60,55 @@ def frame_filter(threshold):
 def lifespan(graph, node):
     return graph.node[node]['died'] - graph.node[node]['born']
 
-def condense_nodes(graph, start, end, *others):
+def condense_nodes(digraph, node, *other_nodes):
     """
-    *start*, *end*, and *others* are all (key, value) pairs where the key is
-    the node name and value is the node data in dictionary form.
+    In the given *digraph*, incorporate all nodes in *other_nodes* into
+    *node*.  Graph is modified in place, so nothing is returned.
 
-    Required node dictionary keys:
-      * born
-      * died
+    All nodes must have ``born`` and ``died`` keys, the condensed node
+    born/died keys will maximize age.  All other key values will be used to
+    ``.update()`` the condensed node data, so sets and mappings
+    (dictionary-like objects) can be used.  The ``components`` key is
+    slightly special, it will be created as a 1-element set with the
+    node's name if non-existent.
 
-    Optional node dictionary keys:
-      * components
+    Edges that *other_nodes* had will be taken by *node*, excepting those to
+    *node* to prevent self-loops.
     """
-    # come up with new node name
-    if start != end:
-        start_and_end = list(flatten([start, end]))
-        new_node = start_and_end[0], start_and_end[-1]
-    else:
-        new_node = start
+    node_data = digraph.node[node]
+    if 'components' not in node_data:
+        node_data['components'] = set([node])
 
-    # repackage data
-    components = set()
-    collisions = set()
-    for node in itertools.chain([start, end], others):
-        try:
-            components.update(graph.node[node]['components'])
-        except KeyError:
-            components.add(node)
-        try:
-            collisions.update(graph.node[node]['collisions'])
-        except KeyError:
-            pass
+    for other_node in other_nodes:
+        other_data = digraph.node[other_node]
 
-    new_node_data = {
-        'born': graph.node[start]['born'],
-        'died': graph.node[end]['died'],
-        'components': components,
-        'collisions': collisions,
-    }
+        # abscond with born/died
+        node_data['born'] = min(node_data['born'], other_data.pop('born'))
+        node_data['died'] = max(node_data['died'], other_data.pop('died'))
 
-    return new_node, new_node_data
+        # combine set/mapping data
+        node_data['components'].update(
+                other_data.pop('components', set([other_node])))
+        for k, v in six.iteritems(other_data):
+            if k in node_data:
+                node_data[k].update(v)
+            else:
+                node_data[k] = v
+
+        # transfer edges
+        digraph.add_edges_from(
+                (node, out_node)
+                for out_node
+                in digraph.successors(other_node)
+                if out_node != node)
+        digraph.add_edges_from(
+                (in_node, node)
+                for in_node
+                in digraph.predecessors(other_node)
+                if in_node != node)
+
+        # remove node
+        digraph.remove_node(other_node)
 
 def flat_node_list(graph):
     """

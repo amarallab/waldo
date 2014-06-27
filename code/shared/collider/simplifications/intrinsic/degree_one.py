@@ -49,14 +49,9 @@ def remove_single_descendents(graph):
         parents = set(graph.predecessors(node))
         grandchildren = set(graph.successors(child))
 
-        new_node, new_node_data = condense_nodes(graph, node, child)
+        condense_nodes(graph, node, child)
 
-        graph.add_node(new_node, **new_node_data)
-        graph.add_edges_from((p, new_node) for p in parents)
-        graph.add_edges_from((new_node, gc) for gc in grandchildren)
-        graph.remove_nodes_from([node, child])
-
-        all_nodes.append(new_node)
+        all_nodes.append(node) # recurse
 
     # graph is modified in-place
 
@@ -79,9 +74,6 @@ def remove_offshoots(digraph, threshold):
         # add to components of parent then remove node
         parent = digraph.predecessors(node)[0]
 
-        _, new_node_data = condense_nodes(digraph, parent, parent, node)
-        digraph.node[parent] = new_node_data
-
-        digraph.remove_node(node)
+        condense_nodes(digraph, parent, node)
 
     # graph is modified in-place

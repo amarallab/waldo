@@ -23,8 +23,8 @@ class TestDirectDescendents(GraphCheck):
         remove_single_descendents(Gtest)
 
         Gexpect = nx.DiGraph()
-        Gexpect.add_path([10, (20, 30), 40])
-        Gexpect.add_path([11, (20, 30), 41])
+        Gexpect.add_path([10, 20, 40])
+        Gexpect.add_path([11, 20, 41])
 
         self.check_graphs_equal(Gtest, Gexpect)
 
@@ -66,7 +66,7 @@ class TestDirectDescendents(GraphCheck):
         remove_single_descendents(Gtest)
 
         Gexpect = nx.DiGraph()
-        Gexpect.add_path([10, (20, 40), 50])
-        Gexpect.add_path([11, (20, 40), 51])
+        Gexpect.add_path([10, 20, 50])
+        Gexpect.add_path([11, 20, 51])
 
         self.check_graphs_equal(Gtest, Gexpect)
