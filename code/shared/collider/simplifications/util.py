@@ -60,6 +60,15 @@ def frame_filter(threshold):
 def lifespan(graph, node):
     return graph.node[node]['died'] - graph.node[node]['born']
 
+def validate_graph(digraph):
+    """
+    Verify that the graph contains the requisite data
+    """
+    for node, node_data in digraph.nodes_iter(data=True):
+        for req_key in ['born', 'died']:
+            if req_key not in node_data:
+                raise AssertionError("Node {} missing required key '{}'".format(node, req_key))
+
 def condense_nodes(digraph, node, *other_nodes):
     """
     In the given *digraph*, incorporate all nodes in *other_nodes* into

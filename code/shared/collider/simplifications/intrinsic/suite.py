@@ -4,6 +4,8 @@ from __future__ import (
 from .degree_one import remove_single_descendents, remove_offshoots
 from .fission_fusion import remove_fission_fusion, remove_fission_fusion_rel
 
+from ..util import validate_graph
+
 __all__ = [
     'removal_suite',
 ]
@@ -17,6 +19,8 @@ SUITE_DEFAULTS = {
 def removal_suite(digraph, **params):
     params_local = SUITE_DEFAULTS.copy()
     params_local.update(params)
+
+    validate_graph(digraph)
 
     remove_single_descendents(digraph)
     remove_fission_fusion(digraph, max_split_frames=params_local['splits_abs'])
