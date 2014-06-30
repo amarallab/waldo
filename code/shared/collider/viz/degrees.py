@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blues', nonzero=False):
+def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blues', ignore_zero=False):
     cmap = plt.get_cmap(cmap)
 
     degrees = np.zeros(tuple(m+1 for m in maximums), dtype=int)
@@ -20,17 +20,23 @@ def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blu
         assert in_node == out_node # hopefully the iterators are matched...
         degrees[min(in_deg, degrees.shape[0]-1)][min(out_deg, degrees.shape[1]-1)] += 1
 
+    if ignore_zero:
+        degrees[0][0] = 0
+
     f, ax = plt.subplots()
     heatmap = ax.pcolor(degrees.T, cmap=cmap)
-
-    if nonzero:
-        degrees[0][0] = 0
 
     # http://stackoverflow.com/questions/11917547/how-to-annotate-heatmap-with-text-in-matplotlib
     for x in range(degrees.shape[0]):
         for y in range(degrees.shape[1]):
-            deg = degrees[x,y]
-            ax.text(x + 0.5, y + 0.5, deg, ha='center', va='center',
+            if ignore_zero and x == 0 and y == 0:
+                deg = 0
+                text = 'X'
+            else:
+                deg = degrees[x,y]
+                text = str(deg)
+
+            ax.text(x + 0.5, y + 0.5, text, ha='center', va='center',
                     color='white' if deg > 0.6*np.max(degrees) else 'black')
 
     # http://stackoverflow.com/questions/14391959/heatmap-in-matplotlib-with-pcolor
