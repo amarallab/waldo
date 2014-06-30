@@ -34,18 +34,23 @@ MONGO = {
 LOGISTICS = {
     'time-series-file-type': 'hdf5', # supports 'hdf5' or 'json'
     # directories for annotation and organization
+    'results': PROJECT_HOME + 'results/',
+
     'data': PROJECT_HOME + 'data/',
+
+    'export': PROJECT_HOME + 'data/export/',
     'worms': PROJECT_HOME + 'data/worms/',
     'plates': PROJECT_HOME + 'data/plates/',
     'dsets': PROJECT_HOME + 'data/dsets/',
-    'results': PROJECT_HOME + 'results/',
-    'validation':PROJECT_HOME + 'data/annotation/validation/',
+    'prep': PROJECT_HOME + 'data/prep',
+    'nodenotes': PROJECT_HOME + 'data/prep/nodenotes/',
+    'matches': PROJECT_HOME + 'data/prep/matches/',
+    'accuracy': PROJECT_HOME + 'data/prep/acuracy/',
+    #'validation':PROJECT_HOME + 'data/annotation/validation/',
     'inventory': PROJECT_HOME + 'data/annotation/inventory/',
     'annotation': PROJECT_HOME + 'data/annotation/experiment_index',
-    'pretreatment': PROJECT_HOME + 'data/annotation/pretreatment/',
-
     'scaling-factors': PROJECT_HOME + 'data/annotation/scaling_factor_images',
-    'export': PROJECT_HOME + 'data/export/',
+
 
     # filesystem variables
     'filesystem_address': 'peterwinter@barcelona.chem-eng.northwestern.edu',
@@ -80,4 +85,3 @@ SMOOTHING = {'spine_order': 5, 'spine_window': 13,
 
 JOINING = {'method': 'tapeworm' #None
 }
-

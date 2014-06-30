@@ -33,10 +33,10 @@ RESULT_DIR = os.path.abspath(LOGISTICS['results'])
 EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
 WORM_DIR = os.path.abspath(LOGISTICS['worms'])
 PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
-PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
+PREP_DIR = os.path.abspath(LOGISTICS['prep'])
 DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
-
-
+NODENOTES_DIR = os.path.abspath(LOGISTICS['nodenotes'])
+ANNOTATION_DIR = os.path.join(PREP_DIR, 'annotation')
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
@@ -54,10 +54,50 @@ WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
 #     or an empty dict if nothing was found. '''
 #     dset = get_dset(ex_id)
 #     filename = 'threshold-{ds}.json'.format(ds=dset)
-#     threshold_file = os.path.join(PRETREATMENT_DIR, filename)
+#     threshold_file = os.path.join(PREP_DIR, filename)
 #     data = json.load(open(threshold_file)).get(ex_id, {})
 #     return data
 
+
+class ColliderNodeNotes(object):
+    def __init__(self, ex_id, directory=NODENOTES_DIR):
+        f = '{eid}.csv'.format(eid=ex_id)
+        self.eid =ex_id
+        self.filedir = directory
+        self.filename = os.join(directory, f)
+        self.data = None
+
+    def load(self):
+        filename = self.filename
+        err = '{eid} does not have file at: {p}'.format(eid=self.eid,
+                                                        p=filename)
+        assert os.path.isfile(filename), err
+        data = pd.read_csv()
+        self.data = data
+        return data
+
+    def dump(self, dataframe):
+        pass
+
+    def _return_set(self, dtype):
+        if self.data is None:
+            self.load()
+        df = self.data[['bid', dtype]]
+        bids = [b for (b, v) in df.Values() if v]
+        return set(bids)
+
+    def good(self):
+        return self._return_set('good')
+
+    def bad(self):
+        return self._return_set('bad')
+
+    def moved(self, thresh):
+        if self.data is None:
+            self.load()
+        df = self.data[['bid', dtype]]
+        bids = [b for (b, v) in df.Values() if v > thresh]
+        return set(bids)
 
 class Preprocess_File(object):
     """
@@ -78,7 +118,7 @@ class Preprocess_File(object):
         if not dset:
             dset = get_dset(ex_id)
 
-        self.path = PRETREATMENT_DIR
+        self.path = ANNOTATION_DIR
         self.dset = dset
         self.ex_id = ex_id
         self.data = None
