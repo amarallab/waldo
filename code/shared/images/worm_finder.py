@@ -445,8 +445,9 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     base_accuracy.to_csv(s2, index=False)
     return bid_matching, base_accuracy
 
-def main():
-    ex_id = '20130614_120518'
+def main(ex_id=None):
+    if ex_id is None:
+        ex_id = '20130614_120518'
     pfile = Preprocess_File(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()

@@ -25,7 +25,8 @@ sys.path.append(CODE_DIR)
 # nonstandard imports
 from settings.local import LOGISTICS
 
-VALIDATION_DIR = os.path.abspath(LOGISTICS['validation'])
+#VALIDATION_DIR = os.path.abspath(LOGISTICS['validation'])
+MATCH_DIR = os.path.abspath(LOGISTICS['matches'])
 
 class Validator(object):
     """ Class that is used to track data to validate the
@@ -34,7 +35,7 @@ class Validator(object):
 
     """
 
-    def __init__(self, ex_id, directory=VALIDATION_DIR):
+    def __init__(self, ex_id, directory=MATCH_DIR):
         """ ex_id """
         filename = os.path.join(directory, '{eid}.csv'.format(eid=ex_id))
         input_err_msg = '{eid} does not have validation file at: \

@@ -456,7 +456,7 @@ class InteractivePlot:
 
 if __name__ == '__main__':
     try:
-        os.makedirs(PREP_DIR)
+        os.makedirs(ANNOTATION_DIR)
     except:
         pass
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
