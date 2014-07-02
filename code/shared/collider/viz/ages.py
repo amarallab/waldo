@@ -13,16 +13,17 @@ import networkx as nx
 
 from ..simplifications.util import lifespan
 
-def age_distribution(digraph):
-    ages = [lifespan(digraph, node) for node in digraph]
-    age_ccdf = cdf(ages, ccdf=True)
+def age_distribution(*digraphs):
+    ages = [[lifespan(digraph, node) for node in digraph] for digraph in digraphs]
+    age_ccdfs = [cdf(a, ccdf=True) for a in ages]
 
     fig, ax = plt.subplots()
-    ax.semilogx(*age_ccdf)
+    for ccdf in age_ccdfs:
+        ax.semilogx(*ccdf)
     ax.set_title("Blob node lifespan")
     ax.set_xlabel("Life (frames)")
     ax.set_ylabel("CDF")
-    ax.text(0.95, 0.05, 'n = {}'.format(len(ages)),
+    ax.text(0.95, 0.05, '\n'.join('n = {}'.format(len(a)) for a in ages),
             ha='right', va='baseline', transform=ax.transAxes)
 
     return fig, ax

@@ -141,8 +141,10 @@ def component_size_summary(graph):
     Gcc = nx.connected_component_subgraphs(graph.to_undirected())
     print("Component sizes and example nodes in descending order")
     for n, G in enumerate(Gcc[:10], start=1):
-        print("{:>2d}. {:>5d} nodes : {}...".format(
-                n, len(G), ', '.join([str(node) for node, _ in zip(G.nodes_iter(), range(5))])))
+        print("{:>2d}. {:>5d} nodes : {}{}".format(
+                n, len(G),
+                ', '.join(str(node) for node, _ in zip(G.nodes_iter(), range(5))),
+                '...' if len(G) > 5 else ''))
 
 def suspected_collisions(digraph, relative_threshold):
     """
