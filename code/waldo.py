@@ -1,11 +1,28 @@
 #!/usr/bin/env python
+"""waldo.
+A program for analyze shape and position data for all worm tracks
+from one or more recordings.
 
-#TEST
+Usage:
+  waldo.py <command> [options] <id>...
+  waldo.py (-h | --help)
+  waldo.py --version
 
-'''
-Filename: waldo.py
-Description: provides a command line user interface with which to process data.
-'''
+Commands:
+  worm          Process worm data and consolidate plate properties.
+  plate         Only process plate properites (skip initial steps)
+
+Arguments:
+   id              can be either dataset names or experiment ids
+
+Options:
+  -o            Overwrite existing data
+  --profile     Profiles waldo, showing how this code spent time.
+  -h --help     Show this screen.
+  --version     Show version.
+
+"""
+
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
@@ -14,10 +31,12 @@ __status__ = 'prototype'
 import os
 import sys
 import argparse
+from docopt import docopt
 import time
 import json
 import cProfile as profile
 import logging
+
 
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -27,9 +46,9 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from wio.file_manager import ensure_dir_exists
-from importing.process_spines import process_ex_id, just_process_centroid, \
-    plate_consolidation
+#from wio.file_manager import ensure_dir_exists
+#from importing.process_spines import process_ex_id, just_process_centroid, \
+#    plate_consolidation
 
 TIMING_DIR = PROJECT_DIR + '/data/diagnostics/timing'
 PROFILE_DIR = PROJECT_DIR + '/data/diagnostics/profileing'
@@ -69,7 +88,7 @@ def run_function_for_ex_ids(f, name, ex_ids, timing_dir=TIMING_DIR,
             logging.exception("HELTENA")
     return True
 
-def main(args):
+def main2(args):
     """ all arguments are parsed here and the appropriate functions are called.
     :param args: arguments from argparse (namespace object)
     """
@@ -83,6 +102,24 @@ def main(args):
     if args.w:
         run_function_for_ex_ids(f=process_ex_id, name='worm', ex_ids=args.ex_ids)
     if args.p:
+        run_function_for_ex_ids(f=plate_consolidation, name='plate', ex_ids=args.ex_ids)
+    # NOTE: it doesn't make sense to consolidate the dataset at this point yet.
+    #if args.s:
+    #    run_function_for_ex_ids(f=dataset_consolidation, name='dataset', ex_ids=[])
+
+def main(args):
+    """ all arguments are parsed here and the appropriate functions are called.
+    :param args: arguments from argparse (namespace object)
+    """
+    #if args.c is not None:
+    #    print 'Error with -c argument'
+    #    run_function_for_ex_ids(f=just_process_centroid, name='centroid', ex_ids=args.ex_ids)
+    #    return
+    #if args.all:
+    #    args.w, args.p, args.s = True, True, True
+    if args['<command>'] == 'worm':
+        run_function_for_ex_ids(f=process_ex_id, name='worm', ex_ids=args.ex_ids)
+    if args['<command>'] == 'plate':
         run_function_for_ex_ids(f=plate_consolidation, name='plate', ex_ids=args.ex_ids)
     # NOTE: it doesn't make sense to consolidate the dataset at this point yet.
     #if args.s:
@@ -105,5 +142,7 @@ def create_parser(for_qsub=False):
     return parser
 
 if __name__ == '__main__':
-    parser = create_parser()
-    main(args=parser.parse_args())
+    #parser = create_parser()
+    #main(args=parser.parse_args())
+    arguments = docopt(__doc__, version='waldo 0.1')
+    print(arguments)
