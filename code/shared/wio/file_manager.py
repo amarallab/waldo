@@ -58,7 +58,7 @@ WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
 #     data = json.load(open(threshold_file)).get(ex_id, {})
 #     return data
 
-
+'''
 class ColliderNodeNotes(object):
     def __init__(self, ex_id, directory=NODENOTES_DIR):
         f = '{eid}.csv'.format(eid=ex_id)
@@ -98,6 +98,7 @@ class ColliderNodeNotes(object):
         df = self.data[['bid', dtype]]
         bids = [b for (b, v) in df.Values() if v > thresh]
         return set(bids)
+'''
 
 class PrepData(object):
     def __init__(self, ex_id, prepdir=PREP_DIR):
@@ -105,49 +106,54 @@ class PrepData(object):
         self.filedir = os.path.join(prepdir, ex_id)
         self.files = []
         self.data_types = []
+        self.refresh()
 
-        self.find_files()
-
-
-
-    def find_files(self):
+    def refresh(self):
         dir_is_there = os.path.exists(self.filedir)
         print(dir_is_there, 'is there')
         search = os.path.join(self.filedir, '*.csv')
         self.files = [f for f in iglob(search)]
-        for f in self.files:
-            print(f)
+
+        splitter = '{eid}-'.format(eid=self.eid)
+        get_dt = lambda x: str(x).split(splitter)[-1].split('.csv')[0]
+        self.data_types = [get_dt(f) for f in self.files]
 
 
     def load(self, data_type):
+        assert data_type in self.data_types
+        f = self.files[self.data_types.index(data_type)]
+        return pd.read_csv(f)
 
-
-        data = pd.read_csv()
-        self.data = data
-        return data
-
-    def dump(self, dataframe):
-        pass
-
-    def _return_set(self, dtype):
-        if self.data is None:
-            self.load()
-        df = self.data[['bid', dtype]]
-        bids = [b for (b, v) in df.Values() if v]
-        return set(bids)
+    def dump(self, data_type, dataframe):
+        filename = '{eid}-{dt}.csv'.format(eid=self.eid, dt=data_type)
+        print(filename)
+        dataframe.to_csv(os.path.join(self.filedir, filename))
 
     def good(self):
-        return self._return_set('good')
+        """ returns a list containing only good nodes.
+
+        returns
+        -----
+        good_list: (list)
+            a list containing blob_ids
+        """
+        df = self.load('matches')[['bid', 'good']]
+        return [b for (b, v) in df.Values() if v]
+
 
     def bad(self):
-        return self._return_set('bad')
+        """ returns a list containing only bad nodes.
 
-    def moved(self, thresh):
-        if self.data is None:
-            self.load()
-        df = self.data[['bid', dtype]]
-        bids = [b for (b, v) in df.Values() if v > thresh]
-        return set(bids)
+        returns
+        -----
+        bad_list: (list)
+            a list containing blob_ids
+        """
+        df = self.load('matches')[['bid', 'good']]
+        return [b for (b, v) in df.Values() if not v]
+
+    def moved(self, bl_threhold=2):
+        pass
 
 
 class Preprocess_File(object):
@@ -202,7 +208,6 @@ class Preprocess_File(object):
     def threshold(self, ex_id=None):
         data = self.pull_data(ex_id)
         return data['threshold']
-
 
 def silent_remove(filename):
     try:
