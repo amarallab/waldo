@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-
 '''
 Filename: file_manager.py
 
 Description: holds many low-level scripts for finding, sorting, and saving files
 in a rigid directory structure.
 '''
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
+import six
+from six.moves import (zip, filter, map, reduce, input, range)
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -17,17 +20,9 @@ import sys
 import json
 from glob import iglob
 import datetime
-import pandas as pd
-from itertools import izip
-import numpy as np
 
-# path definitions
-HERE = os.path.dirname(os.path.realpath(__file__))
-CODE_DIR = os.path.abspath(HERE + '/../../')
-PROJECT_HOME = os.path.abspath(CODE_DIR + '/../')
-SHARED_DIR = CODE_DIR + '/shared'
-sys.path.append(CODE_DIR)
-sys.path.append(SHARED_DIR)
+import pandas as pd
+import numpy as np
 
 # nonstandard imports
 from settings.local import LOGISTICS
@@ -38,19 +33,126 @@ RESULT_DIR = os.path.abspath(LOGISTICS['results'])
 EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
 WORM_DIR = os.path.abspath(LOGISTICS['worms'])
 PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
+PREP_DIR = os.path.abspath(LOGISTICS['prep'])
 DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
-
+NODENOTES_DIR = os.path.abspath(LOGISTICS['nodenotes'])
+ANNOTATION_DIR = os.path.join(PREP_DIR, 'annotation')
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
     TIME_SERIES_FILE_TYPE = 'h5'
     # dont import if hdf5 not chosen. h5py may not be installed.
-    from h5_interface import write_h5_timeseries_base
-    from h5_interface import read_h5_timeseries_base
+    from .h5_interface import write_h5_timeseries_base
+    from .h5_interface import read_h5_timeseries_base
 
 DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
+
+# def preprocessing_data(ex_id):
+#     ''' returns a dict of preprocess data for an ex_id,
+#     or an empty dict if nothing was found. '''
+#     dset = get_dset(ex_id)
+#     filename = 'threshold-{ds}.json'.format(ds=dset)
+#     threshold_file = os.path.join(PREP_DIR, filename)
+#     data = json.load(open(threshold_file)).get(ex_id, {})
+#     return data
+
+
+class ColliderNodeNotes(object):
+    def __init__(self, ex_id, directory=NODENOTES_DIR):
+        f = '{eid}.csv'.format(eid=ex_id)
+        self.eid =ex_id
+        self.filedir = directory
+        self.filename = os.join(directory, f)
+        self.data = None
+
+    def load(self):
+        filename = self.filename
+        err = '{eid} does not have file at: {p}'.format(eid=self.eid,
+                                                        p=filename)
+        assert os.path.isfile(filename), err
+        data = pd.read_csv()
+        self.data = data
+        return data
+
+    def dump(self, dataframe):
+        pass
+
+    def _return_set(self, dtype):
+        if self.data is None:
+            self.load()
+        df = self.data[['bid', dtype]]
+        bids = [b for (b, v) in df.Values() if v]
+        return set(bids)
+
+    def good(self):
+        return self._return_set('good')
+
+    def bad(self):
+        return self._return_set('bad')
+
+    def moved(self, thresh):
+        if self.data is None:
+            self.load()
+        df = self.data[['bid', dtype]]
+        bids = [b for (b, v) in df.Values() if v > thresh]
+        return set(bids)
+
+class Preprocess_File(object):
+    """
+    a class for interacting with preprocessing data
+    for an recording (ie. experiment id or ex_id)
+    or for a dataset (ie. dataset name or dset)
+
+    this gives access to region of interest data
+    (x, y, and radius) and threshold data
+    """
+    def __init__(self, dset=None, ex_id=None):
+        """ specifiy either the experiment or the dataset. """
+        # consistancy checks.
+        assert dset or ex_id, 'user must specify dset or ex_id'
+        if dset and ex_id:
+            err = 'dset does not match recorded dset for ex_id'
+            assert dset == get_dset(ex_id), err
+        if not dset:
+            dset = get_dset(ex_id)
+
+        self.path = ANNOTATION_DIR
+        self.dset = dset
+        self.ex_id = ex_id
+        self.data = None
+
+        #print(self.path)
+        #print(self.dset)
+
+        self.file = os.path.join(self.path,
+                                 'threshold-{d}.json'.format(d=dset))
+
+    def dump(self, data, ex_id=None):
+        return json.dump(open(self.file, 'r'), data)
+
+    def load(self):
+        self.data = json.load(open(self.file, 'r'))
+        return self.data
+
+    def pull_data(self, ex_id):
+        if not ex_id:
+            ex_id = self.ex_id
+        if not self.data:
+            self.load()
+        data = self.data[ex_id]
+        return data
+
+    def roi(self, ex_id=None):
+        data = self.pull_data(ex_id)
+        return {'x':data['x'], 'y':data['y'],
+                'r':data['r']}
+
+    def threshold(self, ex_id=None):
+        data = self.pull_data(ex_id)
+        return data['threshold']
+
 
 def silent_remove(filename):
     try:
@@ -71,7 +173,7 @@ def ensure_dir_exists(path):
             savedir += '/{d}'.format(d=d)
             if not os.path.isdir(savedir):
                 os.mkdir(savedir)
-                print 'created:{d}'.format(d=savedir)
+                print('created:{d}'.format(d=savedir))
     return savedir
 
 class DataFile(object):
@@ -144,6 +246,7 @@ def get_good_blobs(ex_id, key='spine', worm_dir=WORM_DIR):
         blobs.append(blob_id)
     return blobs
 
+
 def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
                             date_stamp=None,
@@ -166,11 +269,11 @@ def format_results_filename(ID, result_type, tag=None,
         ID_type = 'worm'
     else:
         ID_type = 'unknown'
-        print 'warning: ID_type is unknown'
+        print('warning: ID_type is unknown')
 
     if dset == None:
         dset = 'unknown'
-        print 'warning: data set is unknown'
+        print('warning: data set is unknown')
 
     if tag == None:
         tag = ''
@@ -224,7 +327,7 @@ def get_timeseries(ID, data_type, worm_dir=WORM_DIR):
             times, data = read_h5_timeseries_base(filename)
         # print warning if file is empty
         if len(times)==0 and len(data)==0:
-            print 'No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID)
+            print('No Time or Data Found! {dt} for {ID} not found'.format(dt=data_type, ID=ID))
         return times, data
     return None, None
 
@@ -241,6 +344,123 @@ def write_timeseries_file(ID, data_type, times, data, worm_dir=WORM_DIR):
     if file_type == 'h5':
         write_h5_timeseries_base(filename, times, data)
     return True
+
+
+'''
+class BaseTable(object):
+
+    def __init__(self):
+        self.dtype = ''
+        self.ex_id = ''
+        self.dset = ''
+        self.basedir = ''
+        self.ID_type = ''
+        self.subdir = ''
+        self.filedir = ''
+        self.filename = ''
+        self.filetype = ''
+
+    def format_directory(self):
+        base = self.basedir
+        dset = self.dset
+        if self.subdir:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}/{sd}'.format(base=base,
+                                                   dset=dset,
+                                                   sd=sd)
+        else:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}'.format(base=base, dset=dset)
+        return filedir
+
+    def format_filename(self, ID):
+        #errmsg = 'id must be string, not {i}'.format(i=ID)
+        #assert isinstance(self.dset, basestring), errmsg
+        path = self.filedir
+        dt = self.dtype
+        ft = self.filetype
+        return '{path}/{ID}-{dt}.{ft}'.format(path=path, ID=ID,
+                                              dt=dt, ft=ft)
+
+    def dump(self, dataframe):
+        ensure_dir_exists(self.file_dir)
+        dataframe.to_hdf(self.filename, 'table', complib='zlib')
+
+    def load(self):
+        return pd.read_hdf(self.filename, 'table')
+
+
+class DatasetTable(BaseTable):
+
+    def __init__(self, dset, data_type, subdir=None):
+        self.dtype = data_type
+        self.ex_id = ''
+        self.dset = dset
+        self.basedir = DSET_DIR
+        self.ID_type = 'dset'
+        self.subdir = subdir
+        self.filedir = self.format_directory()
+        self.filename = self.format_filename(ID=dset)
+        self.filetype = 'h5'
+
+
+class PlateTable(BaseTable):
+
+    def __init__(self, ex_id, data_type, subdir=None):
+        self.dtype = data_type
+        self.ex_id = ex_id
+        self.dset = get_dset(ex_id)
+        self.basedir = PLATE_DIR
+        self.ID_type = 'plate'
+        self.subdir = subdir
+        self.filedir = self.format_directory()
+        self.filename = self.format_filename(ID=ex_id)
+        self.filetype = 'h5'
+
+
+class BaseBlobDataFile(object):
+
+    def __init__(self, bid, data_type):
+        self.dtype = ''
+        self.ex_id = ''
+        self.dset = ''
+        self.basedir = ''
+        self.ID_type = ''
+        self.subdir = ''
+        self.filedir = ''
+        self.filename = ''
+        self.filetype = ''
+
+    def format_directory(self):
+        base = self.basedir
+        dset = self.dset
+        if self.subdir:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}/{sd}'.format(base=base,
+                                                   dset=dset,
+                                                   sd=sd)
+        else:
+            sd = self.subdir.rstrip('/')
+            filedir =  '{base}/{dset}'.format(base=base, dset=dset)
+        return filedir
+
+    def format_filename(self, ID):
+        #errmsg = 'id must be string, not {i}'.format(i=ID)
+        #assert isinstance(self.dset, basestring), errmsg
+        path = self.filedir
+        dt = self.dtype
+        ft = self.filetype
+        return '{path}/{ID}-{dt}.{ft}'.format(path=path, ID=ID,
+                                              dt=dt, ft=ft)
+
+    def dump(self, dataframe):
+        ensure_dir_exists(self.file_dir)
+        dataframe.to_hdf(self.filename, 'table', complib='zlib')
+
+    def load(self):
+        return pd.read_hdf(self.filename, 'table')
+'''
+
 
 # TODO clean up read/write table
 def write_table(ID, data_type, dataframe,
@@ -278,35 +498,6 @@ def read_table(ID, data_type, ID_type='w', file_type='h5',
                                file_dir=file_dir)
     return pd.read_hdf(filename, 'table')
 
-"""
-    Parameters
-    ----------
-    ID : str
-      A blob ID, an experiment ID or a dataset name.
-        * Blob ID (ID_type: ``worm``, ``w``) is the extended experiment
-            timestamp + 5 digit 0-padded internal blob ID,
-        * experiment ID (ID_type: ``plate``, ``p``) is the timestamp, and the
-        * dataset (ID_type: ``dataset``, ``dset``, ``s``) name refers to a
-            collection of experiments annotated together
-    data_type : str
-      Data field
-        * `xy_raw': Unprocessed data from the MWT text files.  Anisochronous
-        * `xy': Smoothed and interpolated centroid position to be isochronous
-        * `cent_speed': Point-by-point derivative of 'xy'
-        * `cent_speed_bl': Above, scaled by body length
-        * `encoded_outline`: Start X, start y, contour length, encoded outline
-        * `spine`: 50 points fit to the centerline, smoothed and with suspicious data removed
-        * `spine_rough`: Raw spine after thinning
-
-    Keyword Arguments
-    -----------------
-    ID_type : str
-      **see ID**
-    file_type : str
-      ``h5`` or ``json``, depending on the source type to read
-    ...
-
-"""
 
 def write_metadata_file(ID, data_type, data, worm_dir=WORM_DIR):
     filename = format_worm_filename(ID, data_type, file_type='json', worm_dir=worm_dir, ensure=True)
@@ -335,12 +526,12 @@ def remove_plate_files(ex_id, file_tags):
     dataset = get_dset(ex_id)
 
     for tag in file_tags:
-        print tag
+        print(tag)
         search_dir = os.path.abspath(format_directory(ID=ex_id, ID_type='plate',
                                                      dataset=dataset, tag=tag))
         search = '{d}/{eID}*'.format(d=search_dir, eID=ex_id)
         for rfile in iglob(search):
-            print 'removing:', rfile
+            print('removing:', rfile)
             os.remove(rfile)
 
 
@@ -369,7 +560,7 @@ def write_dset_summary(data, data_type, dataset, sum_type, ID=None, dset_dir=Non
                                dset=dataset,
                                file_dir=dset_dir,
                                file_type='json')
-    print filename
+    print(filename)
     json.dump(data, open(filename, 'w'))
 
 
@@ -389,7 +580,7 @@ def get_annotations(dataset, data_type, label='all'):
     #print len(dfiles)
     ids, days, files = [], [], []
     labels = []
-    for eID, dfile in izip(ex_ids, dfiles):
+    for eID, dfile in zip(ex_ids, dfiles):
         #print eID, label
         hours, elabel, sub_label, pID, day = organize_plate_metadata(eID)
         if elabel not in labels:
