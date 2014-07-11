@@ -15,7 +15,7 @@ from scipy import ndimage
 from skimage import morphology
 from skimage.measure import regionprops
 
-# Path definitions
+# # Path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
 SHARED_DIR = os.path.abspath(os.path.join(HERE, '..'))
 PROJECT_DIR = os.path.abspath(os.path.join(SHARED_DIR, '..'))
@@ -33,32 +33,10 @@ from wio.file_manager import ensure_dir_exists
 
 MWT_DIR = LOGISTICS['filesystem_data']
 DATA_DIR = LOGISTICS['filesystem_data']
-PRETREATMENT_DIR = os.path.abspath(LOGISTICS['pretreatment'])
-ensure_dir_exists(PRETREATMENT_DIR)
-#
-# def show_threshold_spread(img, background, thresholds=[0.00004, 0.0001, 0.00015, 0.0002]):
-#     """
-#     plots an image four times with the outlines of objects calculated at four different thresholds
-#     overlaid on them.
-#
-#     params
-#     --------
-#     img: (image ie. numpy array)
-#         each pixel denotes greyscale pixel intensities.
-#     background: (image ie. numpy array)
-#         the background image with maximum pixel intensities (made with create_background)
-#     thresholds: (list of floats, len=4)
-#         the threshold values plotted.
-#     """
-#     fig, ax = plt.subplots(2, 2, sharex=True, sharey=True)
-#     for i, t in enumerate(thresholds):
-#         row = int(i / 2)
-#         col = int(i % 2)
-#         mask = create_binary_mask(img, background, threshold=t)
-#         ax[row, col].imshow(img, cmap=plt.cm.gray, interpolation='nearest')
-#         ax[row, col].contour(mask, [0.5], linewidths=1.2, colors='b')
-#         ax[row, col].set_title('threshold = {t}'.format(t=t))
-#         ax[row, col].axis('off')
+PREP_DIR = os.path.abspath(LOGISTICS['prep'])
+CACHE_DIR = os.path.join(PREP_DIR, 'cache')
+ANNOTATION_DIR = os.path.join(PREP_DIR, 'annotation')
+ensure_dir_exists(PREP_DIR)
 
 
 def perp(v):
@@ -112,11 +90,14 @@ INCR_Y = 1
 INCR_RADIUS = 1
 
 class InteractivePlot:
-    def __init__(self, ids, annotation_filename, initial_threshold=0.0005):
+    def __init__(self, ids, annotation_filename, cache_dir=CACHE_DIR,
+                 initial_threshold=0.0005):
         self.ids = ids
         self.current_index = 0
         self.current_id = None
         self.annotation_filename = annotation_filename
+        self.cache_dir = cache_dir
+        print('cache:', cache_dir)
         self.current_threshold = initial_threshold
         self.thresholds = []
 
@@ -184,8 +165,8 @@ class InteractivePlot:
         if self.current_id in self.data:
             d = self.data[self.current_id]
             self.current_threshold = d['threshold']
-            self.circle_pos = (d['center_x'], d['center_y'])
-            self.circle_radius = d['radius']
+            self.circle_pos = (d['y'], d['x']) #note xy are purposely switched
+            self.circle_radius = d['r']
         else:
             self.circle_pos = (0, 0)
             self.circle_radius = max(self.background.shape)/2
@@ -202,6 +183,7 @@ class InteractivePlot:
         thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
         self.show_threshold_properties(thresholds)
         #NO UNCOMMENT show_threshold_spread(mid, background)
+
         self.show_threshold()
 
     def load_data(self):
@@ -213,12 +195,14 @@ class InteractivePlot:
             print "E: %s (%s)" % (os.strerror(ex.errno), self.annotation_filename)
 
     def save_data(self):
+        # note: the image is usually transposed. we didn't here,
+        # so x and y are flipped during saving process.
         self.data[self.current_id] = {'threshold': self.current_threshold,
-                                      'center_x': self.circle_pos[0],
-                                      'center_y': self.circle_pos[1],
-                                      'radius': self.circle_radius}
+                                      'x': self.circle_pos[1],
+                                      'y': self.circle_pos[0],
+                                      'r': self.circle_radius}
         with open(self.annotation_filename, "wt") as f:
-            f.write(json.dumps(self.data))
+            f.write(json.dumps(self.data, indent=4))
 
     @staticmethod
     def create_background(impaths):
@@ -281,9 +265,27 @@ class InteractivePlot:
         thresholds: (list of floats)
             a list of threshold values to calculate. should be sorted from least to greatest.
         """
+        cache_thresholds = {}
+        filename = os.path.join(self.cache_dir,
+                                "cache-{cid}.json".format(cid=self.current_id))
+        try:
+            with open(filename, "r") as f:
+                x = json.load(f)
+            for k, v in x.iteritems():
+                cache_thresholds[float(k)] = v
+        except:
+            print "NO cache threshold for %s" % self.current_id
+
         self.thresholds = []
         for i, t in enumerate(thresholds):
-            valid, N, m, s = self.data_from_threshold(t)
+            if t in cache_thresholds:
+                x = cache_thresholds[t]
+                valid = x['valid']
+                N = x['N']
+                m = x['m']
+                s = x['s']
+            else:
+                valid, N, m, s = self.data_from_threshold(t)
             if valid:
                self.thresholds.append((t, N, m, s))
 
@@ -440,16 +442,28 @@ class InteractivePlot:
     def run_plot(self):
         plt.show()
 
+    def precalculate_threshold_data(self):
+        thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
+        for id in self.ids:
+            self.current_id = id
+            result = {}
+            for t in thresholds:
+                valid, N, m, s = self.data_from_threshold(t)
+                result[t] = {"valid": valid, "N": N, "m": m, "s": s}
+            filename = os.path.join(self.cache_dir, "cache-%s.json" % id)
+            with open(filename, "w") as f:
+                json.dump(result, f)
 
 if __name__ == '__main__':
     try:
-        os.makedirs(PRETREATMENT_DIR)
+        os.makedirs(ANNOTATION_DIR)
     except:
         pass
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
-    picker_data_file = os.path.join(PRETREATMENT_DIR, "threshold_picker_data.json")
+    picker_data_file = os.path.join(ANNOTATION_DIR_DIR, "threshold_picker_data.json")
     ip = InteractivePlot(dirs, picker_data_file, 0.0005)
     ip.run_plot()
+    #ip.precalculate_threshold_data()
 
     #ex_id = '20130318_131111'
     #threshold = 0.0001

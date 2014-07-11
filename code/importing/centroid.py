@@ -95,7 +95,9 @@ def process_centroid(blob_id, verbose=True, **kwargs):
                           times=times, data=angle_change)
 
     # write markov measures (ie, reversal, speed, accel, radial accel)
-    markov_measures = markov_measures_for_xy(x, y, dt=0.1)
+    dt = np.diff(np.array(times)).sum() / len(times)
+    dt= round(dt, ndigits=1)
+    markov_measures = markov_measures_for_xy(x, y, dt=dt)
     write_timeseries_file(ID=blob_id, data_type='markov_measures',
                           times=times, data=markov_measures)
 

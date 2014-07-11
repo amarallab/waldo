@@ -33,6 +33,13 @@ def node_generate(nodes, timepoints, graph=None):
 
     return graph
 
+def cumulative_sum(seq, start=0):
+    x = start
+    yield x
+    for element in seq:
+        x += element
+        yield x
+
 
 class GraphCheck(unittest.TestCase):
     def check_graphs_equal(self, Gtest, Gexpect):

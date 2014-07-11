@@ -19,10 +19,10 @@ import os
 import sys
 import math
 
-# path definitions
-# path definitions
-CODE_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-sys.path.append(CODE_DIR)
+# # path definitions
+# # path definitions
+# CODE_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
+# sys.path.append(CODE_DIR)
 
 # nonstandard imports
 from settings.local import LOGISTICS
@@ -70,7 +70,7 @@ def create_image_directory(ex_id, data_dir=DATA_DIR):
                 print 'i', i
                 print 'base', basename
                 print 'time', time
-                continue            
+                continue
             #time = '%.3f' % (int(time) / 1000.0)
             time = '{t}'.format(t=round(int(time) / 1000.0), ndigits=3)
         else:
@@ -110,7 +110,7 @@ def get_closest_image(target_time, image_dict):
 def grab_images_in_time_range(ex_id, start_time, end_time=3600.0):
     time_to_image = create_image_directory(ex_id)
     image_times, image_paths = [], []
-    for im_time, im_path in time_to_image.iteritems():        
+    for im_time, im_path in time_to_image.iteritems():
         if start_time <= float(im_time) <= end_time:
             image_times.append(im_time)
             image_paths.append(im_path)

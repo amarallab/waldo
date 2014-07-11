@@ -16,11 +16,11 @@ import numpy as np
 import glob
 import math
 
-# path definitions
-CODE_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
-SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../'
-sys.path.append(SHARED_DIR)
-sys.path.append(CODE_DIR)
+# # path definitions
+# CODE_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
+# SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../'
+# sys.path.append(SHARED_DIR)
+# sys.path.append(CODE_DIR)
 
 # nonstandard imports
 from encoding.decode_outline import decode_outline
@@ -35,7 +35,7 @@ def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, 
     timekey = ('%.3f' % float(timepoint)).replace('.', '?')
     temp_filename = '{path}{ex_id}/timekey{tk}_blobs.tmp'.format(path=data_dir, ex_id=ex_id, tk=timekey)
     if overwrite_temp or not os.path.exists(temp_filename):
-    
+
         # test query to ensure good behavior
         #eligable_blobs = [(d['blob_id'], d['start_time'], timepoint, d['stop_time'], (d['start_time'] <= float(timepoint) <= d['stop_time']))
         #                  for d in mongo_query({'ex_id':ex_id, 'data_type':'encoded_outline'}, {'data':0})]
@@ -43,7 +43,7 @@ def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, 
                           for d in mongo_query({'ex_id':ex_id, 'data_type':'encoded_outline'}, {'data':0})
                           if (d['start_time'] <= float(timepoint) <= d['stop_time'])]
 
-    
+
         lines = []
         for blob_id in eligable_blobs:
             print blob_id

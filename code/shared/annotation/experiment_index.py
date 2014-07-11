@@ -14,6 +14,10 @@ ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_agi
 ei.return_attribute_for_ex_ids(['20130423_123836', '20130410_143246'], 'pixels-per-mm')
 ei.return_ex_ids_within_dates(start_date='20120300', end_date='20121000')
 '''
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
+import six
+from six.moves import (zip, filter, map, reduce, input, range)
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -70,7 +74,7 @@ class Experiment_Attribute_Index(object):
         for filename in self.files:
             self.add_experiments_from_file(filename)
         if not len(self.files):
-            print 'Warning: no index files found in: {dir}'.format(dir=index_tsv_directory)
+            print('Warning: no index files found in: {dir}'.format(dir=index_tsv_directory))
 
     def add_experiments_from_file(self, filename):
         """ reads all ex_ids (+ metadata) from one tsv file and stores it.
@@ -93,8 +97,8 @@ class Experiment_Attribute_Index(object):
             self.attribute_index[ex_id] = {}
             new_ex_ids.append(ex_id)
             for i in range(len(headers)):
-                header = unicode(headers[i].strip('\n'))
-                value = unicode(cols[i])
+                header = six.text_type(headers[i].strip('\n'))
+                value = six.text_type(cols[i])
                 self.attribute_index[ex_id][header] = value
 
             if 'vid-flags' in self.attribute_index[ex_id]:
@@ -129,7 +133,7 @@ class Experiment_Attribute_Index(object):
         """ returns a list of ex_ids that have a key_attribute which is equal to an
         attribute value.
 
-        :param key_attribute: string with the name of the desired attribute 
+        :param key_attribute: string with the name of the desired attribute
         :param attribute_value: string with the value of the desired attribute
         """
         return [ex_id for ex_id in self.attribute_index
@@ -158,22 +162,22 @@ def list_ex_ids_with_raw_data(inventory_directory):
             ex_ids.append(dirname)
 
     if len(ex_ids) < 5:
-        print 'Warning: not many ex_id directories found'
-        print 'search path for raw data is ({sp})'.format(sp=search_path)
-        print '{N} ex_ids present'.format(N=len(ex_ids))
+        print('Warning: not many ex_id directories found\n'
+              'search path for raw data is ({sp})\n'
+              '{N} ex_ids present'.format(sp=search_path, N=len(ex_ids)))
     return ex_ids
 
 def ex_id_to_datetime(ex_id):
     ''' converts an experiment id to a datetime object '''
     parts = ex_id.split('_')
     if len(parts) != 2:
-        print 'Error: something is off with this ex_id', ex_id
+        print('Error: something is off with this ex_id', ex_id)
         return None
     ymd, hms = parts
     year, month, day = map(int, [ymd[:4], ymd[4:6], ymd[6:]])
     h, m, s = map(int, [hms[:2], hms[2:-2], hms[-2:]])
     return datetime.datetime(year, month, day, h, m, s)
-    
+
 def organize_plate_metadata(ex_id):
     '''
     gets the most relevant features from the experiment index
@@ -202,13 +206,10 @@ def organize_plate_metadata(ex_id):
     #    print i
     return hours, label, sub_label, pID, day
 
-
-
-
 if __name__ == '__main__':
     ei = Experiment_Attribute_Index2()
     # examples of possible usages
-    print len(ei.index), 'total'
+    print(len(ei.index), 'total')
     #print len(ei.unflagged_ex_ids), 'unflagged'
     '''
     print ei.return_ex_ids_with_attribute(key_attribute='purpose', attribute_value='N2_aging')

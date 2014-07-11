@@ -45,7 +45,7 @@ if USE_TAPEWORM:
     # if tapeworm not in use, it may also not be installed.
     from tapeworm import Taper
 
-def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size, 
+def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_size,
                                     max_blob_files=10000, overwrite = True,
                                     data_dir=DATA_DIR, store_tmp=True, **kwargs):
 
@@ -53,16 +53,16 @@ def create_entries_from_blobs_files(ex_id, min_body_lengths, min_duration, min_s
     init_dir = os.path.abspath(format_directory(ID=ex_id,ID_type='worm'))
     print 'overwite previous data is: {o}'.format(o=overwrite)
     if overwrite and os.path.isdir(init_dir):
-        print 'removing: {d}'.format(d=init_dir)                                       
+        print 'removing: {d}'.format(d=init_dir)
         shutil.rmtree(init_dir)
 
     # initialize the directory
     if USE_TAPEWORM:
-        return tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
+        return tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
                                   max_blob_files, overwrite=overwrite,
                                   data_dir=data_dir, store_tmp=True)
     else:
-        return blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
+        return blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
                                     max_blob_files, overwrite=overwrite,
                                     data_dir=data_dir,store_tmp=True)
 
@@ -75,7 +75,7 @@ def midline_lengths(midlines):
     for line in midlines:
         if line == None:
             continue
-        if 2 > len(line) > 4: 
+        if 2 > len(line) > 4:
             continue
         try:
             X, Y = zip(*line)
@@ -85,8 +85,8 @@ def midline_lengths(midlines):
         except Exception as e:
             print e
     return lengths
-        
-def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size, 
+
+def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
                          max_blob_files=10000,
                          data_dir=DATA_DIR, store_tmp=True, overwrite=False, **kwargs):
     ''' creates a list of database documents out of all worthy blobs for a particular recording.
@@ -114,9 +114,9 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
         print 'ex id not found by Experiment_Attribute_Index'
         exit()
 
-    
+
     plate = Taper(directory=path, min_move=min_body_lengths,
-               min_time=min_duration, verbosity=1)    
+               min_time=min_duration, verbosity=1)
     plate.load_data()
 
 
@@ -124,7 +124,7 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
 
     for local_id, blob in plate.segments():
 
-        # go through blobs and convert them into        
+        # go through blobs and convert them into
         unique_blob_id = '{eID}_{local}'.format(eID=ex_id, local=local_id)
         blob_ids.append(unique_blob_id)
 
@@ -141,7 +141,7 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
                               'description': 'metadata for blob without any additional data',
                               # get all blob components
                               'local_segments': blob.get('segments', [local_id]),
-                              #TODO: add calculated attributes 
+                              #TODO: add calculated attributes
                               'start_time': float(blob['time'][0]),
                               'stop_time': float(blob['time'][-1]),
                               'duration': float(blob['time'][-1]) - float(blob['time'][0]),
@@ -165,12 +165,12 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
 
             # write encoded outlines
             x, y = zip(*blob['contour_start'])
-            x, y, l, o = [map_string(i) for i in (x, y, blob['contour_encode_len'], blob['contour_encoded'])]            
+            x, y, l, o = [map_string(i) for i in (x, y, blob['contour_encode_len'], blob['contour_encoded'])]
             outlines = zip(x, y, l, o)
             write_timeseries_file(ID=unique_blob_id, data_type='encoded_outline',
                                   times=blob['time'], data=outlines)
 
-            
+
             # TODO: add aspect ratio
             # write aspect ratio
             #write_timeseries_file(ID=unique_blob_id, data_type='aspect_ratio',
@@ -179,7 +179,7 @@ def tape_worm_creation(ex_id, min_body_lengths, min_duration, min_size,
     return blob_ids
 
 
-def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size, 
+def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
                          max_blob_files=10000,
                          data_dir=DATA_DIR, store_tmp=True, overwrite=False, **kwargs):
     ''' creates a list of database documents out of all worthy blobs for a particular recording.
@@ -200,31 +200,31 @@ def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
     assert os.path.isdir(path), 'Error. path not found: {path}'.format(path=path)
 
 
-    blob_files = sorted(iglob(path+'/*.blobs'))    
+    blob_files = sorted(iglob(path+'/*.blobs'))
     assert len(blob_files) < max_blob_files, 'too many blob files. this video will take forever to analyze.'+str(len(blob_files))
-    
+
     BR = Blob_Reader(path=path, min_body_lengths=min_body_lengths,
-                     min_duration=min_duration, min_size=min_size)    
-    
+                     min_duration=min_duration, min_size=min_size)
+
     raw_blobs = BR.pull_worthy_blobs()
     print len(raw_blobs), 'blobs found worthy'
-    
-    metadata_docs = create_metadata_docs(ex_id=ex_id, raw_blobs=raw_blobs)    
 
-    
+    metadata_docs = create_metadata_docs(ex_id=ex_id, raw_blobs=raw_blobs)
+
+
 
     if store_tmp:
         for local_id, blob in raw_blobs.iteritems():
             metadata = metadata_docs[local_id]
             blob_id = metadata['blob_id']
-            #print blob_id            
+            #print blob_id
             write_metadata_file(data=metadata, ID=blob_id, data_type='metadata')
             write_timeseries_file(ID=blob_id, data_type='xy_raw',
                                   times=blob['time'], data=blob['xy'])
 
             #print len(blob['outline'])
-            #outlines = np.zeros(shape=(len(blob['outline']), 4), dtype=str)            
-            #for i, o in enumerate(blob['outline']):                
+            #outlines = np.zeros(shape=(len(blob['outline']), 4), dtype=str)
+            #for i, o in enumerate(blob['outline']):
             #    #print i, o
             #    if len(o) == 4:
             #        outlines[i] = np.array(o, dtype=str)
@@ -243,7 +243,7 @@ def blob_reader_creation(ex_id, min_body_lengths, min_duration, min_size,
 def reformat_outline(outlines):
     # turns outlines in point format with variable length
     # into two matricies, one with x values, one with y values
-    # 
+    #
     xs, ys, N = [], [], []
     for o in outlines:
         x, y = zip(*o)
@@ -252,12 +252,12 @@ def reformat_outline(outlines):
         N.append(len(x))
 
     N_max = max(N)
-    
+
     ox = np.zeros(shape=[len(N), N_max])
-    oy = np.zeros(shape=[len(N), N_max])    
-    for i, (x, y) in enumerate(izip(xs, ys)):        
+    oy = np.zeros(shape=[len(N), N_max])
+    for i, (x, y) in enumerate(izip(xs, ys)):
         ox[i][:len(x)] = np.array(x)
-        oy[i][:len(x)] = np.array(y)        
+        oy[i][:len(x)] = np.array(y)
     return ox, oy
 
 def create_metadata_docs(ex_id, raw_blobs):
@@ -269,10 +269,10 @@ def create_metadata_docs(ex_id, raw_blobs):
         print 'ex id not found by Experiment_Attribute_Index'
         exit()
 
-    metadata_docs = {}    
+    metadata_docs = {}
     # go through blobs and convert them into
     for local_id in raw_blobs:
-        blob = raw_blobs[local_id]        
+        blob = raw_blobs[local_id]
         unique_blob_id = ex_id + '_' + local_id
 
         # create full metadata entry for this blob to later use in the creation of data entries

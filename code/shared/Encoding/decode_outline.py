@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-
 '''
 Filename: decode_outline.py
 Discription: contains functions involved with encoding and decoding xy coordinates between
-point format (ie. tuples of (x, y) ) and an 'encoded' format that compresses 
+point format (ie. tuples of (x, y) ) and an 'encoded' format that compresses
 points into a series of askey characters.
 '''
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -42,7 +43,7 @@ def points_to_dir(pt1, pt2):
     assert type(dir_y) == int
     assert dir_x in [-1, 0, 1]
     assert dir_y in [-1, 0, 1]
-        
+
     assert dir_x == 0 or dir_y == 0
     assert dir_x != 0 or dir_y != 0
 
@@ -89,8 +90,8 @@ def encode_outline_peter(points):
 def decode_outline_peter(outline_parts):
     # broken input if there are not three outline parts, return empty string
     if len(outline_parts) != 4:
-        return []    
-    start_x, start_y, length, outline = outline_parts    
+        return []
+    start_x, start_y, length, outline = outline_parts
     # check if outline parts is empty
     if start_x == '' or start_y =='':
         return []
@@ -107,7 +108,7 @@ def decode_outline_peter(outline_parts):
         assert steps >= 0, 'error:(%s) is not in encoding range' % o
         # convert intager into a binary string
         bit = str(bin1(steps))
-        # remove the first two characters which 
+        # remove the first two characters which
         bit = bit[2:]
         # if the binary string is less than 6 digits long,
         # add zeros to the front to make it 6 digits.
@@ -115,7 +116,7 @@ def decode_outline_peter(outline_parts):
         for i in xrange(desired_length):
             if len(bit) < desired_length:
                 bit = '0' + bit
-        #print o, ord(o)-ARBIRARY_CONVERSION_FACTOR, bit, len(bit)
+        #print(o, ord(o)-ARBIRARY_CONVERSION_FACTOR, bit, len(bit))
         def increment_loc(x, y, b):
             ''' need to use this to increment my xy coords... '''
             format_error = 'Error: boolean format is wrong:%s' % b
@@ -132,7 +133,7 @@ def decode_outline_peter(outline_parts):
             elif b == '11':
                 y += 1
             else:
-                print unkown_error
+                print(unkown_error)
             return x, y
 
         # there are three steps encoded in one character,
@@ -154,7 +155,7 @@ def decode_outline_peter(outline_parts):
     fl_distance = math.sqrt((f[0] - l[0]) ** 2 + (f[1] - l[1]) ** 2)
     fl_error = 'first and last points not close enough to complete outline:%s' % firstlast
     len_error = 'lengths dont aggree num pts = %i, len = %i' % (len(pts), length)
-    #print 'distance from first to last = %f' %fl_distance
+    #print('distance from first to last = %f' %fl_distance)
     #assert fl_distance <= 1.5, fl_error
     #assert abs(len(pts) - length) <= 1, len_error
     return pts
@@ -163,7 +164,7 @@ def decode_outline_peter(outline_parts):
 def decode_outline_old(outline_parts):
     # broken input if there are not three outline parts, return empty string
     if len(outline_parts) != 3:
-        return []    
+        return []
     start_xy, length, outline = outline_parts
     x, y = int(start_xy[0]), int(start_xy[1])
     length = int(length)
@@ -177,7 +178,7 @@ def decode_outline_old(outline_parts):
         assert steps >= 0, 'error:(%s) is not in encoding range' % o
         # convert intager into a binary string
         bit = str(bin1(steps))
-        # remove the first two characters which 
+        # remove the first two characters which
         bit = bit[2:]
         # if the binary string is less than 6 digits long,
         # add zeros to the front to make it 6 digits.
@@ -185,7 +186,7 @@ def decode_outline_old(outline_parts):
         for i in xrange(desired_length):
             if len(bit) < desired_length:
                 bit = '0' + bit
-        #print o, ord(o)-ARBIRARY_CONVERSION_FACTOR, bit, len(bit)
+        #print(o, ord(o)-ARBIRARY_CONVERSION_FACTOR, bit, len(bit))
         def increment_loc(x, y, b):
             ''' need to use this to increment my xy coords... '''
             format_error = 'Error: boolean format is wrong:%s' % b
@@ -202,7 +203,7 @@ def decode_outline_old(outline_parts):
             elif b == '11':
                 y += 1
             else:
-                print unkown_error
+                print(unkown_error)
             return x, y
 
         # there are three steps encoded in one character,
@@ -224,7 +225,7 @@ def decode_outline_old(outline_parts):
     fl_distance = math.sqrt((f[0] - l[0]) ** 2 + (f[1] - l[1]) ** 2)
     fl_error = 'first and last points not close enough to complete outline:%s' % firstlast
     len_error = 'lengths dont aggree num pts = %i, len = %i' % (len(pts), length)
-    #print 'distance from first to last = %f' %fl_distance
+    #print('distance from first to last = %f' %fl_distance)
     #assert fl_distance <= 1.5, fl_error
     #assert abs(len(pts) - length) <= 1, len_error
     return pts
@@ -250,7 +251,7 @@ def encode_outline(points):
         elif dx == 0 and dy == 1:
             next_value = 3
         else:
-            print "E: dx=%d dy=%d" % (dx, dy)
+            print("E: dx=%d dy=%d" % (dx, dy))
             return (0, 0, 0, [])
         value |= next_value << (2 - cur_steps) * 2
         cur_steps += 1
@@ -369,11 +370,11 @@ def test_encode_decode():
     x, y = make_square()
     points = zip(x, y)
     (start_x, start_y, length, encoded_outline) = encode_outline(points)
-    print 'outline encoded', (start_x, start_y, length, encoded_outline)
+    print('outline encoded', (start_x, start_y, length, encoded_outline))
     points2 = decode_outline((start_x, start_y, length, encoded_outline))
     for i, (pt1, pt2) in enumerate(zip(points, points2)):
         assert pt1 == pt2, 'point %i was mismatched' %i
-        print i, pt1, pt2
+        print(i, pt1, pt2)
 
 if __name__ == "__main__":
     test_encode_decode()

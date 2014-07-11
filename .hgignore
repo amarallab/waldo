@@ -5,6 +5,7 @@ syntax: glob
 *.pyc
 __pycache__/
 venv*/
+.python-version
 
 # emacs cruft
 *~
@@ -23,6 +24,7 @@ venv*/
 
 # Hg cruft
 *.orig
+*.rej
 
 # binaries
 build/
@@ -39,6 +41,7 @@ build/
 *.tsv
 *.tmp
 *.gv
+*.pkl
 
 # Directory
 ./data/*
