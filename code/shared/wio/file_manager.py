@@ -99,17 +99,67 @@ class ColliderNodeNotes(object):
         bids = [b for (b, v) in df.Values() if v > thresh]
         return set(bids)
 
-class Preprocess_File(object):
-    """
-    a class for interacting with preprocessing data
-    for an recording (ie. experiment id or ex_id)
-    or for a dataset (ie. dataset name or dset)
+class PrepData(object):
+    def __init__(self, ex_id, prepdir=PREP_DIR):
+        self.eid =ex_id
+        self.filedir = os.path.join(prepdir, ex_id)
+        self.files = []
+        self.data_types = []
 
-    this gives access to region of interest data
-    (x, y, and radius) and threshold data
-    """
+        self.find_files()
+
+
+
+    def find_files(self):
+        dir_is_there = os.path.exists(self.filedir)
+        print(dir_is_there, 'is there')
+        search = os.path.join(self.filedir, '*.csv')
+        self.files = [f for f in iglob(search)]
+        for f in self.files:
+            print(f)
+
+
+    def load(self, data_type):
+
+
+        data = pd.read_csv()
+        self.data = data
+        return data
+
+    def dump(self, dataframe):
+        pass
+
+    def _return_set(self, dtype):
+        if self.data is None:
+            self.load()
+        df = self.data[['bid', dtype]]
+        bids = [b for (b, v) in df.Values() if v]
+        return set(bids)
+
+    def good(self):
+        return self._return_set('good')
+
+    def bad(self):
+        return self._return_set('bad')
+
+    def moved(self, thresh):
+        if self.data is None:
+            self.load()
+        df = self.data[['bid', dtype]]
+        bids = [b for (b, v) in df.Values() if v > thresh]
+        return set(bids)
+
+
+class Preprocess_File(object):
+    # a class for interacting with preprocessing data
+    # for an recording (ie. experiment id or ex_id)
+    # or for a dataset (ie. dataset name or dset)
+
+    # this gives access to region of interest data
+    # (x, y, and radius) and threshold data
+
     def __init__(self, dset=None, ex_id=None):
-        """ specifiy either the experiment or the dataset. """
+        # specifiy either the experiment or the dataset.
         # consistancy checks.
         assert dset or ex_id, 'user must specify dset or ex_id'
         if dset and ex_id:
@@ -245,7 +295,6 @@ def get_good_blobs(ex_id, key='spine', worm_dir=WORM_DIR):
         blob_id = sf.split('/')[-1].split('-{key}'.format(key=key))[0]
         blobs.append(blob_id)
     return blobs
-
 
 def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
