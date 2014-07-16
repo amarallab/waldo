@@ -20,6 +20,7 @@ import sys
 import json
 from glob import iglob
 import datetime
+import errno
 
 import pandas as pd
 import numpy as np
@@ -36,7 +37,7 @@ PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
 PREP_DIR = os.path.abspath(LOGISTICS['prep'])
 DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
 NODENOTES_DIR = os.path.abspath(LOGISTICS['nodenotes'])
-ANNOTATION_DIR = os.path.join(PREP_DIR, 'annotation')
+ANNOTATION_DIR = os.path.join(PREP_DIR, '..', 'annotation', 'pretreatment')
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
@@ -167,10 +168,11 @@ class Preprocess_File(object):
     def __init__(self, dset=None, ex_id=None):
         # specifiy either the experiment or the dataset.
         # consistancy checks.
-        assert dset or ex_id, 'user must specify dset or ex_id'
-        if dset and ex_id:
-            err = 'dset does not match recorded dset for ex_id'
-            assert dset == get_dset(ex_id), err
+        if not (dset or ex_id):
+            raise ValueError('user must specify dset or ex_id')
+        if dset and ex_id and dset != get_dset(ex_id):
+            raise ValueError('dset does not match recorded dset for ex_id')
+
         if not dset:
             dset = get_dset(ex_id)
 
@@ -220,16 +222,15 @@ def df_equal( df1, df2 ):
     return df1.fillna(1).sort(axis=1).eq(df2.fillna(1).sort(axis=1)).all().all()
 
 def ensure_dir_exists(path):
-    ''' recursivly creates path in filesystem, if it does not exist '''
-    path = os.path.abspath(path)
-    savedir = ''
-    for i, d in enumerate(path.split('/')):
-        if d:
-            savedir += '/{d}'.format(d=d)
-            if not os.path.isdir(savedir):
-                os.mkdir(savedir)
-                print('created:{d}'.format(d=savedir))
-    return savedir
+    """Recursivly creates path in filesystem, if it does not exist"""
+    # http://stackoverflow.com/a/600612/194586
+    try:
+        os.makedirs(path)
+    except OSError as e: # Python >2.5
+        if e.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+
 
 class DataFile(object):
     #
