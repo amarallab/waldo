@@ -9,5 +9,6 @@ from .intrinsic.assimilator import *
 from .extrinsic.roi import *
 from .extrinsic.collision_overlap import *
 from .extrinsic.node_validation import *
+from .extrinsic.suspected_collisions import suspected_collisions
 
 from .util import *

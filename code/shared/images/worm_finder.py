@@ -35,15 +35,14 @@ from .manipulations import coordiate_match_offset_arrays, do_boxes_overlap, fill
 from .grab_images import grab_images_in_time_range
 from wio.file_manager import get_good_blobs, get_timeseries, ensure_dir_exists, Preprocess_File
 
-from annotation.image_validation import Validator
 import multiworm
 from multiworm.readers import blob as blob_reader
+import wio.file_manager as fm
 from settings.local import LOGISTICS
+
 
 MWT_DIR = os.path.abspath(LOGISTICS['filesystem_data'])
 
-MATCH_DIR = os.path.abspath(LOGISTICS['matches'])
-ACCURACY_DIR = os.path.abspath(LOGISTICS['accuracy'])
 
 # Derived from http://stackoverflow.com/a/2566508/194586
 # However, I claim these as below the threshold of originality
@@ -432,18 +431,12 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     bid_matching = pd.concat(full_experiment_check)
     base_accuracy = pd.DataFrame(accuracy)
 
-    # save matches.
-    ensure_dir_exists(MATCH_DIR)
-    s1 = os.path.join(MATCH_DIR, '{eid}.csv'.format(eid=ex_id))
-    print(s1)
-    bid_matching.to_csv(s1, index=False)
-
-    # save accuracy
-    ensure_dir_exists(ACCURACY_DIR)
-    s2 = os.path.join(accuracy, '{eid}.csv'.format(eid=ex_id))
-    print(s2)
-    base_accuracy.to_csv(s2, index=False)
-    return bid_matching, base_accuracy
+    # save datafiles
+    prep_data = fm.PrepData(ex_id)
+    prep_data.dump(data_type='matches', dataframe=bid_matching,
+                   index=False)
+    prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
+                   index=False)
 
 def main(ex_id=None):
     if ex_id is None:

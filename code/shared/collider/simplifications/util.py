@@ -126,15 +126,12 @@ def flat_node_list(graph):
     """
     node_ids = []
     for node in graph:
-        if type(node) != tuple:
-            node_ids.append(node)
+        node_data = graph.node[node]
+        if 'components' in node_data:
+            internal_nodes = list(node)
         else:
-            node_data = graph.node[node]
-            if 'components' in node_data:
-                internal_nodes = list(node)
-            else:
-                internal_nodes = list(node)
-            node_ids.extend(internal_nodes)
+            internal_nodes = list(node)
+        node_ids.extend(internal_nodes)
     return list(set(node_ids))
 
 def component_size_summary(graph):
@@ -178,29 +175,30 @@ def is_isolated(graph, node):
     n_children = len(set(graph.successors(node)))
     return (n_parents + n_children) == 0
 
-def is_offshoot(graph, node, subnode):
-    """ returns True if subnode is offshoot.
 
-    params
-    ----
-    graph: (networkx graph object)
-       MUST BE NETWORK BEFORE COMPOUND NODES
-    node: (tuple)
-       the name of the compound node which the subnode is part of.
+# def is_offshoot(graph, node, subnode):
+#     """ returns True if subnode is offshoot.
 
-    subnode: the name of the subnode we are testing.
-    """
-    if type(node) != tuple: #node not compound. not offshoot.
-        return False
-    elif subnode in node: #node is start or end. not offshoot.
-        return False
-    # since start/end gone.  no children or parents = offshoot
-    elif len(set(graph.successors(subnode))) == 0:
-        return True
-    elif len(set(graph.predecessors(subnode))) == 0:
-        return True
-    else: # has children and parents. not offshoot.
-        return False
+#     params
+#     ----
+#     graph: (networkx graph object)
+#        MUST BE NETWORK BEFORE COMPOUND NODES
+#     node: (tuple)
+#        the name of the compound node which the subnode is part of.
+
+#     subnode: the name of the subnode we are testing.
+#     """
+#     if type(node) != tuple: #node not compound. not offshoot.
+#         return False
+#     elif subnode in node: #node is start or end. not offshoot.
+#         return False
+#     # since start/end gone.  no children or parents = offshoot
+#     elif len(set(graph.successors(subnode))) == 0:
+#         return True
+#     elif len(set(graph.predecessors(subnode))) == 0:
+#         return True
+#     else: # has children and parents. not offshoot.
+#         return False
 
 #TODO: add remove offshoots?
 def consolidate_node_data(graph, experiment, node):
@@ -228,13 +226,7 @@ def consolidate_node_data(graph, experiment, node):
        'midline', 'size', 'std_ortho', 'std_vector', 'time'
     """
 
-    is_compound = (type(node) == tuple)
-
-    if is_compound:
-        components = list(graph.node[node]['components'])
-    else:
-        components = [node]
-
+    components = list(graph.node[node].get('components', [node]))
     #print('{n} components in {node}'.format(n=len(components),
     #                                        node=node))
 
