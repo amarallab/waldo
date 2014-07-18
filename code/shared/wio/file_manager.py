@@ -26,19 +26,17 @@ import pandas as pd
 import numpy as np
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
 
-INDEX_DIR = os.path.abspath(LOGISTICS['annotation'])
-RESULT_DIR = os.path.abspath(LOGISTICS['results'])
-EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
-WORM_DIR = os.path.abspath(LOGISTICS['worms'])
-PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
-PREP_DIR = os.path.abspath(LOGISTICS['prep'])
-DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
-NODENOTES_DIR = os.path.abspath(LOGISTICS['nodenotes'])
+RESULT_DIR = settings.LOGISTICS['results']
+WORM_DIR = settings.LOGISTICS['worms']
+PLATE_DIR = settings.LOGISTICS['plates']
+PREP_DIR = settings.LOGISTICS['prep']
+DSET_DIR = settings.LOGISTICS['dsets']
+NODENOTES_DIR = settings.LOGISTICS['nodenotes']
 ANNOTATION_DIR = os.path.join(PREP_DIR, '..', 'annotation', 'pretreatment')
-TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
+TIME_SERIES_FILE_TYPE = settings.LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
     TIME_SERIES_FILE_TYPE = 'h5'
@@ -306,7 +304,7 @@ def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
                             date_stamp=None,
                             file_type='png',
-                            file_dir = RESULT_DIR,
+                            file_dir=RESULT_DIR,
                             ensure=False):
     # get fields in order before file creation
     if date_stamp == None:

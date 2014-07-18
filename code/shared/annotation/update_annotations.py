@@ -24,22 +24,22 @@ sys.path.append(SHARED_DIR)
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from settings.local import SPREADSHEET, LOGISTICS
+from conf import settings
 from wio.file_manager import ensure_dir_exists
 from wio.google_spreadsheet_interface import Spreadsheet_Interface
 
 # Globals
-USER = SPREADSHEET['user']
-PASSWORD = SPREADSHEET['password']
-ANNOTATION_SHEET = SPREADSHEET['spreadsheet']
-SCALEING_SHEET = SPREADSHEET['scaling-factors']
-ROW_ID = SPREADSHEET['row-id']
-HEADERS = SPREADSHEET['columns']
+USER = settings.SPREADSHEET['user']
+PASSWORD = settings.SPREADSHEET['password']
+ANNOTATION_SHEET = settings.SPREADSHEET['spreadsheet']
+SCALEING_SHEET = settings.SPREADSHEET['scaling-factors']
+ROW_ID = settings.SPREADSHEET['row-id']
+HEADERS = settings.SPREADSHEET['columns']
 
-DEFAULT_DATA_DIR = LOGISTICS['filesystem_data']
-DEFAULT_LOGISTICS_DIR = LOGISTICS['inventory']
-DEFAULT_SAVE_DIR = LOGISTICS['annotation']
-SOURCE_INVENTORY = LOGISTICS['filesystem_inventory']
+DEFAULT_DATA_DIR = settings.LOGISTICS['filesystem_data']
+DEFAULT_LOGISTICS_DIR = settings.LOGISTICS['inventory']
+DEFAULT_SAVE_DIR = settings.LOGISTICS['annotation']
+SOURCE_INVENTORY = settings.LOGISTICS['filesystem_inventory']
 
 def inventory_data_directories(base_data_dir=DEFAULT_DATA_DIR):
     """
@@ -67,7 +67,7 @@ def inventory_data_directories(base_data_dir=DEFAULT_DATA_DIR):
 def update_inventory(finventory=SOURCE_INVENTORY, local_inventory=DEFAULT_LOGISTICS_DIR):
     #print finventory
     #print local_inventory
-    cmd = 'rsync -a {fi}/* {li}'.format(fi=finventory.rstrip('/'), 
+    cmd = 'rsync -a {fi}/* {li}'.format(fi=finventory.rstrip('/'),
                                       li=local_inventory.rstrip('/'))
     print cmd
     os.system(cmd)
@@ -197,12 +197,12 @@ def get_attributes_for_dir(ex_dir, sources, scaling_factors):
             'num-blobs-files': str(len(glob.glob(ex_dir + '/*.blobs'))),
             'num-images': str(len(glob.glob(ex_dir + '/*.png'))),
             'source-camera': source,
- 
 
 
- 
 
- 
+
+
+
             'pixels-per-mm': scaling_factor}
 
 
@@ -259,8 +259,8 @@ def test_scaling_factors(ex_id='20130718_154612'):
     source = source_computers.get(ex_id, '?')
 
     scaling_factor = find_scaling_factor(ex_id=ex_id, source=source, scaling_factors=scaling_factors, verbose=True)
-    
-    print 
+
+    print
     print '{ex_id} {source} {sf}'.format(ex_id=ex_id, source=source, sf=scaling_factor)
 
 def parse_summary_file(ex_dir):
@@ -285,7 +285,7 @@ def parse_summary_file(ex_dir):
             record_length = int(float(lines[-1].split()[1]))
     return file_name, record_length
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     #update_inventory()
     #update_main(update_all=False)
     #find_ex_ids_to_update(update_list=['2012-10', '2012-11', '2012-12'])

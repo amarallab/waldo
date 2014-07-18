@@ -25,11 +25,11 @@ import math
 # sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 from grab_outlines import find_frame_for_time
 
 # Globals
-DATA_DIR = LOGISTICS['filesystem_data']
+DATA_DIR = settings.LOGISTICS['filesystem_data']
 
 def get_base_image_path(ex_id, data_dir=DATA_DIR):
     search_path = data_dir + ex_id + '/*.png'

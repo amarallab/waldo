@@ -1,7 +1,7 @@
 '''
 File: mongo_support_functions.py
 Author: Peter Winter
-Description: 
+Description:
 scripts to start/stop mongo client
 '''
 
@@ -19,11 +19,11 @@ CODE_DIR = PROJECT_DIR + 'code/'
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from settings.local import MONGO
+from conf import settings
 
 # default globals
-USER = MONGO['user']
-PASSWORD = MONGO['password']
+USER = settings.MONGO['user']
+PASSWORD = settings.MONGO['password']
 
 def start_mongo_client(ip, port, database_name, collection_name, user=USER, pw=PASSWORD):
     '''

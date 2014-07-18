@@ -39,7 +39,7 @@ from flags_and_breaks import flag_blob_id, create_breaks_for_blob_id
 from smooth_spines_in_time import smooth_good_regions_repeatedly
 from plates import write_plate_timeseries, write_plate_percentiles
 
-from settings.local import FILTER
+from conf import settings
 from metrics.measurement_switchboard import pull_blob_data, quantiles_for_data, FULL_SET
 from wio.file_manager import write_timeseries_file, get_metadata
 from wio.file_manager import get_good_blobs, format_filename, get_dset
@@ -76,15 +76,15 @@ def basic_data_to_smoothspine(blob_id, verbose=True, **kwargs):
 def just_process_centroid(ex_id, **kwargs):
     # note: overwrite defaluts to true so that all recordings will be processed.
     overwrite = kwargs.pop('overwrite', True)
-    print kwargs    
+    print kwargs
     if not overwrite:
         good_blobs = get_good_blobs(ex_id, key='xy')
         if len(good_blobs) > 0:
             print '{eID} already processed. to reprocess use overwrite=True'
             return False
-        
+
     # note: overwrite = false, so that all non centroid data is not deleted.
-    process_ex_id(ex_id, just_centroid=True, overwrite=False, reprocess=True)            
+    process_ex_id(ex_id, just_centroid=True, overwrite=False, reprocess=True)
 
 def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, reprocess=True, **kwargs):
     '''
@@ -94,9 +94,9 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, repro
 
     :param ex_id: the identification string for a particular recording.
     '''
-    min_body_lengths = kwargs.pop('min_body_lengths', FILTER['min_body_lengths'])
-    min_duration = kwargs.pop('min_duration', FILTER['min_duration'])
-    min_size = kwargs.pop('min_size', FILTER['min_size'])
+    min_body_lengths = kwargs.pop('min_body_lengths', settings.FILTER['min_body_lengths'])
+    min_duration = kwargs.pop('min_duration', settings.FILTER['min_duration'])
+    min_size = kwargs.pop('min_size', settings.FILTER['min_size'])
     overwrite = kwargs.pop('overwrite', True)
 
     # importing blobs section
@@ -125,7 +125,7 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, repro
         process_centroid(blob_id)
         if just_centroid:
             continue
-        
+
         times, spines = basic_data_to_smoothspine(blob_id, verbose=True)
         if len(spines) > 0:
             good_blobs.append(blob_id)
@@ -137,9 +137,9 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, repro
             e.printStackTrace()
         if debug:
             break
-    else: # excicute this code if for loop does not break        
+    else: # excicute this code if for loop does not break
         if just_centroid:
-            write_plate_timeseries(ex_id, blob_ids=good_blobs, 
+            write_plate_timeseries(ex_id, blob_ids=good_blobs,
                                    data_types=['cent_speed_bl',
                                                 'angle_change',
                                                 'go_dur',
@@ -153,7 +153,7 @@ def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET):
     """
     Arguments:
     - `blob_id`:
-    """    
+    """
     print 'Computing Standard Measurements'
     # prepare scaling factors to convert from pixels to units
     metadata = get_metadata(blob_id)
@@ -166,10 +166,10 @@ def measure_all(blob_id, store_tmp=True,  measurements=FULL_SET):
                                                         mm=round(pixels_per_mm, ndigits=2),
                                                         w=round(pixels_per_w, ndigits=2))
     # loop through standard set of measurements and write them
-    for metric in measurements:        
+    for metric in measurements:
         t, data = pull_blob_data(blob_id, metric=metric,
                                  pixels_per_bl=pixels_per_bl,
-                                 pixels_per_mm=pixels_per_mm, 
+                                 pixels_per_mm=pixels_per_mm,
                                  pixels_per_w=pixels_per_w)
 
         if store_tmp:
@@ -190,10 +190,10 @@ def plate_consolidation(ex_id, blob_ids=None, overwrite=True):
     # remove existing directory if overwrite == true
     if overwrite:
         remove_plate_files(ex_id, file_tags = ['worm_percentiles', 'timeseries'])
-        
+
     write_plate_timeseries(ex_id, blob_ids=blob_ids)
     write_plate_percentiles(ex_id, blob_ids=blob_ids)
-        
+
 def all_unprocessed_blob_ids(ex_id, **kwargs):
     # mongo version
     #all_ids = unique_blob_ids_for_query({'data_type': 'metadata'}, **kwargs)
@@ -220,6 +220,6 @@ if __name__ == '__main__':
         #for blob_id in all_unprocessed_blob_ids():
         #    basic_data_to_smoothspine(blob_id)
     else:
-        for ex_id in sys.argv[1:]: 
+        for ex_id in sys.argv[1:]:
             process_ex_id(ex_id)
             #write_plate_timeseries(ex_id, blob_ids=['20131213_140440_06928'])

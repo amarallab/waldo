@@ -1,25 +1,27 @@
 #!/usr/bin/env python
 
 '''
-Filename: 
-Discription: 
+Filename:
+Discription:
 '''
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
-# standard imports
-import json
-import os
+# standard library
 import sys
-import glob
+import os
 from itertools import izip
+import glob
+import json
+
+# third party
 import numpy as np
 from scipy.ndimage.morphology import binary_fill_holes
 
 # path specifications
-TEST_DIR = os.path.dirname(os.path.realpath(__file__)) 
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 PROJECT_DIR = os.path.abspath(TEST_DIR + '/../../')
 SHARED_DIR = PROJECT_DIR + '/code/shared/'
 TEST_DATA_DIR = TEST_DIR + '/data/'
@@ -28,9 +30,9 @@ sys.path.append(SHARED_DIR)
 sys.path.append(PROJECT_DIR + '/code/')
 
 # nonstandard imports
+from conf import settings
 from encoding.decode_outline import encode_outline
 from importing.skeletonize_outline import close_outline_border
-from settings.local import SPREADSHEET, LOGISTICS
 
 def outline_timedict_to_list(outline_timedict):
     outlines = [(float(str(k).replace('?', '.')), points)
@@ -48,7 +50,7 @@ def format_blob_into_lines(times, outlines):
                     'x_coor', 'y_coor', 'orth_std',
                     'length', 'width',
                     '%', 'raw_spine',
-                    '%%', 'encoded_outline']        
+                    '%%', 'encoded_outline']
 
     column_data = {}
     for outline in outlines:
@@ -60,18 +62,18 @@ def format_blob_into_lines(times, outlines):
 
     column_data['im_num'] = map(str, range(N))
     column_data['time'] = map(lambda x: '%.3f' % x, times)
-            
+
     '''
     # these are not appropriately valued
     column_data['x'] = map(str, range(N))
-    column_data['y'] = map(str, range(N))    
-    column_data['size'] = map(str, range(N))    
+    column_data['y'] = map(str, range(N))
+    column_data['size'] = map(str, range(N))
     # these are not appropriately valued
-    column_data['x_std'] = map(str, range(N))    
-    column_data['y_std'] = map(str, range(N))    
-    column_data['orth_std'] = map(str, range(N))    
+    column_data['x_std'] = map(str, range(N))
+    column_data['y_std'] = map(str, range(N))
+    column_data['orth_std'] = map(str, range(N))
     # these are not appropriately valued
-    column_data['width'] = map(str, range(N))    
+    column_data['width'] = map(str, range(N))
     column_data['length'] = map(str, range(N))
     '''
     # for formatting
@@ -115,27 +117,27 @@ def outline_points_to_properties(outline_points):
         outline_matrix[x][y] = 1
     # fill the inside of the matrix
     filled_matrix = binary_fill_holes(outline_matrix)
-    
+
     # calculate properties
     properties['size'] = int(sum(sum(filled_matrix)))
-    x, y = get_xy(filled_matrix)    
+    x, y = get_xy(filled_matrix)
     properties['x'] = x - offset_x
     properties['y'] = y - offset_y
 
-    # everything else involves fitting a line to the points.    
+    # everything else involves fitting a line to the points.
     # things not calculated:
-    # xcoor, ycoor, orth_std    
+    # xcoor, ycoor, orth_std
     # length, width
 
     return properties
-        
+
 def write_blob_file_for_test_folder(ex_id='00000000_000001'):
 
     # make sure the write directory is all setup
     blobs_file_name = '{dir}/{eID}/test_blobsfile_00000k.blobs'.format(dir=TEST_DATA_DIR, eID=ex_id)
-        
+
     # for test ex_id, grab all jsons that show worm outlines in point form
-    test_jsons = glob.glob('data/jsons/{eID}/*.json'.format(eID=ex_id)) 
+    test_jsons = glob.glob('data/jsons/{eID}/*.json'.format(eID=ex_id))
     if len(test_jsons) == 0:
         print 'no test json files found in', TEST_DATA_DIR
 
@@ -147,10 +149,10 @@ def write_blob_file_for_test_folder(ex_id='00000000_000001'):
         data = json.load(open(jfile, 'r'))
         outlines = outline_timedict_to_list(data)
         times, outlines_as_points = zip(*outlines)
-        # make sure all points are in integer form        
+        # make sure all points are in integer form
         outlines_as_points = [[( int(x), int(y)) for (x, y) in o]
                               for o in outlines_as_points]
-        
+
         # use outline data to create a set of blobs file lines
         newlines = format_blob_into_lines(times, outlines_as_points)
         map(lines.append, newlines)
@@ -191,7 +193,7 @@ def test_arrays():
     print get_xy(x)
     x = np.array([[1,0, 0],
                   [0,1, 0]])
-                  
+
     print get_xy(x)
 
 def write_summary_file(ex_id='00000000_000001'):
@@ -237,7 +239,7 @@ def write_summary_file(ex_id='00000000_000001'):
     # read all blobs files and pull data
     for i, blobfile in enumerate(blobfiles):
         print 'reading', blobfile.split('/')[-1]
-        with open(blobfiles[0], 'r') as f:        
+        with open(blobfiles[0], 'r') as f:
             for line in f:
                 line_offsets.append(offset)
                 offset += len(line)
@@ -246,7 +248,7 @@ def write_summary_file(ex_id='00000000_000001'):
                     bID = int(line[1:])
                     index_by_blob[bID] = [i, line_offsets[-1]]
                 elif len(line) > 1:
-                    # if data line, make sure frame, 
+                    # if data line, make sure frame,
                     cols = line.split()
                     frame, t = cols[:2]
                     if frame not in frames:
@@ -258,7 +260,7 @@ def write_summary_file(ex_id='00000000_000001'):
                         times.append(t)
                     if bID not in bIDs:
                         bIDs.append(bID)
-                        # blob is found. 
+                        # blob is found.
                         lost_and_found[frame].append('0 {bid}'.format(bid=bID))
                     blob_N[frame] += 1
                 elif bID != 0:
@@ -277,7 +279,7 @@ def write_summary_file(ex_id='00000000_000001'):
     #for frame in sorted(lost_and_found):
     #    if len(lost_and_found[frame]):
     #        print frame, lost_and_found[frame]
-                    
+
     assert len(frames) == len(times), 'frames and times have different lengths'
     # TEST
     # this checks to see if the bit offests and files are correct for each blobID
@@ -295,13 +297,13 @@ def write_summary_file(ex_id='00000000_000001'):
             cols[1] = str(t)
             cols[2] = cols[3] = str(blob_N[frame])
             # lost and found columns
-            l_and_f = lost_and_found[frame]            
+            l_and_f = lost_and_found[frame]
             if len(l_and_f) > 0:
                 l_and_f = ' '.join(l_and_f)
                 cols.append('%%')
                 cols.append(l_and_f)
             # blob index columns
-            b_index = index_by_frame[frame]            
+            b_index = index_by_frame[frame]
             if len(b_index) > 0:
                 cols.append('%%%')
                 cols.append(' '.join(b_index))
@@ -312,16 +314,16 @@ def write_summary_file(ex_id='00000000_000001'):
 def write_index_file(ex_id='00000000_000001'):
     """
     """
-    index_file_name = '{dir}/0000-00.tsv'.format(dir=LOGISTICS['annotation'])
+    index_file_name = '{dir}/0000-00.tsv'.format(dir=settings.LOGISTICS['annotation'])
     print index_file_name
-    summary_search = TEST_DATA_DIR + '/' + ex_id + '/*.summary'    
+    summary_search = TEST_DATA_DIR + '/' + ex_id + '/*.summary'
     sum_file = glob.glob(summary_search)
     if len(sum_file) != 1:
         print 'Warning: no summary file found', summary_search
     sum_file = sum_file[0]
     with open(sum_file, 'r') as f:
         last_time = f.readlines()[-1].split()[1]
-    cols = [SPREADSHEET['row-id']] + SPREADSHEET['columns']
+    cols = [settings.SPREADSHEET['row-id']] + settings.SPREADSHEET['columns']
     data = {}
     for c in cols:
         data[c] = 'selftest'
@@ -329,9 +331,9 @@ def write_index_file(ex_id='00000000_000001'):
     data['vid-flags'] = ''
     data['name'] = sum_file.split('/')[-1].split('.summary')[0]
     data['vid-duration'] = str(last_time)
-    data['num-blobs-files'] = '1'    
+    data['num-blobs-files'] = '1'
     data['num-images'] = '0'
-    data['vid-flags'] = ''        
+    data['vid-flags'] = ''
     data['pixels-per-mm'] = '45'
 
     with open(index_file_name, 'w') as f:
@@ -339,8 +341,8 @@ def write_index_file(ex_id='00000000_000001'):
         f.write(line + '\n')
         line = '\t'.join([data[c] for c in cols])
         f.write(line + '\n')
-        
-        
+
+
 if __name__ == '__main__':
     #write_blob_file_for_test_folder()
     #write_summary_file()

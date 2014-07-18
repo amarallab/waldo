@@ -23,10 +23,10 @@ CODE_DIR = os.path.abspath(HERE + '/../../')
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 
 #VALIDATION_DIR = os.path.abspath(LOGISTICS['validation'])
-MATCH_DIR = os.path.abspath(LOGISTICS['matches'])
+MATCH_DIR = os.path.abspath(settings.LOGISTICS['matches'])
 
 class Validator(object):
     """ Class that is used to track data to validate the

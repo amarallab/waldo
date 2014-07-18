@@ -21,12 +21,12 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, list_ex_ids_with_raw_data
 from wio.file_manager import ensure_dir_exists, get_ex_ids_in_worms
 from waldo import create_parser
 
-QSUB_DIR = os.path.abspath(LOGISTICS['qsub_directory'])
+QSUB_DIR = os.path.abspath(settings.LOGISTICS['qsub_directory'])
 #QSUB_DIR = '.'
 
 print 'saving to', QSUB_DIR
@@ -36,22 +36,22 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
     """ Runs parallel python jobs on cluster after receiving a list of arguments for that script.
 
     :param python_script: which python script should be run
-    :param args: the arguments that should be passed to the scripts    
+    :param args: the arguments that should be passed to the scripts
     :param job_name: identifier for job type. used for output file naming.
     :param number_of_jobs: number of jobs
     """
- 
+
     ensure_dir_exists(qsub_dir)
     # if there are more jobs than recordings. reduce the number of jobs.
     if len(ex_ids) < number_of_jobs:
         number_of_jobs = len(ex_ids)
-                                                                   
+
     for job_num in range(number_of_jobs):
-                
-        eIDs = ex_ids[job_num::number_of_jobs]       
+
+        eIDs = ex_ids[job_num::number_of_jobs]
         job_id = '{name}_{num}'.format(name=job_name, num=job_num)
         qsub_filename = '{d}/{n}.sh'.format(d=qsub_dir, n=job_id)
-        
+
         py = '{dir}/{py}'.format(dir=CODE_DIR, py=python_script)
         python_call = 'python2.7 {py}'.format(py=py)
 
@@ -62,9 +62,9 @@ def qsub_run_script(python_script='waldo.py', args='', ex_ids=[], job_name='job'
                 '#PBS -N {id}\n'.format(id=job_id),
                 "#PBS -q low\n\n\n",
                 '{py} {args} {IDs}'.format(py=python_call,
-                                           args=args, 
+                                           args=args,
                                            IDs=' '.join(eIDs))]
-        
+
         print qsub_filename
         with open(qsub_filename, "w") as f:
             for line in lines:
@@ -92,7 +92,7 @@ def choose_ex_ids(db_attribute=('purpose', 'N2_aging'), blobfiles=None, stage1=N
 
     # Check whether or not raw data directory is present for ex_ids and modify list of target ex_ids
     if blobfiles is not None:
-        ex_ids_with_blobfiles = set(list_ex_ids_with_raw_data(inventory_directory=LOGISTICS['cluster_data']))
+        ex_ids_with_blobfiles = set(list_ex_ids_with_raw_data(inventory_directory=settings.LOGISTICS['cluster_data']))
         if blobfiles:
             target_ex_ids = target_ex_ids & ex_ids_with_blobfiles
         else:
@@ -122,7 +122,7 @@ def main(args, db_attribute):
     """
     new_args = '-c %s' % args.c if args.c is not None else ''
     dataset = str(db_attribute[1])
-    
+
     # initiallize recording selection to have no criterion.
     blobfiles, stage1, stage2 =None, None, None
     # if not overwrite: do not process recordings with data present
@@ -134,7 +134,7 @@ def main(args, db_attribute):
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)
         name = '{ds}-w'.format(ds=dataset)
         qsub_run_script(python_script='waldo.py -to --centroid', job_name=name,
-                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)        
+                        args=new_args, ex_ids=ex_ids, number_of_jobs=100)
         return # centroid specifies that only centroid should be processed.
     if args.w:
         ex_ids = choose_ex_ids(db_attribute=db_attribute, stage1=stage1)

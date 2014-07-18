@@ -17,29 +17,26 @@ import numpy as np
 from itertools import izip
 
 # path definitions
-HERE = os.path.dirname(os.path.realpath(__file__)) 
+HERE = os.path.dirname(os.path.realpath(__file__))
 PROJECT_DIR = os.path.abspath(HERE + '/../../')
 SHARED_DIR = os.path.abspath(PROJECT_DIR + 'code/shared/')
 sys.path.append(PROJECT_DIR)
 sys.path.append(SHARED_DIR)
 
 # nonstandard imports
+from conf import settings
 from skeletonize_outline import compute_skeleton_from_outline
 from encoding.decode_outline import decode_outline
 from filtering.filter_utilities import savitzky_golay
-from settings.local import SMOOTHING
 from wio.file_manager import get_timeseries, write_timeseries_file
 from metrics.compute_metrics import euclidean
 
-# set defaults from settings file
-DEFAULT_ORDER = SMOOTHING['spine_order']
-DEFAULT_WINDOW = SMOOTHING['spine_window']
 N_spine_pts = 50
 
 def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     '''
     pulls encoded outline documents from the database calculates a centerline
-    called 'spine', smoothes it using a polynomial-smoothing technique, 
+    called 'spine', smoothes it using a polynomial-smoothing technique,
     equally spaces 50 points along the length of the centerline, and inserts
     the centerline data back into the database.
 
@@ -79,30 +76,30 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
             spine = compute_skeleton_from_outline(outline)
             if len(spine) == 0:
                 num_short_spines += 1
-            spines.append(spine)            
-                
+            spines.append(spine)
+
         except Exception as e:
             print e
             print 'Warning: skeleton reconstruction failed for time {t}'.format(t=t)
             spines.append([])
-            #spines.append(NA_spine)            
+            #spines.append(NA_spine)
             flagged_timepoints.append(t)
     print '\tN flags during spine creation: {N}'.format(N=len(flagged_timepoints))
     print '\tN spines too short: {N}'.format(N=num_short_spines)
     # equally spaces points and removes reversals of head and tail in the worm spines
     treated_spines = treat_spine(times, spines)
-    
+
     #show_worm_video(treated_spine_timedict)
     # insert it back into the database
     data_type = 'spine_rough'
     if store_tmp:
-        NA_spine = [[np.NaN, np.NaN]] * 50    
-        dat = []    
+        NA_spine = [[np.NaN, np.NaN]] * 50
+        dat = []
         for i, d in enumerate(treated_spines):
             if len(d) > 5:
                 dat.append(d)
             else:
-                dat.append(NA_spine)        
+                dat.append(NA_spine)
         write_timeseries_file(ID=blob_id, data_type=data_type,
                               times=times, data=dat)
         #write_timeseries_file(blob_id=blob_id, data_type=data_type,
@@ -132,21 +129,21 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
 #         pl.clf()
 #
 # '''
-# def smooth_and_space_xy_points(points, poly_order=DEFAULT_ORDER, window_size=DEFAULT_WINDOW, point_num=50):
+# def smooth_and_space_xy_points(points, poly_order=settings.SMOOTHING['spine_order'], window_size=settings.SMOOTHING['spine_window'], point_num=50):
 #     xs, ys = zip(*points)
 #     filtered_xs = list(savitzky_golay(np.array(xs), window_size=window_size, order=poly_order))
 #     filtered_ys = list(savitzky_golay(np.array(ys), window_size=window_size, order=poly_order))
 #     return equally_space(zip(filtered_xs, filtered_ys), points=point_num)
 # '''
 
-def treat_spine(times, spines, poly_order=DEFAULT_ORDER,
-                window_size=DEFAULT_WINDOW, verbose=True):
+def treat_spine(times, spines, poly_order=settings.SMOOTHING['spine_order'],
+                window_size=settings.SMOOTHING['spine_window'], verbose=True):
     """
     this function returns a recalculated spine_timedict that has been polynomially smoothed and now contains 50 points
     along it's centerline. Each spines now faces in the same direction as the spine one timestep earlier.
-    
+
     order of operations:
-    1. smooth the existing points using 
+    1. smooth the existing points using
     2. equally space and standardize number of points to 50.
     3. all spines are made to consitantly face in the same direction by reversing the order of some of the spines.
 
@@ -178,13 +175,13 @@ def treat_spine(times, spines, poly_order=DEFAULT_ORDER,
             badcount += 1
             treated_spines.append([])
             #print 'Warning: len spine smaller than polynomial smoothing window:', len(spine), t_key
-    if verbose:            
+    if verbose:
         N = len(treated_spines)
         print '\tgood: {g} | bad: {b} | total: {N}'.format(g=goodcount, b=badcount, N=N)
 
     #ion()
     #2. equally space and reverse points if backwards
-    
+
     #treated_spines = map(lambda x: equally_space(x, points=50), treated_spines)
     treated_spines = [equally_space(x, points=50) for x in treated_spines]
     # TODO: trouble shoot code and remove this

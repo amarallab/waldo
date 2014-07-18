@@ -19,7 +19,7 @@ import sys
 #from scipy.spatial.distance import euclidean
 
 # path definitions
-HERE = os.path.dirname(os.path.realpath(__file__)) 
+HERE = os.path.dirname(os.path.realpath(__file__))
 PROJECT_DIRECTORY = os.path.abspath(HERE + '/../../')
 SHARED_DIRECTORY = PROJECT_DIRECTORY + '/code/shared/'
 assert os.path.exists(PROJECT_DIRECTORY), 'project directory not found'
@@ -27,25 +27,25 @@ assert os.path.exists(SHARED_DIRECTORY), 'shared code directory not found'
 sys.path.append(SHARED_DIRECTORY)
 
 # nonstandard imports
+from conf import settings
 from wio.file_manager import get_timeseries, write_timeseries_file, get_metadata
 from flags_and_breaks import good_segments_from_data, get_flagged_times
 import equally_space as es
-from settings.local import SMOOTHING 
 
 # set defaults from settings file
-TIME_ORDER = SMOOTHING['time_order']
-TIME_WINDOW = SMOOTHING['time_window']
-SPINE_ORDER = SMOOTHING['spine_order']
-SPINE_WINDOW = SMOOTHING['spine_window']
-T_STEP = SMOOTHING['time_step']
-N_POINTS = SMOOTHING['N_points']
+TIME_ORDER = settings.SMOOTHING['time_order']
+TIME_WINDOW = settings.SMOOTHING['time_window']
+SPINE_ORDER = settings.SMOOTHING['spine_order']
+SPINE_WINDOW = settings.SMOOTHING['spine_window']
+T_STEP = settings.SMOOTHING['time_step']
+N_POINTS = settings.SMOOTHING['N_points']
 
 
 def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
-                                   spine_order=SPINE_ORDER, 
-                                   spine_window=SPINE_WINDOW,                                   
-                                   time_order=TIME_ORDER, 
-                                   time_window=TIME_WINDOW,                                   
+                                   spine_order=SPINE_ORDER,
+                                   spine_window=SPINE_WINDOW,
+                                   time_order=TIME_ORDER,
+                                   time_window=TIME_WINDOW,
                                    store_tmp=True,
                                    time_step=T_STEP, **kwargs):
     """
@@ -68,14 +68,14 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
     flagged_times = get_flagged_times(blob_id)
     good_regions = good_segments_from_data(break_list, times=times, data=spines,
                                            flagged_times=flagged_times)
-                                           
+
     # initialize buckets
     smoothed_times, smoothed_spines = [], []
     # each region is smoothed independently
     for i, region in enumerate(good_regions, start=1):
         # if region is too small, it is not worth smoothing
         safety_factor = 1.3
-        if len(region) < time_window * safety_factor:            
+        if len(region) < time_window * safety_factor:
             continue
         times, spines = zip(*region)
         s, e, N = times[0], times[-1], len(region)
@@ -87,7 +87,7 @@ def smooth_good_regions_repeatedly(blob_id, repeated_smoothings=5,
         x_matrix, y_matrix = es.smooth_matricies_cols(x_matrix, y_matrix, window=time_window, order=time_order)
         x_matrix, y_matrix = es.smooth_matricies_rows(x_matrix, y_matrix, window=spine_window, order=spine_order)
         x_matrix, y_matrix = es.equally_space_matrix_distances(x_matrix, y_matrix)
-        # interpolate missing times 
+        # interpolate missing times
         eq_times = es.equally_spaced_tenth_second_times(start=times[0], end=times[-1])
         x_matrix, y_matrix = es.equally_space_matricies_times(eq_times, times, x_matrix, y_matrix)
         # now that times have been set, smooth + space spines repeatedly

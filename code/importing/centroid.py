@@ -24,17 +24,14 @@ sys.path.append(PROJECT_DIR)
 from encoding.decode_outline import decode_outline
 from deviant.record_exceptions import write_pathological_input
 from wio.file_manager import get_timeseries, write_timeseries_file
-from settings.local import SMOOTHING
+from conf import settings
 import equally_space as eq_sp
 from filtering.filter_utilities import savitzky_golay, neighbor_calculation, domain_creator
 from metrics.compute_metrics import txy_to_speeds, angle_change_for_xy
 from states import fit_hmm_for_blob, markov_measures_for_xy
 
-ORDER = SMOOTHING['time_order']
-WINDOW = SMOOTHING['time_window']
-
 '''
-def process_centroid_old(blob_id, window=WINDOW, order=ORDER, store_tmp=True, **kwargs):
+def process_centroid_old(blob_id, window=settings.SMOOTHING['time_window'], order=settings.SMOOTHING['time_order'], store_tmp=True, **kwargs):
     # retrieve raw xy positions
     orig_times, xy = get_timeseries(blob_id, data_type='xy_raw', **kwargs)
     x, y = map(np.array, zip(*xy))

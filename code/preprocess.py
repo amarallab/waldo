@@ -17,13 +17,13 @@ import argparse
 import json
 
 import setpath
+from conf import settings
 from images.threshold_picker import InteractivePlot
 import images.worm_finder as wf
 from annotation.experiment_index import Experiment_Attribute_Index2
 import wio.file_manager as fm
-from settings.local import LOGISTICS
 
-PREP_DIR = os.path.abspath(LOGISTICS['prep'])
+PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
 ANNOTATION_DIR = os.path.join(PREP_DIR, 'annotation')
 CACHE_DIR = os.path.join(PREP_DIR, 'cache')
 fm.ensure_dir_exists(ANNOTATION_DIR)

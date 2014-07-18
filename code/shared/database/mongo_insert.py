@@ -1,6 +1,6 @@
 '''
 Author: Peter Winter
-Date: 
+Date:
 Description: This has many functions involved with importing data into the mongo database.
 '''
 
@@ -21,8 +21,7 @@ import mongo_support_functions as support_func
 from mongo_retrieve import mongo_query
 import manage_parts
 from total_size import total_size
-from settings.local import MONGO as MONGO
-#from settings.data_settings import measurment_settings as 
+from conf import settings
 
 default_mf = {'mean': np.mean,
               'std': np.std,
@@ -155,7 +154,7 @@ def insert_data_into_db(new_timedict, source_entry, data_type, description, inse
 
 def insert_blob_entries(new_entries, verbose=False, index=True, mongo_client=None, **kwargs):
     '''
-    inserts a list of entries into the database with minimal processing. 
+    inserts a list of entries into the database with minimal processing.
     If entry exists, it will be replaced.
     each new entry must contain the fields 'blob_id', 'data_type', 'data', 'part', and 'description'
 
@@ -167,14 +166,14 @@ def insert_blob_entries(new_entries, verbose=False, index=True, mongo_client=Non
 
     if mongo_client:
         close_mongo_when_done = False
-        mongo_col = mongo_client[MONGO['database']][MONGO['blobs']]
+        mongo_col = mongo_client[settings.MONGO['database']][settings.MONGO['blobs']]
     else:
         close_mongo_when_done = True
         print 'warning, creating new mongo_client'
-        mongo_client, mongo_col = support_func.start_mongo_client(MONGO['ip'],
-                                                                  MONGO['port'],
-                                                                  MONGO['database'],
-                                                                  MONGO['blobs'])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                                  settings.MONGO['port'],
+                                                                  settings.MONGO['database'],
+                                                                  settings.MONGO['blobs'])
     for entry in new_entries:
         for key_attribute in key_attributes:
             err_msg = 'db insert error: {ka} is not in {dt} entry for {bi}'.format(ka=key_attribute,
@@ -221,10 +220,10 @@ def index_blobs(mongo_col=None):
         close_mongo_when_done = False
     else:
         close_mongo_when_done = True
-        mongo_client, mongo_col = support_func.start_mongo_client(MONGO['ip'],
-                                                                  MONGO['port'],
-                                                                  MONGO['database'],
-                                                                  MONGO['blobs'])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                                  settings.MONGO['port'],
+                                                                  settings.MONGO['database'],
+                                                                  settings.MONGO['blobs'])
 
 
     # The main single field queries used throughout code
@@ -286,19 +285,19 @@ def insert_metric_documents(entry, col='worms', mongo_client=None):
     if mongo_client:
         print 'using existing mongo client'
         close_mongo_when_done = False
-        mongo_col = mongo_client[MONGO['database']][MONGO['blobs']]
+        mongo_col = mongo_client[settings.MONGO['database']][settings.MONGO['blobs']]
     else:
         close_mongo_when_done = True
-        mongo_client, mongo_col = support_func.start_mongo_client(MONGO['ip'],
-                                                                  MONGO['port'],
-                                                                  MONGO['database'],
-                                                                  MONGO['blobs'])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                                  settings.MONGO['port'],
+                                                                  settings.MONGO['database'],
+                                                                  settings.MONGO['blobs'])
     # depreciated
     '''
-    mongo_conn, mongo_col = support_func.start_mongo_client(MONGO['ip'],
-                                                            MONGO['port'],
-                                                            MONGO['database'],
-                                                            MONGO[col])
+    mongo_conn, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                            settings.MONGO['port'],
+                                                            settings.MONGO['database'],
+                                                            settings.MONGO[col])
     '''
     # if '_id' in the dict being inserted mongo will not update and won't tell you
     if '_id' in entry:
@@ -326,13 +325,13 @@ def insert_metric_documents(entry, col='worms', mongo_client=None):
 def insert_plate_document(document, mongo_client=None):
     if mongo_client:
         close_mongo_when_done = False
-        mongo_col = mongo_client[MONGO['database']][MONGO['plates']]
+        mongo_col = mongo_client[settings.MONGO['database']][settings.MONGO['plates']]
     else:
         close_mongo_when_done = True
-        mongo_client, mongo_col = support_func.start_mongo_client(MONGO['ip'],
-                                                                  MONGO['port'],
-                                                                  MONGO['database'],
-                                                                  MONGO['plates'])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                                  settings.MONGO['port'],
+                                                                  settings.MONGO['database'],
+                                                                  settings.MONGO['plates'])
     if '_id' in document:
         del document['_id']
 
