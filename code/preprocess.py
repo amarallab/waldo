@@ -1,11 +1,25 @@
 #!/usr/bin/env python
+"""prep.
 
-#TEST
+Usage:
+  prep.py <command> <id>...
+  prep.py (-h | --help)
+  prep.py --version
 
-'''
-Filename: preprocess.py
-Description: provides a command line user interface with which to process data.
-'''
+Commands:
+  cache            precalculate image threshold values to speed up marking
+  mark             manually annotate threshold and ROI images using GUI
+  finish            use annotated images to calculate
+
+Arguments:
+   id              can be either dataset names or experiment ids
+
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+
+"""
+
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
@@ -13,7 +27,8 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
-import argparse
+#import argparse
+from docopt import docopt
 import json
 
 import setpath
@@ -99,6 +114,9 @@ def main(args):
 #short_circuit_preproccessing(ex_ids=['20130426_115023'])
 
 if __name__ == '__main__':
+    arguments = docopt(__doc__, version='prep 0.1')
+    print(arguments)
+    """
     parser = argparse.ArgumentParser(prefix_chars='-',
                                      description="by default it does nothing. but you can specify if it should import, "
                                                  "processes, or aggregate your data.")
@@ -106,3 +124,4 @@ if __name__ == '__main__':
     parser.add_argument('-c', help='configuration username')
     parser.add_argument('-p', action='store_true', help='preprocess')
     main(args=parser.parse_args())
+    """
