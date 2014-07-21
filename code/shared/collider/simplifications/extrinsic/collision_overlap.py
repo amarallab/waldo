@@ -229,8 +229,8 @@ def untangle_collision(graph, collision_node, collision_result):
     to the same worm.
 
 
-     A   C
-      \ /
+    A   C
+     \ /
    collision    ==>  (A, B) and (C, D)
      / \
     B   D

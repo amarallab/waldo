@@ -35,9 +35,8 @@ MWT_DIR = settings.LOGISTICS['filesystem_data']
 DATA_DIR = settings.LOGISTICS['filesystem_data']
 PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
 CACHE_DIR = os.path.join(PREP_DIR, 'cache')
-ANNOTATION_DIR = os.path.join(PREP_DIR, 'annotation')
+IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
 ensure_dir_exists(PREP_DIR)
-
 
 def perp(v):
     # adapted from http://stackoverflow.com/a/3252222/194586
@@ -97,7 +96,7 @@ class InteractivePlot:
         self.current_id = None
         self.annotation_filename = annotation_filename
         self.cache_dir = cache_dir
-        print('cache:', cache_dir)
+        #print('cache:', cache_dir)
         self.current_threshold = initial_threshold
         self.thresholds = []
 
@@ -456,11 +455,11 @@ class InteractivePlot:
 
 if __name__ == '__main__':
     try:
-        os.makedirs(ANNOTATION_DIR)
+        os.makedirs(IMAGE_MARK_DIR)
     except:
         pass
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
-    picker_data_file = os.path.join(ANNOTATION_DIR_DIR, "threshold_picker_data.json")
+    picker_data_file = os.path.join(IMAGE_MARK_DIR_DIR, "threshold_picker_data.json")
     ip = InteractivePlot(dirs, picker_data_file, 0.0005)
     ip.run_plot()
     #ip.precalculate_threshold_data()

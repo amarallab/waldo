@@ -14,7 +14,7 @@ __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
-#standard imports
+# standard library
 import os
 import sys
 import json
@@ -22,6 +22,7 @@ from glob import iglob
 import datetime
 import errno
 
+# third party
 import pandas as pd
 import numpy as np
 
@@ -29,14 +30,16 @@ import numpy as np
 from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
 
-RESULT_DIR = settings.LOGISTICS['results']
-WORM_DIR = settings.LOGISTICS['worms']
-PLATE_DIR = settings.LOGISTICS['plates']
-PREP_DIR = settings.LOGISTICS['prep']
-DSET_DIR = settings.LOGISTICS['dsets']
-NODENOTES_DIR = settings.LOGISTICS['nodenotes']
-ANNOTATION_DIR = os.path.join(PREP_DIR, '..', 'annotation', 'pretreatment')
-TIME_SERIES_FILE_TYPE = settings.LOGISTICS['time-series-file-type']
+LOGISTICS = settings.LOGISTICS
+INDEX_DIR = os.path.abspath(LOGISTICS['annotation'])
+RESULT_DIR = os.path.abspath(LOGISTICS['results'])
+EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
+WORM_DIR = os.path.abspath(LOGISTICS['worms'])
+PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
+PREP_DIR = os.path.abspath(LOGISTICS['prep'])
+DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
+IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
+TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
     TIME_SERIES_FILE_TYPE = 'h5'
@@ -47,57 +50,6 @@ if TIME_SERIES_FILE_TYPE == 'hdf5':
 DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
-
-# def preprocessing_data(ex_id):
-#     ''' returns a dict of preprocess data for an ex_id,
-#     or an empty dict if nothing was found. '''
-#     dset = get_dset(ex_id)
-#     filename = 'threshold-{ds}.json'.format(ds=dset)
-#     threshold_file = os.path.join(PREP_DIR, filename)
-#     data = json.load(open(threshold_file)).get(ex_id, {})
-#     return data
-
-'''
-class ColliderNodeNotes(object):
-    def __init__(self, ex_id, directory=NODENOTES_DIR):
-        f = '{eid}.csv'.format(eid=ex_id)
-        self.eid =ex_id
-        self.filedir = directory
-        self.filename = os.join(directory, f)
-        self.data = None
-
-    def load(self):
-        filename = self.filename
-        err = '{eid} does not have file at: {p}'.format(eid=self.eid,
-                                                        p=filename)
-        assert os.path.isfile(filename), err
-        data = pd.read_csv()
-        self.data = data
-        return data
-
-    def dump(self, dataframe):
-        pass
-
-    def _return_set(self, dtype):
-        if self.data is None:
-            self.load()
-        df = self.data[['bid', dtype]]
-        bids = [b for (b, v) in df.Values() if v]
-        return set(bids)
-
-    def good(self):
-        return self._return_set('good')
-
-    def bad(self):
-        return self._return_set('bad')
-
-    def moved(self, thresh):
-        if self.data is None:
-            self.load()
-        df = self.data[['bid', dtype]]
-        bids = [b for (b, v) in df.Values() if v > thresh]
-        return set(bids)
-'''
 
 class PrepData(object):
     def __init__(self, ex_id, prepdir=PREP_DIR):
@@ -123,10 +75,13 @@ class PrepData(object):
         f = self.files[self.data_types.index(data_type)]
         return pd.read_csv(f)
 
-    def dump(self, data_type, dataframe):
+    def dump(self, data_type, dataframe, **kwargs):
+        """
+        """
         filename = '{eid}-{dt}.csv'.format(eid=self.eid, dt=data_type)
         print(filename)
-        dataframe.to_csv(os.path.join(self.filedir, filename))
+        dataframe.to_csv(os.path.join(self.filedir, filename), **kwargs)
+        self.refresh()
 
     def good(self):
         """ returns a list containing only good nodes.
@@ -151,6 +106,22 @@ class PrepData(object):
         df = self.load('matches')[['bid', 'good']]
         return [b for (b, v) in df.Values() if not v]
 
+    def joins(self):
+        """ returns a list specifying all blobs that should be joined
+        according to the image data.
+
+        returns
+        -----
+        blob_joins: (list of tuples)
+            a list containing tuples in the following form: ( frame [int], 'blob1-blob2' [str])
+        """
+        joins = self.load('matches')[['frame', 'join']]
+        joins = joins[joins['join'] != '']
+        joins.drop_duplicates(cols='join', take_last=True, inplace=True)
+        tuples = [tuple(i) for i in joins.values]
+        tuples = [(int(a), [int(i) for i in b.split('-')]) for (a,b) in tuples]
+        return tuples
+
     def moved(self, bl_threhold=2):
         pass
 
@@ -174,7 +145,7 @@ class Preprocess_File(object):
         if not dset:
             dset = get_dset(ex_id)
 
-        self.path = ANNOTATION_DIR
+        self.path = IMAGE_MARK_DIR
         self.dset = dset
         self.ex_id = ex_id
         self.data = None
@@ -344,7 +315,7 @@ def format_results_filename(ID, result_type, tag=None,
 
 def format_filename(ID, ID_type='worm', data_type='cent_speed',
                     file_type='json',
-                    file_dir = None,
+                    file_dir=None,
                     dset=None, file_tag='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
 
