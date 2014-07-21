@@ -11,11 +11,11 @@ import pandas as pd
 
 from ..util import is_isolated
 
-from annotation import image_validation as iv
+#from annotation import image_validation as iv
 
 __all__ = [
-    'add_validation',
-    'validate_nodes',
+    #'add_validation',
+    #'validate_nodes',
 ]
 
 def add_validation(graph, ex_id):

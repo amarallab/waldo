@@ -396,7 +396,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     threshold: (float)
         threshold to use when analyzing images.
     """
-
+    print('analzying images')
     # grab images and times.
     times, impaths = grab_images_in_time_range(ex_id, start_time=0)
     times = [float(t) for t in times]
@@ -424,10 +424,6 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
         full_experiment_check.append(bid_matching)
         accuracy.append(base_acc)
 
-        # TODO: remove this failsafe.
-        #if i > 3:
-        #    break
-
     bid_matching = pd.concat(full_experiment_check)
     base_accuracy = pd.DataFrame(accuracy)
 
@@ -438,9 +434,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
                    index=False)
 
-def main(ex_id=None):
-    if ex_id is None:
-        ex_id = '20130614_120518'
+def summarize(ex_id):
     pfile = Preprocess_File(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()

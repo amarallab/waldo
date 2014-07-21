@@ -36,8 +36,7 @@ WORM_DIR = os.path.abspath(LOGISTICS['worms'])
 PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
 PREP_DIR = os.path.abspath(LOGISTICS['prep'])
 DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
-NODENOTES_DIR = os.path.abspath(LOGISTICS['nodenotes'])
-ANNOTATION_DIR = os.path.join(PREP_DIR, '..', 'annotation', 'pretreatment')
+IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
@@ -75,9 +74,12 @@ class PrepData(object):
         return pd.read_csv(f)
 
     def dump(self, data_type, dataframe, **kwargs):
+        """
+        """
         filename = '{eid}-{dt}.csv'.format(eid=self.eid, dt=data_type)
         print(filename)
         dataframe.to_csv(os.path.join(self.filedir, filename), **kwargs)
+        self.refresh()
 
     def good(self):
         """ returns a list containing only good nodes.
@@ -141,7 +143,7 @@ class Preprocess_File(object):
         if not dset:
             dset = get_dset(ex_id)
 
-        self.path = ANNOTATION_DIR
+        self.path = IMAGE_MARK_DIR
         self.dset = dset
         self.ex_id = ex_id
         self.data = None

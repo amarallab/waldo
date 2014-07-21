@@ -135,25 +135,26 @@ def preprocess_blobs_data(experiment):
     for bid, blob in experiment.blobs():
         try:
             if blob['centroid']:
+                times = blob['time']
                 centroid_x, centroid_y = zip(*blob['centroid'])
-
                 x_min, x_max = min(centroid_x), max(centroid_x)
                 y_min, y_max = min(centroid_y), max(centroid_y)
+                t0, tN = min(times), max(times)
                 bounds_data.append({'bid': bid, 'x_min':x_min,
                                     'x_max': x_max, 'y_min':y_min,
                                     'y_max': y_max})
 
                 x0, y0 = blob['centroid'][0]
                 xN, yN = blob['centroid'][-1]
-                terminals_data.append({'bid': bid, 'x0':x0, 'xN':xN, 'y0':y0, 'yN':yN})
+                terminals_data.append({'bid': bid, 'x0':x0, 'xN':xN,
+                                       'y0':y0, 'yN':yN,
+                                       't0':t0, 'tN':tN})
 
             midline_median, area = np.nan, np.nan
             if blob['midline']:
                 midline_median = np.median([_midline_length(p) for p in blob['midline'] if p])
-                #sizes.midline_median[bid] = np.median([_midline_length(p) for p in blob['midline'] if p])
             if blob['area']:
                 area = np.median(blob['area'])
-                #sizes.area_median[bid] = np.median(blob['area'])
             if blob['midline'] or blob['area']:
                 sizes_data.append({'bid':bid, 'area_median':area, 'midline_median':midline_median})
 
@@ -182,12 +183,11 @@ def summarize(ex_id):
     prep_data.dump(data_type='terminals', dataframe=terminals, index=False)
     prep_data.dump(data_type='sizes', dataframe=sizes, index=False)
 
-
     roi = check_roi(ex_id, bounds=bounds)
-    prep_data.dump(data_type='roi1', dataframe=roi, index=False)
+    prep_data.dump(data_type='roi', dataframe=roi, index=False)
 
     moved = bodylengths_moved(ex_id, bounds=bounds, sizes=sizes)
-    prep_data.dump(data_type='moved1', dataframe=moved, index=False)
+    prep_data.dump(data_type='moved', dataframe=moved, index=False)
 
     return bounds, terminals, sizes
 
@@ -198,7 +198,7 @@ def check_roi(ex_id, bounds=None):
     if not isinstance(bounds, pd.DataFrame):
         prep_data = fm.PrepData(ex_id)
         bounds = prep_data.load('bounds')
-    print(bounds.head())
+    #print(bounds.head())
     roi = check_bounds_against_roi(bounds, **iprep)
-    print(roi.head(20))
+    #print(roi.head(20))
     return roi
