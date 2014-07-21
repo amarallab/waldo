@@ -11,10 +11,9 @@ ex_ids = ['20130614_120518',
 #ex_id = '20130614_120518'
 ex_id = '20130318_131111'
 
-
 #b, t, s = prep.summarize(ex_id)
-#g = prep.graph_cache(ex_id)
+g = prep.graph_cache(ex_id)
 #r = prep.check_roi(ex_id)
 #bl = prep.bodylengths_moved(ex_id)
 #pf = fm.PrepData(ex_id)
-prep.quick_check(ex_id)
+#prep.quick_check(ex_id)
