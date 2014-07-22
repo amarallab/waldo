@@ -6,24 +6,27 @@ from __future__ import print_function, absolute_import, unicode_literals, divisi
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
+# standard library
 import os
 
+from math import fabs
 import functools
+# third party
 import numpy as np
+import scipy
+from scipy import ndimage
 import pandas as pd
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-import scipy
-from scipy import ndimage
 #import skimage
-from math import fabs
 #from skimage import morphology
 from skimage.measure import regionprops
 #from skimage.filter.rank import entropy
 
-# nonstandard imports
+# project imports
+from conf import settings
 from .manipulations import create_backround, create_binary_mask, outline_to_outline_matrix
 #, show_threshold , align_outline_matricies
 from .manipulations import coordiate_match_offset_arrays
@@ -34,10 +37,9 @@ from .grab_images import grab_images_in_time_range
 import multiworm
 from multiworm.readers import blob as blob_reader
 import wio.file_manager as fm
-from settings.local import LOGISTICS
 
 
-MWT_DIR = os.path.abspath(LOGISTICS['filesystem_data'])
+MWT_DIR = os.path.abspath(settings.LOGISTICS['filesystem_data'])
 
 
 # Derived from http://stackoverflow.com/a/2566508/194586

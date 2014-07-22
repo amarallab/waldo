@@ -28,12 +28,12 @@ sys.path.append(PROJECT_DIR)
 
 # nonstandard imports
 from grab_images import grab_images_in_time_range
-from settings.local import LOGISTICS
+from conf import settings
 from wio.file_manager import ensure_dir_exists
 
-MWT_DIR = LOGISTICS['filesystem_data']
-DATA_DIR = LOGISTICS['filesystem_data']
-PREP_DIR = os.path.abspath(LOGISTICS['prep'])
+MWT_DIR = settings.LOGISTICS['filesystem_data']
+DATA_DIR = settings.LOGISTICS['filesystem_data']
+PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
 CACHE_DIR = os.path.join(PREP_DIR, 'cache')
 IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
 ensure_dir_exists(PREP_DIR)

@@ -24,15 +24,15 @@ sys.path.append(SHARED_DIR)
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 import update_annotations
 
-DEFAULT_DATA_DIR = LOGISTICS['filesystem_data']
-DEFAULT_SAVE_DIR = LOGISTICS['scaling-factors']
+DEFAULT_DATA_DIR = settings.LOGISTICS['filesystem_data']
+DEFAULT_SAVE_DIR = settings.LOGISTICS['scaling-factors']
 
 def get_index_from_data(search_string):
     """
-    Creates a dictionary of ex_ids (keys) and paths to images (values). Every ex_id in the dict has a name 
+    Creates a dictionary of ex_ids (keys) and paths to images (values). Every ex_id in the dict has a name
     names containing the search_string. Every value contains the path to the image in that directory with the shortest name.
     """
     glob_string = '{dr}*/*{search}*.{ftype}'.format(dr=DEFAULT_DATA_DIR, search=search_string, ftype='png')
@@ -50,8 +50,8 @@ def get_index_from_data(search_string):
 
 def copy_currently_indexed_pics_back(im_dir=DEFAULT_SAVE_DIR, source_dir=DEFAULT_DATA_DIR):
     """
-    Goes throught the all images in the Scaling-Factor_Images directory. Renames them back to their origional names 
-    and moves them back to the origional directories. 
+    Goes throught the all images in the Scaling-Factor_Images directory. Renames them back to their origional names
+    and moves them back to the origional directories.
     """
     pic_files = glob.glob(im_dir + '*.png')
     for pic_file in pic_files:

@@ -29,12 +29,12 @@ import os
 from docopt import docopt
 
 import setpath
+from conf import settings
 import images
 import collider.prep.prepare as prep
 import wio.file_manager as fm
-from settings.local import LOGISTICS
 
-PREP_DIR = os.path.abspath(LOGISTICS['prep'])
+PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
 IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
 CACHE_DIR = os.path.join(PREP_DIR, 'cache')
 

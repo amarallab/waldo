@@ -7,17 +7,17 @@ from bson.objectid import ObjectId
 project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../../'
 sys.path.append(project_directory)
 
-from settings.local import MONGO as mongo_settings
+from conf import settings
 import mongo_support_functions as support_func
 from mongo_retrieve import mongo_query
 from mongo_retrieve import unique_blob_ids_for_query
 from mongo_insert_new_data import check_entry_types
 
 def remove_these_queries(queries):
-    mongo_client, mongo_col = support_func.start_mongo_client(mongo_settings['mongo_ip'],
-                                                                      mongo_settings['mongo_port'],
-                                                                      mongo_settings['worm_db'],
-                                                                      mongo_settings['blob_collection'])
+    mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['mongo_ip'],
+                                                                      settings.MONGO['mongo_port'],
+                                                                      settings.MONGO['worm_db'],
+                                                                      settings.MONGO['blob_collection'])
     for query in queries:
         print 'Removing:', query
         mongo_col.remove(query)
@@ -44,10 +44,10 @@ def remove_entries_with_innapropriate_data_types(query={'data_type': 'metadata'}
         else: print 'for %s, removing %i of %i entries' % (str(blob_id), len(removal_queries), len(entries))
 
         # remove entries that failed test.
-        mongo_client, mongo_col = support_func.start_mongo_client(mongo_settings['mongo_ip'],
-                                                                    mongo_settings['mongo_port'],
-                                                                    mongo_settings['worm_db'],
-                                                                    mongo_settings['blob_collection'])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['mongo_ip'],
+                                                                    settings.MONGO['mongo_port'],
+                                                                    settings.MONGO['worm_db'],
+                                                                    settings.MONGO['blob_collection'])
         for removal_query in removal_queries:
             mongo_col.remove(removal_query)
         support_func.close_mongo_client(mongo_client)

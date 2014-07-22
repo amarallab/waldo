@@ -10,12 +10,12 @@ import pickle
 import numpy as np
 import pandas as pd
 
+from conf import settings
 import multiworm
-from settings.local import LOGISTICS
 import wio.file_manager as fm
 import collider
 
-DATA_DIR = LOGISTICS['filesystem_data']
+DATA_DIR = settings.LOGISTICS['filesystem_data']
 
 def experiment_path(ex_id):
     return os.path.join(DATA_DIR, ex_id)

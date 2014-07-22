@@ -14,7 +14,7 @@ __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
-#standard imports
+# standard library
 import os
 import sys
 import json
@@ -22,13 +22,15 @@ from glob import iglob
 import datetime
 import errno
 
+# third party
 import pandas as pd
 import numpy as np
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
 
+LOGISTICS = settings.LOGISTICS
 INDEX_DIR = os.path.abspath(LOGISTICS['annotation'])
 RESULT_DIR = os.path.abspath(LOGISTICS['results'])
 EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
@@ -273,7 +275,7 @@ def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
                             date_stamp=None,
                             file_type='png',
-                            file_dir = RESULT_DIR,
+                            file_dir=RESULT_DIR,
                             ensure=False):
     # get fields in order before file creation
     if date_stamp == None:
@@ -313,7 +315,7 @@ def format_results_filename(ID, result_type, tag=None,
 
 def format_filename(ID, ID_type='worm', data_type='cent_speed',
                     file_type='json',
-                    file_dir = None,
+                    file_dir=None,
                     dset=None, file_tag='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
 

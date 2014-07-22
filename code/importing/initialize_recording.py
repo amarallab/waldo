@@ -32,14 +32,14 @@ sys.path.append(SHARED_DIR)
 sys.path.append(JOINING_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS, FILTER, JOINING
+from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index
 from wio.blob_reader import Blob_Reader
 from wio.file_manager import write_timeseries_file, write_metadata_file, format_directory
 
 
-DATA_DIR = LOGISTICS['filesystem_data']
-USE_TAPEWORM = (JOINING['method'] == 'tapeworm') # turned on and off in settings file.
+DATA_DIR = settings.LOGISTICS['filesystem_data']
+USE_TAPEWORM = (settings.JOINING['method'] == 'tapeworm') # turned on and off in settings file.
 
 if USE_TAPEWORM:
     # if tapeworm not in use, it may also not be installed.
@@ -294,8 +294,8 @@ def create_metadata_docs(ex_id, raw_blobs):
         metadata_docs[local_id] = metadata_entry
     return metadata_docs
 
-def import_ex_id(ex_id, min_body_lengths=FILTER['min_body_lengths'],
-                 min_duration=FILTER['min_duration'], min_size=FILTER['min_size'],
+def import_ex_id(ex_id, min_body_lengths=settings.FILTER['min_body_lengths'],
+                 min_duration=settings.FILTER['min_duration'], min_size=settings.FILTER['min_size'],
                  overwrite=True, **kwargs):
     ''' Imports raw data from one experiment into the database.
 
@@ -317,9 +317,9 @@ def import_ex_id(ex_id, min_body_lengths=FILTER['min_body_lengths'],
 
 if __name__ == '__main__':
     # toggle constraints
-    min_body_lengths = FILTER['min_body_lengths']
-    min_duration = FILTER['min_duration']
-    min_size = FILTER['min_size']
+    min_body_lengths = settings.FILTER['min_body_lengths']
+    min_duration = settings.FILTER['min_duration']
+    min_size = settings.FILTER['min_size']
 
     if len(sys.argv) < 2:
         print sys.argv[0], '[ex_ids]'
