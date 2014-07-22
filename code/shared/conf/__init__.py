@@ -19,7 +19,7 @@ from . import defaults
 
 ENVIRONMENT_VARIABLE = 'WALDO_SETTINGS'
 
-local_settings = os.environ[ENVIRONMENT_VARIABLE]
+local_settings = os.environ.get(ENVIRONMENT_VARIABLE)
 
 class Settings(object):
     def __init__(self, local_module_name):
