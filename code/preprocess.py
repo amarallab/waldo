@@ -26,26 +26,17 @@ __status__ = 'prototype'
 
 # standard imports
 import os
-import sys
-
-#import argparse
 from docopt import docopt
-#import json
 
 import setpath
 import images
-#from images.threshold_picker import InteractivePlot
-#import images.worm_finder as wf
 import collider.prep.prepare as prep
-
-#from annotation.experiment_index import Experiment_Attribute_Index2
 import wio.file_manager as fm
 from settings.local import LOGISTICS
 
 PREP_DIR = os.path.abspath(LOGISTICS['prep'])
 IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
 CACHE_DIR = os.path.join(PREP_DIR, 'cache')
-
 
 def cache_image_data(eids, threshold_file):
     fm.ensure_dir_exists(CACHE_DIR)

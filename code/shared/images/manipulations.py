@@ -10,9 +10,9 @@ import matplotlib.image as mpimg
 import matplotlib.cm as cm
 from scipy import ndimage
 from skimage import morphology
-from skimage.measure import regionprops
-
-
+#from skimage.measure import regionprops
+from skimage.filter.rank import entropy
+import matplotlib.patches as mpatches
 
 def outline_to_outline_matrix(outline, bbox=None):
     """

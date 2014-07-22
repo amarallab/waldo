@@ -7,33 +7,29 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 import os
-import sys
-import itertools
 
-#import random
 import functools
 import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import matplotlib.cm as cm
-import matplotlib.patches as mpatches
-import prettyplotlib as ppl
 
 import scipy
 from scipy import ndimage
-import skimage
+#import skimage
 from math import fabs
-from skimage import morphology
+#from skimage import morphology
 from skimage.measure import regionprops
-from skimage.filter.rank import entropy
+#from skimage.filter.rank import entropy
 
 # nonstandard imports
-from .manipulations import create_backround, create_binary_mask, show_threshold, outline_to_outline_matrix, align_outline_matricies
-from .manipulations import coordiate_match_offset_arrays, do_boxes_overlap, filled_image_to_outline_points
+from .manipulations import create_backround, create_binary_mask, outline_to_outline_matrix
+#, show_threshold , align_outline_matricies
+from .manipulations import coordiate_match_offset_arrays
+from .manipulations import do_boxes_overlap
 from .grab_images import grab_images_in_time_range
-from wio.file_manager import get_good_blobs, get_timeseries, ensure_dir_exists, Preprocess_File
+#from wio.file_manager import get_good_blobs, get_timeseries, ensure_dir_exists, Preprocess_File
 
 import multiworm
 from multiworm.readers import blob as blob_reader
@@ -212,7 +208,7 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
 
             # calculate pixel matches.
             overlaps = (overlay == 3).sum()
-            underlaps = (overlay == 2).sum()
+            #underlaps = (overlay == 2).sum()
             overreaches = (overlay == 1).sum()
 
             # if the objects are mostly on top of one another,
@@ -353,6 +349,22 @@ def analyze_image(experiment, time, img, background, threshold,
     return bid_matching, base_accuracy
 
 def show_matched_image(ex_id, threshold, time, roi=None):
+    """
+    shows an image in which objects found through image processing
+    are matched against the blobs found by the multiworm tracker.
+
+    params
+    -------
+    ex_id: (str)
+        the experiment id
+    threshold: (float)
+        a threshold value for image processing. if None,
+        will automatically check for cached value.
+    roi: (dict)
+       contains x, y, and r coordinates for a roi. if None,
+       no region of interest will be considered during matching,
+       and no region of interest will be drawn onto the image.
+    """
 
     # grab images and times.
     times, impaths = grab_images_in_time_range(ex_id, start_time=0)
@@ -384,6 +396,138 @@ def show_matched_image(ex_id, threshold, time, roi=None):
                                            roi=roi, show=True)
     return bid_matching, base_acc
 
+def worm_cuttouts(ex_id, savedir, threshold=None, roi=None):
+    """
+    creates a nested directory structure containing cropped worm images,
+    masks corresponding to the worm images, and an index csv with
+    relevant information.
+
+    params
+    -------
+    ex_id: (str)
+        the experiment id
+    savedir: (str)
+        the path in which the nested directory structure will be created.
+    threshold: (float)
+        a threshold value for image processing. if None,
+        will automatically check for cached value.
+    roi: (dict)
+       contains x, y, and r coordinates for a roi. if None,
+       will automatically check for cached value.
+    """
+
+    if not threshold or not roi:
+        pfile = fm.Preprocess_File(ex_id=ex_id)
+        if not threshold:
+            threshold = pfile.threshold()
+        if not roi:
+            roi = pfile.roi()
+
+    times, impaths = grab_images_in_time_range(ex_id, start_time=0)
+    background = create_backround(impaths)
+    full_index = []
+
+    # for blob matching
+    path = os.path.join(MWT_DIR, ex_id)
+    experiment = multiworm.Experiment(path)
+    experiment.load_summary()
+
+    print(len(impaths), 'images')
+    for i, (time, impath) in enumerate(zip(times, impaths)):
+        img = mpimg.imread(impath)
+        mask = create_binary_mask(img, background, threshold)
+        labels, n_img = ndimage.label(mask)
+        image_objects = regionprops(labels)
+        cuttouts = cuttouts_from_image(img, image_objects, roi)
+        labels, masks, imgs, img_index = cuttouts
+
+        img_index['time'] = time
+        frame, blob_data = grab_blob_data(experiment, float(time))
+        img_index['time'] = time
+        bids, blob_centroids, outlines = zip(*blob_data)
+        _, _, _, more = match_objects(bids, blob_centroids, outlines,
+                                      image_objects,roi=roi)
+
+        bbo =[]
+        for l in img_index['label']:
+            match = more['blobs_by_object'][l]
+            a = ''
+            if match:
+                a = match[0]
+            bbo.append(a)
+        img_index['bid'] = bbo
+        #print(img_index.head(10))
+
+        f_dir = os.path.join(savedir, str(frame))
+        fm.ensure_dir_exists(f_dir)
+        for l, m, im in zip(labels, masks, imgs):
+            bid_matches = more['blobs_by_object'][l]
+            if not bid_matches:
+                continue
+            bid = bid_matches[0]
+            mfile = '{bid}_mask.png'.format(bid=bid)
+            ifile = '{bid}_img.png'.format(bid=bid)
+            scipy.misc.imsave(os.path.join(f_dir, ifile), im)
+            scipy.misc.imsave(os.path.join(f_dir, mfile), m)
+
+        full_index.append(img_index)
+        #if i > 4:
+        #    break
+
+    index = pd.concat(full_index)
+    print(index.head())
+    index.to_csv(os.path.join(savedir, 'index.csv'), index=False)
+
+
+def cuttouts_from_image(img, image_objects, roi=None):
+    """
+    returns a list of images cropped around a worm,
+    a list of masks that correspond to each worm image,
+    and a pandas DataFrame containing information on each worm
+    object.
+
+    params
+    -------
+    img: (np array)
+        contains image data
+    image_objects: (scikit.measure.regionprops object)
+        contains an iterator for a set of region objects
+    roi: (dict)
+       contains x, y, and r coordinates for a roi
+    """
+    labels = []
+    masks = []
+    imgs = []
+    image_index = []
+    for obj in image_objects:
+        if roi != None:
+            x, y = obj.centroid
+            dx = x - roi['x']
+            dy = y - roi['y']
+            # skip if outside roi
+            if np.sqrt(dx** 2 + dy** 2) > roi['r']:
+                continue
+
+        obj_bbox = obj.bbox
+        xmin, ymin, xmax, ymax = obj_bbox
+        obj_mask = obj.image
+        obj_img = img[xmin:xmax, ymin:ymax]
+
+        labels.append(obj.label)
+        imgs.append(obj_img)
+        masks.append(obj_mask)
+        image_index.append({'label':obj.label,
+                            'xmin':xmin, 'xmax':xmax,
+                            'ymin':ymin, 'ymax':ymax,
+                            'x':x, 'y':y})
+
+        if False:
+            fig, ax = plt.subplots(1, 2)
+            ax[0].imshow(obj_mask)
+            ax[1].imshow(obj_img, cmap=plt.cm.Greys_r)
+            plt.show()
+
+    return labels, masks, imgs, pd.DataFrame(image_index)
 
 def analyze_ex_id_images(ex_id, threshold, roi=None):
     """
@@ -434,8 +578,13 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
                    index=False)
 
+
+
 def summarize(ex_id):
-    pfile = Preprocess_File(ex_id=ex_id)
+    """ short script to load threshold, roi and run
+    analyze_ex_id_images.
+    """
+    pfile = fm.Preprocess_File(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()
     print(threshold)
