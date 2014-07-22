@@ -1,7 +1,8 @@
 import pathlib
 
 # NOTE: MAKES ASSUMPTION ABOUT PROJECT STRUCTURE AND WHERE THIS FILE IS
-PROJECT_HOME = str((pathlib.Path(__file__).parent / '..' / '..' / '..').resolve())
+PROJECT_HOME_pl = (pathlib.Path(__file__).parent / '..' / '..' / '..').resolve()
+PROJECT_HOME = str(PROJECT_HOME_pl) # down-convert pathlib object to plain string
 
 MONGO = {
     'use_mongo': False,
@@ -15,28 +16,27 @@ MONGO = {
     'blobs': 'blobs',
     'worms': 'worms',
     'plates': 'plates'
-    }
+}
 
 LOGISTICS = {
     'time-series-file-type': 'hdf5', # supports 'hdf5' or 'json'
     # directories for annotation and organization
-    'results': PROJECT_HOME + 'results/',
+    'results': PROJECT_HOME_pl / 'results',
 
-    'data': PROJECT_HOME + 'data/',
+    'data': PROJECT_HOME_pl / 'data',
 
-    'export': PROJECT_HOME + 'data/export/',
-    'worms': PROJECT_HOME + 'data/worms/',
-    'plates': PROJECT_HOME + 'data/plates/',
-    'dsets': PROJECT_HOME + 'data/dsets/',
-    'prep': PROJECT_HOME + 'data/prep',
-    #'nodenotes': PROJECT_HOME + 'data/prep/nodenotes/',
-    #'matches': PROJECT_HOME + 'data/prep/matches/',
-    #'accuracy': PROJECT_HOME + 'data/prep/acuracy/',
-    #'validation':PROJECT_HOME + 'data/annotation/validation/',
-    'inventory': PROJECT_HOME + 'data/annotation/inventory/',
-    'annotation': PROJECT_HOME + 'data/annotation/experiment_index',
-    'scaling-factors': PROJECT_HOME + 'data/annotation/scaling_factor_images',
-
+    'export': PROJECT_HOME_pl / 'data' / 'export',
+    'worms': PROJECT_HOME_pl / 'data' / 'worms',
+    'plates': PROJECT_HOME_pl / 'data' / 'plates',
+    'dsets': PROJECT_HOME_pl / 'data' / 'dsets',
+    'prep': PROJECT_HOME_pl / 'data' / 'prep',
+    #'nodenotes': PROJECT_HOME_pl / 'data' / 'prep' / 'nodenotes',
+    #'matches': PROJECT_HOME_pl / 'data' / 'prep' / 'matches',
+    #'accuracy': PROJECT_HOME_pl / 'data' / 'prep' / 'acuracy',
+    #'validation':PROJECT_HOME_pl / 'data' / 'annotation' / 'validation',
+    'inventory': PROJECT_HOME_pl / 'data' / 'annotation' / 'inventory',
+    'annotation': PROJECT_HOME_pl / 'data' / 'annotation' / 'experiment_index',
+    'scaling-factors': PROJECT_HOME_pl / 'data' / 'annotation' / 'scaling_factor_images',
 
     # filesystem variables
     'filesystem_address': 'peterwinter@barcelona.chem-eng.northwestern.edu',
@@ -46,8 +46,13 @@ LOGISTICS = {
     # cluster variables
     'cluster_data': '/home/projects/worm_movement/Data/MWT_RawData/',
     'cluster_address': 'peterwinter@phoenix.research.northwestern.edu',
-    'qsub_directory': PROJECT_HOME + 'data/qsub/',
-    }
+    'qsub_directory': PROJECT_HOME_pl / 'data' / 'qsub',
+}
+
+# compatibility
+for key in LOGISTICS:
+    if isinstance(LOGISTICS[key], pathlib.Path):
+        LOGISTICS[key] = str(LOGISTICS[key])
 
 SPREADSHEET = {'user': 'your gmail name',
                'password': 'your gmail password',
