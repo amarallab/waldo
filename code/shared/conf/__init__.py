@@ -52,7 +52,7 @@ class Settings(object):
                 if not hasattr(self, field):
                     # see below
                     rogue_fields.append(field)
-                setattr(self, setting, getattr(local_module, setting))
+                setattr(self, field, getattr(local_module, field))
 
         # notify users if there is an unexpected setting. could be either a
         # typo, or a "local-only" setting which may result in code that works
