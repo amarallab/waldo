@@ -36,9 +36,9 @@ CODE_DIR = os.path.abspath(HERE + '/../../')
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 
-INDEX_DIR = LOGISTICS['annotation']
+INDEX_DIR = settings.LOGISTICS['annotation']
 
 def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
     ''' returns a pandas dataframe with all the annotated indicies '''

@@ -1,26 +1,28 @@
 #!/usr/bin/env
 
-# standard imports
+# standard library
+import random
+from itertools import izip
+
+# third party
 import numpy as np
 import matplotlib.pyplot as plt
-from itertools import izip
 import matplotlib.mlab as mlab
-import random
 
+# waldo
+from conf import settings
 import database.mongo_support_functions as mongo
 from database.mongo_retrieve import mongo_query
 from database.mongo_retrieve import pull_data_type_for_blob
 from database.mongo_retrieve import timedict_to_list
 
 from experiment_index import Experiment_Attribute_Index
-from settings.local import LOGISTICS as logistics_settings
-from settings.local import MONGO as mongo_settings
 
 from Plotting.SingleWorms.single_worm_suite import plot_outline_shapes
 from Encoding.decode_outline import pull_outline
 import flag_timepoints
 
-DATA_DIR = logistics_settings['filesystem_data']
+DATA_DIR = settings.LOGISTICS['filesystem_data']
 SAVE_DIR = './../Results/GoodShape-BadShape/'
 
 def choose_ex_id(key='purpose', value='N2_aging'):
@@ -92,8 +94,8 @@ def draw_good_and_bad_shapes(good_shapes, bad_shapes, savename='', dimensions=[4
     plt.clf()
 
 def main():
-    mongo_client, _ = mongo.start_mongo_client(mongo_settings['mongo_ip'], mongo_settings['mongo_port'],
-                                               mongo_settings['worm_db'], mongo_settings['blob_collection'])
+    mongo_client, _ = mongo.start_mongo_client(settings.MONGO['mongo_ip'], settings.MONGO['mongo_port'],
+                                               settings.MONGO['worm_db'], settings.MONGO['blob_collection'])
     try:
         ex_ids = choose_ex_id()
         for ex_id in ex_ids[5:10]:
@@ -109,8 +111,8 @@ def main():
 
 
 def plot_one_blob():
-    mongo_client, _ = mongo.start_mongo_client(mongo_settings['mongo_ip'], mongo_settings['mongo_port'],
-                                               mongo_settings['worm_db'], mongo_settings['blob_collection'])
+    mongo_client, _ = mongo.start_mongo_client(settings.MONGO['mongo_ip'], settings.MONGO['mongo_port'],
+                                               settings.MONGO['worm_db'], settings.MONGO['blob_collection'])
 
     try:
 

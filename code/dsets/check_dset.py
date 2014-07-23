@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Filename: 
+Filename:
 Description:
 
 
@@ -25,7 +25,7 @@ sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
 from annotation.experiment_index import Experiment_Attribute_Index2
-from settings.local import LOGISTICS
+from conf import settings
 
 def count_file_types(basedir):
     counts = {}
@@ -36,11 +36,11 @@ def count_file_types(basedir):
         counts[filetype] += 1
     return counts
 
-def merge_experiment_index_with_file_counts(dataset, data_dir=LOGISTICS['data']):
+def merge_experiment_index_with_file_counts(dataset, data_dir=settings.LOGISTICS['data']):
     data_dir = os.path.abspath(data_dir)
     ei = Experiment_Attribute_Index2(dataset=dataset)
 
-    data, null_recordings = {}, []    
+    data, null_recordings = {}, []
     for eID in list(ei.index):
         search_dir = '{d}/worms/{eId}/'.format(d=data_dir, eId=eID)
         counts = count_file_types(search_dir)
@@ -69,7 +69,7 @@ def show_counts_by_label(results, final_filetype, verbose=True):
             col_name = '{l}-{a}'.format(l=l, a=a)
             N = len(sub_section)
             N_worms = sub_section[final_filetype].sum()
-            summary[col_name] = [l, a, N, N_worms] 
+            summary[col_name] = [l, a, N, N_worms]
             row_index.append((l, a))
             i += 1
 
@@ -78,7 +78,7 @@ def show_counts_by_label(results, final_filetype, verbose=True):
         print summary
     return summary
 
-def file_counts_dataframe(dataset, data_dir=LOGISTICS['data']):
+def file_counts_dataframe(dataset, data_dir=settings.LOGISTICS['data']):
     data_dir = os.path.abspath(data_dir)
     print data_dir
     ei = Experiment_Attribute_Index2(dataset=dataset)
@@ -98,8 +98,8 @@ def file_counts_dataframe(dataset, data_dir=LOGISTICS['data']):
     return pd.DataFrame(data).T
 
 def show_completeness(results):
-    
-    cols = [col for col in ['metadata.json', 'spine_rough.h5', 'spine.h5'] 
+
+    cols = [col for col in ['metadata.json', 'spine_rough.h5', 'spine.h5']
             if col in results.columns]
     #print results[['metadata.json', 'spine_rough.h5', 'spine.h5']]
     print results[cols]

@@ -10,26 +10,14 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import numpy as np
 
 from ..util import frame_filter, condense_nodes
+import wio.file_manager as fm
 
 __all__ = [
     'remove_nodes_outside_roi',
 ]
 
-def remove_nodes_outside_roi(graph, experiment, x, y, r):
-    """
-    Removes nodes that are outside of a precalculated circle denoting a
-    'region of interest'.  Must run before other simplifications; does not
-    tolerate compound blob IDs
-
-    params
-    -----
-    graph: (networkx graph)
-       nodes are blob ids
-    experiment: (multiworm Experiment)
-       the experiment object corresponding to the same recording
-    ex_id: (str)
-       the experiment id (ie. timestamp) used to look up roi.
-    """
+#seperated
+def check_blobs_against_roi(experiment, x, y, z):
     def box_centers(experiment):
         bids, boxes = [], []
         for (bid, blob_data) in experiment.all_blobs():
@@ -56,9 +44,31 @@ def remove_nodes_outside_roi(graph, experiment, x, y, r):
     bids, box_centers = box_centers(experiment)
     dists = np.sqrt((box_centers[:, 0] - x)**2 +
                    (box_centers[:, 1] - y)**2)
-
     are_inside = dists < r
+    return bids, are_inside
 
+
+def remove_nodes_outside_roi(graph, experiment, x, y, r, ex_ids=None):
+    """
+    Removes nodes that are outside of a precalculated circle denoting a
+    'region of interest'.  Must run before other simplifications; does not
+    tolerate compound blob IDs
+
+    params
+    -----
+    graph: (networkx graph)
+       nodes are blob ids
+    experiment: (multiworm Experiment)
+       the experiment object corresponding to the same recording
+    ex_id: (str)
+       the experiment id (ie. timestamp) used to look up roi.
+    """
+    # TODO check for cache.
+    #try:
+    #    pass
+    #except:
+
+    bids, are_inside = check_blobs_against_roi(experiment, x, y, z)
     outside_nodes = []
     for bid, in_roi in zip(bids, are_inside):
         if not in_roi:

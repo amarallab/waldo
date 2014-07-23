@@ -14,7 +14,7 @@ __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
-#standard imports
+# standard library
 import os
 import sys
 import json
@@ -22,13 +22,15 @@ from glob import iglob
 import datetime
 import errno
 
+# third party
 import pandas as pd
 import numpy as np
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
 
+LOGISTICS = settings.LOGISTICS
 INDEX_DIR = os.path.abspath(LOGISTICS['annotation'])
 RESULT_DIR = os.path.abspath(LOGISTICS['results'])
 EXPORT_PATH = os.path.abspath(LOGISTICS['export'])
@@ -36,8 +38,7 @@ WORM_DIR = os.path.abspath(LOGISTICS['worms'])
 PLATE_DIR = os.path.abspath(LOGISTICS['plates'])
 PREP_DIR = os.path.abspath(LOGISTICS['prep'])
 DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
-NODENOTES_DIR = os.path.abspath(LOGISTICS['nodenotes'])
-ANNOTATION_DIR = os.path.join(PREP_DIR, '..', 'annotation', 'pretreatment')
+IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
 if TIME_SERIES_FILE_TYPE == 'hdf5':
@@ -75,9 +76,12 @@ class PrepData(object):
         return pd.read_csv(f)
 
     def dump(self, data_type, dataframe, **kwargs):
+        """
+        """
         filename = '{eid}-{dt}.csv'.format(eid=self.eid, dt=data_type)
         print(filename)
         dataframe.to_csv(os.path.join(self.filedir, filename), **kwargs)
+        self.refresh()
 
     def good(self):
         """ returns a list containing only good nodes.
@@ -141,7 +145,7 @@ class Preprocess_File(object):
         if not dset:
             dset = get_dset(ex_id)
 
-        self.path = ANNOTATION_DIR
+        self.path = IMAGE_MARK_DIR
         self.dset = dset
         self.ex_id = ex_id
         self.data = None
@@ -271,7 +275,7 @@ def format_results_filename(ID, result_type, tag=None,
                             dset=None, ID_type='dset',
                             date_stamp=None,
                             file_type='png',
-                            file_dir = RESULT_DIR,
+                            file_dir=RESULT_DIR,
                             ensure=False):
     # get fields in order before file creation
     if date_stamp == None:
@@ -311,7 +315,7 @@ def format_results_filename(ID, result_type, tag=None,
 
 def format_filename(ID, ID_type='worm', data_type='cent_speed',
                     file_type='json',
-                    file_dir = None,
+                    file_dir=None,
                     dset=None, file_tag='',
                     worm_dir=WORM_DIR, plate_dir=PLATE_DIR, dset_dir=DSET_DIR):
 

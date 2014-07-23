@@ -23,12 +23,12 @@ import math
 # sys.path.append(CODE_DIR)
 
 # nonstandard imports
+from conf import settings
 from encoding.decode_outline import decode_outline
 #from database.mongo_retrieve import mongo_query, pull_data_type_for_blob
-from settings.local import LOGISTICS
 
 # Globals
-DATA_DIR = LOGISTICS['filesystem_data']
+DATA_DIR = settings.LOGISTICS['filesystem_data']
 
 '''
 def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, **kwargs):

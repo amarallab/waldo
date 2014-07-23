@@ -18,8 +18,8 @@ print SHARED
 sys.path.append(SHARED)
 sys.path.append(CODES)
 
+from conf import settings
 from wio.file_manager import read_table, ensure_dir_exists, get_good_blobs, get_timeseries, get_dset
-from settings.local import LOGISTICS
 from metrics.measurement_switchboard import pull_blob_data
 
 # TODO: eliminate redundency in function.
@@ -32,9 +32,9 @@ def pull_plate_from_phoenix(ex_id, pull=True):
     p2 = '/home/projects/worm_movement/waldo/data/plates/{dset}/percentiles/{eid}*'.format(eid=ex_id, dset=dataset)
     w1 = '/home/projects/worm_movement/waldo/data/worms/{eid}'.format(eid=ex_id)
     # destination
-    d_p1 = '{p_dir}timeseries'.format(p_dir=LOGISTICS['plates'])
-    d_p2 = '{p_dir}percentiles'.format(p_dir=LOGISTICS['plates'])
-    d_w1 = '{w_dir}'.format(w_dir=LOGISTICS['worms'])
+    d_p1 = '{p_dir}timeseries'.format(p_dir=settings.LOGISTICS['plates'])
+    d_p2 = '{p_dir}percentiles'.format(p_dir=settings.LOGISTICS['plates'])
+    d_w1 = '{w_dir}'.format(w_dir=settings.LOGISTICS['worms'])
     # make sure destination exists
     for d in [d_p1, d_p2, d_w1]:
         print d

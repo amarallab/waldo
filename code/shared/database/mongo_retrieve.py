@@ -15,7 +15,7 @@ project_directory = os.path.dirname(os.path.realpath(__file__)) + '/../../'
 sys.path.append(project_directory)
 
 # nonstandard imports
-from settings.local import MONGO as mongo_settings
+from conf import settings
 import manage_parts
 import mongo_support_functions as support_func
 
@@ -45,14 +45,14 @@ def mongo_query(query, projection={}, find_one=False, col='blobs', mongo_client=
 
     if mongo_client:
         close_mongo_when_done = False
-        mongo_col = mongo_client[mongo_settings['database']][mongo_settings[col]]
+        mongo_col = mongo_client[settings.MONGO['database']][settings.MONGO[col]]
     else:
         close_mongo_when_done = True
         print 'warning, creating new mongo_client'
-        mongo_client, mongo_col = support_func.start_mongo_client(mongo_settings['ip'],
-                                                                  mongo_settings['port'],
-                                                                  mongo_settings['database'],
-                                                                  mongo_settings[col])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                                  settings.MONGO['port'],
+                                                                  settings.MONGO['database'],
+                                                                  settings.MONGO[col])
 
     if not find_one:
         if len(projection) == 0:
@@ -79,14 +79,14 @@ def unique_results_for_query(query=None, result_feild=None, col='blob_collection
 
     if mongo_client:
         close_mongo_when_done = False
-        mongo_col = mongo_client[mongo_settings['database']][mongo_settings[col]]
+        mongo_col = mongo_client[settings.MONGO['database']][settings.MONGO[col]]
     else:
         close_mongo_when_done = True
         print 'warning, creating new mongo_client'
-        mongo_client, mongo_col = support_func.start_mongo_client(mongo_settings['ip'],
-                                                                  mongo_settings['port'],
-                                                                  mongo_settings['database'],
-                                                                  mongo_settings[col])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                                  settings.MONGO['port'],
+                                                                  settings.MONGO['database'],
+                                                                  settings.MONGO[col])
 
 
     pipeline = [{'$project': {'purpose':1, 'ex_id': 1}},
@@ -114,14 +114,14 @@ def mongo_update(query, update, multi=False, col='blobs', mongo_client=None):
 
     if mongo_client:
         close_mongo_when_done = False
-        mongo_col = mongo_client[mongo_settings['database']][col]
+        mongo_col = mongo_client[settings.MONGO['database']][col]
     else:
         close_mongo_when_done = True
         print 'warning, creating new mongo_client'
-        mongo_client, mongo_col = support_func.start_mongo_client(mongo_settings['ip'],
-                                                                  mongo_settings['port'],
-                                                                  mongo_settings['database'],
-                                                                  mongo_settings[col])
+        mongo_client, mongo_col = support_func.start_mongo_client(settings.MONGO['ip'],
+                                                                  settings.MONGO['port'],
+                                                                  settings.MONGO['database'],
+                                                                  settings.MONGO[col])
     mongo_col.update(query, update, multi=multi)
     if close_mongo_when_done:
         support_func.close_mongo_client(mongo_client)

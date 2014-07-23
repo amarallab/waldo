@@ -22,12 +22,12 @@ CODE_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../../'
 sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from settings.local import LOGISTICS
+from conf import settings
 
 # globals
-FILESYSTEM_DIR = LOGISTICS['filesystem_data']
-CLUSTER_DIR = '{address}:{data_dir}'.format(address=LOGISTICS['cluster_address'],
-                                            data_dir=LOGISTICS['cluster_data'])
+FILESYSTEM_DIR = settings.LOGISTICS['filesystem_data']
+CLUSTER_DIR = '{address}:{data_dir}'.format(address=settings.LOGISTICS['cluster_address'],
+                                            data_dir=settings.LOGISTICS['cluster_data'])
 FILE_TYPES = ['.blobs', '.blob', '.summary']
 
 
@@ -37,12 +37,12 @@ def sync_raw_data_files_to_cluster(source_dir=FILESYSTEM_DIR, dest_dir=CLUSTER_D
 
     Breif explanation of rsync options used:
     rxync by default only moves raw data files not already on cluster
-    '-a' -- archive mode 
+    '-a' -- archive mode
             ie. recursivly transfer subdirectories
             copy/preserve simlinks, permissions, groups, modification times
     '-v' -- verbose
     '-z' -- compress files during transfer
-    '--exclude "*.filetype" -- do not move files of this type.    
+    '--exclude "*.filetype" -- do not move files of this type.
     """
     cmd = ('rsync -avz --exclude "*.png" --exclude "*.dat" --exclude "*.avi" '
            '{dir1} {dir2}').format(dir1=source_dir, dir2=dest_dir)

@@ -2,7 +2,7 @@
 
 '''
 Filename: plot_bargraphs.py
-Description: 
+Description:
 
 graphs:
 1d - scattered, horizontal, bargraph style, dot plot.
@@ -27,7 +27,6 @@ from database.mongo_retrieve import mongo_query
 from Plotting.TraitAggregation.results_bargraph import table_boxplot
 from Plotting.TraitAggregation.multi_histogram import table_histogram_set
 from Plotting import utilities as ut
-#from settings.local import default_mf
 
 # Globals
 BARGRAPH_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../Results/Bargraphs/'
@@ -55,7 +54,7 @@ def bargraph_processing(data_type, graph_tag='aging', measurement_type='mean',
     '''
     assert len(labels) == len(queries)
     if not graph_name:
-        graph_name = '{gt}_{dt}_{date}'.format(gt=graph_tag, dt=data_type, 
+        graph_name = '{gt}_{dt}_{date}'.format(gt=graph_tag, dt=data_type,
                                                date=datetime.date.today())
     savename = dirname + graph_name + '.png'
     print savename
@@ -78,12 +77,12 @@ def bargraphs_by_ex_id(query, data_types=DATA_TYPES_BL, **kwargs):
     ex_id_labels.sort()
     queries = [{'ex_id': ex_id} for ex_id in ex_id_labels]
     for data_type in data_types:
-        bargraph_processing(data_type, labels=ex_id_labels, queries=queries, 
+        bargraph_processing(data_type, labels=ex_id_labels, queries=queries,
                             graph_tag=graph_tag)
-                            
+
     else:
         print 'no worms found for', query
-                             
+
 
 def bargraphs_compare_camera(age='A2', data_types=DATA_TYPES_BL, base_query={}):
     '''
@@ -103,7 +102,7 @@ def bargraphs_compare_camera(age='A2', data_types=DATA_TYPES_BL, base_query={}):
 
 def bargraphs_compare_age(age_range=(2,7), data_types=DATA_TYPES_BL):
     '''
-    Makes a bargraph plot that shows 
+    Makes a bargraph plot that shows
     '''
     graph_tag = 'aging'
     #base_query = {'strain': 'N2', 'ex_id': {'$lt': '20130318_153741'}}
@@ -115,10 +114,10 @@ def bargraphs_compare_age(age_range=(2,7), data_types=DATA_TYPES_BL):
         q.update(base_query)
         queries.append(q)
     for data_type in data_types[:]:
-        bargraph_processing(data_type, labels=age_labels, queries=queries, 
+        bargraph_processing(data_type, labels=age_labels, queries=queries,
                             graph_tag=graph_tag)
-                            
-                            
+
+
 def data_for_query(query, data_type, measurement_type):
     assert measurement_type in default_mf
     result_dicts, metadata_dicts = ut.pull_data_from_results_db(query)

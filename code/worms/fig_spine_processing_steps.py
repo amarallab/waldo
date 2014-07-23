@@ -1,12 +1,16 @@
-#!/usr/bin/env 
+#!/usr/bin/env
 
-# standard imports
-import numpy as np
-import bisect
+# standard library
 import math
+import bisect
 
+# third party
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
+# waldo
+from conf import settings
 
 import database.mongo_support_functions as mongo
 from database.mongo_retrieve import mongo_query
@@ -14,16 +18,13 @@ from database.mongo_retrieve import pull_data_type_for_blob
 from database.mongo_retrieve import timedict_to_list
 from ImageManipulation.find_outlines import find_images, crop_image_around_worm
 
-from settings.local import LOGISTICS as logistics_settings
-from settings.local import MONGO as mongo_settings
-
 from experiment_index import Experiment_Attribute_Index
 from skeletonize_outline import compute_skeleton_from_outline
 from spine_processing_videos import process_outlines
 from create_spine import smooth_and_space_xy_points
 
 
-DATA_DIR = logistics_settings['filesystem_data']
+DATA_DIR = settings.LOGISTICS['filesystem_data']
 SAVE_DIR = './../Results/BlobShapes/'
 
 def choose_ex_id(key='purpose', value='N2_aging'):
@@ -122,8 +123,8 @@ def plot_single_timepoint(cropped_region, filled_matrix, spine_matrix_branched, 
 
 
 def main():
-    mongo_client, _ = mongo.start_mongo_client(mongo_settings['mongo_ip'], mongo_settings['mongo_port'],
-                                               mongo_settings['worm_db'], mongo_settings['blob_collection'])
+    mongo_client, _ = mongo.start_mongo_client(settings.MONGO['mongo_ip'], settings.MONGO['mongo_port'],
+                                               settings.MONGO['worm_db'], settings.MONGO['blob_collection'])
     try:
         ex_ids = choose_ex_id()
         for ex_id in ex_ids[5:10]:
@@ -138,8 +139,8 @@ def main():
 
 
 def plot_one_blob():
-    mongo_client, _ = mongo.start_mongo_client(mongo_settings['mongo_ip'], mongo_settings['mongo_port'],
-                                               mongo_settings['worm_db'], mongo_settings['blob_collection'])
+    mongo_client, _ = mongo.start_mongo_client(settings.MONGO['mongo_ip'], settings.MONGO['mongo_port'],
+                                               settings.MONGO['worm_db'], settings.MONGO['blob_collection'])
 
     try:
         #blob_id = '20130318_153742_02796'
