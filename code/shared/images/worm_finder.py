@@ -445,7 +445,7 @@ def worm_cuttouts(ex_id, savedir, threshold=None, roi=None):
 
         img_index['time'] = time
         frame, blob_data = grab_blob_data(experiment, float(time))
-        img_index['time'] = time
+        img_index['frame'] = frame
         bids, blob_centroids, outlines = zip(*blob_data)
         _, _, _, more = match_objects(bids, blob_centroids, outlines,
                                       image_objects,roi=roi)
