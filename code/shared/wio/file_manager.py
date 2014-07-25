@@ -61,7 +61,6 @@ class PrepData(object):
 
     def refresh(self):
         dir_is_there = os.path.exists(self.filedir)
-        print(dir_is_there, 'is there')
         search = os.path.join(self.filedir, '*.csv')
         self.files = [f for f in iglob(search)]
 
@@ -70,10 +69,19 @@ class PrepData(object):
         self.data_types = [get_dt(f) for f in self.files]
 
 
-    def load(self, data_type):
-        assert data_type in self.data_types
-        f = self.files[self.data_types.index(data_type)]
-        return pd.read_csv(f)
+    def load(self, data_type, **kwargs):
+        """
+        Load the specified *data_type* as a Pandas DataFrame.  Raises KeyError
+        if
+        """
+        try:
+            f = self.files[self.data_types.index(data_type)]
+            df = pd.read_csv(f, **kwargs)
+        except ValueError, IndexError:
+            raise ValueError('Requested data storage type not found (not generated?)')
+        except IOError:
+            raise IOError('Pandas could not load the CSV file')
+        return df
 
     def dump(self, data_type, dataframe, **kwargs):
         """
