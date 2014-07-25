@@ -100,7 +100,7 @@ class PrepData(object):
             a list containing blob_ids
         """
         df = self.load('matches')[['bid', 'good']]
-        return [b for (b, v) in df.Values() if v]
+        return [b for (b, v) in df.values if v]
 
 
     def bad(self):
@@ -112,7 +112,7 @@ class PrepData(object):
             a list containing blob_ids
         """
         df = self.load('matches')[['bid', 'good']]
-        return [b for (b, v) in df.Values() if not v]
+        return [b for (b, v) in df.values if not v]
 
     def joins(self):
         """ returns a list specifying all blobs that should be joined
@@ -129,6 +129,11 @@ class PrepData(object):
         tuples = [tuple(i) for i in joins.values]
         tuples = [(int(a), [int(i) for i in b.split('-')]) for (a,b) in tuples]
         return tuples
+
+    def outside(self):
+        df = self.load('roi')[['bid', 'inside_roi']]
+        return [b for (b, v) in df.values if not v]
+
 
     def moved(self, bl_threhold=2):
         pass

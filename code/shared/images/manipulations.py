@@ -11,7 +11,7 @@ import matplotlib.cm as cm
 from scipy import ndimage
 from skimage import morphology
 #from skimage.measure import regionprops
-from skimage.filter.rank import entropy
+#from skimage.filter.rank import entropy
 import matplotlib.patches as mpatches
 
 def outline_to_outline_matrix(outline, bbox=None):
@@ -109,21 +109,21 @@ def show_threshold(img, background, threshold):
     ax.set_title('threshold = {t}'.format(t=threshold))
     ax.axis('off')
 
-def check_entropy(img):
-    """
-    for fun, show the entropy for a given image
-    using three different radius sizes.
+# def check_entropy(img):
+#     """
+#     for fun, show the entropy for a given image
+#     using three different radius sizes.
 
-    params
-    ------
-    img: (image or array)
-        the image.
-    """
-    fig, ax = plt.subplots(2,2, sharex=True, sharey=True)
-    ax[0, 0].imshow(img, cmap=plt.cm.Greys_r)
-    ax[0, 1].imshow(entropy(img, morphology.disk(3)))
-    ax[1, 0].imshow(entropy(img, morphology.disk(5)))
-    ax[1, 1].imshow(entropy(img, morphology.disk(20)))
+#     params
+#     ------
+#     img: (image or array)
+#         the image.
+#     """
+#     fig, ax = plt.subplots(2,2, sharex=True, sharey=True)
+#     ax[0, 0].imshow(img, cmap=plt.cm.Greys_r)
+#     ax[0, 1].imshow(entropy(img, morphology.disk(3)))
+#     ax[1, 0].imshow(entropy(img, morphology.disk(5)))
+#     ax[1, 1].imshow(entropy(img, morphology.disk(20)))
 
 
 def flip_bbox_xy(bbox):

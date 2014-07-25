@@ -127,11 +127,17 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
     #print('all', all(img_roi_check))
     img_outside_roi = len(img_roi_check) - sum(img_roi_check)
     bid_outside_roi = []
+    outside_objects = []
+
     #print(img_outside_roi)
     if roi != None:
         dx = img_centroids[:, 0] - roi['x']
         dy = img_centroids[:, 1] - roi['y']
         img_roi_check = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
+
+        for l, in_roi in zip(img_labels, img_roi_check):
+            if not in_roi:
+                outside_objects.append(l)
 
     #blob_centroids = np.array(blob_centroids)
     matches, false_pos = [], []
@@ -264,7 +270,8 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
             'lines': lines,
             'roi':roi,
             'bid-outside':bid_outside_roi,
-            'img-outside':img_outside_roi}
+            'img-outside':img_outside_roi,
+            'outside_objects':outside_objects}
 
     return matches, false_pos, blobs_to_join, more
 
@@ -350,6 +357,106 @@ def analyze_image(experiment, time, img, background, threshold,
 
     return bid_matching, base_accuracy
 
+def draw_colors_on_image(ex_id, time):
+
+    missed_color = 'b'
+    tp_color = 'green'
+    fp_color = 'red'
+    roi_color = 'yellow'
+    roi_line_color = 'blue'
+
+    # grab images and times.
+    times, impaths = grab_images_in_time_range(ex_id, start_time=0)
+    times = [float(t) for t in times]
+    times, impaths = zip(*sorted(zip(times, impaths)))
+
+    closest_time, closest_image = 1000000.0, None
+    for i, (t, impath) in enumerate(zip(times, impaths)):
+        if fabs(t - time) < fabs(closest_time - time):
+            closest_time = t
+            closest_image = impath
+
+    print('looking for {t}'.format(t=time))
+    print('closest image is at time {t}'.format(t=closest_time))
+    print(closest_image)
+
+    # initialize experiment
+    path = os.path.join(MWT_DIR, ex_id)
+    experiment = multiworm.Experiment(path)
+    experiment.load_summary()
+
+    time = closest_time
+    img = mpimg.imread(closest_image)
+    prepdata = fm.PrepData(ex_id)
+    good = prepdata.good()
+    bad = prepdata.bad()
+    outside = prepdata.outside()
+
+    frame, blob_data = grab_blob_data(experiment, time)
+    print(frame)
+    bids, blob_centroids, outlines = zip(*blob_data)
+
+    pf = fm.Preprocess_File(ex_id=ex_id)
+    threshold = pf.threshold()
+    roi = pf.roi()
+
+    background = create_backround(impaths)
+    mask = create_binary_mask(img, background, threshold)
+    labels, n_img = ndimage.label(mask)
+    image_objects = regionprops(labels)
+
+    match = match_objects(bids, blob_centroids, outlines,
+                          image_objects, roi=roi)
+    matches, false_pos, blobs_to_join, more = match
+    blobs_by_obj = more['blobs_by_object']
+    objects_outside = more['outside_objects']
+    #print('outside', objects_outside)
+
+    f, ax = plt.subplots()
+    ax.imshow(img.T, cmap=plt.cm.Greys_r)
+    print(len(bids), 'bids found')
+
+    object_baseline = np.zeros(img.shape)
+    for o in image_objects:
+        if o.label not in blobs_by_obj:
+            continue
+        if o.label in objects_outside:
+            continue
+        if len(blobs_by_obj.get(o.label, [])):
+            continue
+        xmin, ymin, xmax, ymax = o.bbox
+        object_baseline[xmin: xmax, ymin: ymax] = o.image
+    ax.contour(object_baseline.T, [0.5], linewidths=1.2,
+               colors=missed_color)
+
+    for bid, outline in zip(bids, outlines):
+        color = 'blue'
+        if bid in good:
+            color = tp_color
+        if bid in bad:
+            color = fp_color
+        if bid in outside:
+            color = roi_color
+
+        if not len(outline):
+            continue
+        x, y = zip(*outline)
+        ax.fill(x, y, color=color, alpha=0.5)
+
+    if roi != None:
+        # draw full circle region of interest
+        roi_t = np.linspace(0, 2* np.pi, 500)
+        roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+        roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
+        ax.plot(roi_x, roi_y, color=roi_line_color)
+        # resize figure
+        ymax, xmax = img.T.shape
+        ax.set_xlim([0, xmax])
+        ax.set_ylim([0, ymax])
+    print('done')
+    plt.show()
+
+
 def show_matched_image(ex_id, threshold, time, roi=None):
     """
     shows an image in which objects found through image processing
@@ -398,7 +505,7 @@ def show_matched_image(ex_id, threshold, time, roi=None):
                                            roi=roi, show=True)
     return bid_matching, base_acc
 
-def worm_cuttouts(ex_id, savedir, threshold=None, roi=None):
+def worm_cutouts(ex_id, savedir, threshold=None, roi=None):
     """
     creates a nested directory structure containing cropped worm images,
     masks corresponding to the worm images, and an index csv with
@@ -440,8 +547,8 @@ def worm_cuttouts(ex_id, savedir, threshold=None, roi=None):
         mask = create_binary_mask(img, background, threshold)
         labels, n_img = ndimage.label(mask)
         image_objects = regionprops(labels)
-        cuttouts = cuttouts_from_image(img, image_objects, roi)
-        labels, masks, imgs, img_index = cuttouts
+        cutouts = cutouts_from_image(img, image_objects, roi)
+        labels, masks, imgs, img_index = cutouts
 
         img_index['time'] = time
         frame, blob_data = grab_blob_data(experiment, float(time))
@@ -481,7 +588,7 @@ def worm_cuttouts(ex_id, savedir, threshold=None, roi=None):
     index.to_csv(os.path.join(savedir, 'index.csv'), index=False)
 
 
-def cuttouts_from_image(img, image_objects, roi=None):
+def cutouts_from_image(img, image_objects, roi=None):
     """
     returns a list of images cropped around a worm,
     a list of masks that correspond to each worm image,

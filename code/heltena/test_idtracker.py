@@ -50,7 +50,7 @@ def calculate_fingerprint(image_filename, mask_filename, output_filename):
                     dist_scores.append(dist)
                 jx, jy = move_pixel(jx, jy)
         ix, iy = move_pixel(ix, iy)
-    
+
     plus_heatmap, _, _ = np.histogram2d(dist_scores, plus_scores, bins=(32,32))
     minus_heatmap, _, _ = np.histogram2d(dist_scores, minus_scores, bins=(32,32))
     f, ax = plt.subplots(1,2)
