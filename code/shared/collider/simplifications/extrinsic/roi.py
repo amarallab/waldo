@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 #seperated
-def check_blobs_against_roi(experiment, x, y, z):
+def check_blobs_against_roi(experiment, x, y, r):
     def box_centers(experiment):
         bids, boxes = [], []
         for (bid, blob_data) in experiment.all_blobs():
@@ -68,7 +68,7 @@ def remove_nodes_outside_roi(graph, experiment, x, y, r, ex_ids=None):
     #    pass
     #except:
 
-    bids, are_inside = check_blobs_against_roi(experiment, x, y, z)
+    bids, are_inside = check_blobs_against_roi(experiment, x, y, r)
     outside_nodes = []
     for bid, in_roi in zip(bids, are_inside):
         if not in_roi:

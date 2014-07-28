@@ -20,34 +20,37 @@ DATA_DIR = settings.LOGISTICS['filesystem_data']
 def experiment_path(ex_id):
     return os.path.join(DATA_DIR, ex_id)
 
-def graph_cache(ex_id):
+def graph_cache(ex_id, num_repeats=2):
     print('load experiment')
     ep = experiment_path(ex_id)
     experiment = multiworm.Experiment(experiment_id=ep)
     experiment.load_summary(graph=True)
     graph = experiment.collision_graph
 
-    cache_file = pathlib.Path() / '{}_graphcache.pkl'.format(ex_id)
-    print('removing nodes outside roi')
-    collider.remove_nodes_outside_roi(graph, experiment, **fm.Preprocess_File(ex_id=ex_id).roi())
+    for i in range(num_repeats):
+        #remove nodes outside roi
+        print('removing nodes outside roi')
+        collider.remove_nodes_outside_roi(graph, experiment, **fm.Preprocess_File(ex_id=ex_id).roi())
 
-    print('round 1')
-    params = {'offshoots': 20, 'splits_abs': 5, 'splits_rel': 0.5}
-    collider.removal_suite(graph, **params)
-    print('resolving collisions')
-    threshold = 2
-    suspects = collider.suspected_collisions(graph, threshold)
-    print(len(suspects), 'suspects found')
-    collider.resolve_collisions(graph, experiment, suspects)
 
-    print('round 2')
-    params = {'offshoots': 20, 'splits_abs': 5, 'splits_rel': 0.5}
-    collider.removal_suite(graph, **params)
-    print('resolving collisions')
-    suspects = collider.suspected_collisions(graph, threshold)
-    print(len(suspects), 'suspects found')
-    collider.resolve_collisions(graph, experiment, suspects)
+        print('round {i}'.format(i=i))
+        params = {'offshoots': 20, 'splits_abs': 5, 'splits_rel': 0.5}
+        collider.removal_suite(graph, **params)
+        # removal suite preforms the following actions:
+        # remove_single_descendents(digraph)
+        # remove_fission_fusion(digraph, max_split_frames=params_local['splits_abs'])
+        # remove_fission_fusion_rel(digraph, split_rel_time=params_local['splits_rel'])
+        # remove_offshoots(digraph, threshold=params_local['offshoots'])
+        # remove_single_descendents(digraph)
 
+        print('resolving collisions')
+        # threshold = 2
+        # suspects = collider.suspected_collisions(graph, threshold)
+        # print(len(suspects), 'suspects found')
+        # collider.resolve_collisions(graph, experiment, suspects)
+
+    # save cache of the graph.
+    cache_file = pathlib.Path() / '{}_graphcache2.pkl'.format(ex_id)
     pickle.dump(graph, cache_file.open('wb'), protocol=pickle.HIGHEST_PROTOCOL)
     print('Caching graph')
     return graph
