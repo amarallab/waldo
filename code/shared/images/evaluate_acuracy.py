@@ -32,17 +32,19 @@ def grab_files(ex_id):
     #base_accuracy = pd.read_csv(s2, index_col='frame')
     return base_accuracy, matches
 
-def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=True):
+def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
 
     #frames, true_pos, false_pos, false_neg = [], [], [], []
     data = {}
+    #print base_accuracy.head()
+    ba = base_accuracy.set_index('frame')
     for frame, df in matches.groupby('frame'):
         tp_bids = list(df[df['good']]['bid'])
         # false positives are inside roi and not good.
         check = (df['good']== False) & (df['roi']== True)
         fp_bids = list(df[check]['bid'])
 
-        row = base_accuracy.loc[frame]
+        row = ba.loc[frame]
         #print row
         base_tp = row['true-pos']
         base_fp = row['false-pos']
@@ -51,9 +53,16 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=True):
         #print len(tp_bids), len(fp_bids)
 
         if unforgiving:
+            #print 'in roi', (df['roi'] == True).sum()
+
+            #print 'fp', base_fp, row['false-pos']
+            #print 'tp', base_tp
+            #print 'fn', base_fn
             assert (df['roi'] == True).sum() == base_fp + base_tp
-            #print base_fp, len(fp_bids)
-            assert base_fp == len(fp_bids)
+            ##print base_fp, len(fp_bids)
+            print 'fp', len(fp_bids)
+            print fp_bids
+            #assert base_fp == len(fp_bids)
 
         if len(bids) > 0:
             n_tracked_bids = len([b for b in tp_bids if b in bids])
