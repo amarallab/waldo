@@ -17,11 +17,7 @@ import numpy as np
 # project specific
 #import..
 
-TRACE_LIMIT_NUM = 400
-TRACE_LIMIT_FRAMES = 300
-REL_MOVE_THRESHOLD = 0.5
-
-PREPDATA_TRACE_NAME = 'example_tracks'
+#PREPDATA_TRACE_NAME = 'example_tracks'
 
 def absolute_displacement(centroid, reverse=False):
     """

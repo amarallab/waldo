@@ -14,6 +14,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import os
 import imp
+import warnings
 
 from . import defaults
 
@@ -55,9 +56,9 @@ class Settings(object):
         # notify users if there is an unexpected setting. could be either a
         # typo, or a "local-only" setting which may result in code that works
         # locally, but will crash when internal code attempts to reference a
-        # non-existent attribute.
+        # non-existent attribute (gonna have a bad time).
         if rogue_fields:
-            raise Warning("Settings included field(s): {} which have no "
+            warnings.warn("Local settings included field(s): {} which have no "
                     "defaults.  Possible typo?"
                     .format(', '.join("'{}'".format(f) for f in rogue_fields)))
 

@@ -9,14 +9,15 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 # standard library
+import math
 
 # third party
 
 # project specific
+from conf import settings
 from .scorer import Scorer
 
 # parameters
-MAX_CELERITY = 5  # pixel / seconds
 MAX_TIME = 5
 OFFSET = 10 # pixels added to the radius of the cone
 
@@ -48,15 +49,28 @@ def angle_2d(p1, p2):
 
 class Taper(object):
     """
-    Designed to take a wio.Experiment-like object.
+    Initalized with a wio.Experiment-like object and a simplified graph.
     """
-    def __init__(self, experiment, regenerate_cache=False):
+    def __init__(self, experiment, graph):#, regenerate_cache=False):
         self.experiment = experiment
 
-        self.scorer = Scorer(experiment)
+        self._scorer = Scorer(experiment)
 
+        self.max_speed = self._scorer.max_speed * settings.TAPE_MAX_SPEED_MULTIPLIER
 
+        self._terminals = self.experiment.prepdata.load('terminals').set_index('bid')
 
+    def score(lost_id, found_id):
+        lost = self._terminals.loc[lost_id]
+        found = self._terminals.loc[found_id]
+
+        Dx = lost.xN - found.x0
+        Dy = lost.yN - found.y0
+        Dt = lost.tN - found.t0
+
+        Dr = math.sqrt(Dx**2 + Dy**2)
+
+        return self._scorer(Dr, Dt)
 
 
 # dl is an array of DataRow ordered by "begin time"
@@ -128,7 +142,7 @@ def calculate_relations(network, terminals):
     #             maxT = max(maxT, data.begin[2], data.end[2])
 
     # data_list = sorted(data_list, key=lambda x: x.begin[2]) # sorting by begin time
-    print "Total nodes readed: ", len(terminals)
+    print("Total nodes readed: ", len(terminals))
 
     data_index_nodes = set(terminals['bid'])
     in_index_nodes = set([x for x in network.nodes() if len(network.predecessors(x)) == 0]) & data_index_nodes
@@ -137,21 +151,19 @@ def calculate_relations(network, terminals):
     # TODO: resume recoding here.
     in_nodes = sorted([data_map[x] for x in in_index_nodes], key=lambda x: x.begin[2])
     out_nodes = sorted([data_map[x] for x in out_index_nodes], key=lambda x: x.begin[2])
-    print "In nodes: %d, Out nodes: %d" % (len(in_index_nodes), len(out_index_nodes))
+    print("In nodes: %d, Out nodes: %d" % (len(in_index_nodes), len(out_index_nodes)))
 
     proposed_relations = []
     for out in out_nodes:
         index = index_of_data_with_begin_time_greater_than(in_nodes, out.end[2])
         while index < len(in_nodes):
             current = in_nodes[index]
-            if inside_time_cone(out, current, MAX_CELERITY, MAX_TIME, OFFSET):
+            if inside_time_cone(out, current, MAX_CELERITY, TAPE_FRAME_SEARCH_LIMIT, TAPE_SHAKYCAM_ALLOWANCE):
                 score = calculate_score(out, current)
                 proposed_relations.append((score, out, current))
             index += 1
 
     return proposed_relations
-
-
 
 def pick_single_best_relation(proposed_relations):
     relations = []
@@ -163,12 +175,9 @@ def pick_single_best_relation(proposed_relations):
 
     return relations
 
-
 def main(ex_id):
+    result = calculate_relations(BASEDIR, PREFIX)
+    print("Result: %d" % len(result))
 
-
-result = calculate_relations(BASEDIR, PREFIX)
-print "Result: %d" % len(result)
-
-for s, tail, head in result:
-    print "%d -> %d" % (tail.id, head.id)
+    for s, tail, head in result:
+        print("%d -> %d" % (tail.id, head.id))
