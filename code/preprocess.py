@@ -80,9 +80,10 @@ if __name__ == '__main__':
         filename = 'threshold-{ds}.json'.format(ds=dset)
         threshold_file = os.path.join(IMAGE_MARK_DIR, filename)
         print threshold_file
-    if cmd == 'cache':
-          cache_image_data(eids, threshold_file=threshold_file)
-    if cmd == 'mark':
-          mark_images_interactivly(eids, threshold_file=threshold_file)
-    if cmd  == 'finish':
-          finish_preprocessing(eids)
+
+        if cmd == 'cache':
+              cache_image_data(eids, threshold_file=threshold_file)
+        if cmd == 'mark':
+              mark_images_interactivly(eids, threshold_file=threshold_file)
+        if cmd  == 'finish':
+              finish_preprocessing(eids)

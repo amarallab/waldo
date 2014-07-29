@@ -139,10 +139,12 @@ def preprocess_blobs_data(experiment):
         try:
             if blob['centroid']:
                 times = blob['time']
+                frames = blob['frame']
                 centroid_x, centroid_y = zip(*blob['centroid'])
                 x_min, x_max = min(centroid_x), max(centroid_x)
                 y_min, y_max = min(centroid_y), max(centroid_y)
                 t0, tN = min(times), max(times)
+                f0, fN = min(frames), max(frames)
                 bounds_data.append({'bid': bid, 'x_min':x_min,
                                     'x_max': x_max, 'y_min':y_min,
                                     'y_max': y_max})
@@ -151,7 +153,8 @@ def preprocess_blobs_data(experiment):
                 xN, yN = blob['centroid'][-1]
                 terminals_data.append({'bid': bid, 'x0':x0, 'xN':xN,
                                        'y0':y0, 'yN':yN,
-                                       't0':t0, 'tN':tN})
+                                       't0':t0, 'tN':tN,
+                                       'f0':f0, 'fN':fN})
 
             midline_median, area = np.nan, np.nan
             if blob['midline']:

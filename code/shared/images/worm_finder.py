@@ -286,7 +286,7 @@ def analyze_image(experiment, time, img, background, threshold,
     image_objects = regionprops(labels)
 
     frame, blob_data = grab_blob_data(experiment, time)
-    print(frame)
+    #print(frame)
     bids, blob_centroids, outlines = zip(*blob_data)
     match = match_objects(bids, blob_centroids, outlines,
                           image_objects, roi=roi)
@@ -301,7 +301,7 @@ def analyze_image(experiment, time, img, background, threshold,
             ax.plot(*outline.T, color='red')
 
         lines = more['lines']
-        print(len(lines), 'lines')
+        #print(len(lines), 'lines')
         for line in lines:
             x, y = line
             ax.plot(x, y, '.-', color='green', lw=2)
@@ -347,11 +347,11 @@ def analyze_image(experiment, time, img, background, threshold,
 
     assert more['true-pos'] == len(matches)
 
-    A = more['false-pos']
-    B = len(bids) - len(matches) -len(outside)
-    C = len([b for b in bids
-             if (b not in matches and b not in outside)])
-    print('false pos', frame, A, B, C)
+    # A = more['false-pos']
+    # B = len(bids) - len(matches) -len(outside)
+    # C = len([b for b in bids
+    #          if (b not in matches and b not in outside)])
+    # print('false pos', frame, A, B, C)
 
     #assert more['false-pos'] == len(bids) - len(matches)
 
@@ -673,7 +673,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
         bid_matching, base_acc = analyze_image(experiment, time, img,
                                                background, threshold,
                                                roi=roi, show=False)
-        print(base_acc)
+        #print(base_acc)
         full_experiment_check.append(bid_matching)
         accuracy.append(base_acc)
 
@@ -696,5 +696,4 @@ def summarize(ex_id):
     pfile = fm.Preprocess_File(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()
-    print(threshold)
     return analyze_ex_id_images(ex_id, threshold, roi)
