@@ -1,0 +1,2 @@
+#!/bin/sh
+rsync -rcv /home/projects/worm_movement/Data/dev/prep/ ./prep/
