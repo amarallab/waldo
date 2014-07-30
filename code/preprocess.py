@@ -32,7 +32,7 @@ os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
 
 from conf import settings
 import images
-import collider.prep.prepare as prep
+import prepare
 import wio.file_manager as fm
 
 
@@ -53,7 +53,7 @@ def mark_images_interactivly(eids, threshold_file):
 
 def finish_preprocessing(eids):
     for ex_id in eids:
-        prep.summarize(ex_id) #csvs from blob data
+        prepare.summarize(ex_id) #csvs from blob data
         images.summarize(ex_id) #csvs from image data
 
 #TODO make this be able to accept both
@@ -74,9 +74,8 @@ if __name__ == '__main__':
     dset_eids = parse_ids(arguments['<id>'])
     cmd = arguments['<command>']
     for dset, eids in dset_eids.iteritems():
-        print '{cmd}ing {n} recordings for {ds}'.format(ds=dset,
-                                                        cmd=cmd,
-                                                        n=len(eids))
+        print '{cmd}ing {n} recordings for {ds}'.format(
+              ds=dset, cmd=cmd, n=len(eids))
         filename = 'threshold-{ds}.json'.format(ds=dset)
         threshold_file = os.path.join(IMAGE_MARK_DIR, filename)
         print threshold_file
@@ -87,3 +86,4 @@ if __name__ == '__main__':
               mark_images_interactivly(eids, threshold_file=threshold_file)
         if cmd  == 'finish':
               finish_preprocessing(eids)
+        if cmd == 'blobs':
