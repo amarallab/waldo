@@ -37,8 +37,9 @@ taper = tp.Taper(experiment=experiment, graph=graph)
 s, e = taper.find_start_and_end_nodes()
 matches = taper.score_potential_matches(s,e)
 
-
-#prep_data = fm.PrepData('20130318_131111')
+prep_data = fm.PrepData(ex_id)
+prep_data.dump('gaps', matches)
+print matches.head()
 #print prep_data.filedir
 #print prep_data.data_types
 #terminals = prep_data.load('terminals')
