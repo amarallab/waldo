@@ -9,7 +9,9 @@ Usage:
 Commands:
   cache            precalculate image threshold values to speed up marking
   mark             manually annotate threshold and ROI images using GUI
-  finish            use annotated images to calculate
+  prepare          convert text data into CSVs
+  images           use annotated images to calculate
+  finish           runs both 'prepare' and 'images'
 
 Arguments:
    id              can be either dataset names or experiment ids
@@ -32,9 +34,9 @@ os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
 
 from conf import settings
 import images
+#import collider.prep.prepare as prep
 import prepare
 import wio.file_manager as fm
-
 
 PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
 IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
@@ -53,7 +55,7 @@ def mark_images_interactivly(eids, threshold_file):
 
 def finish_preprocessing(eids):
     for ex_id in eids:
-        prepare.summarize(ex_id) #csvs from blob data
+        prepare.summarize(ex_id, verbose=True) #csvs from blob data
         images.summarize(ex_id) #csvs from image data
 
 #TODO make this be able to accept both
@@ -67,23 +69,28 @@ def parse_ids(ids):
     #print(dset_eids)
     return dset_eids
 
-
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='prep 0.1')
     #print(arguments)
     dset_eids = parse_ids(arguments['<id>'])
     cmd = arguments['<command>']
     for dset, eids in dset_eids.iteritems():
-        print '{cmd}ing {n} recordings for {ds}'.format(
-              ds=dset, cmd=cmd, n=len(eids))
+        print '{cmd}ing {n} recordings for {ds}'.format(ds=dset,
+                                                        cmd=cmd,
+                                                        n=len(eids))
         filename = 'threshold-{ds}.json'.format(ds=dset)
         threshold_file = os.path.join(IMAGE_MARK_DIR, filename)
         print threshold_file
 
         if cmd == 'cache':
-              cache_image_data(eids, threshold_file=threshold_file)
-        if cmd == 'mark':
-              mark_images_interactivly(eids, threshold_file=threshold_file)
-        if cmd  == 'finish':
-              finish_preprocessing(eids)
-        if cmd == 'blobs':
+            cache_image_data(eids, threshold_file=threshold_file)
+        elif cmd == 'mark':
+            mark_images_interactivly(eids, threshold_file=threshold_file)
+        elif cmd == 'prepare':
+            for ex_id in eids:
+                prepare.summarize(ex_id, verbose=True) #csvs from blob data
+        elif cmd == 'images':
+            for ex_id in eids:
+                images.summarize(ex_id) #csvs from blob data
+        elif cmd  == 'finish':
+            finish_preprocessing(eids)

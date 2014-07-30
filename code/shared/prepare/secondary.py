@@ -9,9 +9,11 @@ from six.moves import (zip, filter, map, reduce, input, range)
 # standard library
 
 # third party
+import numpy as np
 import pandas as pd
 
 # project specific
+import wio.file_manager as fm
 
 def bodylengths_moved(experiment=None, bounds=None, sizes=None):
     if bounds is None or sizes is None:
@@ -41,7 +43,7 @@ def _check_roi(bounds, x, y, r):
 
     return df[['bid', 'inside_roi']]
 
-def roi(experiment=None, ex_id=None, bounds=None):
+def in_roi(experiment=None, ex_id=None, bounds=None):
     """
     Generate a dataframe with True/False for each blob ID if the bounding
     box centroid lies within the ROI.
