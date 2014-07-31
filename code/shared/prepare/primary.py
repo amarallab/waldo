@@ -18,15 +18,17 @@ import pandas as pd
 __all__ = ['summarize']
 
 class DataFrameBuilder(object):
+    column_order = None
     def __init__(self):
         self.data = []
 
     def render(self):
-        return pd.DataFrame(self.data)
+        return pd.DataFrame(self.data, columns=self.column_order)
 
 
 class BoundsBuilder(DataFrameBuilder):
     data_type = 'bounds'
+    column_order = ['bid', 'x_min', 'x_max', 'y_min', 'y_max']
 
     def append(self, bid, blob):
         if not blob['centroid']:
@@ -41,6 +43,7 @@ class BoundsBuilder(DataFrameBuilder):
 
 class SizeBuilder(DataFrameBuilder):
     data_type = 'sizes'
+    column_order = ['bid', 'area_median', 'midline_median']
 
     def append(self, bid, blob):
         no_data = True
@@ -76,6 +79,8 @@ class SizeBuilder(DataFrameBuilder):
 
 class TerminalsBuilder(DataFrameBuilder):
     data_type = 'terminals'
+    column_order = ['bid', 'x0', 'y0', 't0', 'f0',
+                           'xN', 'yN', 'tN', 'fN']
 
     def append(self, bid, blob):
         if not blob['centroid']:
