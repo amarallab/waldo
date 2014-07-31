@@ -54,3 +54,6 @@ build/
 .ropeproject/*
 *.sublime-*
 
+# Local settings files
+scripts/settings/waldo_local.py
+scripts/settings/multiworm_local.py

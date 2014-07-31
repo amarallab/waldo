@@ -13,7 +13,7 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 import os
-import imp
+import importlib #2.7+
 import warnings
 
 from . import defaults
@@ -37,9 +37,7 @@ class Settings(object):
 
         # attempt to import
         try:
-            file, pathname, desc = imp.find_module(local_module_name)
-            local_module = imp.load_module(
-                    local_module_name, file, pathname, desc)
+            local_module = importlib.import_module(local_module_name)
         except ImportError:
             raise ImportError("Failed to load settings module: {}"
                               .format(local_module_name))
