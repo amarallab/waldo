@@ -45,11 +45,3 @@ def summarize(ex_id, verbose=False):
     for key, value in six.iteritems(data):
         talk('   - {}'.format(key))
         experiment.prepdata.dump(data_type=key, dataframe=value, index=False)
-
-    # roi = check_roi(experiment=experiment, bounds=bounds)
-    # prep_data.dump(data_type='roi', dataframe=roi, index=False)
-
-    # moved = bodylengths_moved(ex_id, bounds=bounds, sizes=sizes)
-    # prep_data.dump(data_type='moved', dataframe=moved, index=False)
-
-    #return bounds, terminals, sizes

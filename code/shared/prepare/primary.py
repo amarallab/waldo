@@ -15,6 +15,7 @@ import pandas as pd
 
 # project specific
 
+__all__ = ['summarize']
 
 class DataFrameBuilder(object):
     def __init__(self):
@@ -25,24 +26,21 @@ class DataFrameBuilder(object):
 
 
 class BoundsBuilder(DataFrameBuilder):
-    name = 'bounds'
+    data_type = 'bounds'
 
     def append(self, bid, blob):
         if not blob['centroid']:
             return
 
         centroid_x, centroid_y = zip(*blob['centroid'])
-        x_min, x_max = min(centroid_x), max(centroid_x)
-        y_min, y_max = min(centroid_y), max(centroid_y)
-
         self.data.append({'bid': bid,
-                'x_min': x_min, 'x_max': x_max,
-                'y_min': y_min, 'y_max': y_max,
+                'x_min': min(centroid_x), 'x_max': max(centroid_x),
+                'y_min': min(centroid_y), 'y_max': max(centroid_y),
             })
 
 
 class SizeBuilder(DataFrameBuilder):
-    name = 'sizes'
+    data_type = 'sizes'
 
     def append(self, bid, blob):
         no_data = True
@@ -61,9 +59,9 @@ class SizeBuilder(DataFrameBuilder):
 
         if not no_data:
             self.data.append({
-                    'bid':bid,
-                    'area_median':area,
-                    'midline_median':midline_median
+                    'bid': bid,
+                    'area_median': area,
+                    'midline_median': midline_median
                 })
 
     def _midline_length(self, points):
@@ -77,25 +75,20 @@ class SizeBuilder(DataFrameBuilder):
 
 
 class TerminalsBuilder(DataFrameBuilder):
-    name = 'terminals'
+    data_type = 'terminals'
 
     def append(self, bid, blob):
         if not blob['centroid']:
             return
 
-        times = blob['time']
-        frames = blob['frame']
-
-        t0, tN = min(times), max(times)
-        f0, fN = min(frames), max(frames)
         x0, y0 = blob['centroid'][0]
         xN, yN = blob['centroid'][-1]
 
         self.data.append({'bid': bid,
-                'x0':x0, 'xN':xN,
-                'y0':y0, 'yN':yN,
-                't0':t0, 'tN':tN,
-                'f0':f0, 'fN':fN,
+                'x0': x0, 'xN': xN,
+                'y0': y0, 'yN': yN,
+                't0': min(blob['time']),  'tN': max(blob['time']),
+                'f0': min(blob['frame']), 'fN': max(blob['frame']),
             })
 
 
@@ -110,46 +103,14 @@ def summarize(experiment):
     3. Sizes: median sizes of the area and midline provided by the raw
         blob data.
     """
-    #bounds_data, terminals_data, sizes_data = [], [], []
-    bounds = BoundsBuilder()
-    terminals = TerminalsBuilder()
-    sizes = SizeBuilder()
-    builders = [bounds, terminals, sizes]
+    builders = [BoundsBuilder(), TerminalsBuilder(), SizeBuilder()]
 
     for bid, blob in experiment.blobs():
         try:
             for builder in builders:
                 builder.append(bid, blob)
-            # if blob['centroid']:
-                # times = blob['time']
-                # frames = blob['frame']
-                # centroid_x, centroid_y = zip(*blob['centroid'])
-                # x_min, x_max = min(centroid_x), max(centroid_x)
-                # y_min, y_max = min(centroid_y), max(centroid_y)
-                # t0, tN = min(times), max(times)
-                # f0, fN = min(frames), max(frames)
-                # bounds_data.append({'bid': bid, 'x_min':x_min,
-                #                     'x_max': x_max, 'y_min':y_min,
-                #                     'y_max': y_max})
-
-                # x0, y0 = blob['centroid'][0]
-                # xN, yN = blob['centroid'][-1]
-                # terminals_data.append({'bid': bid, 'x0':x0, 'xN':xN,
-                #                        'y0':y0, 'yN':yN,
-                #                        't0':t0, 'tN':tN,
-                #                        'f0':f0, 'fN':fN})
-
-            # midline_median, area = np.nan, np.nan
-            # if blob['midline'] and any(blob['midline']):
-            #     midline_median = np.median([_midline_length(p) for p in blob['midline'] if p])
-            # if blob['area']:
-            #     area = np.median(blob['area'])
-            # if blob['midline'] or blob['area']:
-            #     sizes_data.append({'bid':bid, 'area_median':area, 'midline_median':midline_median})
-
         except KeyError:
             # zero frame blobs
-            assert blob.blob_data == {}
             pass
 
-    return {'bounds': bounds.render(), 'terminals': terminals.render(), 'sizes': sizes.render()}
+    return {builder.data_type: builder.render() for builder in builders}
