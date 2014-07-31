@@ -129,7 +129,6 @@ def ensure_dir_exists(path):
             pass
         else: raise
 
-
 class DataFile(object):
     #
     def __init__(self):

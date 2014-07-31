@@ -357,14 +357,16 @@ def analyze_image(experiment, time, img, background, threshold,
 
     return bid_matching, base_accuracy
 
-def draw_colors_on_image(ex_id, time):
+def draw_colors_on_image(ex_id, time, ax=None, colors=None):
 
-    missed_color = 'b'
-    tp_color = 'green'
-    fp_color = 'red'
-    roi_color = 'yellow'
-    roi_line_color = 'blue'
-
+    if colors is None:
+        c = {'missed_color': 'b',
+             'tp_color':'green',
+             'fp_color': 'red',
+             'roi_color': 'yellow',
+             'roi_line_color': 'blue'}
+    else:
+        c = colors
     # grab images and times.
     times, impaths = grab_images_in_time_range(ex_id, start_time=0)
     times = [float(t) for t in times]
@@ -387,6 +389,8 @@ def draw_colors_on_image(ex_id, time):
 
     time = closest_time
     img = mpimg.imread(closest_image)
+    h, w = img.shape
+    print(img.shape, h/w, w/h)
     prepdata = fm.PrepData(ex_id)
     good = prepdata.good()
     bad = prepdata.bad()
@@ -412,10 +416,14 @@ def draw_colors_on_image(ex_id, time):
     objects_outside = more['outside_objects']
     #print('outside', objects_outside)
 
-    f, ax = plt.subplots()
+    show_by_default = False
+    if ax is None:
+        show_by_default = True
+        f, ax = plt.subplots()
     ax.imshow(img.T, cmap=plt.cm.Greys_r)
     print(len(bids), 'bids found')
-
+    ax.xaxis.set_ticks([])
+    ax.yaxis.set_ticks([])
     object_baseline = np.zeros(img.shape)
     for o in image_objects:
         if o.label not in blobs_by_obj:
@@ -427,16 +435,16 @@ def draw_colors_on_image(ex_id, time):
         xmin, ymin, xmax, ymax = o.bbox
         object_baseline[xmin: xmax, ymin: ymax] = o.image
     ax.contour(object_baseline.T, [0.5], linewidths=1.2,
-               colors=missed_color)
+               colors=c['missed_color'])
 
     for bid, outline in zip(bids, outlines):
         color = 'blue'
         if bid in good:
-            color = tp_color
+            color = c['tp_color']
         if bid in bad:
-            color = fp_color
+            color = c['fp_color']
         if bid in outside:
-            color = roi_color
+            color = c['roi_color']
 
         if not len(outline):
             continue
@@ -448,13 +456,14 @@ def draw_colors_on_image(ex_id, time):
         roi_t = np.linspace(0, 2* np.pi, 500)
         roi_x = roi['r'] * np.cos(roi_t) + roi['x']
         roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
-        ax.plot(roi_x, roi_y, color=roi_line_color)
+        ax.plot(roi_x, roi_y, color=c['roi_line_color'])
         # resize figure
         ymax, xmax = img.T.shape
         ax.set_xlim([0, xmax])
         ax.set_ylim([0, ymax])
     print('done')
-    plt.show()
+    if show_by_default:
+        plt.show()
 
 
 def show_matched_image(ex_id, threshold, time, roi=None):

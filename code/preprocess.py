@@ -60,8 +60,16 @@ def finish_preprocessing(eids):
 
 #TODO make this be able to accept both
 def parse_ids(ids):
+
+
+    id_type = classify_ids(ids)
     dset_eids = {}
-    for eid in ids:
+
+    return organize_ex_ids(ids)
+
+
+def organize_ex_ids(ex_ids):
+    for eid in ex_ids:
         dset = fm.get_dset(eid)
         if dset not in dset_eids:
             dset_eids[dset] = []
