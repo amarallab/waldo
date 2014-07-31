@@ -36,7 +36,7 @@ class Experiment(multiworm.Experiment):
             self._pull_prepdata()
 
         if 'in_roi' not in self._prep_df.columns:
-            prep_file = fm.Preprocess_File(ex_id=self.experiment_id)
+            prep_file = fm.ImageMarkings(ex_id=self.experiment_id)
             roi = prep_file.roi()
 
             x_mid = (self._prep_df.x_min + self._prep_df.x_max) / 2
@@ -68,4 +68,3 @@ class Experiment(multiworm.Experiment):
                 if moved >= threshold)
 
         return moved_enough
-

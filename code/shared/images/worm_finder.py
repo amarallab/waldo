@@ -16,23 +16,18 @@ import numpy as np
 import scipy
 from scipy import ndimage
 import pandas as pd
+from skimage.measure import regionprops
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-#import skimage
-#from skimage import morphology
-from skimage.measure import regionprops
-#from skimage.filter.rank import entropy
 
-# project imports
 from conf import settings
 from .manipulations import create_backround, create_binary_mask, outline_to_outline_matrix
-#, show_threshold , align_outline_matricies
 from .manipulations import coordiate_match_offset_arrays
 from .manipulations import do_boxes_overlap
 from .grab_images import grab_images_in_time_range
-#from wio.file_manager import get_good_blobs, get_timeseries, ensure_dir_exists, Preprocess_File
+#from wio.file_manager import get_good_blobs, get_timeseries, ensure_dir_exists, ImageMarkings
 
 import multiworm
 from multiworm.readers import blob as blob_reader
@@ -400,7 +395,7 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
     print(frame)
     bids, blob_centroids, outlines = zip(*blob_data)
 
-    pf = fm.Preprocess_File(ex_id=ex_id)
+    pf = fm.ImageMarkings(ex_id=ex_id)
     threshold = pf.threshold()
     roi = pf.roi()
 
@@ -535,7 +530,7 @@ def worm_cutouts(ex_id, savedir, threshold=None, roi=None):
     """
 
     if not threshold or not roi:
-        pfile = fm.Preprocess_File(ex_id=ex_id)
+        pfile = fm.ImageMarkings(ex_id=ex_id)
         if not threshold:
             threshold = pfile.threshold()
         if not roi:
@@ -584,7 +579,7 @@ def worm_cutouts(ex_id, savedir, threshold=None, roi=None):
                 continue
             bid = bid_matches[0]
             mfile = '{bid}_mask.png'.format(bid=bid)
-            ifile = '{bid}_img.png'.format(bid=bid)
+            ifile = '{bid}_i<mg.png'.format(bid=bid)
             scipy.misc.imsave(os.path.join(f_dir, ifile), im)
             scipy.misc.imsave(os.path.join(f_dir, mfile), m)
 
@@ -697,12 +692,11 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
                    index=False)
 
 
-
-def summarize(ex_id):
+def summarize(ex_id, overwrite=True):
     """ short script to load threshold, roi and run
     analyze_ex_id_images.
     """
-    pfile = fm.Preprocess_File(ex_id=ex_id)
+    pfile = fm.ImageMarkings(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()
     return analyze_ex_id_images(ex_id, threshold, roi)

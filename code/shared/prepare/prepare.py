@@ -32,7 +32,7 @@ def graph_cache(ex_id, num_repeats=2):
     for i in range(num_repeats):
         #remove nodes outside roi
         print('removing nodes outside roi')
-        collider.remove_nodes_outside_roi(graph, experiment, **fm.Preprocess_File(ex_id=ex_id).roi())
+        collider.remove_nodes_outside_roi(graph, experiment, **fm.ImageMarkings(ex_id=ex_id).roi())
 
 
         print('round {i}'.format(i=i))
@@ -65,7 +65,7 @@ def quick_check(ex_id):
     graph = experiment.collision_graph
     all_nodes = set(graph.nodes())
 
-    collider.remove_nodes_outside_roi(graph, experiment, **fm.Preprocess_File(ex_id=ex_id).roi())
+    collider.remove_nodes_outside_roi(graph, experiment, **fm.ImageMarkings(ex_id=ex_id).roi())
     inodes = set(graph.nodes())
     onodes = all_nodes - inodes
     print('all nodes {}'.format(len(all_nodes)))

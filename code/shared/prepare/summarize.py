@@ -19,7 +19,6 @@ DATA_DIR = settings.LOGISTICS['filesystem_data']
 
 def summarize(ex_id, verbose=False):
     """
-    Process a wio.Experiment object using the raw data to generate
     intermediate summary data.
     """
     if verbose:

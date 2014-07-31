@@ -55,7 +55,7 @@ RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
 
 
-class Preprocess_File(object):
+class ImageMarkings(object):
     # a class for interacting with preprocessing data
     # for an recording (ie. experiment id or ex_id)
     # or for a dataset (ie. dataset name or dset)

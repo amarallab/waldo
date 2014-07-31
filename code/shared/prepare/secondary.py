@@ -60,7 +60,7 @@ def in_roi(experiment=None, ex_id=None, bounds=None):
         if ex_id is None:
             ex_id = experiment.experiment_id
 
-    roi_definition = fm.Preprocess_File(ex_id=ex_id).roi()
+    roi_definition = fm.ImageMarkings(ex_id=ex_id).roi()
 
     roi = _check_roi(bounds, **roi_definition)
 
