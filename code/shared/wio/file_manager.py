@@ -21,6 +21,7 @@ import json
 from glob import iglob
 import datetime
 import errno
+import pathlib # std in py3.4+
 
 # third party
 import pandas as pd
@@ -29,6 +30,8 @@ import numpy as np
 # nonstandard imports
 from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
+
+from .prepdata import PrepData
 
 LOGISTICS = settings.LOGISTICS
 INDEX_DIR = os.path.abspath(LOGISTICS['annotation'])
@@ -50,93 +53,6 @@ if TIME_SERIES_FILE_TYPE == 'hdf5':
 DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
-
-class PrepData(object):
-    def __init__(self, ex_id, prepdir=PREP_DIR):
-        self.eid =ex_id
-        self.filedir = os.path.join(prepdir, ex_id)
-        self.files = []
-        self.data_types = []
-        self.refresh()
-
-    def refresh(self):
-        dir_is_there = os.path.exists(self.filedir)
-        search = os.path.join(self.filedir, '*.csv')
-        self.files = [f for f in iglob(search)]
-
-        splitter = '{eid}-'.format(eid=self.eid)
-        get_dt = lambda x: str(x).split(splitter)[-1].split('.csv')[0]
-        self.data_types = [get_dt(f) for f in self.files]
-
-
-    def load(self, data_type, **kwargs):
-        """
-        Load the specified *data_type* as a Pandas DataFrame.  Raises KeyError
-        if
-        """
-        try:
-            f = self.files[self.data_types.index(data_type)]
-            df = pd.read_csv(f, **kwargs)
-        except ValueError, IndexError:
-            raise ValueError('Requested data storage type not found (not generated?)')
-        except IOError:
-            raise IOError('Pandas could not load the CSV file')
-        return df
-
-    def dump(self, data_type, dataframe, **kwargs):
-        """
-        """
-        filename = '{eid}-{dt}.csv'.format(eid=self.eid, dt=data_type)
-        print(filename)
-        dataframe.to_csv(os.path.join(self.filedir, filename), **kwargs)
-        self.refresh()
-
-    def good(self):
-        """ returns a list containing only good nodes.
-
-        returns
-        -----
-        good_list: (list)
-            a list containing blob_ids
-        """
-        df = self.load('matches')[['bid', 'good']]
-        return [b for (b, v) in df.values if v]
-
-
-    def bad(self):
-        """ returns a list containing only bad nodes.
-
-        returns
-        -----
-        bad_list: (list)
-            a list containing blob_ids
-        """
-        df = self.load('matches')[['bid', 'good']]
-        return [b for (b, v) in df.values if not v]
-
-    def joins(self):
-        """ returns a list specifying all blobs that should be joined
-        according to the image data.
-
-        returns
-        -----
-        blob_joins: (list of tuples)
-            a list containing tuples in the following form: ( frame [int], 'blob1-blob2' [str])
-        """
-        joins = self.load('matches')[['frame', 'join']]
-        joins = joins[joins['join'] != '']
-        joins.drop_duplicates(cols='join', take_last=True, inplace=True)
-        tuples = [tuple(i) for i in joins.values]
-        tuples = [(int(a), [int(i) for i in b.split('-')]) for (a,b) in tuples]
-        return tuples
-
-    def outside(self):
-        df = self.load('roi')[['bid', 'inside_roi']]
-        return [b for (b, v) in df.values if not v]
-
-
-    def moved(self, bl_threhold=2):
-        pass
 
 
 class Preprocess_File(object):
