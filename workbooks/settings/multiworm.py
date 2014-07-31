@@ -6,3 +6,8 @@ if sys.platform.startswith('linux'):
 else:
     MWT_DATA_ROOT = pathlib.Path() / '..' / 'data' / 'mwt'
 #MWT_DATA_ROOT = pathlib.Path() / '..' / 'Waldo' / 'data' / 'mwt'
+
+try:
+    from multiworm_local import *
+except ImportError:
+    pass
