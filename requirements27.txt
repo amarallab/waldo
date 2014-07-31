@@ -11,6 +11,7 @@ numpy>=1.8.1
 openpyxl>=1.6.1,<2.0.0
 pandas>=0.14.0
 pathlib>=1.0
+prettyplotlib>=0.1.7
 pyparsing>=2.0.2
 python-dateutil>=2.2
 pytz>=2014.4
