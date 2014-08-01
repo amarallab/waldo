@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+pyver=`python -c 'import sys;print(sys.version_info.major)'`
+
+pip install -Ur requirements/phase1.txt
+pip install -Ur requirements/phase2.txt
+pip install -Ur requirements/phase3.txt
+
+if [ "$pyver" = "2" ]; then
+    pip install -Ur requirements/py2only.txt
+else
+    pip install -Ur requirements/py3only.txt
+fi
