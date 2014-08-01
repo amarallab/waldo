@@ -12,6 +12,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import argparse
 
 # third party
+import pandas as pd
 import matplotlib.pyplot as plt
 
 # project specific
@@ -23,7 +24,7 @@ def main():
         help="Experiment ID to use.")
     parser.add_argument('lost_blob_id', type=int,
         help="Blob ID to look around the end")
-    parser.add_argument('-r', '--radius', type=float, default=200,
+    parser.add_argument('-r', '--radius', type=float, default=150,
         help='Pixel radius ("barrel-through-time radius")')
     parser.add_argument('-t', '--times', nargs='+', type=int, default=[-30, 60],
         help='Times relative to the end of the target blob '
@@ -69,14 +70,40 @@ def main():
     started_near = started_near - entirely_near
     ended_near = ended_near - entirely_near
     assert not (started_near & ended_near)
+    assert near == entirely_near | started_near | ended_near
 
-    centroids = {bid: experiment[bid]['centroid'] for bid in near}
+    traces = {}
+    for bid in near:
+        trace = pd.DataFrame(experiment[bid]['centroid'], columns=['x', 'y'])
+        trace['f'] = experiment[bid]['frame']
+        traces[bid] = trace
 
     f, ax = plt.subplots()
 
-    for color, bid_set in [('green', started_near), ('red', ended_near), ('blue', entirely_near)]:
+    for color, bid_set in [('green', started_near), ('red', ended_near), ('blue', entirely_near), ('orange', [lost_id])]:
         for bid in bid_set:
-            print('plotting id {}'.format(bid))
-            ax.plot(*zip(*centroids[bid]), color=color)
+            if bid == lost_id:
+                continue
+            trace = traces[bid]
+            ax.plot(trace.f, trace.x, color=color)
+
+    ax.plot([flost], [xlost], 'ro')
+
+    xmin = flost + dt[0]
+    xmax = flost + dt[1]
+    ymin = xlost - dr
+    ymax = xlost + dr
+    box = [
+        (xmin, ymin),
+        (xmin, ymax),
+        (xmax, ymax),
+        (xmax, ymin),
+        (xmin, ymin),
+    ]
+    ax.plot(*zip(*box), color='grey', linestyle='--')
+    ax.set_xlim(left=xmin, right=xmax)
+    ax.set_ylim(bottom=ymin, top=ymax)
+    ax.xlabel('Frame')
+    ax.ylabel('X (pixels)')
 
     plt.show()
