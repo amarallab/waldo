@@ -53,3 +53,7 @@ build/
 .idea/*
 .ropeproject/*
 *.sublime-*
+
+# Local settings files (in /scripts and /workbooks)
+settings/waldo_local.py
+settings/multiworm_local.py
