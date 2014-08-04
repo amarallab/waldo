@@ -51,8 +51,8 @@ class Taper(object):
         terminals = self._terminals
 
         # go through graph and find all node ids for start/stop canidates
-        start_nodes = [x for x in graph.nodes() if len(graph.successors(x)) == 0]
-        stop_nodes = [x for x in graph.nodes() if len(graph.predecessors(x)) == 0]
+        start_nodes = [x for x in graph.nodes() if len(graph.predecessors(x)) == 0]
+        stop_nodes = [x for x in graph.nodes() if len(graph.successors(x)) == 0]
 
         # reformat terminals dataframe.
         terms = terminals.copy()
