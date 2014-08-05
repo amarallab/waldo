@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+# standard library
+import sys
+import argparse
+
+# third party
+
+# project specific
+import pathcustomize
+
+import wio
+import collider
+import tape
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate the gaps file for later use.')
+
+    parser.add_argument('experiment_id',
+        help="Experiment ID to use.")
+
+    args = parser.parse_args()
+
+    print('Loading experiment_id {}'.format(args.experiment_id))
+    experiment = wio.Experiment(experiment_id=args.experiment_id)
+    graph = experiment.collision_graph.copy()
+
+    print('Simplifying graph')
+    print(' - removing nodes outside the ROI')
+    collider.remove_nodes_outside_roi(experiment=experiment, graph=graph)
+    print(' - removing based on intrinsic features') # whatever that means
+    collider.removal_suite(graph)
+
+    print('Taper creation')
+    taper = tape.Taper(experiment=experiment, graph=graph)
+
+    print('Creating gaps file')
+    taper.make_gaps_file()
+
+if __name__ == '__main__':
+    sys.exit(main())

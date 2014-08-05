@@ -122,4 +122,4 @@ class Scorer(object):
         if self._interpolator is None:
             return
 
-        return max(self._interpolator(frame_gap, distance_gap), 1e-100)
+        return float(max(self._interpolator(frame_gap, distance_gap), 1e-100))

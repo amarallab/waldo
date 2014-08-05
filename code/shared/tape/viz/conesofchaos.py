@@ -26,7 +26,7 @@ def main():
         help="Blob ID to look around the end")
     parser.add_argument('-r', '--radius', type=float, default=150,
         help='Pixel radius ("barrel-through-time radius")')
-    parser.add_argument('-t', '--times', nargs='+', type=int, default=[-30, 60],
+    parser.add_argument('-t', '--times', nargs='+', type=int, default=[-50, 500],
         help='Times relative to the end of the target blob '
              '("barrel-through-time length")')
 
@@ -82,12 +82,9 @@ def main():
 
     for color, bid_set in [('green', started_near), ('red', ended_near), ('blue', entirely_near), ('orange', [lost_id])]:
         for bid in bid_set:
-            if bid == lost_id:
-                continue
             trace = traces[bid]
-            ax.plot(trace.f, trace.x, color=color)
-
-    ax.plot([flost], [xlost], 'ro')
+            ax.plot(trace.f, trace.x, color=color, marker='o')
+            ax.annotate(bid, xy=trace.loc[0][['f', 'x']], xycoords='data')
 
     xmin = flost + dt[0]
     xmax = flost + dt[1]
@@ -103,7 +100,7 @@ def main():
     ax.plot(*zip(*box), color='grey', linestyle='--')
     ax.set_xlim(left=xmin, right=xmax)
     ax.set_ylim(bottom=ymin, top=ymax)
-    ax.xlabel('Frame')
-    ax.ylabel('X (pixels)')
+    ax.set_xlabel('Frame')
+    ax.set_ylabel('X (pixels)')
 
     plt.show()

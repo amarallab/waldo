@@ -24,30 +24,40 @@ class Taper(object):
     Initalized with a wio.Experiment-like object and a simplified graph.
     """
     def __init__(self, experiment, graph):#, regenerate_cache=False):
-        self.experiment = experiment
+        self._experiment = experiment
+        self._graph = graph
 
         self._scorer = Scorer(experiment)
 
         self.max_speed = self._scorer.max_speed * settings.TAPE_MAX_SPEED_MULTIPLIER
 
-        self._terminals = self.experiment.prepdata.load('terminals').set_index('bid')
-        self.graph = graph
+        self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
 
-    # def score(lost_id, found_id):
-    #     lost = self._terminals.loc[lost_id]
-    #     found = self._terminals.loc[found_id]
+    def score(distance_gap=None, frame_gap=None, ids=None):
+        """
+        Score the putative link based on either the distance and frame gap
+        or a pair of IDs.
+        """
+        if distance_gap is not None and frame_gap is not None:
+            Dr = distance_gap
+            Df = frame_gap
 
-    #     Dx = lost.xN - found.x0
-    #     Dy = lost.yN - found.y0
-    #     Dt = lost.tN - found.t0
+        else:
+            lost_id, found_id = ids
 
-    #     Dr = math.sqrt(Dx**2 + Dy**2)
+            lost = self._terminals.loc[lost_id]
+            found = self._terminals.loc[found_id]
 
-    #     return self._scorer(Dr, Dt)
+            Dx = lost.xN - found.x0
+            Dy = lost.yN - found.y0
+            Dr = math.sqrt(Dx**2 + Dy**2)
+            Df = lost.fN - found.f0
+
+        return self._scorer(Dr, Df)
 
     def find_start_and_end_nodes(self):
 
-        graph = self.graph
+        graph = self._graph
         terminals = self._terminals
 
         # go through graph and find all node ids for start/stop canidates
@@ -135,7 +145,7 @@ class Taper(object):
         return start_terms, end_terms
 
 
-    def score_potential_matches(self, start_terms, end_terms):
+    def score_potential_gaps(self, start_terms, end_terms):
         """
 
         creates a dataframe with the following columns:
@@ -151,19 +161,18 @@ class Taper(object):
         -----
         start_terms: (pandas DataFrame)
         end_terms: (pandas DataFrame)
-        columns:
-        node_id, bid, x, y, t, f
+
+        *start_terms* and *end_terms* must have columns with: node_id, bid,
+        x, y, t, f
 
         """
-
         def score(row):
             #print(row)
-            r = self._scorer(row['dist'], row['df'])
-            return float(r)
-
+            s = self._scorer(row['df'], row['dist'])
+            return s
 
         buffer = 10
-        all_match_dfs = []
+        all_gap_dfs = []
         print(end_terms.columns)
 
         start_num = len(start_terms)
@@ -173,41 +182,52 @@ class Taper(object):
             node1, blob1 = row['node_id'], row['bid']
 
             # start narrowing down data frame by time
-            match_df = start_terms.copy()
-            match_df['dt'] = start_terms['t'] - t
-            match_df['df'] = start_terms['f'] - f
-            match_df = match_df[0 < match_df['df']]
-            match_df = match_df[match_df['df'] <= 500]
+            gap_df = start_terms.copy()
+            gap_df['dt'] = start_terms['t'] - t
+            gap_df['df'] = start_terms['f'] - f
+            gap_df = gap_df[(0 < gap_df['df']) & (gap_df['df'] <= settings.TAPE_FRAME_SEARCH_LIMIT)]
 
-            time_num = len(match_df)
+            time_num = len(gap_df)
 
             dy = start_terms['y'] - y
             dx = start_terms['x'] - x
-            match_df['dist'] = np.sqrt(dy**2 + dx**2)
+            gap_df['dist'] = np.sqrt(dy**2 + dx**2)
 
-            speed = match_df['dist'] / match_df['df']
+            speed = gap_df['dist'] / gap_df['df']
 
-            match_df = match_df[ speed < (self.max_speed + buffer)]
+            gap_df = gap_df[ speed < (self.max_speed + buffer)]
 
-            space_num = len(match_df)
+            space_num = len(gap_df)
             m = '{b}\t | {i} | {t} | {s}'.format(b=int(blob1), i=start_num,
                                                  t=time_num, s=space_num)
             #print(m)
 
-            if len(match_df):
-                # some matches were left, reformat df.
-                match_df.rename(columns={'bid':'blob2',
+            if len(gap_df):
+                # some gaps were left, reformat df.
+                gap_df.rename(columns={'bid':'blob2',
                                          'node_id':'node2'},
                                 inplace=True)
-                match_df['node1'] = node1
-                match_df['blob1'] = blob1
-                match_df = match_df[['node1', 'node2', 'blob1', 'blob2',
+                gap_df['node1'] = node1
+                gap_df['blob1'] = blob1
+                gap_df = gap_df[['node1', 'node2', 'blob1', 'blob2',
                                      'dist', 'dt', 'df']]
 
-                a = match_df[['dist', 'df']].apply(score, axis=1)
-                match_df['score'] = a
-                all_match_dfs.append(match_df)
+                a = gap_df[['dist', 'df']].apply(score, axis=1)
+                gap_df['score'] = a
+                all_gap_dfs.append(gap_df)
 
-        potential_matches = pd.concat(all_match_dfs)
-        print(potential_matches.head())
-        return potential_matches
+        potential_gaps = pd.concat(all_gap_dfs)
+        print(potential_gaps.head())
+        return potential_gaps
+
+    def make_gaps_file(self):
+        s, e = self.find_start_and_end_nodes()
+        gaps = self.score_potential_gaps(s, e)
+
+        # clean up output floating point
+        gaps[['node1', 'node2', 'blob1', 'blob2', 'df']] = (
+            gaps[['node1', 'node2', 'blob1', 'blob2', 'df']].astype(int))
+        gaps['dt'] = gaps['dt'].apply(lambda x: format(x, '.03f'))
+        gaps['dist'] = gaps['dist'].apply(lambda x: format(x, '.01f'))
+
+        self._experiment.prepdata.dump('gaps', gaps, index=False)

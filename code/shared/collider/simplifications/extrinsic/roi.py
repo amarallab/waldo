@@ -10,7 +10,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import numpy as np
 
 from ..util import frame_filter, condense_nodes
-import wio.file_manager as fm
+import wio
 
 __all__ = [
     'remove_nodes_outside_roi',
@@ -47,8 +47,7 @@ def check_blobs_against_roi(experiment, x, y, r):
     are_inside = dists < r
     return bids, are_inside
 
-
-def remove_nodes_outside_roi(graph, experiment, x, y, r, ex_ids=None):
+def remove_nodes_outside_roi(graph, experiment, x=None, y=None, r=None, ex_ids=None):
     """
     Removes nodes that are outside of a precalculated circle denoting a
     'region of interest'.  Must run before other simplifications; does not
@@ -63,15 +62,20 @@ def remove_nodes_outside_roi(graph, experiment, x, y, r, ex_ids=None):
     ex_id: (str)
        the experiment id (ie. timestamp) used to look up roi.
     """
-    # TODO check for cache.
-    #try:
-    #    pass
-    #except:
+    if isinstance(experiment, wio.Experiment):
+        roi = experiment.prepdata.load('roi').set_index('bid')
 
-    bids, are_inside = check_blobs_against_roi(experiment, x, y, r)
-    outside_nodes = []
-    for bid, in_roi in zip(bids, are_inside):
-        if not in_roi:
-            outside_nodes.append(bid)
+        outside_nodes = roi[roi.inside_roi].index
+
+    else:
+        if not all([x, y, r]):
+            raise ValueError('x, y, and r must be provided if the experiment '
+                             'is not a wio.Experiment.')
+
+        bids, are_inside = check_blobs_against_roi(experiment, x, y, r)
+        outside_nodes = []
+        for bid, in_roi in zip(bids, are_inside):
+            if not in_roi:
+                outside_nodes.append(bid)
 
     graph.remove_nodes_from(outside_nodes)

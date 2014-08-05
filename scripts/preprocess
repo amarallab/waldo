@@ -29,14 +29,17 @@ __status__ = 'prototype'
 
 # standard imports
 import os
+import json
+import glob
+
+# third party
 from docopt import docopt
-import setpath
-os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
+
+# project specific
+import pathcustomize
 
 from conf import settings
 import images
-import json
-import glob
 import prepare
 import wio.file_manager as fm
 from wio.id_handeling import parse_ids
