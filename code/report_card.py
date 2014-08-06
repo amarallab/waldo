@@ -83,6 +83,10 @@ r = graph_report(graph)
 r['step'] = 'remove outside roi'
 reports.append(r)
 
+collider.remove_blank_nodes(graph, experiment)
+r['step'] = 'remove blank nodes'
+reports.append(r)
+
 collider.remove_single_descendents(graph)
 r = graph_report(graph)
 r['step'] = 'remove single descendents'
