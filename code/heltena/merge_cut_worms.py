@@ -1,0 +1,124 @@
+__author__ = 'heltena'
+
+#import pathcustomize
+import os
+import sys
+
+HERE = os.path.abspath('.')
+CODE_DIR = os.path.join(HERE, '..')
+print CODE_DIR
+sys.path.append(CODE_DIR)
+import setpath
+import platform
+import math
+
+print('Python {} ({}) [{}] on {}'.format(platform.python_version(), ', '.join(platform.python_build()),
+                                         platform.python_compiler(), sys.platform))
+
+from wio.experiment import Experiment
+import collider
+
+def dist_2d(c1, c2):
+    xc = c1[0] - c2[0]
+    yc = c1[1] - c2[1]
+    return math.hypot(xc, yc)
+
+
+def dist_3d(c1, c2):
+    d = [c1[i] - c2[i] for i in range(3)]
+    return math.sqrt(sum([x * x for x in d]))
+
+
+# max_first_last_distance is the max distance between the first node and the last node (not between siblings)
+# max_sibling_distance is the max distance between the first node and each of its sibling
+def merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_distance):
+    terminals_df = experiment.prepdata.load('terminals')
+    sizes_df = experiment.prepdata.load('sizes')
+    terminals_map = {int(v['bid']): i for i, v in terminals_df.iterrows()}
+    sizes_map = {int(v['bid']): i for i, v in sizes_df.iterrows()}
+
+    area_mean = sizes_df['area_median'].mean(axis=1)
+    area_std = sizes_df['area_median'].std(axis=1)
+    print "Area mean: %f, std: %f" % (area_mean, area_std)
+
+    def debug_data(x):
+        terminals = terminals_df.iloc[terminals_map[x]]
+        sizes = sizes_df.iloc[sizes_map[x]]
+        pos0 = tuple(int(terminals[p]) for p in ['x0', 'y0', 't0'])
+        posN = tuple(int(terminals[p]) for p in ['xN', 'yN', 'tN'])
+        area = float(sizes['area_median'])
+        return "%d (%s - %s) x %d" % (x, pos0, posN, area)
+
+    print "ESTE NO:\n", "\n".join((debug_data(x) for x in [14710, 14723, 14724, 14727]))
+    print "ESTE SI:\n", "\n".join((debug_data(x) for x in (6318, 6348, 6349, 6357)))
+
+    candidates = []
+    for node in graph.nodes():
+        successors = graph.successors(node)
+
+        if len(successors) != 2:
+            continue
+
+        sibling1, sibling2 = successors
+        if len(graph.predecessors(sibling1)) != 1 or len(graph.predecessors(sibling2)) != 1:
+            continue
+
+        sibling1_successors = graph.successors(sibling1)
+        sibling2_successors = graph.successors(sibling2)
+        if len(sibling1_successors) != 1 or sibling1_successors != sibling2_successors:
+            continue
+
+        last = sibling1_successors[0]
+        if last not in terminals_map or sibling1 not in terminals_map or sibling2 not in terminals_map:
+            print "E: Problems with nodes: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last)
+            continue
+
+        node_terminals = terminals_df.iloc[terminals_map[node]]
+        last_terminals = terminals_df.iloc[terminals_map[last]]
+        node_pos = tuple(float(node_terminals[p]) for p in ['xN', 'yN', 'tN'])
+        last_pos = tuple(float(last_terminals[p]) for p in ['x0', 'y0', 't0'])
+        if dist_2d(node_pos, last_pos) >= max_first_last_distance:
+            continue
+
+        sibling1_terminals = terminals_df.iloc[terminals_map[sibling1]]
+        sibling2_terminals = terminals_df.iloc[terminals_map[sibling2]]
+        sibling1_pos = tuple(float(sibling1_terminals[p]) for p in ['x0', 'y0', 't0'])
+        sibling2_pos = tuple(float(sibling2_terminals[p]) for p in ['x0', 'y0', 't0'])
+        if max(dist_2d(node_pos, sibling1_pos), dist_2d(node_pos, sibling2_pos)) >= max_sibling_distance:
+            continue
+
+        node_sizes = sizes_df.iloc[sizes_map[node]]
+        last_sizes = sizes_df.iloc[sizes_map[last]]
+        sibling1_sizes = sizes_df.iloc[sizes_map[sibling1]]
+        sibling2_sizes = sizes_df.iloc[sizes_map[sibling2]]
+
+        node_area = float(node_sizes['area_median'])
+        last_area = float(last_sizes['area_median'])
+        sibling1_area = float(sibling1_sizes['area_median'])
+        sibling2_area = float(sibling2_sizes['area_median'])
+
+        if not (area_mean - area_std <= node_area < area_mean + area_std):
+            # print "Este no cuela: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last)
+            # print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+            continue
+
+        if not ((area_mean - area_std) / 2 <= sibling1_area < (area_mean + area_std) / 2) or \
+                not ((area_mean - area_std) / 2 <= sibling2_area < (area_mean + area_std) / 2):
+            # print "Este TAMPOCO no cuela: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last)
+            # print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+            continue
+
+        candidates.append((node, sibling1, sibling2, last))
+    for v in candidates:
+        print "YES!\n ", "\n  ".join((debug_data(x) for x in v))
+    print len(graph.nodes()), len(candidates)
+
+
+if __name__ == "__main__":
+    ex_id = '20130318_131111'
+    experiment = Experiment(experiment_id=ex_id)
+    graph = experiment.collision_graph
+    collider.removal_suite(graph)
+    max_first_last_distance = 10
+    max_sibling_distance = 50
+    merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_distance)
