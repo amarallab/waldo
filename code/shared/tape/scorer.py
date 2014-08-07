@@ -19,8 +19,8 @@ from scipy.interpolate import RectBivariateSpline
 from scipy.signal import lfilter, boxcar
 
 # project specific
-from . import core
 from conf import settings
+from . import core
 
 
 class InsufficientData(Exception):

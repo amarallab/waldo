@@ -1,34 +1,25 @@
 # This notebook is for finding the segmentation threshold that most clearly finds worms in a recording.
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
-import os
+# standard library
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as grd
-from matplotlib.widgets import Button, Slider
+import os
 import json
 
+# third party
+import numpy as np
+from scipy import ndimage
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as grd
 import matplotlib.image as mpimg
 import matplotlib.cm as cm
-from scipy import ndimage
+from matplotlib.widgets import Button, Slider
 from skimage import morphology
 from skimage.measure import regionprops
 
-# # Path definitions
-HERE = os.path.dirname(os.path.realpath(__file__))
-SHARED_DIR = os.path.abspath(os.path.join(HERE, '..'))
-PROJECT_DIR = os.path.abspath(os.path.join(SHARED_DIR, '..'))
-print HERE
-print SHARED_DIR
-print PROJECT_DIR
-
-sys.path.append(SHARED_DIR)
-sys.path.append(PROJECT_DIR)
-
-# nonstandard imports
-from grab_images import grab_images_in_time_range
+# project specific
 from conf import settings
+from grab_images import grab_images_in_time_range
 from wio.file_manager import ensure_dir_exists
 
 MWT_DIR = settings.LOGISTICS['filesystem_data']
