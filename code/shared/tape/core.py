@@ -17,8 +17,6 @@ import numpy as np
 # project specific
 #import..
 
-#PREPDATA_TRACE_NAME = 'example_tracks'
-
 def absolute_displacement(centroid, reverse=False):
     """
     Given a sequence of X-Y coordinates, return the absolute distance from

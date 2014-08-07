@@ -19,6 +19,7 @@ __all__ = [
     'suspected_collisions',
     'consolidate_node_data'
 ]
+
 def _check_assumptions(graph):
     for node in graph:
         successors = graph.successors(node)
@@ -137,7 +138,7 @@ def flat_node_list(graph):
 def component_size_summary(graph):
     Gcc = nx.connected_component_subgraphs(graph.to_undirected())
     print("Component sizes and example nodes in descending order")
-    for n, G in enumerate(Gcc[:10], start=1):
+    for n, G in enumerate(sorted(list(Gcc), key=len, reverse=True)[:10], start=1):
         print("{:>2d}. {:>5d} nodes : {}{}".format(
                 n, len(G),
                 ', '.join(str(node) for node, _ in zip(G.nodes_iter(), range(5))),
@@ -171,9 +172,7 @@ def suspected_collisions(digraph, relative_threshold):
 def is_isolated(graph, node):
     """ returns True if node does not have any parents or children
     """
-    n_parents = len(set(graph.predecessors(node)))
-    n_children = len(set(graph.successors(node)))
-    return (n_parents + n_children) == 0
+    return graph.degree(node) == 0
 
 
 # def is_offshoot(graph, node, subnode):
