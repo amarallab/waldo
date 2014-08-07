@@ -222,7 +222,7 @@ class Taper(object):
                 all_gap_dfs.append(gap_df)
 
         potential_gaps = pd.concat(all_gap_dfs)
-        print(potential_gaps.head())
+        #print(potential_gaps.head())
         return potential_gaps
 
     def make_gaps_file(self):
@@ -321,5 +321,7 @@ class Taper(object):
         link_list: (list of tuples)
 
         """
-        self.digraph.add_edges_from((n1, n2, {'taped':True})
-                                    for (n1, n2) in link_list)
+        print(len(link_list))
+        print('starting edge number', self._graph.number_of_edges())
+        self._graph.add_edges_from((n1, n2) for (n1, n2) in link_list)
+        print('after edge number', self._graph.number_of_edges())
