@@ -30,7 +30,7 @@ SUITE_DEFAULTS = {
 }
 
 
-def find_potential_collisions(graph, experiment, duration_factor):
+def find_potential_collisions(graph, experiment, min_duration, duration_factor):
     candidates = []
     for node in graph.nodes():
         succs = graph.successors(node)
@@ -66,7 +66,7 @@ def find_potential_collisions(graph, experiment, duration_factor):
             continue
 
         duration = graph.node[node]['died'] - graph.node[node]['born']
-        if duration < min_succ_duration * duration_factor and duration < min_pred_duration * duration:
+        if duration >= min_duration and duration < min_succ_duration * duration_factor and duration < min_pred_duration * duration:
             candidates.append(node)
     print "Candidates (%d): %s" % (len(candidates), candidates)
     for n in candidates:
@@ -81,6 +81,7 @@ def find_potential_collisions(graph, experiment, duration_factor):
             pred = graph.predecessors(a)
             if len(pred) != 1 or pred[0] != n:
                 print "ERROR!!!!"
+
 
 if __name__ == "__main__":
     ex_id = '20130318_131111'
@@ -102,5 +103,6 @@ if __name__ == "__main__":
     max_duration = 30
     collapse_group_of_nodes(graph, experiment, max_duration)
 
-    duration_factor = 0.1
-    find_potential_collisions(graph, experiment, duration_factor)
+    min_duration = 1
+    duration_factor = 200000000000000
+    find_potential_collisions(graph, experiment, min_duration, duration_factor)
