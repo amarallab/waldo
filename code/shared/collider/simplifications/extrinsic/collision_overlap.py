@@ -56,9 +56,13 @@ def grab_outline(node, graph, experiment, first=True):
         x, y = row['contour_start']
         l = row['contour_encode_len']
         enc = row['contour_encoded']
-        if enc and l:
-
-            #print(node, x, y, l, enc)
+        is_good = True
+        if not enc or not l:
+            is_good = False
+        if np.isnan(enc) or np.isnan(l):
+            is_good = False
+        if is_good:
+            print(node, x, y, l, enc)
             outline_points = de.decode_outline([x, y, l, enc])
             #print(outline_points)
             return outline_points
