@@ -13,16 +13,35 @@ import networkx as nx
 
 from ..simplifications.util import lifespan
 
-def age_distribution(*digraphs):
+def age_distribution(*digraphs, **kwargs):
+    """
+    Keyword Arguments
+    -----------------
+    log : string
+        Contains either 'x' and/or 'y', denoting that those axes should be
+        logarithmic.  Default is 'x'.
+    """
+    log = kwargs.get('log', 'x').lower()
+
     ages = [[lifespan(digraph, node) for node in digraph] for digraph in digraphs]
     age_ccdfs = [cdf(a, ccdf=True) for a in ages]
 
     fig, ax = plt.subplots()
+    plot_method = ax.plot
+    if log:
+        if 'x' in log and 'y' in log:
+            plot_method = ax.loglog
+        elif 'x' in log:
+            plot_method = ax.semilogx
+        elif 'y' in log:
+            plot_method = ax.semilogy
+
     for ccdf in age_ccdfs:
-        ax.semilogx(*ccdf)
+        plot_method(*ccdf)
+
     ax.set_title("Blob node lifespan")
     ax.set_xlabel("Life (frames)")
-    ax.set_ylabel("CDF")
+    ax.set_ylabel("CCDF")
     ax.text(0.95, 0.05, '\n'.join('n = {}'.format(len(a)) for a in ages),
             ha='right', va='baseline', transform=ax.transAxes)
 

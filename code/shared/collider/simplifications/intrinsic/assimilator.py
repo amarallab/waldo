@@ -74,6 +74,7 @@ def assimilate(digraph, max_threshold):
         # copy because we'll be modifying it and modifying while
         # iterating is fraught with peril
         nodes = digraph.nodes()
+        nodes.sort()
 
         while nodes:
             node = nodes.pop()
