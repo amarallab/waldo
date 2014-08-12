@@ -69,7 +69,7 @@ def create_report_card(experiment, graph):
     r,d = graph_report(graph)
     r['step'] = 'raw'
     reports.append(r)
-    print 'raw', r['total-nodes']
+    #print 'raw', r['total-nodes']
 
     durations.append(('raw', d))
 
@@ -78,13 +78,13 @@ def create_report_card(experiment, graph):
     r,d = graph_report(graph)
     r['step'] = 'remove outside roi'
     reports.append(r)
-    print 'roi', r['total-nodes']
+    #print 'roi', r['total-nodes']
 
     collider.remove_blank_nodes(graph, experiment) # <-----
     r,d = graph_report(graph)
     r['step'] = 'remove blank nodes'
     reports.append(r)
-    print 'blank', r['total-nodes']
+    #print 'blank', r['total-nodes']
 
     durations.append(('pruned', d))
 
@@ -130,7 +130,7 @@ def create_report_card(experiment, graph):
         r['step'] = 'network_simplifications'
         reports.append(r)
 
-    print 'simplified', r['total-nodes']
+    #print 'simplified', r['total-nodes']
     durations.append(('simplified', d))
 
     ############### collisions
@@ -152,7 +152,7 @@ def create_report_card(experiment, graph):
     r,d = graph_report(graph)
     r['step'] = 'greedy gaps'
     reports.append(r)
-    print 'greedy gap bridging', r['total-nodes']
+    #print 'greedy gap bridging', r['total-nodes']
 
     durations.append(('gaps', d))
 
@@ -199,7 +199,7 @@ def create_report_card(experiment, graph):
         r['step'] = 'network_simplifications'
         reports.append(r)
 
-    print 'simplified', r['total-nodes']
+    #print 'simplified', r['total-nodes']
     durations.append(('simplifed 2', d))
 
     ############### collisions
@@ -222,7 +222,7 @@ def create_report_card(experiment, graph):
     r,d = graph_report(graph)
     r['step'] = 'greedy gaps'
     reports.append(r)
-    print 'greedy gap bridging', r['total-nodes']
+    #print 'greedy gap bridging', r['total-nodes']
     durations.append(('gaps 2', d))
 
     columns = ['step', 'total-nodes', 'isolated-nodes',
@@ -244,7 +244,7 @@ if __name__ == '__main__':
     #print path
 
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-    graph = experiment.collision_graph
+    graph = experiment.graph
 
     fig, ax = plt.subplots()
     labels = ['raw', 'pruned', 'simplified', 'gaps', 'simplified', 'gaps']
