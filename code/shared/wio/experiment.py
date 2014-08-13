@@ -9,6 +9,7 @@ from __future__ import (
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
+import numpy as np
 import pandas as pd
 
 import multiworm
@@ -24,6 +25,7 @@ class Experiment(multiworm.Experiment):
         self.prepdata = fm.PrepData(self.experiment_id)
 
         self._prep_df = None
+        self._typical_bodylength = None
 
     def _pull_prepdata(self):
         bounds = self.prepdata.load('bounds')
@@ -68,3 +70,19 @@ class Experiment(multiworm.Experiment):
                 if moved >= threshold)
 
         return moved_enough
+
+    @property
+    def typical_bodylength(self):
+        if self._typical_bodylength is None:
+            # find out the typical body length if we haven't already
+            im_df = self.prepdata.load('matches')
+            matched_blobs = im_df[im_df['good'] & im_df['roi']]['bid']
+
+            sizes = self.prepdata.load('sizes')
+            sizes.set_index('bid', inplace=True)
+
+            good_midlines = list(sizes.loc[matched_blobs]['midline_median'])
+
+            self._typical_bodylength = np.median(good_midlines)
+
+        return self._typical_bodylength
