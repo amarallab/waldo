@@ -138,9 +138,9 @@ class Taper(object):
         end_terms.drop_duplicates('node_id', take_last=True,
                                   inplace=True)
 
-        print('removed all but one component for node_ids')
-        print(len(start_terms), 'start terms')
-        print(len(end_terms), 'end terms')
+        #print('removed all but one component for node_ids')
+        #print(len(start_terms), 'start terms')
+        #print(len(end_terms), 'end terms')
 
         return start_terms, end_terms
 
@@ -321,7 +321,7 @@ class Taper(object):
         link_list: (list of tuples)
 
         """
-        print(len(link_list))
-        print('starting edge number', self._graph.number_of_edges())
+        #print(len(link_list))
+        #print('starting edge number', self._graph.number_of_edges())
         self._graph.add_edges_from((n1, n2) for (n1, n2) in link_list)
-        print('after edge number', self._graph.number_of_edges())
+        #print('after edge number', self._graph.number_of_edges())

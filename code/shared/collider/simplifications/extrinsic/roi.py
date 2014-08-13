@@ -64,8 +64,7 @@ def remove_nodes_outside_roi(graph, experiment, x=None, y=None, r=None, ex_ids=N
     """
     if isinstance(experiment, wio.Experiment):
         roi = experiment.prepdata.load('roi').set_index('bid')
-
-        outside_nodes = roi[roi.inside_roi].index
+        outside_nodes = roi[roi.inside_roi == False].index
 
     else:
         if not all([x, y, r]):
