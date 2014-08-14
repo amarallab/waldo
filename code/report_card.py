@@ -24,236 +24,116 @@ import collider
 
 DATA_DIR = settings.LOGISTICS['filesystem_data']
 
-def graph_report(digraph):
-    graph = digraph.to_undirected()
-    isolated_count, connected_count = 0, 0
-    durations = []
-    components = nx.connected_components(graph)
-    giant_size = max([len(c) for c in components])
+class ReportCard(object):
 
-    for node in digraph:
-        parents = list(digraph.predecessors(node))
-        children = list(digraph.successors(node))
-        if parents or children:
-            connected_count += 1
-        else:
-            isolated_count += 1
-        try:
-            durations.append(digraph.node[node]['died'] - digraph.node[node]['born'])
-        except KeyError:
-            pass
+    def __init__(self):
+        self.steps = []
+        self.reports = []
+        self.durations = []
 
-    duration_med = np.median(durations)
-    duration_std = np.std(durations)
-    assert len(graph.nodes(data=False)) == graph.number_of_nodes()
-    report = {'total-nodes':graph.number_of_nodes(),
-              'isolated-nodes': isolated_count,
-              'connected-nodes': connected_count,
-              'giant-component-size':giant_size,
-              'duration-med': round(duration_med, ndigits=2),
-              'duration-std': round(duration_std, ndigits=2),
-              '# components': len(components),
-              }
+    def add_step(self, graph, step_name):
+        report, durations = self.evaluate_graph(graph)
+        report['step'] = step_name
+        self.steps.append(step_name)
+        self.reports.append(report)
+        self.durations.append(durations)
 
-    return report, durations
+
+    def evaluate_graph(self, digraph):
+        graph = digraph.to_undirected()
+        isolated_count, connected_count = 0, 0
+        durations = []
+        components = nx.connected_components(graph)
+        giant_size = max([len(c) for c in components])
+
+        for node in digraph:
+            parents = list(digraph.predecessors(node))
+            children = list(digraph.successors(node))
+            if parents or children:
+                connected_count += 1
+            else:
+                isolated_count += 1
+            try:
+                durations.append(digraph.node[node]['died'] - digraph.node[node]['born'])
+            except KeyError:
+                pass
+
+        duration_med = np.median(durations)
+        duration_std = np.std(durations)
+        assert len(graph.nodes(data=False)) == graph.number_of_nodes()
+        report = {'total-nodes':graph.number_of_nodes(),
+                  'isolated-nodes': isolated_count,
+                  'connected-nodes': connected_count,
+                  'giant-component-size':giant_size,
+                  'duration-med': round(duration_med, ndigits=2),
+                  'duration-std': round(duration_std, ndigits=2),
+                  '# components': len(components),
+                  }
+        return report, durations
+
+    def report(self, show=True):
+        columns = ['step', 'total-nodes', 'isolated-nodes',
+                   'connected-nodes', 'giant-component-size',
+                   'duration-med', 'duration-std', '# components']
+
+        report_df = pd.DataFrame(self.reports, columns=columns)
+        report_df.set_index('step')
+        if show:
+            print report_df[['step', 'total-nodes', 'isolated-nodes', 'duration-med']]
+        return report_df
 
 def create_report_card(experiment, graph):
-    #graph = pickle.load(open('/home/projects/worm_movement/Data/dev/collider_networks/20130318_131111_graphcache2.pkl'))
 
-    show_full = False
+    report_card = ReportCard()
+    report_card.add_step(graph, 'raw')
 
-    ############### iniitalization
-    reports = []
-    durations = []
+    ############### Remove Known Junk
 
-    r,d = graph_report(graph)
-    r['step'] = 'raw'
-    reports.append(r)
-    #print 'raw', r['total-nodes']
+    collider.remove_nodes_outside_roi(graph, experiment)
+    report_card.add_step(graph, 'roi')
 
-    durations.append(('raw', d))
+    collider.remove_blank_nodes(graph, experiment)
+    report_card.add_step(graph, 'blank')
 
+    ############### Simplify
 
-    collider.remove_nodes_outside_roi(graph, experiment) # <-----
-    r,d = graph_report(graph)
-    r['step'] = 'remove outside roi'
-    reports.append(r)
-    #print 'roi', r['total-nodes']
-
-    collider.remove_blank_nodes(graph, experiment) # <-----
-    r,d = graph_report(graph)
-    r['step'] = 'remove blank nodes'
-    reports.append(r)
-    #print 'blank', r['total-nodes']
-
-    durations.append(('pruned', d))
-
-    ############### simplifications
-    collider.assimilate(graph, max_threshold=10)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'assimilate'
-        reports.append(r)
-
-    collider.remove_single_descendents(graph) # < --------
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove single descendents'
-        reports.append(r)
-
+    #collider.assimilate(graph, max_threshold=10)
+    collider.remove_single_descendents(graph)
     collider.remove_fission_fusion(graph)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove fission-fusion'
-        reports.append(r)
-
     collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove fission-fusion relative'
-        reports.append(r)
-
     collider.remove_offshoots(graph, threshold=20)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove offshoots'
-        reports.append(r)
-
     collider.remove_single_descendents(graph)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove single descendents'
-        reports.append(r)
+    report_card.add_step(graph, 'simplify')
 
-    if not show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'network_simplifications'
-        reports.append(r)
+    ############### Collisions
+    threshold=2
+    suspects = collider.suspected_collisions(graph, threshold)
+    print('{n} suspects found with time difference'.format(n=len(suspects)))
+    collider.resolve_collisions(graph, experiment, suspects)
+    report_card.add_step(graph, 'collisions')
 
-    #print 'simplified', r['total-nodes']
-    durations.append(('simplified', d))
-
-    ############### collisions
-
-    # threshold = 2
-    # suspects = collider.suspected_collisions(graph, threshold)
-    # print(len(suspects), 'suspects found')
-    # collider.resolve_collisions(graph, experiment, suspects)
-    # r,d = graph_report(graph)
-    # r['step'] = 'basic collisions removed'
-    # print 'collision', r['total-nodes']
-
-    ############### gaps
-    taper = tp.Taper(experiment=experiment, graph=graph)
-    start, end = taper.find_start_and_end_nodes()
-    gaps = taper.score_potential_gaps(start, end)
-    gt = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-    graph = taper._graph
-    r,d = graph_report(graph)
-    r['step'] = 'greedy gaps'
-    reports.append(r)
-    #print 'greedy gap bridging', r['total-nodes']
-
-    durations.append(('gaps', d))
-
-    ############### simplifications
-    collider.assimilate(graph, max_threshold=10)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'assimilate'
-        reports.append(r)
-
-    collider.remove_single_descendents(graph)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove single descendents'
-        reports.append(r)
-
-    collider.remove_fission_fusion(graph)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove fission-fusion'
-        reports.append(r)
-
-
-    collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove fission-fusion relative'
-        reports.append(r)
-
-    collider.remove_offshoots(graph, threshold=20)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove offshoots'
-        reports.append(r)
-
-    collider.remove_single_descendents(graph)
-    if show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'remove single descendents'
-        reports.append(r)
-
-    if not show_full:
-        r,d = graph_report(graph)
-        r['step'] = 'network_simplifications'
-        reports.append(r)
-
-    #print 'simplified', r['total-nodes']
-    durations.append(('simplifed 2', d))
-
-    ############### collisions
-
-    # threshold = 2
-    # suspects = collider.suspected_collisions(graph, threshold)
-    # print(len(suspects), 'suspects found')
-    # collider.resolve_collisions(graph, experiment, suspects)
-    # r,d = graph_report(graph)
-    # r['step'] = 'basic collisions removed'
-    # print 'collision', r['total-nodes']
-
-    ############### gaps
+    ############### Gaps
 
     taper = tp.Taper(experiment=experiment, graph=graph)
     start, end = taper.find_start_and_end_nodes()
     gaps = taper.score_potential_gaps(start, end)
-    gt = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+    taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
     graph = taper._graph
-    r,d = graph_report(graph)
-    r['step'] = 'greedy gaps'
-    reports.append(r)
-    #print 'greedy gap bridging', r['total-nodes']
-    durations.append(('gaps 2', d))
+    report_card.add_step(graph, 'gaps')
 
-    columns = ['step', 'total-nodes', 'isolated-nodes',
-               'connected-nodes', 'giant-component-size',
-               'duration-med', 'duration-std', '# components']
+    report_df = report_card.report(show=True)
+    return graph, report_df
 
-    report_card = pd.DataFrame(reports, columns=columns)
-    report_card.set_index('step')
-    print report_card[['step', 'total-nodes', 'isolated-nodes', 'duration-med']]
-    return graph, report_card
 
-if __name__ == '__main__':
+def main():
     ex_id = '20130318_131111'
     ex_id = '20130614_120518'
     #ex_id = '20130702_135704' # many pics
     # ex_id = '20130614_120518'
 
-    #path = os.path.join(DATA_DIR, ex_id)
-    #print path
-
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-    graph = experiment.graph
+    graph = experiment.graph.copy()
+    return create_report_card(experiment, graph)
 
-    fig, ax = plt.subplots()
-    labels = ['raw', 'pruned', 'simplified', 'gaps', 'simplified', 'gaps']
-
-    x = np.arange(0, 30, 0.05)
-    for i, (l, d) in enumerate(durations):
-        dur = np.array(d) / 60.0
-        ecdf = ECDF(dur)
-        cdf = ecdf(x)
-        ax.plot(x, cdf, label=l)
-    ax.legend(loc='lower right')
-    plt.show()
+if __name__ == '__main__':
+    main()
