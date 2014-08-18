@@ -47,7 +47,7 @@ def grab_outline(node, graph, experiment, first=True):
     df = consolidate_node_data(graph, experiment, node)
     if df is None:
         print('Failed to find node data')
-        print('grabbing', node, type(node))
+        #print('grabbing', node, type(node))
         raise CollisionException
     if not first:
         df.sort(ascending=False, inplace=True)
@@ -59,10 +59,10 @@ def grab_outline(node, graph, experiment, first=True):
         is_good = True
         if not enc or not l:
             is_good = False
-        if np.isnan(enc) or np.isnan(l):
+        if not isinstance(enc, basestring):
             is_good = False
         if is_good:
-            print(node, x, y, l, enc)
+            #print(node, x, y, l, enc)
             outline_points = de.decode_outline([x, y, l, enc])
             #print(outline_points)
             return outline_points
