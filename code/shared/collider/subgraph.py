@@ -40,3 +40,15 @@ def nearby(digraph, target, max_distance):
         subdig.node[node]['more'] = True
 
     return subdig
+
+def neartime(digraph, fstart, fend):
+    included = set()
+    for node in digraph.nodes_iter():
+        node_data = digraph.node[node]
+        if node_data['born'] <= fend and node_data['died'] >= fstart:
+            included.add(node)
+        # elif fstart <= node_data['died']:
+        #     included.add(node)
+
+    subdig = digraph.subgraph(included)
+    return subdig

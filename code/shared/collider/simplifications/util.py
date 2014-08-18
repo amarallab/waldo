@@ -230,7 +230,7 @@ def consolidate_node_data(graph, experiment, node):
     #                                        node=node))
 
     data = []
-    for i, subnode in enumerate(components):
+    for subnode in components:
         # NOTE: the following comment of remove offshoots code
         # did not work, because the graph passed in
         # has compound nodes. We cannot use it to check the parents
@@ -240,15 +240,17 @@ def consolidate_node_data(graph, experiment, node):
         #    if is_offshoot(graph, node, subnode):
         #        print(subnode, 'is offshoot')
         #        continue
-        blob_data = experiment.parse_blob(subnode)
-        if blob_data is None:
-            print("components:", components, "subnode:", subnode)
+        blob_data = experiment[subnode]
+        # if blob_data is None:
+        #     print("components:", components, "subnode:", subnode)
+        #     continue
+        if 'frame' not in blob_data:
             continue
-        if blob_data.get('frame', []):
-            df = pd.DataFrame(blob_data)
-            df.set_index('frame', inplace=True)
-            df['blob'] = subnode
-            data.append(df)
+
+        df = pd.DataFrame(blob_data)
+        df.set_index('frame', inplace=True)
+        df['blob'] = subnode
+        data.append(df)
         #data.append(df)
     if data:
         all_data = pd.concat(data)
