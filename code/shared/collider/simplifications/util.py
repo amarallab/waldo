@@ -9,6 +9,8 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import itertools
 import collections
+import types
+
 import pandas as pd
 import networkx as nx
 
@@ -70,6 +72,12 @@ def validate_graph(digraph):
             if req_key not in node_data:
                 raise AssertionError("Node {} missing required key '{}'".format(node, req_key))
 
+def _whereis_addon(digraph, node):
+    """
+    For patching onto specially-modifed digraph objects.
+    """
+    return digraph._whereis_data.get(node, node)
+
 def condense_nodes(digraph, node, *other_nodes):
     """
     In the given *digraph*, incorporate all nodes in *other_nodes* into
@@ -84,10 +92,18 @@ def condense_nodes(digraph, node, *other_nodes):
 
     Edges that *other_nodes* had will be taken by *node*, excepting those to
     *node* to prevent self-loops.
+
+    In what is probably bad practice, this adds a method to the class
     """
+    whereis_data = getattr(digraph, '_whereis_data', {})
+
     node_data = digraph.node[node]
     if 'components' not in node_data:
         node_data['components'] = set([node])
+
+    # record where things go
+    for component in node_data['components']:
+        whereis_data[component] = node
 
     for other_node in other_nodes:
         other_data = digraph.node[other_node]
@@ -119,6 +135,10 @@ def condense_nodes(digraph, node, *other_nodes):
 
         # remove node
         digraph.remove_node(other_node)
+
+    # monkey-patch object
+    digraph.whereis = types.MethodType(_whereis_addon, digraph)
+    digraph._whereis_data = whereis_data
 
 def flat_node_list(graph):
     """
