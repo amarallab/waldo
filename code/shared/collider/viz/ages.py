@@ -11,8 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from ..simplifications.util import lifespan
-
 def age_distribution(*digraphs, **kwargs):
     """
     Keyword Arguments
@@ -23,7 +21,7 @@ def age_distribution(*digraphs, **kwargs):
     """
     log = kwargs.get('log', 'x').lower()
 
-    ages = [[lifespan(digraph, node) for node in digraph] for digraph in digraphs]
+    ages = [[digraph.lifespan(node) for node in digraph] for digraph in digraphs]
     age_ccdfs = [cdf(a, ccdf=True) for a in ages]
 
     fig, ax = plt.subplots()

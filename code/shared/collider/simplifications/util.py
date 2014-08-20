@@ -16,7 +16,6 @@ import networkx as nx
 
 __all__ = [
     'flat_node_list',
-    'lifespan',
     'component_size_summary',
     'suspected_collisions',
     'consolidate_node_data'
@@ -60,86 +59,6 @@ def frame_filter(threshold):
         return True
     return conditional
 
-def lifespan(graph, node):
-    return graph.node[node]['died'] - graph.node[node]['born']
-
-def validate_graph(digraph):
-    """
-    Verify that the graph contains the requisite data
-    """
-    for node, node_data in digraph.nodes_iter(data=True):
-        for req_key in ['born', 'died']:
-            if req_key not in node_data:
-                raise AssertionError("Node {} missing required key '{}'".format(node, req_key))
-
-def _whereis_addon(digraph, node):
-    """
-    For patching onto specially-modifed digraph objects.
-    """
-    return digraph._whereis_data.get(node, node)
-
-def condense_nodes(digraph, node, *other_nodes):
-    """
-    In the given *digraph*, incorporate all nodes in *other_nodes* into
-    *node*.  Graph is modified in place, so nothing is returned.
-
-    All nodes must have ``born`` and ``died`` keys, the condensed node
-    born/died keys will maximize age.  All other key values will be used to
-    ``.update()`` the condensed node data, so sets and mappings
-    (dictionary-like objects) can be used.  The ``components`` key is
-    slightly special, it will be created as a 1-element set with the
-    node's name if non-existent.
-
-    Edges that *other_nodes* had will be taken by *node*, excepting those to
-    *node* to prevent self-loops.
-
-    In what is probably bad practice, this adds a method to the class
-    """
-    whereis_data = getattr(digraph, '_whereis_data', {})
-
-    node_data = digraph.node[node]
-    if 'components' not in node_data:
-        node_data['components'] = set([node])
-
-    # record where things go
-    for component in node_data['components']:
-        whereis_data[component] = node
-
-    for other_node in other_nodes:
-        other_data = digraph.node[other_node]
-
-        # abscond with born/died
-        node_data['born'] = min(node_data['born'], other_data.pop('born'))
-        node_data['died'] = max(node_data['died'], other_data.pop('died'))
-
-        # combine set/mapping data
-        node_data['components'].update(
-                other_data.pop('components', set([other_node])))
-        for k, v in six.iteritems(other_data):
-            if k in node_data:
-                node_data[k].update(v)
-            else:
-                node_data[k] = v
-
-        # transfer edges
-        digraph.add_edges_from(
-                (node, out_node)
-                for out_node
-                in digraph.successors(other_node)
-                if out_node != node)
-        digraph.add_edges_from(
-                (in_node, node)
-                for in_node
-                in digraph.predecessors(other_node)
-                if in_node != node)
-
-        # remove node
-        digraph.remove_node(other_node)
-
-    # monkey-patch object
-    digraph.whereis = types.MethodType(_whereis_addon, digraph)
-    digraph._whereis_data = whereis_data
-
 def flat_node_list(graph):
     """
     returns list of all non-compund nodes in a graph, inculding
@@ -178,9 +97,9 @@ def suspected_collisions(digraph, relative_threshold):
         if len(parents) != 2 or len(children) != 2:
             continue
 
-        node_life = lifespan(digraph, node)
-        parents_life = [lifespan(digraph, p) for p in parents]
-        children_life = [lifespan(digraph, c) for c in children]
+        node_life = digraph.lifespan(node)
+        parents_life = [digraph.lifespan(p) for p in parents]
+        children_life = [digraph.lifespan(c) for c in children]
 
         #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > relative_threshold:
         if (sum(parents_life) / (2 * node_life) > relative_threshold and

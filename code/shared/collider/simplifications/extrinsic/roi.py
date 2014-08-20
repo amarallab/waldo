@@ -9,7 +9,6 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import numpy as np
 
-from ..util import frame_filter, condense_nodes
 import wio
 
 __all__ = [
@@ -53,14 +52,19 @@ def remove_nodes_outside_roi(graph, experiment, x=None, y=None, r=None, ex_ids=N
     'region of interest'.  Must run before other simplifications; does not
     tolerate compound blob IDs
 
-    params
-    -----
-    graph: (networkx graph)
-       nodes are blob ids
-    experiment: (multiworm Experiment)
-       the experiment object corresponding to the same recording
-    ex_id: (str)
-       the experiment id (ie. timestamp) used to look up roi.
+    Parameters
+    ----------
+    graph: nx.DiGraph
+       Nodes are blob ids
+    experiment: multiworm.Experiment or wio.Experiment
+       The experiment object corresponding to the same recording
+
+    Keyword Arguments
+    -----------------
+    x, y, r: numbers
+        ROI definition
+    ex_id: str
+        The experiment id (ie. timestamp) used to look up roi.
     """
     if isinstance(experiment, wio.Experiment):
         roi = experiment.prepdata.load('roi').set_index('bid')

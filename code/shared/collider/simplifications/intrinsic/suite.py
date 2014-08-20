@@ -7,8 +7,6 @@ from .degree_one import remove_single_descendents, remove_offshoots
 from .fission_fusion import remove_fission_fusion, remove_fission_fusion_rel
 from .assimilator import assimilate
 
-from ..util import validate_graph
-
 __all__ = [
     'removal_suite',
 ]
@@ -24,7 +22,7 @@ def removal_suite(digraph, **params):
     params_local = SUITE_DEFAULTS.copy()
     params_local.update(params)
 
-    validate_graph(digraph)
+    digraph.validate()
 
     assimilate(digraph, max_threshold=params_local['assimilate'])
     remove_single_descendents(digraph)

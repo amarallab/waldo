@@ -11,9 +11,12 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import numpy as np
 import pandas as pd
+import networkx as nx
 
 import multiworm
 from . import file_manager as fm
+import collider
+#from collider.blobops import components
 
 class Experiment(multiworm.Experiment):
     """
@@ -23,6 +26,9 @@ class Experiment(multiworm.Experiment):
     def __init__(self, *args, **kwargs):
         super(Experiment, self).__init__(*args, **kwargs)
         self.prepdata = fm.PrepData(self.experiment_id)
+
+        # NOTE: this needs to be done in two steps for some reason
+        self.graph = nx.freeze(collider.Graph(self.graph))
 
         self._prep_df = None
         self._typical_bodylength = None

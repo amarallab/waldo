@@ -17,7 +17,6 @@ print('Python {} ({}) [{}] on {}'.format(platform.python_version(), ', '.join(pl
 
 from wio.experiment import Experiment
 import collider
-from collider.simplifications.util import condense_nodes
 from conf import settings
 
 SUITE_DEFAULTS = {
@@ -81,7 +80,7 @@ def collapse_group_of_nodes(graph, experiment, max_duration):
                     succs = (str(a) for a in graph.successors(n))
                     ss.append("%d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
                 print "Group: (%s)" % ") - (".join(ss)
-                condense_nodes(graph, r[0], *r[1:])
+                graph.condense_nodes(r[0], *r[1:])
 
 if __name__ == "__main__":
     ex_id = '20130318_131111'

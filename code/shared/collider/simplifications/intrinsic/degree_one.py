@@ -7,14 +7,14 @@ from __future__ import (
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
-from ..util import frame_filter, condense_nodes
+from ..util import frame_filter
 
 __all__ = [
     'remove_single_descendents',
     'remove_offshoots',
 ]
 
-def remove_single_descendents(graph):
+def remove_single_descendents(digraph):
     """
     Combine direct descendents (and repetitions thereof) into a single node.
 
@@ -31,25 +31,25 @@ def remove_single_descendents(graph):
     The hidden data will be attached to the nodes as a set, for example from
     above: ``{A, B}``.
     """
-    all_nodes = graph.nodes()
+    all_nodes = digraph.nodes()
 
     while all_nodes:
         node = all_nodes.pop()
-        if node not in graph:
+        if node not in digraph:
             continue # node was already removed/abridged
 
-        children = set(graph.successors(node))
+        children = set(digraph.successors(node))
         if len(children) != 1:
             continue
         child = children.pop()
 
-        if len(graph.predecessors(child)) != 1:
+        if len(digraph.predecessors(child)) != 1:
             continue
 
-        parents = set(graph.predecessors(node))
-        grandchildren = set(graph.successors(child))
+        parents = set(digraph.predecessors(node))
+        grandchildren = set(digraph.successors(child))
 
-        condense_nodes(graph, node, child)
+        digraph.condense_nodes(node, child)
 
         all_nodes.append(node) # recurse
 
@@ -74,6 +74,6 @@ def remove_offshoots(digraph, threshold):
         # add to components of parent then remove node
         parent = digraph.predecessors(node)[0]
 
-        condense_nodes(digraph, parent, node)
+        digraph.condense_nodes(parent, node)
 
     # graph is modified in-place

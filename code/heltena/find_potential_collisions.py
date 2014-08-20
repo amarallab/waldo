@@ -19,7 +19,6 @@ print('Python {} ({}) [{}] on {}'.format(platform.python_version(), ', '.join(pl
 
 from wio.experiment import Experiment
 import collider
-from collider.simplifications.util import condense_nodes
 from conf import settings
 
 SUITE_DEFAULTS = {

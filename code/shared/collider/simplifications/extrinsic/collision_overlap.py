@@ -13,7 +13,7 @@ import pandas as pd
 import encoding.decode_outline as de
 from images.manipulations import points_to_aligned_matrix
 
-from ..util import condense_nodes, consolidate_node_data
+from ..util import consolidate_node_data
 
 __all__ = [
     'resolve_collisions',
@@ -266,7 +266,7 @@ def untangle_collision(graph, collision_node, collision_result):
         #children = set(graph.successors(n2))
 
         # combine data
-        #new_node, new_node_data = condense_nodes(graph, n1, n2)
+        #new_node, new_node_data = graph.condense_nodes(n1, n2)
         if 'collision' not in graph.node[n1]:
             graph.node[n1]['collisions'] = set()
         graph.node[n1]['collisions'].add(collision_node)

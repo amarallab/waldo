@@ -15,7 +15,7 @@ except ImportError:
     def mean(x):
         return sum(x) / len(x)
 
-from ..util import frame_filter, condense_nodes, lifespan
+from ..util import frame_filter
 
 __all__ = [
     'remove_fission_fusion',
@@ -84,7 +84,7 @@ def remove_fission_fusion(digraph, max_split_frames=None):
         grandchild = grandchildren.pop()
         greatgrandchildren = set(digraph.successors(grandchild))
 
-        condense_nodes(digraph, node, *(children | set([grandchild])))
+        digraph.condense_nodes(node, *(children | set([grandchild])))
 
         all_nodes.append(node) # recurse
 
@@ -114,10 +114,10 @@ def remove_fission_fusion_rel(digraph, split_rel_time):
     """
     def conditional(digraph, node, children, grandchild):
         # average age of focal node/gchild
-        endpoint_avg = mean([lifespan(digraph, node),
-                        lifespan(digraph, grandchild)])
+        endpoint_avg = mean([digraph.lifespan(node),
+                        digraph.lifespan(grandchild)])
         # average age of children
-        split_avg = mean([lifespan(digraph, c) for c in children])
+        split_avg = mean([digraph.lifespan(c) for c in children])
 
         return split_avg / endpoint_avg <= split_rel_time
 
@@ -158,7 +158,7 @@ def remove_fission_fusion_rel(digraph, split_rel_time):
 
         greatgrandchildren = set(digraph.successors(grandchild))
 
-        condense_nodes(digraph, node, *(children | set([grandchild])))
+        digraph.condense_nodes(node, *(children | set([grandchild])))
 
         all_nodes.append(node) # recurse
 

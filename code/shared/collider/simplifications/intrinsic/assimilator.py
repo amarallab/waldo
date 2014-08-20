@@ -12,8 +12,6 @@ L = logging.getLogger(__name__)
 
 import networkx as nx
 
-from ..util import frame_filter, condense_nodes, lifespan, validate_graph
-
 __all__ = [
     'assimilate',
 ]
@@ -56,7 +54,7 @@ def assimilate(digraph, max_threshold):
 
     Who would get the small node?  Nobody hopefully.
     """
-    validate_graph(digraph)
+    #digraph.validate()
     methods = {
         'down': {
             'relatives': digraph.successors,
@@ -88,7 +86,7 @@ def assimilate(digraph, max_threshold):
                 L.debug('- checking relative {}'.format(rnode))
 
                 # check exclusions
-                if lifespan(digraph, rnode) > max_threshold:
+                if digraph.lifespan(rnode) > max_threshold:
                     L.debug(' - lifespan too short'.format(rnode))
                     continue
                 if meth['towards_degree'](rnode) != 1:
@@ -100,6 +98,6 @@ def assimilate(digraph, max_threshold):
 
                 # assimilate relative
                 L.debug(' - absorbing node {} into {}'.format(rnode, node))
-                condense_nodes(digraph, node, rnode)
+                digraph.condense_nodes(node, rnode)
 
 

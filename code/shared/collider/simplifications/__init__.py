@@ -13,3 +13,5 @@ from .extrinsic.node_validation import *
 from .extrinsic.suspected_collisions import suspected_collisions
 
 from .util import *
+
+from .graph import ColliderGraph as Graph
