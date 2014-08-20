@@ -9,9 +9,6 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import pandas as pd
 
-def components(graph, node):
-    return set(graph.node[node].get('components', [node]))
-
 def blob_to_dataframe(experiment, blob_id, fields=None):
     """
     Loads the fields from a blob in the provided experiment and converts

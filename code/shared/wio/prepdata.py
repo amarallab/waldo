@@ -22,6 +22,13 @@ class PrepData(object):
         self.eid = ex_id
         self.directory = pathlib.Path(prepdir) / ex_id
 
+    def __getattr__(self, name):
+        """
+        For convienence
+        prepdata.load('bounds') => prepdata.bounds
+        """
+        return self.load(name)
+
     def _filepath(self, data_type):
         return self.directory / '{}-{}.csv'.format(self.eid, data_type)
 

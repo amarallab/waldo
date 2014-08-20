@@ -36,6 +36,9 @@ class ColliderGraph(nx.DiGraph):
     def copy(self):
         return ColliderGraph(self)
 
+    def components(self, node):
+        return set(self.node[node].get('components', [node]))
+
     def where_is(self, bid):
         """
         What
@@ -62,7 +65,6 @@ class ColliderGraph(nx.DiGraph):
             node_data['components'] = set([node])
 
         for other_node in other_nodes:
-            self._whereis_data[other_node] = node
             other_data = self.node[other_node]
 
             # abscond with born/died
@@ -92,6 +94,10 @@ class ColliderGraph(nx.DiGraph):
 
             # remove node
             self.remove_node(other_node)
+
+        # update what's where
+        for component in node_data['components']:
+            self._whereis_data[component] = node
 
     def validate(self):
         """
