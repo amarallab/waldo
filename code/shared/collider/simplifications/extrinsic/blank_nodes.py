@@ -11,12 +11,12 @@ __all__ = [
     'remove_blank_nodes',
 ]
 
-def remove_blank_nodes(digraph, experiment):
+def remove_blank_nodes(digraph, experiment, exclude_connected=True):
     """
-    Remove unconnected nodes in *digraph* with no associated data in
-    *experiment*.
+    Remove nodes in *digraph* with no associated data in *experiment*. If
+    *exclude_connected*, skip nodes that are connected.
     """
-    for bid in experiment:
-        if bid in digraph and not digraph.neighbors(bid):
+    for bid in digraph.nodes():
+        if not (exclude_connected and digraph.neighbors(bid)):
             if experiment[bid].empty:
                 digraph.remove_node(bid)

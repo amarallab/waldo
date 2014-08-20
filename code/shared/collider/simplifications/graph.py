@@ -40,9 +40,6 @@ class ColliderGraph(nx.DiGraph):
         return set(self.node[node].get('components', [node]))
 
     def where_is(self, bid):
-        """
-        What
-        """
         return self._whereis_data.get(bid, bid)
 
     def condense_nodes(self, node, *other_nodes):

@@ -60,20 +60,31 @@ class Experiment(multiworm.Experiment):
 
         return in_roi
 
-    def rel_move(self, threshold):
+    def rel_move(self, threshold, graph=None):
         if self._prep_df is None:
             self._pull_prepdata()
 
-        if 'rel_move' not in self._prep_df.columns:
-            movement_px = (self._prep_df.x_max - self._prep_df.x_min) + (self._prep_df.y_max - self._prep_df.y_min)
+        if graph is not None:
+            merged = collider.merge_bounds(self, graph)
+            movement_px = (merged.x_max - merged.x_min) + (merged.y_max - merged.y_min)
+            merged['rel_move'] = movement_px / self.typical_bodylength
 
-            self._prep_df['rel_move'] = movement_px / self._prep_df.midline_median
+            moved_enough = set(
+                    int(bid)
+                    for bid, moved
+                    in zip(merged.bid, merged.rel_move)
+                    if moved >= threshold)
 
-        moved_enough = set(
-                bid
-                for bid, moved
-                in zip(self._prep_df.bid, self._prep_df.rel_move)
-                if moved >= threshold)
+        else:
+            if 'rel_move' not in self._prep_df.columns:
+                movement_px = (self._prep_df.x_max - self._prep_df.x_min) + (self._prep_df.y_max - self._prep_df.y_min)
+                self._prep_df['rel_move'] = movement_px / self.typical_bodylength
+
+            moved_enough = set(
+                    int(bid)
+                    for bid, moved
+                    in zip(self._prep_df.bid, self._prep_df.rel_move)
+                    if moved >= threshold)
 
         return moved_enough
 

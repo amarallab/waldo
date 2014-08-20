@@ -18,7 +18,9 @@ __all__ = [
     'flat_node_list',
     'component_size_summary',
     'suspected_collisions',
-    'consolidate_node_data'
+    'consolidate_node_data',
+    'group_composite_nodes',
+    'merge_bounds',
 ]
 
 def _check_assumptions(graph):
@@ -195,3 +197,23 @@ def consolidate_node_data(graph, experiment, node):
         all_data = pd.concat(data)
         all_data.sort(inplace=True)
         return all_data
+
+# should find a better spot for this
+def group_composite_nodes(experiment, graph, dataframe):
+    cgen = ((node, graph.where_is(node)) for node in experiment.graph)
+    cgen = (x for x in cgen if x[1] in graph)
+    composites = pd.DataFrame(list(cgen), columns=['bid', 'composite_bid'])
+
+    # merge, only keep ids in dataframe
+    bounds = pd.merge(dataframe, composites, on='bid', how='left')
+
+    # clean up and group
+    bounds.drop('bid', axis=1, inplace=True)
+    bounds.rename(columns={'composite_bid': 'bid'}, inplace=True)
+    return bounds.groupby('bid')
+
+# should find a better spot for this
+def merge_bounds(experiment, graph):
+    dataframe = experiment.prepdata.bounds
+    gr = group_composite_nodes(experiment, graph, dataframe)
+    return gr.agg({'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max}).reset_index()
