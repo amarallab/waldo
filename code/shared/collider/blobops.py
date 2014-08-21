@@ -9,23 +9,6 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import pandas as pd
 
-def blob_to_dataframe(experiment, blob_id, fields=None):
-    """
-    Loads the fields from a blob in the provided experiment and converts
-    to a dataframe. 'frame' will always be tacked onto the list of fields,
-    and only 'centroid' is included by default.
-    """
-    if fields is None:
-        fields = ['centroid']
-    fields = set(fields)
-    fields.add('frame')
-
-    blob = experiment[blob_id].crop(fields)
-
-    df = pd.DataFrame(dict(blob))
-    #df.set_index('frame', inplace=True)
-    return df
-
 def weighted_centroid(df):
     """
     Collapses a dataframe full of areas and centroids (presumably from the
