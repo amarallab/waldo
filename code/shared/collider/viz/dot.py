@@ -21,7 +21,8 @@ def get_color(value, scalerange, cmap='jet'):
     return color
 
 def render_nx_as_dot(nxgraph, output_file=None, format='png',
-                     colormap='jet_r', logrange=(-0.5, 4), ref=True):
+                     colormap='jet_r', logrange=(-0.5, 4), ref=True,
+                     focus=None):
     if output_file is None:
         output_file = 'graph.gv'
 
@@ -33,7 +34,7 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png',
     # style nodes
     for node, node_data in nxgraph.nodes_iter(data=True):
         try:
-            life = node_data['died'] - node_data['born']
+            life = nxgraph.lifespan(node)
             #if 100 <= node <= 110: print(life)
             if node_data.get('more', False):
                 gvgraph.node(str(node), label='...', shape='circle', style='filled', color='grey')
@@ -53,5 +54,8 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png',
             source = dest
         for ref, ref_node in zip(reference, ref_nodes):
             gvgraph.node(ref_node, penwidth='5', color=get_color(ref, logrange, colormap))
+
+    if focus:
+        gvgraph.node(str(focus), penwidth='2.5', shape='doubleoctagon')
 
     return gvgraph.render(filename=output_file)

@@ -28,6 +28,7 @@ def nearby(digraph, target, max_distance):
     Return a copy of a subgraph containing nodes within *max_distance* of
     *target* in *digraph*.
     """
+    target = digraph.where_is(target)
     graph = digraph.to_undirected()
     lengths = nx.single_source_shortest_path_length(graph, target, max_distance + 1)
     nearby_nodes = set(node for node, length in six.iteritems(lengths)

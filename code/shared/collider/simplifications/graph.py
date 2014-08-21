@@ -106,4 +106,6 @@ class ColliderGraph(nx.DiGraph):
                     raise AssertionError("Node {} missing required key '{}'".format(node, req_key))
 
     def lifespan(self, node):
-        return self.node[node]['died'] - self.node[node]['born']
+        # +1 because something that was born & died on the same frame exists
+        # for 1 frame.
+        return self.node[node]['died'] - self.node[node]['born'] + 1
