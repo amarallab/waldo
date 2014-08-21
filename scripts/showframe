@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import (
+        absolute_import, division, print_function, unicode_literals)
+import six
+from six.moves import range
+
+import sys
+import os
+import argparse
+import functools
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+import pathcustomize
+import multiworm
+from multiworm.readers import blob as blob_reader
+
+# Derived from http://stackoverflow.com/a/2566508/194586
+# However, I claim these as below the threshold of originality
+def find_nearest_index(seq, value):
+    return (np.abs(np.array(seq)-value)).argmin()
+def find_nearest(seq, value):
+    return seq[find_nearest_index(seq, value)]
+
+def frame_parser(blob_lines, frame):
+    """
+    A lighter, probably quicker, parser to just get a single frame of
+    data out of a blob.
+    """
+    first_line = six.next(blob_lines)
+    frame_offset = frame - int(first_line.split(' ', 1)[0])
+    line = first_line
+
+    # blindly consume as many lines as needed
+    try:
+        for dummy in range(frame_offset):
+            line = six.next(blob_lines)
+    except multiworm.core.MWTDataError:
+        pass
+
+    # parse the line and return
+    blob = blob_reader.parse([line])
+    if blob['frame'][0] != frame:
+        raise multiworm.core.MWTDataError("Blob line offset failure")
+    return blob
+
+def frame_parser_spec(frame):
+    return functools.partial(frame_parser, frame=frame)
+
+def fmtcols(mylist, cols):
+    """http://stackoverflow.com/a/1524333/194586"""
+    lines = ("\t".join(mylist[i:i+cols]) for i in range(0,len(mylist),cols))
+    return '\n'.join(lines)
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+
+    parser = argparse.ArgumentParser(description='Get basic information '
+        'about a particular blob.')
+
+    parser.add_argument('data_set', help='The location of the data set.')
+    parser.add_argument('time', type=float, help='The time to display.  '
+        'Nudged to the nearest available image if no exact match.')
+    parser.add_argument('-f', '--frame', action='store_true',
+        help="Interpret time as the frame number")
+    #parser.add_argument('-d', '--dont-adjust', action)
+
+    args = parser.parse_args(argv[1:])
+
+    experiment = multiworm.Experiment(experiment_id=args.data_set)
+    experiment.load_summary()
+
+    spec_time = args.time
+    if args.frame:
+        frame = spec_time
+        spec_time = experiment.frame_times[int(frame) - 1]
+        print("- Frame {} occured at {} s".format(frame, spec_time))
+
+    # find the closest still to the given time
+    time = find_nearest(list(experiment.image_files.keys()), spec_time)
+    print("- Found image at {0:.2f} s ({1:+.2f} s relative to requested "
+          "time)".format(time, time - spec_time))
+    image_file = experiment.image_files[time]
+    print("  >> {}".format(image_file))
+    img = mpimg.imread(str(image_file))
+
+    # find the closest frame to the derived still time
+    frame = find_nearest_index(experiment.frame_times, time) + 1
+    frame_time = experiment.frame_times[frame - 1]
+    print("- Nearest frame at {:.2f} s ({:+.3f} s "
+          "relative to image)".format(frame_time, frame_time - time))
+
+    bids = list(experiment.blobs_in_frame(frame))
+    print("- {} blobs tracked on frame {}".format(len(bids), frame))
+    print(fmtcols([str(x) for x in bids], 5))
+
+    empties = []
+    for bid in bids[:]:
+        if experiment[bid].empty:
+            bids.remove(bid)
+            empties.append(bid)
+    if empties:
+        print("!!! Removed empty blobs: {}".format(empties))
+
+    outlines = []
+    parser = frame_parser_spec(frame)
+    for bid in bids:
+        blob = experiment.parse_blob(bid, parser)
+        if blob['contour_encode_len'][0]:
+            outline = blob_reader.decode_outline(
+                    blob['contour_start'][0],
+                    blob['contour_encode_len'][0],
+                    blob['contour_encoded'][0],
+                )
+            outlines.append(outline)
+
+    f, ax = plt.subplots()
+    ax.imshow(img.T, cmap=plt.cm.Greys_r)
+    for outline in outlines:
+        ax.plot(*outline.T)
+
+    plt.show()
+    return
+
+if __name__ == '__main__':
+    sys.exit(main())
