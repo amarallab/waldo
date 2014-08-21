@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
+from conf import settings
 import multiworm
 from . import file_manager as fm
 import collider
@@ -24,6 +25,8 @@ class Experiment(multiworm.Experiment):
     available as the ``prepdata`` attribute.
     """
     def __init__(self, *args, **kwargs):
+        if 'data_root' not in kwargs:
+            kwargs['data_root'] = settings.MWT_DATA_ROOT
         super(Experiment, self).__init__(*args, **kwargs)
         self.prepdata = fm.PrepData(self.experiment_id)
 
