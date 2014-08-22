@@ -125,7 +125,7 @@ def show_collision(experiment, graph, target, direction='backwards'):
 
     if backwards:
         blob_contour = get_contour(blob, index='first')
-        other_contours = [get_contour(other, index='last') for other in others]
+        other_contours = [get_contour(other, index='last') for other in others if not other.empty]
 
     contours = [blob_contour]
     contours.extend(other_contours)
@@ -140,19 +140,23 @@ def show_collision(experiment, graph, target, direction='backwards'):
     #f.subplots_adjust(wspace=None)
     f.tight_layout()
 
-    bounds.grow(20)
-    bounds.width = max(120, bounds.width)
-    bounds.height = max(180, bounds.height)
+    #bounds.grow(20)
+    #bounds.width = max(120, bounds.width)
+    #bounds.height = max(180, bounds.height)
+    bounds.shape = 120, 180 # this seems to work well enough...
 
     image = get_image(experiment, int(blob.born), 0)
     vmin, vmax = np.percentile(image, [6, 94])
 
     collections = [collection_pre, collection_post]
-    for ax, coll in zip(axs, collections):
+    for ax, coll, blobs, frame in zip(axs, collections, [others, [blob]], [others[0].died_f, blob.born_f]):
         ax.imshow(image.T, cmap=plt.cm.Greys, interpolation='none', vmin=vmin, vmax=vmax)
         ax.add_collection(coll)
         ax.set_xlim(bounds.x)
         ax.set_ylim(bounds.y)
         ax.set_aspect('equal')
+        ax.set_title('Blob(s): {}, Frame {}'.format(
+                ', '.join(str(b.id) for b in blobs),
+                int(frame)))
 
     return f, axs
