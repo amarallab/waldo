@@ -85,7 +85,7 @@ def find_potential_collisions(graph, experiment, min_duration, duration_factor):
 if __name__ == "__main__":
     ex_id = '20130318_131111'
     experiment = Experiment(experiment_id=ex_id)
-    graph = experiment.collision_graph
+    graph = experiment.graph.copy()
     collider.removal_suite(graph)
 
     params_local = SUITE_DEFAULTS.copy()
