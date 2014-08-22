@@ -11,11 +11,14 @@ import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Polygon, Wedge
 from matplotlib.collections import PatchCollection
 from scipy import ndimage
 
 import multiworm
+
+from .box import Box
 
 def before_and_after(experiment, target):
     """
@@ -66,26 +69,43 @@ def show_before_and_after(experiment, target):
     return f, axs
 
 def patch_contours(contours):
-    x_min, x_max, y_min, y_max = 10000, 0, 10000, 0
+    bounds = []
     patches = []
     for contour in contours:
         contour = np.array(contour)
-        x_min = min(x_min, contour.T[0].min())
-        x_max = max(x_max, contour.T[0].max())
-        y_min = min(y_min, contour.T[1].min())
-        y_max = max(y_max, contour.T[1].max())
-        patches.append(Polygon(contour, closed=True))
+        if contour.shape == (2,):
+            contour = np.reshape(contour, (-1, 2))
+        bbox = Box.fit(contour)
+        if len(contour) == 1:
+            patches.append(Wedge(contour, 10, 0, 360, 5, alpha=0.6))
+            bbox.size = 30, 30
+        else:
+            patches.append(Polygon(contour, closed=True, alpha=0.3))
+        bounds.append(bbox)
 
-    bounds = x_min, x_max, y_min, y_max
+    bounds = sum(bounds)
     return bounds, patches
-
-def pad_bounds(bounds, padding):
-    return bounds[0] - padding, bounds[1] + padding, bounds[2] - padding, bounds[3] + padding
 
 def get_image(experiment, time, bounds):
     actual_time, im_file = experiment.image_files.nearest(time=time)
     img = ndimage.imread(str(im_file))
     return img
+
+def get_contour(blob, index='first', centroid_fallback=True):
+    if index not in ['first', 'last']:
+        raise ValueError('index must be either "first" or "last"')
+
+    method = index + '_valid_index'
+
+    col = 'contour'
+    index = getattr(blob.df[col], method)()
+    if index is None:
+        if not centroid_fallback:
+            raise KeyError('No valid index')
+        col = 'centroid'
+        index = getattr(blob.df[col], method)()
+
+    return blob.df[col][index]
 
 def show_collision(experiment, graph, target, direction='backwards'):
     backwards = direction.startswith('back')
@@ -104,21 +124,26 @@ def show_collision(experiment, graph, target, direction='backwards'):
         other.df.decode_contour()
 
     if backwards:
-        blob_contour = blob.df['contour'][blob.df['contour'].first_valid_index()]
-        other_contours = [other.df['contour'][other.df['contour'].last_valid_index()] for other in others]
+        blob_contour = get_contour(blob, index='first')
+        other_contours = [get_contour(other, index='last') for other in others]
 
     contours = [blob_contour]
     contours.extend(other_contours)
 
     bounds, patches = patch_contours(contours)
-    collection_pre = PatchCollection(patches[1:], cmap=plt.cm.jet, alpha=0.3)
+    collection_pre = PatchCollection(patches[1:], cmap=plt.cm.autumn, alpha=0.3)
     collection_post = PatchCollection(patches[:1], facecolor='green', alpha=0.3)
-    collection_pre.set_array(np.linspace(0.1, 0.9, len(patches) - 1))
+    collection_pre.set_array(np.linspace(0.3, 0.9, len(patches) - 1))
 
-    f, axs = plt.subplots(ncols=2)
+    f, axs = plt.subplots(ncols=2, sharey=True)
     f.set_size_inches((10, 6))
+    #f.subplots_adjust(wspace=None)
+    f.tight_layout()
 
-    bounds = pad_bounds(bounds, 20)
+    bounds.grow(20)
+    bounds.width = max(120, bounds.width)
+    bounds.height = max(180, bounds.height)
+
     image = get_image(experiment, int(blob.born), 0)
     vmin, vmax = np.percentile(image, [6, 94])
 
@@ -126,8 +151,8 @@ def show_collision(experiment, graph, target, direction='backwards'):
     for ax, coll in zip(axs, collections):
         ax.imshow(image.T, cmap=plt.cm.Greys, interpolation='none', vmin=vmin, vmax=vmax)
         ax.add_collection(coll)
-        ax.set_xlim(*bounds[:2])
-        ax.set_ylim(*bounds[2:])
+        ax.set_xlim(bounds.x)
+        ax.set_ylim(bounds.y)
         ax.set_aspect('equal')
 
     return f, axs
