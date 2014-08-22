@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import pathcustomize
 
 import wio
+import collider
 import collider.viz.outlines as outlines
 
 def main():
@@ -27,7 +28,8 @@ def main():
     eid = args.experiment_id
 
     experiment = wio.Experiment(experiment_id=eid)
-    graph = experiment.graph
+    graph = experiment.graph.copy()
+    collider.remove_nodes_outside_roi(graph, experiment)
 
     gen = (bid for bid, deg in graph.in_degree_iter() if deg >= 2)
     print(','.join(['eid', 'bid', 'frame', 'filename']))

@@ -140,13 +140,13 @@ def show_collision(experiment, graph, target, direction='backwards'):
     #f.subplots_adjust(wspace=None)
     f.tight_layout()
 
-    #bounds.grow(20)
-    #bounds.width = max(120, bounds.width)
-    #bounds.height = max(180, bounds.height)
-    bounds.shape = 120, 180 # this seems to work well enough...
+    bounds.grow(20)
+    bounds.width = max(120, bounds.width)
+    bounds.height = max(180, bounds.height)
+    #bounds.shape = 120, 180 # this seems to work well enough?
 
     image = get_image(experiment, int(blob.born), 0)
-    vmin, vmax = np.percentile(image, [6, 94])
+    vmin, vmax = np.percentile(image, [3, 97])
 
     collections = [collection_pre, collection_post]
     for ax, coll, blobs, frame in zip(axs, collections, [others, [blob]], [others[0].died_f, blob.born_f]):
