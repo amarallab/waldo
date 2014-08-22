@@ -49,6 +49,8 @@ LOGISTICS = {
     'qsub_directory': PROJECT_HOME_pl / 'data' / 'qsub',
 }
 
+MWT_DATA_ROOT = LOGISTICS['filesystem_data']
+
 # compatibility
 for key in LOGISTICS:
     if isinstance(LOGISTICS[key], pathlib.Path):

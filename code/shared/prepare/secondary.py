@@ -58,7 +58,7 @@ def in_roi(experiment=None, ex_id=None, bounds=None):
         if bounds is None:
             bounds = experiment.prepdata.load('bounds')
         if ex_id is None:
-            ex_id = experiment.experiment_id
+            ex_id = experiment.id
 
     roi_definition = fm.ImageMarkings(ex_id=ex_id).roi()
 

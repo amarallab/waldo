@@ -16,8 +16,8 @@ import scipy.stats as sps
 import scipy.signal as ss
 
 import pathcustomize
-import multiworm
 import multiworm.analytics.sgolay
+import wio
 
 def IQR(dist):
     return np.percentile(dist, 75) - np.percentile(dist, 25)
@@ -199,7 +199,7 @@ def main(argv=None):
 
     args = parser.parse_args()
 
-    experiment = multiworm.Experiment(experiment_id=args.data_set)
+    experiment = wio.Experiment(experiment_id=args.data_set)
     experiment.load_summary()
     if args.blob_id not in experiment:
         print('Blob ID {0} not found.'.format(args.blob_id), file=sys.stderr)

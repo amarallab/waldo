@@ -65,6 +65,10 @@ def remove_nodes_outside_roi(graph, experiment, x=None, y=None, r=None, ex_ids=N
         ROI definition
     ex_id: str
         The experiment id (ie. timestamp) used to look up roi.
+
+    Returns
+    -------
+    removed_nodes: set
     """
     if isinstance(experiment, wio.Experiment):
         roi = experiment.prepdata.load('roi').set_index('bid')
@@ -82,3 +86,5 @@ def remove_nodes_outside_roi(graph, experiment, x=None, y=None, r=None, ex_ids=N
                 outside_nodes.append(bid)
 
     graph.remove_nodes_from(outside_nodes)
+
+    return set(outside_nodes)

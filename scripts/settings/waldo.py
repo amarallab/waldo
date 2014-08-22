@@ -1,8 +1,7 @@
 import sys
 import pathlib
 
-print("I: Hi 2!")
-if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+if sys.platform.startswith('linux'):
     MWT_DATA_ROOT = pathlib.Path('/home/projects/worm_movement/Data/MWT_RawData')
 else:
     MWT_DATA_ROOT = pathlib.Path() / '..' / 'data' / 'mwt'

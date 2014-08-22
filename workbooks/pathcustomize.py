@@ -8,5 +8,4 @@ add_rel_path('..', 'code')
 add_rel_path('..', 'code', 'shared')
 add_rel_path('..', 'code', 'shared', 'joining')
 
-os.environ.setdefault('MULTIWORM_SETTINGS', 'settings.multiworm')
 os.environ.setdefault('WALDO_SETTINGS', 'settings.waldo')

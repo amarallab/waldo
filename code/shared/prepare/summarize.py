@@ -28,7 +28,7 @@ def summarize(ex_id, verbose=False):
 
     # load experiment
     experiment = wio.Experiment(fullpath=os.path.join(DATA_DIR, ex_id))
-    talk('Loaded experiment ID: {}'.format(experiment.experiment_id))
+    talk('Loaded experiment ID: {}'.format(experiment.id))
 
     # process the basic blob data
     talk(' - Summarizing raw data...')
