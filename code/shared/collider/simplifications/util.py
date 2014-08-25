@@ -188,7 +188,8 @@ def consolidate_node_data(graph, experiment, node):
         if 'frame' not in blob_data:
             continue
 
-        df = pd.DataFrame(blob_data)
+        df = blob_data.df
+        #df = pd.DataFrame(blob_data)
         df.set_index('frame', inplace=True)
         df['blob'] = subnode
         data.append(df)

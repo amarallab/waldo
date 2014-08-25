@@ -17,6 +17,9 @@ from ..util import consolidate_node_data
 
 __all__ = [
     'resolve_collisions',
+    'untangle_collision',
+    'create_collision_masks',
+    'compare_masks',
 ]
 
 class CollisionException(Exception):

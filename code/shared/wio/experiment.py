@@ -28,7 +28,7 @@ class Experiment(multiworm.Experiment):
         if 'data_root' not in kwargs:
             kwargs['data_root'] = settings.MWT_DATA_ROOT
         super(Experiment, self).__init__(*args, **kwargs)
-        self.prepdata = fm.PrepData(self.experiment_id)
+        self.prepdata = fm.PrepData(self.id) # Avoid warning (before: self.experiment_id)
 
         # NOTE: this needs to be done in two steps for some reason
         self.graph = nx.freeze(collider.Graph(self.graph))
