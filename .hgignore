@@ -42,6 +42,7 @@ build/
 *.tmp
 *.gv
 *.pkl
+db.sqlite3
 
 # Directory
 ./data/*
