@@ -1,31 +1,6 @@
 __author__ = 'heltena'
 
-#import pathcustomize
-import os
-import sys
-
-HERE = os.path.abspath('.')
-CODE_DIR = os.path.join(HERE, '..')
-print CODE_DIR
-sys.path.append(CODE_DIR)
-import setpath
-import platform
 import math
-
-print('Python {} ({}) [{}] on {}'.format(platform.python_version(), ', '.join(platform.python_build()),
-                                         platform.python_compiler(), sys.platform))
-
-from wio.experiment import Experiment
-import collider
-
-from conf import settings
-
-SUITE_DEFAULTS = {
-    'offshoots': settings.COLLIDER_SUITE_OFFSHOOT,
-    'splits_abs': settings.COLLIDER_SUITE_SPLIT_ABS,
-    'splits_rel': settings.COLLIDER_SUITE_SPLIT_REL,
-    'assimilate': settings.COLLIDER_SUITE_ASSIMILATE_SIZE,
-}
 
 
 def dist_2d(c1, c2):
@@ -34,14 +9,9 @@ def dist_2d(c1, c2):
     return math.hypot(xc, yc)
 
 
-def dist_3d(c1, c2):
-    d = [c1[i] - c2[i] for i in range(3)]
-    return math.sqrt(sum([x * x for x in d]))
-
-
 # max_first_last_distance is the max distance between the first node and the last node (not between siblings)
 # max_sibling_distance is the max distance between the first node and each of its sibling
-def merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_distance):
+def find_potential_cut_worms(graph, experiment, max_first_last_distance=40, max_sibling_distance=50, debug=False):
     terminals_df = experiment.prepdata.load('terminals')
     sizes_df = experiment.prepdata.load('sizes')
     terminals_map = {int(v['bid']): i for i, v in terminals_df.iterrows()}
@@ -49,7 +19,7 @@ def merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_dist
 
     area_mean = sizes_df['area_median'].mean(axis=1)
     area_std = sizes_df['area_median'].std(axis=1)
-    print "Area mean: %f, std: %f" % (area_mean, area_std)
+    print("I: Area mean: %f, std: %f" % (area_mean, area_std))
 
     def debug_data(x):
         terminals = terminals_df.iloc[terminals_map[x]]
@@ -77,7 +47,8 @@ def merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_dist
 
         last = sibling1_successors[0]
         if last not in terminals_map or sibling1 not in terminals_map or sibling2 not in terminals_map:
-            print "E: Problems with nodes: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last)
+            if debug:
+                print("E: Problems with nodes: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last))
             continue
 
         node_terminals = terminals_df.iloc[terminals_map[node]]
@@ -85,9 +56,10 @@ def merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_dist
         node_pos = tuple(float(node_terminals[p]) for p in ['xN', 'yN', 'tN'])
         last_pos = tuple(float(last_terminals[p]) for p in ['x0', 'y0', 't0'])
         if dist_2d(node_pos, last_pos) >= max_first_last_distance:
-            print "Distance between 'node' and 'last' is greater than %f: %d - (%d, %d) - %d" % \
-                  (max_first_last_distance, node, sibling1, sibling2, last)
-            print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+            if debug:
+                print("I: Distance between 'node' and 'last' is greater than %f: %d - (%d, %d) - %d" % \
+                      (max_first_last_distance, node, sibling1, sibling2, last))
+                print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
             continue
 
         sibling1_terminals = terminals_df.iloc[terminals_map[sibling1]]
@@ -95,9 +67,10 @@ def merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_dist
         sibling1_pos = tuple(float(sibling1_terminals[p]) for p in ['x0', 'y0', 't0'])
         sibling2_pos = tuple(float(sibling2_terminals[p]) for p in ['x0', 'y0', 't0'])
         if max(dist_2d(node_pos, sibling1_pos), dist_2d(node_pos, sibling2_pos)) >= max_sibling_distance:
-            print "Distance between siblings is greater than %f: %d - (%d, %d) - %d" % \
-                  (max_sibling_distance, node, sibling1, sibling2, last)
-            print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+            if debug:
+                print("I: Distance between siblings is greater than %f: %d - (%d, %d) - %d" % \
+                      (max_sibling_distance, node, sibling1, sibling2, last))
+                print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
             continue
 
         node_sizes = sizes_df.iloc[sizes_map[node]]
@@ -111,45 +84,23 @@ def merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_dist
         sibling2_area = float(sibling2_sizes['area_median'])
 
         if not (area_mean - area_std <= node_area < area_mean + area_std):
-            print "Bad 'node' area: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last)
-            print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+            if debug:
+                print("E: Bad 'node' area: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last))
+                print("I: ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last]))
             continue
 
         if not (area_mean - area_std <= last_area < area_mean + area_std):
-            print "Bad 'last' area: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last)
-            print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+            if debug:
+                print("E: Bad 'last' area: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last))
+                print("I: ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last]))
             continue
 
         if not ((area_mean - area_std) / 2 <= sibling1_area < (area_mean + area_std) / 2) or \
                 not ((area_mean - area_std) / 2 <= sibling2_area < (area_mean + area_std) / 2):
-            print "Sibling area problems: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last)
-            print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+            if debug:
+                print("E: Sibling area problems: %d - (%d, %d) - %d" % (node, sibling1, sibling2, last))
+                print("I: ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last]))
             continue
 
         candidates.append((node, sibling1, sibling2, last))
-    for v in candidates:
-        print "Ok: %d - (%d, %d) - %d\n " % v, "\n  ".join((debug_data(x) for x in v))
-    print "Nodes in the graph: %d, Candidates: %d" % (len(graph.nodes()), len(candidates))
-
-
-if __name__ == "__main__":
-    ex_id = '20130318_131111'
-    experiment = Experiment(experiment_id=ex_id)
-    graph = experiment.collision_graph
-    collider.removal_suite(graph)
-
-    params_local = SUITE_DEFAULTS.copy()
-    params_local.update()
-
-    collider.remove_single_descendents(graph)
-
-    collider.remove_fission_fusion(graph, max_split_frames=params_local['splits_abs'])
-    collider.remove_fission_fusion_rel(graph, split_rel_time=params_local['splits_rel'])
-
-    collider.remove_offshoots(graph, threshold=params_local['offshoots'])
-    collider.remove_single_descendents(graph)
-
-
-    max_first_last_distance = 40
-    max_sibling_distance = 50
-    merge_cut_worms(graph, experiment, max_first_last_distance, max_sibling_distance)
+    return candidates

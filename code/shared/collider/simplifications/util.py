@@ -172,13 +172,18 @@ def consolidate_node_data(graph, experiment, node):
 
     data = []
     for subnode in components:
-        blob_data = experiment[subnode].to_dict()
+        try:
+            blob_data = dict(experiment[subnode])
+        except Exception as e:
+            print('{e} reading blob {i}'.format(e=e, i=subnode))
+            continue
         if blob_data is None:
             continue
         if 'frame' not in blob_data:
             continue
 
-        df = pd.DataFrame(blob_data)
+        df = blob_data.df
+        #df = pd.DataFrame(blob_data)
         df.set_index('frame', inplace=True)
         df['blob'] = subnode
         data.append(df)

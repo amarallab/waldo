@@ -17,7 +17,7 @@ os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
 
 
 from conf import settings
-import wio.file_manager as fm
+#import wio.file_manager as fm
 from wio.experiment import Experiment
 import tape.taper as tp
 import collider
@@ -161,7 +161,7 @@ def collision_itteration(experiment, graph):
 
 
     ############### Simplify
-    for i in range(4):
+    for i in range(10):
         print('itteration', i+1)
         #collider.assimilate(graph, max_threshold=10)
         collider.remove_single_descendents(graph)
@@ -190,9 +190,6 @@ def collision_itteration(experiment, graph):
     report_df = report_card.report(show=True)
     return graph, report_df
 
-
-
-
 def main():
     ex_id = '20130318_131111'
     #ex_id = '20130614_120518'
@@ -201,7 +198,13 @@ def main():
 
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     graph = experiment.graph.copy()
-    return create_report_card(experiment, graph)
+
+    savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
+    print savename
+    graph1, df = create_report_card(experiment, graph.copy())
+    graph2, df = collision_itteration(experiment, graph.copy())
+    df.to_csv(savename)
+    return df
 
 if __name__ == '__main__':
     main()
