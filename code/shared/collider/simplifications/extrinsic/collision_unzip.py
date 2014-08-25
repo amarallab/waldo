@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import random
 import math
+import itertools
 
 import encoding.decode_outline as de
 from images.manipulations import points_to_aligned_matrix
@@ -22,6 +23,7 @@ from ..util import consolidate_node_data
 __all__ = [
     'find_potential_collisions',
     'unzip_resolve_collisions',
+    'get_outlines'
 ]
 
 class CollisionException(Exception):
@@ -102,30 +104,43 @@ def grab_outline(node, graph, experiment, first=True):
        a list of (x,y) points
     """
 
-    df = consolidate_node_data(graph, experiment, node)
-    if df is None:
-        print('Failed to find node data')
-        #print('grabbing', node, type(node))
-        raise CollisionException
-    if not first:
-        df.sort(ascending=False, inplace=True)
+    nodes = [node]
+    preds = graph.predecessors(node)
+    while preds == 1:
+        current = succs[0]
+        nodes.insert(0, current)
+        preds = graph.predecessors(current)
 
-    for frame, row in df.iterrows():
-        x, y = row['contour_start']
-        l = row['contour_encode_len']
-        enc = row['contour_encoded']
-        is_good = True
-        if not enc or not l:
-            is_good = False
-        if not isinstance(enc, basestring):
-            is_good = False
-        if is_good:
-            outline_points = de.decode_outline([x, y, l, enc])
-            return outline_points
-    else:
-        print('Failed to find outline')
-        print('grabbing', node, type(node))
-        raise CollisionException
+    if not first:
+        nodes = nodes[::-1]
+
+    node_count = len(nodes)
+    while len(nodes) > 0:
+        node = nodes.pop(0)
+        df = consolidate_node_data(graph, experiment, node)
+        if df is None:
+            print('Failed to find node data')
+            #print('grabbing', node, type(node))
+            raise CollisionException
+        if not first:
+            df.sort(ascending=False, inplace=True)
+
+        for frame, row in df.iterrows():
+            x, y = row['contour_start']
+            l = row['contour_encode_len']
+            enc = row['contour_encoded']
+            is_good = True
+            if not enc or not l:
+                is_good = False
+            if not isinstance(enc, basestring):
+                is_good = False
+            if is_good:
+                outline_points = de.decode_outline([x, y, l, enc])
+                return outline_points
+
+    print('Failed to find outline in %d predeccessors' % node_count)
+    print('grabbing', node, type(node))
+    raise CollisionException
 
 def grab_outline_list(node, graph, experiment):
     """
@@ -193,6 +208,12 @@ def calculate_distance_outline(outline):
     return dist
 
 
+def get_outlines(graph, experiment, nodes):
+    outline_list = [grab_outline(node, graph, experiment, first=True) for node in nodes]
+    outline_list, _ = points_to_aligned_matrix(outline_list)
+    return outline_list
+
+
 def unzip_resolve_collisions(graph, experiment, collision_nodes):
     """
 
@@ -214,16 +235,22 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
     """
     collision_results = {}
     for node in collision_nodes:
+        print("Node: %d" % node)
         preds = list(set(graph.predecessors(node)))
         if len(preds) != 2:
+            print("No preds: ", preds)
             continue
 
         succs = list(set(graph.successors(node)))
         if len(succs) != 2:
+            print("No succs")
             continue
 
         a, b = preds  # 'up' and 'down' predecessors
         x, y = succs  # 'up' and 'down' successors
+
+        print("Initial %d, %d" % (a, b))
+        print("Final %d, %d" % (x, y))
 
         # get the outlines
         outline_a = grab_outline(a, graph, experiment, first=False)
@@ -247,16 +274,21 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
         MAX_STEPS = 50
         if len(outline_c_list) > MAX_STEPS:
             #step = int(len(outline_c_list) / MAX_STEPS)
-            step = 2
+            step = 1
             outline_c_list = outline_list[4::step]
         result = []
+
+        print("OLA KE ASE")
+        yield [outline_a, outline_b]
 
         count = 0
         while len(outline_c_list) > 0:
             current_c = outline_c_list.pop(0)
 
-            area_removed_a = np.count_nonzero((outline_a - current_c) > 0)
-            area_removed_b = np.count_nonzero((outline_b - current_c) > 0)
+            removed_a = outline_a - current_c
+            removed_b = outline_b - current_c
+            area_removed_a = np.count_nonzero(removed_a > 0)
+            area_removed_b = np.count_nonzero(removed_b > 0)
 
             new_a = outline_a * current_c
             new_b = outline_b * current_c
@@ -266,14 +298,35 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
 
             skel_a = skeletonize(new_a)
             endpoints, _ = calculate_branch_and_endpoints(skel_a)
-            endpoints_a = endpoints if len(endpoints) >= 2 else None
+            endpoints_a = endpoints if endpoints is not None and len(endpoints) >= 2 else []
 
             skel_b = skeletonize(new_b)
             endpoints, _ = calculate_branch_and_endpoints(skel_b)
-            endpoints_b = endpoints if len(endpoints) >= 2 else None
+            endpoints_b = endpoints if endpoints is not None and len(endpoints) >= 2 else []
 
-            # TODO: Use Nick's algorithm to create the approximation curve
-            #       and use it adding a gaussian curve around it
+            # Calculate percentage of the lose points close to endpoints
+            closed_points_to_endpoint = [0] * len(endpoints_a)
+            if len(endpoints_a) > 0:
+                for i, j in itertools.product(*[range(a) for a in removed_a.shape]):
+                    if removed_a[i][j] > 0:
+                        d = [math.hypot(i - ep[0], j - ep[1]) for ep in endpoints_a]
+                        closed_points_to_endpoint[np.argmin(d)] += 1
+            if closed_points_to_endpoint[0] == 0 and closed_points_to_endpoint[1] == 0:
+                percentage_adding_first_a = 0.5
+            else:
+                percentage_adding_first_a = closed_points_to_endpoint[0] / sum(closed_points_to_endpoint)
+
+            closed_points_to_endpoint = [0] * len(endpoints_b)
+            if len(endpoints_b) > 0:
+                for i, j in itertools.product(*[range(a) for a in removed_b.shape]):
+                    if removed_b[i][j] > 0:
+                        d = [math.hypot(i - ep[0], j - ep[1]) for ep in endpoints_b]
+                        closed_points_to_endpoint[np.argmin(d)] += 1
+            if closed_points_to_endpoint[0] == 0 and closed_points_to_endpoint[1] == 0:
+                percentage_adding_first_b = 0.5
+            else:
+                percentage_adding_first_b = closed_points_to_endpoint[0] / sum(closed_points_to_endpoint)
+
 
             MIN_DIST = 5
             MAX_DIST = 10
@@ -286,18 +339,18 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
                     if remain[i][j] > 0:
                         da = dist_a[i][j]
                         db = dist_b[i][j]
-                        if da < MIN_DIST and db > HUGE_DIST and area_removed_a > 0:
+                        if da < MIN_DIST and db > HUGE_DIST:
                             new_a[i][j] = 1
                             area_removed_a -= 1
-                        if db < MIN_DIST and da > HUGE_DIST and area_removed_b > 0:
+                        if db < MIN_DIST and da > HUGE_DIST:
                             new_b[i][j] = 1
                             area_removed_b -= 1
 
                     if current_c[i][j] > 0:
                         if new_a[i][j] == 0 and dist_a[i][j] < MAX_DIST:
                             if len(endpoints_a) >= 2:
-                                v1 = math.hypot(i - endpoints_a[0][0], j - endpoints_a[0][1])
-                                v2 = math.hypot(i - endpoints_a[1][0], j - endpoints_a[1][1])
+                                v1 = math.hypot(i - endpoints_a[0][0], j - endpoints_a[0][1]) * percentage_adding_first_a
+                                v2 = math.hypot(i - endpoints_a[1][0], j - endpoints_a[1][1]) * (1 - percentage_adding_first_a)
                                 v = min(v1, v2)
                             else:
                                 v = 5
@@ -305,22 +358,62 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
 
                         if new_b[i][j] == 0 and dist_b[i][j] < MAX_DIST:
                             if len(endpoints_b) >= 2:
-                                v1 = math.hypot(i - endpoints_b[0][0], j - endpoints_b[0][1])
-                                v2 = math.hypot(i - endpoints_b[1][0], j - endpoints_b[1][1])
+                                v1 = math.hypot(i - endpoints_b[0][0], j - endpoints_b[0][1]) * percentage_adding_first_b
+                                v2 = math.hypot(i - endpoints_b[1][0], j - endpoints_b[1][1]) * ( 1 - percentage_adding_first_b)
                                 v = min(v1, v2)
                             else:
                                 v = 5
                             possibles_b.append((i, j, dist_b[i][j] / v))
 
-            if area_removed_a > 0:
+            while area_removed_a > 0:
+                changed = False
                 for i, j, d in sorted(possibles_a, key=lambda x: x[2])[0:area_removed_a]:
-                    new_a[i][j] = 1
-                    area_removed_a -= 1
+                    values = []
+                    for ai, aj in itertools.product([-1, 0, 1], [-1, 0, 1]):
+                        if 0 <= i + ai < new_a.shape[0] and 0 <= j + aj < new_a.shape[1]:
+                            values.append(new_a[i + ai][j + aj])
+                        else:
+                            values.append(0)
+                    valid = False
+                    prev = values[-1]
+                    for curr in values[0:-1]:
+                        if curr == prev == 1:
+                            valid = True
+                            break
+                        prev = curr
 
-            if area_removed_b > 0:
+                    if valid:
+                        new_a[i][j] = 1
+                        area_removed_a -= 1
+                        changed = True
+                        break
+                if not changed:
+                    break
+
+            while area_removed_b > 0:
+                changed = False
                 for i, j, d in sorted(possibles_b, key=lambda x: x[2])[0:area_removed_b]:
-                    new_b[i][j] = 1
-                    area_removed_b -= 1
+                    values = []
+                    for ai, aj in itertools.product([-1, 0, 1], [-1, 0, 1]):
+                        if 0 <= i + ai < new_b.shape[0] and 0 <= j + aj < new_b.shape[1]:
+                            values.append(new_b[i + ai][j + aj])
+                        else:
+                            values.append(0)
+                    valid = False
+                    prev = values[-1]
+                    for curr in values[0:-1]:
+                        if curr == prev == 1:
+                            valid = True
+                            break
+                        prev = curr
+
+                    if valid:
+                        new_b[i][j] = 1
+                        area_removed_b -= 1
+                        changed = True
+                        break
+                if not changed:
+                    break
 
             # skel_a = skeletonize(new_new_a)
             # endpoints, branchpoints = calculate_branch_and_endpoints(skel_a)
@@ -339,9 +432,9 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
             common = new_a * new_b
             print("Removed areas: A %d, B %d" % (area_removed_a, area_removed_b))
             count -= 1
-            if count <= 0:
-                yield [outline_a, outline_b, current_c, new_a, new_b, common, outline_x, outline_y]
-                count = 5
+            #if count <= 0:
+            yield [outline_a, outline_b, current_c, new_a, new_b, common, outline_x, outline_y]
+            #    count = 5
 
             outline_a = new_a
             outline_b = new_b
