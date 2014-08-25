@@ -26,10 +26,11 @@ DATA_DIR = settings.LOGISTICS['filesystem_data']
 
 class ReportCard(object):
 
-    def __init__(self):
+    def __init__(self, experiment):
         self.steps = []
         self.reports = []
         self.durations = []
+        self.experiment = experiment
 
     def add_step(self, graph, step_name):
         report, durations = self.evaluate_graph(graph)
@@ -39,11 +40,11 @@ class ReportCard(object):
         self.durations.append(durations)
 
 
-    def evaluate_graph(self, digraph):
+    def evaluate_graph(self, digraph, threshold=2):
         graph = digraph.to_undirected()
         isolated_count, connected_count = 0, 0
         durations = []
-        components = nx.connected_components(graph)
+        components = list(nx.connected_components(graph))
         giant_size = max([len(c) for c in components])
 
         for node in digraph:
@@ -68,23 +69,43 @@ class ReportCard(object):
                   'duration-med': round(duration_med, ndigits=2),
                   'duration-std': round(duration_std, ndigits=2),
                   '# components': len(components),
+                  'moving-nodes': len(compound_bl_filter(self.experiment,
+                        digraph, threshold))
                   }
         return report, durations
 
     def report(self, show=True):
         columns = ['step', 'total-nodes', 'isolated-nodes',
                    'connected-nodes', 'giant-component-size',
-                   'duration-med', 'duration-std', '# components']
+                   'duration-med', 'duration-std', '# components',
+                   'moving-nodes']
 
         report_df = pd.DataFrame(self.reports, columns=columns)
         report_df.set_index('step')
         if show:
-            print report_df[['step', 'total-nodes', 'isolated-nodes', 'duration-med']]
+            print report_df[['step', 'total-nodes', 'isolated-nodes', 'duration-med',
+            'moving-nodes']]
         return report_df
+
+
+# find me a better home
+def compound_bl_filter(experiment, graph, threshold):
+    cbounds = compound_bounding_box(experiment, graph)
+    cbounds['bl'] = (cbounds['x_max'] + cbounds['y_max'] - cbounds['x_min'] - cbounds['y_min']) / experiment.typical_bodylength
+    moved = cbounds[cbounds['bl'] >= threshold]
+    if 'bid' in moved.columns:
+        return list(moved['bid'])
+    else:
+        return list(moved.index)
+
+def compound_bounding_box(experiment, graph):
+    bounds = experiment.prepdata.bounds
+    return bounds.groupby(graph.where_is).agg(
+            {'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
 
 def create_report_card(experiment, graph):
 
-    report_card = ReportCard()
+    report_card = ReportCard(experiment)
     report_card.add_step(graph, 'raw')
 
     ############### Remove Known Junk
@@ -127,7 +148,7 @@ def create_report_card(experiment, graph):
 
 def collision_itteration(experiment, graph):
 
-    report_card = ReportCard()
+    report_card = ReportCard(experiment)
     report_card.add_step(graph, 'raw')
 
     ############### Remove Known Junk
@@ -174,7 +195,7 @@ def collision_itteration(experiment, graph):
 
 def main():
     ex_id = '20130318_131111'
-    ex_id = '20130614_120518'
+    #ex_id = '20130614_120518'
     #ex_id = '20130702_135704' # many pics
     # ex_id = '20130614_120518'
 
