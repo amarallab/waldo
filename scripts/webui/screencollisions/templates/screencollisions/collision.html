@@ -43,13 +43,13 @@
             <button id="ans05" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="05">Half a worm <kbd>.</kbd></button>
           </div>
           <div class="col-md-3">
-            <button id="ans15" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="15">1.5 Worms</button>
+            <button id="ans15" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="15">1.5 Worms <kbd>4</kbd></button>
           </div>
           <div class="col-md-3">
-            <button id="ans25" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="25">2.5 Worms</button>
+            <button id="ans25" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="25">2.5 Worms <kbd>5</kbd></button>
           </div>
           <div class="col-md-3">
-            <button id="ans35" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="35">&gt;3 worms</button>
+            <button id="ans35" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="35">&gt;3 worms <kbd>6</kbd></button>
           </div>
         </div>
       </div>
@@ -82,10 +82,29 @@
           case 99:
             $("#ans30").click();
             break;
+
+          case 52:
+          case 100:
+            $("#ans15").click();
+            break;
+
+          case 53:
+          case 101:
+            $("#ans25").click();
+            break;
+
+          case 54:
+          case 102:
+            $("#ans35").click();
+            break;
         }
       });
     </script>
-    <p><i>TIP: Use the keyboard and hit the key shown (e.g. <kbd>1</kbd>)</i></p>
+    <p>TIPS</p>
+    <ul>
+      <li>Use the keyboard and hit the key shown (e.g. <kbd>1</kbd>)</li>
+      <li>Hit back or Backspace to correct a mistake</li>
+    </ul>
   {% else %}
     <p><a href="{% url 'login' %}?next={{ request.get_full_path }}">Log in</a> to screen worms.</p>
   {% endif %}
