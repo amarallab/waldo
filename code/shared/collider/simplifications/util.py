@@ -172,19 +172,9 @@ def consolidate_node_data(graph, experiment, node):
 
     data = []
     for subnode in components:
-        # NOTE: the following comment of remove offshoots code
-        # did not work, because the graph passed in
-        # has compound nodes. We cannot use it to check the parents
-        # and children of internal nodes.
-        #
-        #if remove_offshoots and not is_compound:
-        #    if is_offshoot(graph, node, subnode):
-        #        print(subnode, 'is offshoot')
-        #        continue
-        blob_data = experiment[subnode]
-        # if blob_data is None:
-        #     print("components:", components, "subnode:", subnode)
-        #     continue
+        blob_data = experiment[subnode].to_dict()
+        if blob_data is None:
+            continue
         if 'frame' not in blob_data:
             continue
 
@@ -192,7 +182,17 @@ def consolidate_node_data(graph, experiment, node):
         df.set_index('frame', inplace=True)
         df['blob'] = subnode
         data.append(df)
-        #data.append(df)
+        try:
+            pass
+        except Exception as e:
+            print('df failed', blob_data)
+            print(type(blob_data))
+            for i in dir(blob_data):
+                print(i)
+            print(e)
+            print(dict(blob_data))
+            raise
+        data.append(df)
     if data:
         all_data = pd.concat(data)
         all_data.sort(inplace=True)

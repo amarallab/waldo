@@ -125,6 +125,53 @@ def create_report_card(experiment, graph):
     return graph, report_df
 
 
+def collision_itteration(experiment, graph):
+
+    report_card = ReportCard()
+    report_card.add_step(graph, 'raw')
+
+    ############### Remove Known Junk
+
+    collider.remove_nodes_outside_roi(graph, experiment)
+    report_card.add_step(graph, 'roi')
+
+    collider.remove_blank_nodes(graph, experiment)
+    report_card.add_step(graph, 'blank')
+
+
+    ############### Simplify
+    for i in range(4):
+        print('itteration', i+1)
+        #collider.assimilate(graph, max_threshold=10)
+        collider.remove_single_descendents(graph)
+        collider.remove_fission_fusion(graph)
+        collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+        collider.remove_offshoots(graph, threshold=20)
+        collider.remove_single_descendents(graph)
+        report_card.add_step(graph, 'simplify')
+
+        ############### Collisions
+        threshold=2
+        suspects = collider.suspected_collisions(graph, threshold)
+        print('{n} suspects found with time difference'.format(n=len(suspects)))
+        collider.resolve_collisions(graph, experiment, suspects)
+        report_card.add_step(graph, 'collisions')
+
+        ############### Gaps
+
+        taper = tp.Taper(experiment=experiment, graph=graph)
+        start, end = taper.find_start_and_end_nodes()
+        gaps = taper.score_potential_gaps(start, end)
+        taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+        graph = taper._graph
+        report_card.add_step(graph, 'gaps')
+
+    report_df = report_card.report(show=True)
+    return graph, report_df
+
+
+
+
 def main():
     ex_id = '20130318_131111'
     ex_id = '20130614_120518'
