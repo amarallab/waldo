@@ -1,0 +1,93 @@
+{% extends 'screencollisions/base.html' %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block html_title %}
+  Collision Screening - {{ eid }} {{ bid }}
+{% endblock %}
+
+{% block content %}
+  <h1>Screening Collisions</h1>
+  <p>
+  Experiment: <b>{{ eid }}</b>, Possible collision blob ID: <b>{{ bid }}</b>
+  </p>
+
+  <img src="{% static collision.image_file.name %}" style="max-width: 100%; height: auto;">
+
+  {% if user.is_authenticated %}
+    <form role="form" action="" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+      <div class="checkbox"><label><input type="checkbox" name="starred"> {% bootstrap_icon "star" %} Star/Flag as particularly curious</label></div>
+      </div>
+      <div class="form-group">
+      <div class="well" style="width: 800px;">
+        <label><p>What does the green worm on the right represent?</p><p>If unclear, what
+        does the combination of the highlighted regions on the left represent?</p></label>
+        <div class="row" style="margin-bottom: 15px;">
+          <div class="col-md-3">
+            <button id="ansunk" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="00">Not a worm <kbd>0</kbd></button>
+          </div>
+          <div class="col-md-3">
+            <button id="ans10" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="10">1 Worm <kbd>1</kbd></button>
+          </div>
+          <div class="col-md-3">
+            <button id="ans20" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="20">2 Worms <kbd>2</kbd></button>
+          </div>
+          <div class="col-md-3">
+            <button id="ans30" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="30">3 Worms <kbd>3</kbd></button>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom: 0px;">
+          <div class="col-md-3">
+            <button id="ans05" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="05">Half a worm <kbd>.</kbd></button>
+          </div>
+          <div class="col-md-3">
+            <button id="ans15" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="15">1.5 Worms</button>
+          </div>
+          <div class="col-md-3">
+            <button id="ans25" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="25">2.5 Worms</button>
+          </div>
+          <div class="col-md-3">
+            <button id="ans35" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="35">&gt;3 worms</button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </form>
+    <script type="text/javascript">
+      $(document).on("keyup", function (e) {
+        switch (e.which) {
+          case 48:
+          case 96:
+            $("#ansunk").click();
+            break;
+
+          case 110:
+          case 190:
+            $("#ans05").click();
+            break;
+
+          case 49:
+          case 97:
+            $("#ans10").click();
+            break;
+
+          case 50:
+          case 98:
+            $("#ans20").click();
+            break;
+
+          case 51:
+          case 99:
+            $("#ans30").click();
+            break;
+        }
+      });
+    </script>
+    <p><i>TIP: Use the keyboard and hit the key shown (e.g. <kbd>1</kbd>)</i></p>
+  {% else %}
+    <p><a href="{% url 'login' %}?next={{ request.get_full_path }}">Log in</a> to screen worms.</p>
+  {% endif %}
+
+{% endblock %}

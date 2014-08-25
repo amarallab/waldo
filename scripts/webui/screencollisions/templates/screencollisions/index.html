@@ -1,0 +1,47 @@
+{% extends 'screencollisions/base.html' %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block html_title %}
+    Collision Index
+{% endblock %}
+
+{% block content %}
+    <h1>Worm Collisions</h1>
+
+<script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Screen Results', 'Results'],
+          {{ piedata|safe }}
+        ]);
+
+        var options = {
+          title: 'Screen Results'
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+        chart.draw(data, options);
+      }
+</script>
+
+<a href="start" class="btn btn-primary btn-lg">Start Screening {% bootstrap_icon "arrow-right" %}</a>
+
+<div id="piechart" style="width: 800px; height: 400px;"></div>
+
+<table class='table'>
+    <thead><tr>
+        <th>Screen Result</th>
+        <th>Number</th>
+        <th>View List</th>
+    </tr></thead>
+    <tbody>
+        {% for d in data %}
+            <tr><td>{{ d.name }}</td><td>{{ d.number }}</td><td><a href="{% url 'sc:type' d.code %}">View...</a></td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

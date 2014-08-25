@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+{% load bootstrap3 %}
+<html lang='en'>
+  <head>
+    <meta charset='utf-8' />
+    <title>{% block html_title %}{% endblock %}</title>
+    <!--<link href='{% static "style.css" %}' type='text/css' rel='stylesheet' />-->
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <!--<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">-->
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  </head>
+  <body {% block body_attrs %}{% endblock %} style='padding-top: 70px;'>
+    <div class='navbar navbar-default navbar-fixed-top'>
+      <div class='container'>
+        <div class='navbar-header'>
+          <a class='navbar-brand' href="/screen">Screener</a>
+        </div>
+        <div class='navbar-collapse'>
+          <ul class='nav navbar-nav'>
+            <li><a href="/screen">Index</a></li>
+          </ul>
+          <ul class='nav navbar-nav navbar-right'>
+            {% if user.is_authenticated %}
+              <li>
+                <p class='navbar-text'>
+                  {% bootstrap_icon "user" %} {{ user.username }}
+                </p>
+              </li>
+              <li>
+                <a href="{% url 'logout' %}?next={{ request.get_full_path }}">
+                  Logout
+                </a>
+              </li>
+            {% else %}
+              <li>
+                <a href="{% url 'login' %}?next={{ request.get_full_path }}">
+                  Login
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+    </div>
+    <div class='container'>
+          {% block content %}
+          {% endblock %}
+    </div>
+  </body>
+</html>
