@@ -5,6 +5,9 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from ...models import Collision
 
+def write_result_header():
+    sys.stdout.write('eid,bid,ans\n')
+
 def write_result_line(collision, answer):
     sys.stdout.write(','.join([str(x) for x in [collision.experiment_id, collision.blob_id, answer]]) + '\n')
 
@@ -14,6 +17,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         collisions = Collision.objects.prefetch_related('curatedanswer_set').all()
+
+        write_result_header()
         for collision in collisions:
             answers = set(ca.answer for ca in collision.curatedanswer_set.all())
             if len(answers) == 1:
