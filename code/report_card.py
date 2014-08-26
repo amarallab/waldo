@@ -264,7 +264,7 @@ def main2():
 
     ############### Cut Worms
     candidates = collider.find_potential_cut_worms(graph, experiment,
-                                                   max_first_last_distance=40, max_sibling_distance=50, debug=False)
+                                                   max_first_last_distance=40, max_sibling_distance=50)
     for candidate in candidates:
         print(candidate)
         graph.condense_nodes(candidate[0], *candidate[1:])
