@@ -9,7 +9,7 @@ __author__ = 'heltena'
 # One the candidate list are completed, the algorithm loops the list ordered by inverse length (bigger first). For
 # each candidate, remove from the remain list all the lists that contains at lest one of the nodes in the candidate.
 # The algorithm loops until no candidates found.
-def collapse_group_of_nodes(graph, max_duration):
+def collapse_group_of_nodes(graph, max_duration, debug=False):
     while True:
         candidates = []
         for node in graph.nodes():
@@ -45,12 +45,14 @@ def collapse_group_of_nodes(graph, max_duration):
         if len(result) == 0:
             break
         else:
-            print("I: Condensing %d group of nodes" % len(result))
+            if debug:
+                print("I: Condensing %d group of nodes" % len(result))
             for r in result:
                 ss = []
                 for n in r:
                     preds = (str(a) for a in graph.predecessors(n))
                     succs = (str(a) for a in graph.successors(n))
                     ss.append("%d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
-                print("I: Group: (%s)" % ") - (".join(ss))
+                if debug:
+                    print("I: Group: (%s)" % ") - (".join(ss))
                 graph.condense_nodes(r[0], *r[1:])

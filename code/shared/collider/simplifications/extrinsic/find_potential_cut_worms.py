@@ -19,7 +19,8 @@ def find_potential_cut_worms(graph, experiment, max_first_last_distance=40, max_
 
     area_mean = sizes_df['area_median'].mean(axis=1)
     area_std = sizes_df['area_median'].std(axis=1)
-    print("I: Area mean: %f, std: %f" % (area_mean, area_std))
+    if debug:
+        print("I: Area mean: %f, std: %f" % (area_mean, area_std))
 
     def debug_data(x):
         terminals = terminals_df.iloc[terminals_map[x]]

@@ -121,7 +121,7 @@ def create_report_card(experiment, graph):
     report_card.add_step(graph, 'blank')
 
     ############### Simplify
-
+    collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
     #collider.assimilate(graph, max_threshold=10)
     collider.remove_single_descendents(graph)
     collider.remove_fission_fusion(graph)
@@ -130,12 +130,21 @@ def create_report_card(experiment, graph):
     collider.remove_single_descendents(graph)
     report_card.add_step(graph, 'simplify')
 
+    ############### Cut Worms
+    candidates = collider.find_potential_cut_worms(graph, experiment,
+                                                   max_first_last_distance=40, max_sibling_distance=50, debug=False)
+    for candidate in candidates:
+        graph.condense_nodes(candidate[0], *candidate[1:])
+    report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+
     ############### Collisions
     threshold=2
-    suspects = collider.suspected_collisions(graph, threshold)
-    print('{n} suspects found with time difference'.format(n=len(suspects)))
+    #suspects = collider.suspected_collisions(graph, threshold)
+    suspects = collider.find_area_based_collisions(graph, experiment)
+    suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
+    print('{n} suspects found with area difference'.format(n=len(suspects)))
     collider.resolve_collisions(graph, experiment, suspects)
-    report_card.add_step(graph, 'collisions')
+    report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
 
     ############### Gaps
 
@@ -150,7 +159,7 @@ def create_report_card(experiment, graph):
     return graph, report_df
 
 
-def collision_itteration(experiment, graph):
+def collision_iteration(experiment, graph):
 
     report_card = ReportCard(experiment)
     report_card.add_step(graph, 'raw')
@@ -166,7 +175,9 @@ def collision_itteration(experiment, graph):
 
     ############### Simplify
     for i in range(6):
-        print('itteration', i+1)
+        print('iteration', i+1)
+        ############### Simplify
+        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
         #collider.assimilate(graph, max_threshold=10)
         collider.remove_single_descendents(graph)
         collider.remove_fission_fusion(graph)
@@ -175,12 +186,21 @@ def collision_itteration(experiment, graph):
         collider.remove_single_descendents(graph)
         report_card.add_step(graph, 'simplify')
 
+        ############### Cut Worms
+        candidates = collider.find_potential_cut_worms(graph, experiment,
+                                                       max_first_last_distance=40, max_sibling_distance=50, debug=False)
+        for candidate in candidates:
+            graph.condense_nodes(candidate[0], *candidate[1:])
+        report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+
         ############### Collisions
         threshold=2
         suspects = collider.suspected_collisions(graph, threshold)
-        print('{n} suspects found with time difference'.format(n=len(suspects)))
+        #suspects = collider.find_area_based_collisions(graph, experiment)
+        #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
+        print('{n} suspects found with area difference'.format(n=len(suspects)))
         collider.resolve_collisions(graph, experiment, suspects)
-        report_card.add_step(graph, 'collisions')
+        report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
 
         ############### Gaps
 
@@ -190,6 +210,7 @@ def collision_itteration(experiment, graph):
         taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
         graph = taper._graph
         report_card.add_step(graph, 'gaps')
+
 
     report_df = report_card.report(show=True)
     return graph, report_df
@@ -221,14 +242,9 @@ def main():
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     graph = experiment.graph.copy()
 
-    savename = '{eid}-report.csv'.format(eid=ex_id)
-    graph1, df = create_report_card(experiment, graph.copy())
-    df.to_csv(savename)
 
-    savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
-    graph2, df = collision_itteration(experiment, graph.copy())
-    df.to_csv(savename)
-    return df
+    graph1, df = create_report_card(experiment, graph.copy())
+
 
 if __name__ == '__main__':
     main()
