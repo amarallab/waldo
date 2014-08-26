@@ -68,6 +68,10 @@ class ColliderGraph(nx.DiGraph):
             node_data['born'] = min(node_data['born'], other_data.pop('born'))
             node_data['died'] = max(node_data['died'], other_data.pop('died'))
 
+            # note some nodes do not have born_f, died_f labels
+            #node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
+            #node_data['died_f'] = max(node_data['died_f'], other_data.pop('died_f'))
+
             # combine set/mapping data
             node_data['components'].update(
                     other_data.pop('components', set([other_node])))
