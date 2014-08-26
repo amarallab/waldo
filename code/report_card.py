@@ -161,7 +161,7 @@ def collision_itteration(experiment, graph):
 
 
     ############### Simplify
-    for i in range(10):
+    for i in range(6):
         print('itteration', i+1)
         #collider.assimilate(graph, max_threshold=10)
         collider.remove_single_descendents(graph)
@@ -190,6 +190,24 @@ def collision_itteration(experiment, graph):
     report_df = report_card.report(show=True)
     return graph, report_df
 
+def create_reports():
+    ex_ids = ['20130318_131111',
+              '20130614_120518',
+              '20130702_135704',
+              '20130614_120518']
+    for ex_id in ex_ids:
+        experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+        graph = experiment.graph.copy()
+
+        savename = '{eid}-report.csv'.format(eid=ex_id)
+        graph1, df = create_report_card(experiment, graph.copy())
+        df.to_csv(savename)
+
+        savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
+        graph2, df = collision_itteration(experiment, graph.copy())
+        df.to_csv(savename)
+
+
 def main():
     ex_id = '20130318_131111'
     #ex_id = '20130614_120518'
@@ -199,9 +217,11 @@ def main():
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     graph = experiment.graph.copy()
 
-    savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
-    print savename
+    savename = '{eid}-report.csv'.format(eid=ex_id)
     graph1, df = create_report_card(experiment, graph.copy())
+    df.to_csv(savename)
+
+    savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
     graph2, df = collision_itteration(experiment, graph.copy())
     df.to_csv(savename)
     return df
