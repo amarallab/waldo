@@ -151,7 +151,7 @@ def consolidate_node_data(graph, experiment, node):
 
     params
     -----
-    graph: (networkx graph object)
+    graph: (collider.Graph object)
        a directed graph of node interactions
     experiment: (multiworm experiment object)
        the experiment from which data can be exctracted.
@@ -167,17 +167,12 @@ def consolidate_node_data(graph, experiment, node):
        'contour_encode_len', 'contour_encoded', 'contour_start',
        'midline', 'size', 'std_ortho', 'std_vector', 'time'
     """
-
-    components = list(graph.node[node].get('components', [node]))
-    #print('{n} components in {node}'.format(n=len(components),
-    #                                        node=node))
-
     data = []
-    for subnode in components:
+    for subnode in graph.components(node):
         try:
             blob = experiment[subnode]
             df = blob.df
-        except multiworm.MWTDataError as e:
+        except (KeyError, multiworm.MWTDataError) as e:
             print('{e} reading blob {i}'.format(e=e, i=subnode))
             continue
 

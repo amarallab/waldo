@@ -37,7 +37,7 @@ class ColliderGraph(nx.DiGraph):
         return ColliderGraph(self)
 
     def components(self, node):
-        return set(self.node[node].get('components', [node]))
+        return set(int(n) for n in self.node[node].get('components', [node]))
 
     def where_is(self, bid):
         return self._whereis_data.get(bid, bid)
