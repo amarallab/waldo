@@ -7,7 +7,7 @@ __author__ = 'heltena'
 #    max_duration
 # The algorithm is always keeping the last safe group of nodes that reach the conditions.
 # One the candidate list are completed, the algorithm loops the list ordered by inverse length (bigger first). For
-# each candidate, remove from the remain list all the lists that contains at lest one of the nodes in the candidate.
+# each candidate, remove from the remain list all the lists that contains at least one of the nodes in the candidate.
 # The algorithm loops until no candidates found.
 def collapse_group_of_nodes(graph, max_duration, debug=False):
     while True:
@@ -47,12 +47,15 @@ def collapse_group_of_nodes(graph, max_duration, debug=False):
         else:
             if debug:
                 print("I: Condensing %d group of nodes" % len(result))
-            for r in result:
-                ss = []
-                for n in r:
-                    preds = (str(a) for a in graph.predecessors(n))
-                    succs = (str(a) for a in graph.successors(n))
-                    ss.append("%d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
+
+            while len(result) > 0:
+                r = result.pop(0)
+                result = [a for a in result if len(set(a) & set(r)) == 0]
                 if debug:
+                    ss = []
+                    for n in r:
+                        preds = (str(a) for a in graph.predecessors(n))
+                        succs = (str(a) for a in graph.successors(n))
+                        ss.append("%d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
                     print("I: Group: (%s)" % ") - (".join(ss))
                 graph.condense_nodes(r[0], *r[1:])
