@@ -14,6 +14,8 @@ import types
 import pandas as pd
 import networkx as nx
 
+import multiworm
+
 __all__ = [
     'flat_node_list',
     'component_size_summary',
@@ -174,31 +176,16 @@ def consolidate_node_data(graph, experiment, node):
     for subnode in components:
         try:
             blob = experiment[subnode]
-            #blob_data = dict(blob)
-        except Exception as e:
+            df = blob.df
+        except multiworm.MWTDataError as e:
             print('{e} reading blob {i}'.format(e=e, i=subnode))
             continue
 
         if blob.empty:
             continue
 
-        #if 'frame' not in blob_data:
-        #    continue
-        df = pd.DataFrame(blob.df)
-        #df = pd.DataFrame(blob_data)
         df.set_index('frame', inplace=True)
         df['blob'] = subnode
-        data.append(df)
-        try:
-            pass
-        except Exception as e:
-            print('df failed', blob_data)
-            print(type(blob_data))
-            for i in dir(blob_data):
-                print(i)
-            print(e)
-            print(dict(blob_data))
-            raise
         data.append(df)
     if data:
         all_data = pd.concat(data)

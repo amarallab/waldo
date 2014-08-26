@@ -15,10 +15,8 @@ from statsmodels.distributions.empirical_distribution import ECDF
 import setpath
 os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
 
-
 from conf import settings
-#import wio.file_manager as fm
-from wio.experiment import Experiment
+from wio import Experiment
 import tape.taper as tp
 import collider
 
@@ -55,7 +53,7 @@ class ReportCard(object):
             else:
                 isolated_count += 1
             try:
-                durations.append(digraph.node[node]['died'] - digraph.node[node]['born'])
+                durations.append(digraph.lifespan(node))
             except KeyError:
                 pass
 
@@ -87,18 +85,24 @@ class ReportCard(object):
             'moving-nodes']]
         return report_df
 
-
 # find me a better home
 def compound_bl_filter(experiment, graph, threshold):
+    """
+    Return node IDs from *graph* and *experiment* if they moved at least
+    *threshold* standard body lengths.
+    """
     cbounds = compound_bounding_box(experiment, graph)
-    cbounds['bl'] = (cbounds['x_max'] + cbounds['y_max'] - cbounds['x_min'] - cbounds['y_min']) / experiment.typical_bodylength
+    cbounds['bl'] = ((cbounds['x_max'] - cbounds['x_min'] +
+                      cbounds['y_max'] - cbounds['y_min']) /
+                      experiment.typical_bodylength)
     moved = cbounds[cbounds['bl'] >= threshold]
-    if 'bid' in moved.columns:
-        return list(moved['bid'])
-    else:
-        return list(moved.index)
+    return moved['bid'] if 'bid' in moved.columns else moved.index
 
 def compound_bounding_box(experiment, graph):
+    """
+    Construct bounding box for all nodes (compound or otherwise) by using
+    experiment prepdata and graph node components.
+    """
     bounds = experiment.prepdata.bounds
     return bounds.groupby(graph.where_is).agg(
             {'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
