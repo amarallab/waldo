@@ -245,6 +245,61 @@ def main():
 
     graph1, df = create_report_card(experiment, graph.copy())
 
+def main2():
+    ex_id = '20130318_131111'
+
+    experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+    graph = experiment.graph.copy()
+
+    report_card = ReportCard(experiment)
+    report_card.add_step(graph, 'raw')
+
+    ############### Remove Known Junk
+
+    collider.remove_nodes_outside_roi(graph, experiment)
+    report_card.add_step(graph, 'roi')
+
+    collider.remove_blank_nodes(graph, experiment)
+    report_card.add_step(graph, 'blank')
+
+    ############### Cut Worms
+    candidates = collider.find_potential_cut_worms(graph, experiment,
+                                                   max_first_last_distance=40, max_sibling_distance=50)
+    for candidate in candidates:
+        print(candidate)
+        graph.condense_nodes(candidate[0], *candidate[1:])
+    report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+
+    ############### Collisions
+    threshold=2
+    suspects = collider.suspected_collisions(graph, threshold)
+    #suspects = collider.find_area_based_collisions(graph, experiment)
+    #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
+    print('{n} suspects found with area difference'.format(n=len(suspects)))
+    collider.resolve_collisions(graph, experiment, suspects)
+    report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
+
+    ############### Simplify
+    collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+    #collider.assimilate(graph, max_threshold=10)
+    collider.remove_single_descendents(graph)
+    collider.remove_fission_fusion(graph)
+    collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+    collider.remove_offshoots(graph, threshold=20)
+    collider.remove_single_descendents(graph)
+    report_card.add_step(graph, 'simplify')
+
+    ############### Gaps
+
+    taper = tp.Taper(experiment=experiment, graph=graph)
+    start, end = taper.find_start_and_end_nodes()
+    gaps = taper.score_potential_gaps(start, end)
+    taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+    graph = taper._graph
+    report_card.add_step(graph, 'gaps')
+
+    report_df = report_card.report(show=True)
 
 if __name__ == '__main__':
-    main()
+    #main()
+    main2()

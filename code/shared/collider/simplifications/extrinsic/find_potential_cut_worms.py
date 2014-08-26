@@ -103,5 +103,24 @@ def find_potential_cut_worms(graph, experiment, max_first_last_distance=40, max_
                 print("I: ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last]))
             continue
 
-        candidates.append((node, sibling1, sibling2, last))
-    return candidates
+        candidates.append([node, sibling1, sibling2, last])
+
+    result = []
+    while len(candidates) > 0:
+        current = candidates.pop(0)
+        used = False
+        for i in range(len(result)):
+            a = result[i]
+            if a[-1] == current[0]:
+                a.extend(current[1:])
+                used = True
+                break
+            elif a[0] == current[-1]:
+                current.extend(a[1:])
+                result[i] = current
+                used = True
+                break
+        if not used:
+            result.append(current)
+
+    return result

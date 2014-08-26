@@ -117,31 +117,6 @@ def is_isolated(graph, node):
     """
     return graph.degree(node) == 0
 
-
-# def is_offshoot(graph, node, subnode):
-#     """ returns True if subnode is offshoot.
-
-#     params
-#     ----
-#     graph: (networkx graph object)
-#        MUST BE NETWORK BEFORE COMPOUND NODES
-#     node: (tuple)
-#        the name of the compound node which the subnode is part of.
-
-#     subnode: the name of the subnode we are testing.
-#     """
-#     if type(node) != tuple: #node not compound. not offshoot.
-#         return False
-#     elif subnode in node: #node is start or end. not offshoot.
-#         return False
-#     # since start/end gone.  no children or parents = offshoot
-#     elif len(set(graph.successors(subnode))) == 0:
-#         return True
-#     elif len(set(graph.predecessors(subnode))) == 0:
-#         return True
-#     else: # has children and parents. not offshoot.
-#         return False
-
 #TODO: add remove offshoots?
 def consolidate_node_data(graph, experiment, node):
     """
