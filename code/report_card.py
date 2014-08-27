@@ -19,6 +19,7 @@ from conf import settings
 from wio import Experiment
 import tape.taper as tp
 import collider
+import wio.file_manager as fm
 
 DATA_DIR = settings.LOGISTICS['filesystem_data']
 
@@ -363,45 +364,100 @@ def main2():
 
 def determine_lost_and_found_causes(experiment, graph):
 
+
+    # create a basic dataframe with information about all blob terminals
+
     terms = experiment.prepdata.load('terminals')
     terms = terms[np.isfinite(terms['t0'])]
     if 'bid' in terms.columns:
         terms.set_index('bid', inplace=True)
     term_ids = set(terms.index) # get set of all bids with data
     terms['node_id'] = 0
+    terms['id_change_found'] = False
+    terms['id_change_lost'] = False
+
+    # loop through graph and assign all blob ids to cooresponding nodes.
+    # also include if nodes have parents or children
 
     for node_id in graph.nodes(data=False):
+        successors = list(graph.successors(node_id))
+        predecessors = list(graph.predecessors(node_id))
+        has_pred = len(predecessors) > 0
+        has_suc = len(successors) > 0
         comps = graph[node_id].get('components', [node_id])
         known_comps = set(comps) & term_ids
         for comp in comps:
             terms['node_id'].loc[list(known_comps)] = node_id
-    print terms
-    print terms.head(20)
+            terms['id_change_found'].loc[list(known_comps)] = has_pred
+            terms['id_change_lost'].loc[list(known_comps)] = has_suc
 
-    # standardize collumn names
-    start_terms = terms[['bid', 't0', 'x0', 'y0', 'f0', 'node_id']]
-    end_terms = terms[['bid', 'tN', 'xN', 'yN', 'fN', 'node_id']]
+    # split dataframe into seperate dfs concerned with starts and ends
+    # standardize collumn names such that both have the same columns
 
-    start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y',
-                                'f0':'f'}, inplace=True)
+    start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found']]
+    start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y', 'f0':'f',
+                                'id_change_found': 'id_change'},
+                       inplace=True)
 
-    end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y',
-                              'fN':'f'}, inplace=True)
+    end_terms = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost']]
+    end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y', 'fN':'f',
+                              'id_change_lost': 'id_change'},
+                     inplace=True)
 
-    # drop rows with NaN as 't' (most other data will be missing)
+    # precautionary drop rows with NaN as 't' (most other data will be missing)
     start_terms = start_terms[np.isfinite(start_terms['t'])]
     end_terms = end_terms[np.isfinite(end_terms['t'])]
 
-    start_terms.sort(columns='t', inplace=True)
-    end_terms.sort(columns='t', inplace=True)
-
     # drop rows that have duplicate node_ids.
     # for starts, take the first row (lowest time)
+
+    start_terms.sort(columns='t', inplace=True)
     start_terms.drop_duplicates('node_id', take_last=False,
                                 inplace=True)
     # for ends, take the last row (highest time)
+    end_terms.sort(columns='t', inplace=True)
     end_terms.drop_duplicates('node_id', take_last=True,
                               inplace=True)
+
+    # mark if nodes start or end on the edge of the image.
+
+    edge_thresh = 80
+    start_thresh = 30
+
+    plate_size = [1728, 2352]
+    xlow, xhigh = edge_thresh, plate_size[0] - edge_thresh
+    ylow, yhigh = edge_thresh, plate_size[1] - edge_thresh
+
+    def add_on_edge(df):
+        df['on_edge'] = False
+        df['on_edge'][df['x'] < xlow] = True
+        df['on_edge'][df['y'] < ylow] = True
+        df['on_edge'][ xhigh < df['x']] = True
+        df['on_edge'][ yhigh < df['y']] = True
+
+    add_on_edge(start_terms)
+    add_on_edge(end_terms)
+
+    # mark if nodes start or end outside region of interest ROI
+    ex_id = experiment.id
+    print ex_id
+    roi = fm.ImageMarkings(ex_id=ex_id).roi()
+    print roi
+    x, y, r = roi['x'], roi['y'], roi['r']
+    def add_out_of_roi(df):
+        dists = np.sqrt((df['x'] - x)**2 + (df['y'] - y)**2)
+        df['outside-roi'] = dists < r
+
+
+    # mark if nodes start or end with the start/end of the recording.
+
+    start_terms['timing'] = False
+    start_terms['timing'][start_terms['t'] < start_thresh] = True
+    end_terms['timing'] = False
+    end_terms['timing'][end_terms['t'] >= 3599] = True
+
+    print end_terms.head()
+    return start_terms, end_terms
 
 
 if __name__ == '__main__':
