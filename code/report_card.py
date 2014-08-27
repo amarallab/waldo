@@ -332,8 +332,9 @@ def main2():
     ############### Collisions
     threshold=2
     # suspects = collider.suspected_collisions(graph, threshold)
-    suspects = collider.find_bbox_based_collisions(graph, experiment)
-    #suspects = collider.find_area_based_collisions(graph, experiment)
+    # suspects = collider.find_bbox_based_collisions(graph, experiment)
+    # suspects = collider.find_area_based_collisions(graph, experiment)
+    suspects = collider.find_time_based_collisions(graph, experiment, 10, 5)
     print('{n} suspects found with big bbox'.format(n=len(suspects)))
     collider.resolve_collisions(graph, experiment, suspects)
     report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
@@ -354,8 +355,8 @@ def main2():
     start, end = taper.find_start_and_end_nodes()
     gaps = taper.score_potential_gaps(start, end)
     taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-    graph = taper._graph
-    report_card.add_step(graph, 'gaps')
+    # graph = taper._graph
+    # report_card.add_step(graph, 'gaps')
 
     report_df = report_card.report(show=True)
     return experiment, graph

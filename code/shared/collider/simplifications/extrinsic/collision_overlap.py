@@ -122,6 +122,10 @@ def create_collision_masks(graph, experiment, node, verbose=False):
         print('parents:{p}'.format(p=p))
         print('children:{c}'.format(c=c))
         #print('beginning:end pixel overlap')
+
+    if len(p) != 2 or len(c) != 2:
+        return [], []
+
     #grab relevant outlines.
     p0 = grab_outline(p[0], graph, experiment, first=False)
     p1 = grab_outline(p[1], graph, experiment, first=False)
@@ -130,7 +134,12 @@ def create_collision_masks(graph, experiment, node, verbose=False):
 
     # align outline masks
     outline_list = [p0, p1, c0, c1]
-    masks, bbox = points_to_aligned_matrix([o for o in outline_list if o is not None])
+
+    notnone_list = [o for o in outline_list if o is not None]
+    if len(notnone_list) == 0:
+        return [(p[0], None), (p[1], None)], [(c[0], None), (c[1], None)]
+
+    masks, bbox = points_to_aligned_matrix(notnone_list)
 
     next = 0
 
@@ -254,9 +263,11 @@ def resolve_collisions(graph, experiment, collision_nodes):
     """
     collision_results = {}
     for node in collision_nodes:
+        collision_result = None
         try:
             parent_masks, children_masks = create_collision_masks(graph, experiment, node)
-            collision_result = compare_masks(parent_masks, children_masks)
+            if len(parent_masks) >= 2 and len(children_masks) >= 2:
+                collision_result = compare_masks(parent_masks, children_masks)
 
             #INFO: if you want to see the outmasks and the relation between them
             # data = [parent_masks[0], parent_masks[1], children_masks[0], children_masks[1]]
@@ -279,7 +290,7 @@ def resolve_collisions(graph, experiment, collision_nodes):
             print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
             continue
         #print(node, 'is', collision_result)
-        if collision_result:
+        if collision_result is not None:
             collision_results[node] = collision_result
             untangle_collision(graph, node, collision_result)
 

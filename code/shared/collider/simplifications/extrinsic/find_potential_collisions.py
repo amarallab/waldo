@@ -3,6 +3,7 @@ __author__ = 'heltena'
 import math
 from importing.flags_and_breaks import fit_gaussian
 import numpy as np
+import matplotlib.pyplot as plt
 
 def dist_2d(c1, c2):
     xc = c1[0] - c2[0]
@@ -23,7 +24,7 @@ def _iterate_collisions_by_structure(graph, num_succ_range=[2, 3], num_pred_rang
         yield (node, preds, succs)
 
 
-def find_time_based_collisions(graph, min_duration, duration_factor):
+def find_time_based_collisions(graph, experiment, min_duration, duration_factor):
     candidates = []
     for node, preds, succs in _iterate_collisions_by_structure(graph, [1, 2000], [1, 2000]):
         min_succ_duration = None
@@ -53,6 +54,21 @@ def find_time_based_collisions(graph, min_duration, duration_factor):
         duration = graph.lifespan_f(node)
         if duration >= min_duration and duration < min_succ_duration * duration_factor and duration < min_pred_duration * duration:
             candidates.append(node)
+    #
+    #
+    # sizes_df = experiment.prepdata.load('sizes')
+    #
+    # areas = []
+    # sizes_df.set_index('bid')
+    # for candidate in candidates:
+    #     if candidate in sizes_df.index:
+    #         v = float(sizes_df.loc[candidate]['area_median'])
+    #         if v > 5:
+    #             areas.append(v)
+    #
+    # plt.hist(areas, 50)
+    # plt.show()
+
     return candidates
 
 
@@ -72,6 +88,21 @@ def find_bbox_based_collisions(graph, experiment, min_distance=10, verbose=False
                     break
         if moved:
             candidates.append(node)
+    #
+    #
+    # sizes_df = experiment.prepdata.load('sizes')
+    #
+    # areas = []
+    # sizes_df.set_index('bid')
+    # for candidate in candidates:
+    #     if candidate in sizes_df.index:
+    #         v = float(sizes_df.loc[candidate]['area_median'])
+    #         if v > 5:
+    #             areas.append(v)
+    #
+    # plt.hist(areas, 50)
+    # plt.show()
+
     return candidates
 
 
@@ -94,17 +125,23 @@ def find_area_based_collisions(graph, experiment, verbose=False):
     terminals_map = {int(v['bid']): i for i, v in terminals_df.iterrows()}
     sizes_map = {int(v['bid']): i for i, v in sizes_df.iterrows()}
 
-    values = sizes_df['area_median'].loc[matches_ids]
-    v = fit_gaussian(values, 50)
-    if v is not None:
-        mean, std = v
-        print("I: Area mean gaussian: %f" % mean)
-        print("I: Area std gaussian: %f" % std)
+    # values = [float(f) for f in sizes_df['area_median'].loc[matches_ids] if not np.isnan(float(f)) and float(f) > 1]
+    # plt.hist(values, 50)
+    # plt.show()
 
-    print("I: Area mean before: %f" % sizes_df['area_median'].mean(axis=1))
-    print("I: Area std before: %f" % sizes_df['area_median'].std(axis=1))
-    area_mean = sizes_df['area_median'].loc[matches_ids].mean(axis=1)
-    area_std = sizes_df['area_median'].loc[matches_ids].std(axis=1)
+    # v = fit_gaussian(values, 50)
+    # if v is not None:
+    #     mean, std = v
+    #     print("I: Area mean gaussian: %f" % mean)
+    #     print("I: Area std gaussian: %f" % std)
+    # print("I: Area mean before: %f" % sizes_df['area_median'].mean(axis=1))
+    # print("I: Area std before: %f" % sizes_df['area_median'].std(axis=1))
+    # area_mean = sizes_df['area_median'].loc[matches_ids].mean(axis=1)
+    # area_std = sizes_df['area_median'].loc[matches_ids].std(axis=1)
+
+    #TODO: don't use "these" values
+    area_mean = 100
+    area_std = 50
 
     #if verbose:
     print("I: Area mean: %f, std: %f" % (area_mean, area_std))
@@ -160,4 +197,18 @@ def find_area_based_collisions(graph, experiment, verbose=False):
             continue
 
         candidates.append(node)
+    #
+    # sizes_df = experiment.prepdata.load('sizes')
+    #
+    # areas = []
+    # sizes_df.set_index('bid')
+    # for candidate in candidates:
+    #     if candidate in sizes_df.index:
+    #         v = float(sizes_df.loc[candidate]['area_median'])
+    #         if v > 5:
+    #             areas.append(v)
+    #
+    # plt.hist(areas, 50)
+    # plt.show()
+
     return candidates
