@@ -58,7 +58,7 @@ def flatten(l):
 def frame_filter(threshold):
     def conditional(graph, nodes):
         for node in nodes:
-            if graph.node[node]['died'] - graph.node[node]['born'] > threshold:
+            if graph.lifespan_f(node) > threshold:
                 return False
         return True
     return conditional
@@ -101,9 +101,9 @@ def suspected_collisions(digraph, relative_threshold):
         if len(parents) != 2 or len(children) != 2:
             continue
 
-        node_life = digraph.lifespan(node)
-        parents_life = [digraph.lifespan(p) for p in parents]
-        children_life = [digraph.lifespan(c) for c in children]
+        node_life = digraph.lifespan_f(node)
+        parents_life = [digraph.lifespan_f(p) for p in parents]
+        children_life = [digraph.lifespan_f(c) for c in children]
 
         #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > relative_threshold:
         if (sum(parents_life) / (2 * node_life) > relative_threshold and

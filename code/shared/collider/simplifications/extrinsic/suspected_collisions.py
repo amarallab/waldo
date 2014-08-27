@@ -36,9 +36,9 @@ def suspected_collisions(digraph, threshold=2):
         if len(parents) != 2 or len(children) != 2:
             continue
 
-        node_life = digraph.lifespan(node)
-        parents_life = [digraph.lifespan(p) for p in parents]
-        children_life = [digraph.lifespan(c) for c in children]
+        node_life = digraph.lifespan_f(node)
+        parents_life = [digraph.lifespan_f(p) for p in parents]
+        children_life = [digraph.lifespan_f(c) for c in children]
 
         #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > threshold:
         if (sum(parents_life) / (2 * node_life) > threshold and

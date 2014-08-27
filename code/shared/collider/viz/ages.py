@@ -21,7 +21,7 @@ def age_distribution(*digraphs, **kwargs):
     """
     log = kwargs.get('log', 'x').lower()
 
-    ages = [[digraph.lifespan(node) for node in digraph] for digraph in digraphs]
+    ages = [[digraph.lifespan_f(node) for node in digraph] for digraph in digraphs]
     age_ccdfs = [cdf(a, ccdf=True) for a in ages]
 
     fig, ax = plt.subplots()
