@@ -142,6 +142,7 @@ def create_report_card(experiment, graph):
     threshold=2
     #suspects = collider.suspected_collisions(graph, threshold)
     suspects = collider.find_area_based_collisions(graph, experiment)
+    suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
     print('{n} suspects found with area difference'.format(n=len(suspects)))
     collider.resolve_collisions(graph, experiment, suspects)
     report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
@@ -241,6 +242,7 @@ def collision_iteration2(experiment, graph):
         ############### Collisions
 
         suspects = collider.find_area_based_collisions(graph, experiment)
+        suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
         print('{n} suspects found with area difference'.format(n=len(suspects)))
         collider.resolve_collisions(graph, experiment, suspects)
 
@@ -303,6 +305,7 @@ def main():
 
 
     graph1, df = create_report_card(experiment, graph.copy())
+    return experiment, graph, graph1
 
 def main2():
     ex_id = '20130318_131111'
@@ -315,50 +318,62 @@ def main2():
 
     ############### Remove Known Junk
 
-    collider.remove_nodes_outside_roi(graph, experiment)
-    report_card.add_step(graph, 'roi')
+    #collider.remove_nodes_outside_roi(graph, experiment)
+    # report_card.add_step(graph, 'roi')
 
-    collider.remove_blank_nodes(graph, experiment)
-    report_card.add_step(graph, 'blank')
+    # collider.remove_blank_nodes(graph, experiment)
+    # report_card.add_step(graph, 'blank')
 
-    ############### Cut Worms
-    candidates = collider.find_potential_cut_worms(graph, experiment,
-                                                   max_first_last_distance=40, max_sibling_distance=50)
-    for candidate in candidates:
-        print(candidate)
-        graph.condense_nodes(candidate[0], *candidate[1:])
-    report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+    # ############### Cut Worms
+    # candidates = collider.find_potential_cut_worms(graph, experiment,
+    #                                                max_first_last_distance=40, max_sibling_distance=50)
+    # for candidate in candidates:
+    #     graph.condense_nodes(candidate[0], *candidate[1:])
+    # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
-    ############### Collisions
-    threshold=2
-    # suspects = collider.suspected_collisions(graph, threshold)
-    suspects = collider.find_bbox_based_collisions(graph, experiment)
-    #suspects = collider.find_area_based_collisions(graph, experiment)
-    print('{n} suspects found with big bbox'.format(n=len(suspects)))
-    collider.resolve_collisions(graph, experiment, suspects)
-    report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
+    # ############### Collisions
+    # n = collision_suite(experiment, graph)
+    # report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
     ############### Simplify
-    collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+    #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
     #collider.assimilate(graph, max_threshold=10)
-    collider.remove_single_descendents(graph)
-    collider.remove_fission_fusion(graph)
-    collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-    collider.remove_offshoots(graph, threshold=20)
-    collider.remove_single_descendents(graph)
-    report_card.add_step(graph, 'simplify')
+    # collider.remove_single_descendents(graph)
+    # collider.remove_fission_fusion(graph)
+    # collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+    # collider.remove_offshoots(graph, threshold=20)
+    # collider.remove_single_descendents(graph)
+    # report_card.add_step(graph, 'simplify')
 
     ############### Gaps
 
-    taper = tp.Taper(experiment=experiment, graph=graph)
-    start, end = taper.find_start_and_end_nodes()
-    gaps = taper.score_potential_gaps(start, end)
-    taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-    graph = taper._graph
-    report_card.add_step(graph, 'gaps')
+    # taper = tp.Taper(experiment=experiment, graph=graph)
+    # start, end = taper.find_start_and_end_nodes()
+    # gaps = taper.score_potential_gaps(start, end)
+    # taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+    # graph = taper._graph
+    # report_card.add_step(graph, 'gaps')
 
     report_df = report_card.report(show=True)
     return experiment, graph
+
+def collision_suite(experiment, graph):
+    suspects = collider.suspected_collisions(graph, threshold=2)
+    #suspects = collider.find_area_based_collisions(graph, experiment)
+    #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
+    print('{n} suspects found with area difference'.format(n=len(suspects)))
+    collider.resolve_collisions(graph, experiment, suspects)
+    return len(suspects)
+    #movement_suspects = collider.find_bbox_based_collisions()
+
+    # threshold=2
+    # suspects = collider.suspected_collisions(graph, threshold)
+    # #suspects = collider.find_area_based_collisions(graph, experiment)
+    # #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
+    # print('{n} suspects found with area difference'.format(n=len(suspects)))
+    # collider.resolve_collisions(graph, experiment, suspects)
+    # report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
+
 
 def determine_lost_and_found_causes(experiment, graph):
 
@@ -371,6 +386,7 @@ def determine_lost_and_found_causes(experiment, graph):
         terms.set_index('bid', inplace=True)
     term_ids = set(terms.index) # get set of all bids with data
     terms['node_id'] = 0
+    terms['n-blobs'] = 1
     terms['id_change_found'] = False
     terms['id_change_lost'] = False
 
@@ -382,12 +398,22 @@ def determine_lost_and_found_causes(experiment, graph):
         predecessors = list(graph.predecessors(node_id))
         has_pred = len(predecessors) > 0
         has_suc = len(successors) > 0
-        comps = graph[node_id].get('components', [node_id])
+        node_data = graph[node_id]
+        print node_id, node_data
+        comps = node_data.get('components', [node_id])
         known_comps = set(comps) & term_ids
         for comp in comps:
+            terms['n-blobs'].loc[list(known_comps)] = len(comps)
             terms['node_id'].loc[list(known_comps)] = node_id
             terms['id_change_found'].loc[list(known_comps)] = has_pred
             terms['id_change_lost'].loc[list(known_comps)] = has_suc
+
+    node_set = set(graph.nodes(data=False))
+    print len(term_ids), 'blobs have terminal data'
+    print len(node_set), 'nodes in graph'
+    print len(term_ids & node_set), 'overlap'
+    compound_nodes = list(terms[terms['n-blobs'] > 1]['node_id'])
+    print len(compound_nodes), 'have more than 1 blob id in them'
 
     # split dataframe into seperate dfs concerned with starts and ends
     # standardize collumn names such that both have the same columns
@@ -446,6 +472,8 @@ def determine_lost_and_found_causes(experiment, graph):
         dists = np.sqrt((df['x'] - x)**2 + (df['y'] - y)**2)
         df['outside-roi'] = dists < r
 
+    add_out_of_roi(start_terms)
+    add_out_of_roi(end_terms)
 
     # mark if nodes start or end with the start/end of the recording.
 
@@ -453,17 +481,22 @@ def determine_lost_and_found_causes(experiment, graph):
     start_terms['timing'][start_terms['t'] < start_thresh] = True
     end_terms['timing'] = False
     end_terms['timing'][end_terms['t'] >= 3599] = True
-
-    print end_terms.head()
     return start_terms, end_terms
 
 
 if __name__ == '__main__':
-    #main()
-    experiment, graph = main2()
-    # determine_lost_and_found_causes(experiment, graph)
+    ex_id = '20130318_131111'
+    experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+    graph = experiment.graph.copy()
+    print type(graph)
 
-    #ex_id = '20130318_131111'
+    for node_id in graph: #.nodes(data=False):
+        print node_id, graph.node[node_id]
+        #print graph.lifespan_t(node_id)
+
+    experiment, graph, graph1 = main()
+    #experiment, graph = main2()
+    #determine_lost_and_found_causes(experiment, graph)
 
     #experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     #graph = experiment.graph.copy()

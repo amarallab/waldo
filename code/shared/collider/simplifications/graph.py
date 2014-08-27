@@ -38,8 +38,8 @@ class ColliderGraph(nx.DiGraph):
         Edges that *other_nodes* had will be taken by *node*, excepting those to
         *node* to prevent self-loops.
         """
-
         node_data = self.node[node]
+        #print('condensing', node, node_data)
         if 'components' not in node_data:
             node_data['components'] = set([node])
 

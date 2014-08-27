@@ -253,6 +253,7 @@ def resolve_collisions(graph, experiment, collision_nodes):
        worms.
     """
     collision_results = {}
+    resolved_count = 0
     for node in collision_nodes:
         try:
             parent_masks, children_masks = create_collision_masks(graph, experiment, node)
@@ -282,7 +283,8 @@ def resolve_collisions(graph, experiment, collision_nodes):
         if collision_result:
             collision_results[node] = collision_result
             untangle_collision(graph, node, collision_result)
-
+            resolved_count += 1
+    return resolved_count
 
 def untangle_collision(graph, collision_node, collision_result):
     """
