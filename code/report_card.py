@@ -172,13 +172,12 @@ def collision_iteration(experiment, graph):
     collider.remove_blank_nodes(graph, experiment)
     report_card.add_step(graph, 'blank')
 
-
     ############### Simplify
     for i in range(6):
         print('iteration', i+1)
         ############### Simplify
-        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
-        #collider.assimilate(graph, max_threshold=10)
+        #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+        collider.assimilate(graph, max_threshold=10)
         collider.remove_single_descendents(graph)
         collider.remove_fission_fusion(graph)
         collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
@@ -215,6 +214,67 @@ def collision_iteration(experiment, graph):
     report_df = report_card.report(show=True)
     return graph, report_df
 
+def collision_iteration2(experiment, graph):
+
+    report_card = ReportCard(experiment)
+    report_card.add_step(graph, 'raw')
+
+    ############### Remove Known Junk
+
+    collider.remove_nodes_outside_roi(graph, experiment)
+    report_card.add_step(graph, 'roi')
+
+    collider.remove_blank_nodes(graph, experiment)
+    report_card.add_step(graph, 'blank')
+
+    ############### Simplify
+    for i in range(6):
+        print('iteration', i+1)
+
+        ############### Cut Worms
+        candidates = collider.find_potential_cut_worms(graph, experiment,
+                                                       max_first_last_distance=40, max_sibling_distance=50, debug=False)
+        for candidate in candidates:
+            graph.condense_nodes(candidate[0], *candidate[1:])
+        report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+
+        ############### Collisions
+
+        suspects = collider.find_area_based_collisions(graph, experiment)
+        suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
+        print('{n} suspects found with area difference'.format(n=len(suspects)))
+        collider.resolve_collisions(graph, experiment, suspects)
+
+        threshold=2
+        suspects2 = collider.suspected_collisions(graph, threshold)
+        print('{n} suspects found with time difference'.format(n=len(suspects2)))
+        collider.resolve_collisions(graph, experiment, suspects2)
+
+        report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects) + len(suspects2)))
+
+        ############### Simplify
+        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+        #collider.assimilate(graph, max_threshold=10)
+        collider.remove_single_descendents(graph)
+        collider.remove_fission_fusion(graph)
+        collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+        collider.remove_offshoots(graph, threshold=20)
+        collider.remove_single_descendents(graph)
+        report_card.add_step(graph, 'simplify')
+
+        ############### Gaps
+
+        taper = tp.Taper(experiment=experiment, graph=graph)
+        start, end = taper.find_start_and_end_nodes()
+        gaps = taper.score_potential_gaps(start, end)
+        taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+        graph = taper._graph
+        report_card.add_step(graph, 'gaps')
+
+    report_df = report_card.report(show=True)
+    return graph, report_df
+
+
 def create_reports():
     ex_ids = ['20130318_131111',
               '20130614_120518',
@@ -229,7 +289,7 @@ def create_reports():
         df.to_csv(savename)
 
         savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
-        graph2, df = collision_itteration(experiment, graph.copy())
+        graph2, df = collision_iteration(experiment, graph.copy())
         df.to_csv(savename)
 
 
@@ -299,7 +359,59 @@ def main2():
     report_card.add_step(graph, 'gaps')
 
     report_df = report_card.report(show=True)
+    return experiment, graph
+
+def determine_lost_and_found_causes(experiment, graph):
+
+    terms = experiment.prepdata.load('terminals')
+    terms = terms[np.isfinite(terms['t0'])]
+    if 'bid' in terms.columns:
+        terms.set_index('bid', inplace=True)
+    term_ids = set(terms.index) # get set of all bids with data
+    terms['node_id'] = 0
+
+    for node_id in graph.nodes(data=False):
+        comps = graph[node_id].get('components', [node_id])
+        known_comps = set(comps) & term_ids
+        for comp in comps:
+            terms['node_id'].loc[list(known_comps)] = node_id
+    print terms
+    print terms.head(20)
+
+    # standardize collumn names
+    start_terms = terms[['bid', 't0', 'x0', 'y0', 'f0', 'node_id']]
+    end_terms = terms[['bid', 'tN', 'xN', 'yN', 'fN', 'node_id']]
+
+    start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y',
+                                'f0':'f'}, inplace=True)
+
+    end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y',
+                              'fN':'f'}, inplace=True)
+
+    # drop rows with NaN as 't' (most other data will be missing)
+    start_terms = start_terms[np.isfinite(start_terms['t'])]
+    end_terms = end_terms[np.isfinite(end_terms['t'])]
+
+    start_terms.sort(columns='t', inplace=True)
+    end_terms.sort(columns='t', inplace=True)
+
+    # drop rows that have duplicate node_ids.
+    # for starts, take the first row (lowest time)
+    start_terms.drop_duplicates('node_id', take_last=False,
+                                inplace=True)
+    # for ends, take the last row (highest time)
+    end_terms.drop_duplicates('node_id', take_last=True,
+                              inplace=True)
+
 
 if __name__ == '__main__':
     #main()
-    main2()
+    experiment, graph = main2()
+    determine_lost_and_found_causes(experiment, graph)
+
+    #ex_id = '20130318_131111'
+
+    #experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+    #graph = experiment.graph.copy()
+    #collision_iteration2(experiment, graph)
+    #collision_iteration(experiment, graph)

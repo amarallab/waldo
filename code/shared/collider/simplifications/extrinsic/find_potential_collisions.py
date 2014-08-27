@@ -1,7 +1,8 @@
 __author__ = 'heltena'
 
 import math
-
+from importing.flags_and_breaks import fit_gaussian
+import numpy as np
 
 def dist_2d(c1, c2):
     xc = c1[0] - c2[0]
@@ -51,17 +52,40 @@ def find_potential_collisions(graph, min_duration, duration_factor):
 
 
 def find_area_based_collisions(graph, experiment, debug=False):
+    ###TODO: Calculate Area Mean/Std correctly!!!
     terminals_df = experiment.prepdata.load('terminals')
     sizes_df = experiment.prepdata.load('sizes')
+    moved_df = experiment.prepdata.load('moved')
+    matches_df = experiment.prepdata.load('matches')
+
+    matches_ids = list(set(matches_df[matches_df['good']]['bid']))
+    #bl_thresh = 4
+    #moving_ids = list(moved_df[moved_df['bl_moved'] > bl_thresh]['bid'])
+    #print(moved_df.head())
+    #print(len(moving_ids), 'moving ids')
+
+    print(matches_df.head())
+    print(len(matches_ids), 'matches ids')
+
     terminals_map = {int(v['bid']): i for i, v in terminals_df.iterrows()}
     sizes_map = {int(v['bid']): i for i, v in sizes_df.iterrows()}
 
-    #TODO: Call flags_and_breaks.py fit_gaussian
-    area_mean = sizes_df['area_median'].mean(axis=1)
-    area_std = sizes_df['area_median'].std(axis=1)
-    #area_mean, area_std =
-    if debug:
-        print("I: Area mean: %f, std: %f" % (area_mean, area_std))
+    values = sizes_df['area_median'].loc[matches_ids]
+    v = fit_gaussian(values, 50)
+    if v is not None:
+        mean, std = v
+        print("I: Area mean gaussian: %f" % mean)
+        print("I: Area std gaussian: %f" % std)
+
+    print("I: Area mean before: %f" % sizes_df['area_median'].mean(axis=1))
+    print("I: Area std before: %f" % sizes_df['area_median'].std(axis=1))
+    area_mean = sizes_df['area_median'].loc[matches_ids].mean(axis=1)
+    area_std = sizes_df['area_median'].loc[matches_ids].std(axis=1)
+
+    #if debug:
+    print("I: Area mean: %f, std: %f" % (area_mean, area_std))
+
+    ###END
 
     def debug_data(x):
         terminals = terminals_df.iloc[terminals_map[x]]

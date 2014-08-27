@@ -15,6 +15,8 @@ from images.manipulations import points_to_aligned_matrix
 
 from ..util import consolidate_node_data
 
+import matplotlib.pyplot as plt
+
 __all__ = [
     'resolve_collisions',
     'untangle_collision',
@@ -47,32 +49,44 @@ def grab_outline(node, graph, experiment, first=True):
        a list of (x,y) points
     """
 
-    df = consolidate_node_data(graph, experiment, node)
-    if df is None:
-        print('Failed to find node data')
-        #print('grabbing', node, type(node))
-        raise CollisionException
-    if not first:
-        df.sort(ascending=False, inplace=True)
+    nodes = [node]
+    preds = graph.predecessors(node)
+    while preds == 1:
+        current = preds[0]
+        nodes.insert(0, current)
+        preds = graph.predecessors(current)
 
-    for frame, row in df.iterrows():
-        x, y = row['contour_start']
-        l = row['contour_encode_len']
-        enc = row['contour_encoded']
-        is_good = True
-        if not enc or not l:
-            is_good = False
-        if not isinstance(enc, basestring):
-            is_good = False
-        if is_good:
-            #print(node, x, y, l, enc)
-            outline_points = de.decode_outline([x, y, l, enc])
-            #print(outline_points)
-            return outline_points
-    else:
-        print('Failed to find outline')
-        print('grabbing', node, type(node))
-        raise CollisionException
+    if not first:
+        nodes = nodes[::-1]
+
+    node_count = len(nodes)
+    while len(nodes) > 0:
+        node = nodes.pop(0)
+        df = consolidate_node_data(graph, experiment, node)
+        if df is None:
+            print('Failed to find node data')
+            #print('grabbing', node, type(node))
+            raise CollisionException
+        if not first:
+            df.sort(ascending=False, inplace=True)
+
+        for frame, row in df.iterrows():
+            x, y = row['contour_start']
+            l = row['contour_encode_len']
+            enc = row['contour_encoded']
+            is_good = True
+            if not enc or not l:
+                is_good = False
+            if not isinstance(enc, basestring):
+                is_good = False
+            if is_good:
+                outline_points = de.decode_outline([x, y, l, enc])
+                return outline_points
+
+    print('I: Failed to find outline in %d predeccessors' % node_count)
+    print('I: grabbing', node, type(node))
+    return None
+
 
 # TODO make this function agnostic to the number of parents.
 def create_collision_masks(graph, experiment, node, verbose=False):
@@ -116,10 +130,28 @@ def create_collision_masks(graph, experiment, node, verbose=False):
 
     # align outline masks
     outline_list = [p0, p1, c0, c1]
-    masks, bbox = points_to_aligned_matrix(outline_list)
-    #reorganize
-    parents = [i for i in zip(p, masks[:2])]
-    children = [i for i in zip(c, masks[-2:])]
+    masks, bbox = points_to_aligned_matrix([o for o in outline_list if o is not None])
+
+    next = 0
+
+    if p0 is not None:
+        p0 = masks[0]
+        next += 1
+
+    if p1 is not None:
+        p1 = masks[next]
+        next += 1
+
+    if c0 is not None:
+        c0 = masks[next]
+        next += 1
+
+    if c1 is not None:
+        c1 = masks[next]
+
+    parents = [(p[0], p0), (p[1], p1)]
+    children = [(c[0], c0), (c[1], c1)]
+
     return parents, children
 
 
@@ -167,15 +199,20 @@ def compare_masks(parents, children, err_margin=10, verbose=False):
     if len(parents) != 2 or len(children) != 2:
         raise ValueError('parents and children must be lists with two elements')
 
-    d1_sum, d2_sum= 0, 0
+    NONE_OVERLAP_VALUE = 0
+    d1_sum, d2_sum = 0, 0
     d1, d2 = [], []
     p_nodes, _ = zip(*parents)
     c_nodes, _ = zip(*children)
-    comparison = pd.DataFrame(index=p_nodes, columns=c_nodes)
+    comparison = pd.DataFrame(index=p_nodes, columns=c_nodes) if verbose else None
     for i, (p, p_mask) in enumerate(parents):
         for j, (c, c_mask) in enumerate(children):
-            overlap = (p_mask & c_mask).sum()
-            comparison.loc[p, c] = overlap
+            if p_mask is None or c_mask is None:
+                overlap = NONE_OVERLAP_VALUE
+            else:
+                overlap = (p_mask & c_mask).sum()
+            if verbose:
+                comparison.loc[p, c] = overlap
             if i == j:
                 d1_sum += overlap
                 d1.append([p, c])
@@ -220,6 +257,19 @@ def resolve_collisions(graph, experiment, collision_nodes):
         try:
             parent_masks, children_masks = create_collision_masks(graph, experiment, node)
             collision_result = compare_masks(parent_masks, children_masks)
+
+            #INFO: if you want to see the outmasks and the relation between them
+            # data = [parent_masks[0], parent_masks[1], children_masks[0], children_masks[1]]
+            # outmasks = {i: o for i, o in data if o is not None}
+            #
+            # f, axs = plt.subplots(2, len(collision_result))
+            # for i, cr in enumerate(collision_result):
+            #     for col, id in enumerate(cr):
+            #         axs[i][col].axis('off')
+            #         if id in outmasks:
+            #             axs[i][col].imshow(outmasks[id], interpolation='none')
+            # plt.show()
+
         except CollisionException:
             print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
             continue
