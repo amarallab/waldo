@@ -33,9 +33,9 @@ def graph1():
                 [[10, 11, 12], [20, 21], [30], [40, 41, 42]],
                 [0, 100, 110, 120, 200])
 
-    Go.node[12]['died'] = Go.node[30]['born']
+    Go.node[12]['died_f'] = Go.node[30]['born_f']
 
-    Go.node[11]['died'] = Go.node[21]['died'] = Go.node[42]['born'] = 150
+    Go.node[11]['died_f'] = Go.node[21]['died_f'] = Go.node[42]['born_f'] = 150
 
     Go.node[21]['components'] = set([21, 22, 39])
     Go.node[20]['components'] = set([20, 23, 38])
@@ -123,12 +123,12 @@ class TestAssimilator(GraphCheck):
         self.assertEquals(Gtest.node[10]['extras'], {'test': 42, 'test2': 420})
 
     def test_expiration_time(self):
-        """'died' time should be that of the latest blob in a compound node"""
+        """'died_f' time should be that of the latest blob in a compound node"""
         Gtest = graph1()
 
         assimilate(Gtest, 10)
 
-        self.assertEqual(Gtest.node[10]['died'], 110)
+        self.assertEqual(Gtest.node[10]['died_f'], 110)
 
     def test_check_already_removed(self):
         for seed in range(100):

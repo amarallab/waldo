@@ -13,8 +13,8 @@ def collapse_group_of_nodes(graph, max_duration, debug=False):
     while True:
         candidates = []
         for node in graph.nodes():
-            born = graph.node[node]['died']
-            last_died = graph.node[node]['died']
+            born = graph.node[node]['died_f']
+            last_died = graph.node[node]['died_f']
             remain = graph.successors(node)
             current_group = [node]
             last_safe = None
@@ -28,7 +28,7 @@ def collapse_group_of_nodes(graph, max_duration, debug=False):
                     for s in succ:
                         if s not in remain and s not in current_group:
                             remain.append(s)
-                    last_died = max(last_died, graph.node[current]['died'])
+                    last_died = max(last_died, graph.node[current]['died_f'])
                     current_group.append(current)
                 if len(remain) == 1 and len(current_group) > 1 and last_died - born < max_duration:
                     last_safe = list(current_group)

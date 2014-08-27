@@ -47,7 +47,7 @@ def find_potential_collisions(graph, min_duration, duration_factor):
             if len(cur_preds) != 1 or cur_preds[0] != node:
                 min_succ_duration = None
                 break
-            duration = graph.node[s]['died'] - graph.node[s]['born']
+            duration = graph.lifespan_f(s)
             if min_succ_duration is None or min_succ_duration > duration:
                 min_succ_duration = duration
         if min_succ_duration is None:
@@ -59,13 +59,13 @@ def find_potential_collisions(graph, min_duration, duration_factor):
             if len(cur_succs) != 1 or cur_succs[0] != node:
                 min_pred_duration = None
                 break
-            duration = graph.node[p]['died'] - graph.node[p]['born']
+            duration = graph.lifespan_f(p)
             if min_pred_duration is None or min_pred_duration > duration:
                 min_pred_duration = duration
         if min_pred_duration is None:
             continue
 
-        duration = graph.node[node]['died'] - graph.node[node]['born']
+        duration = graph.lifespan_f(node)
         if duration >= min_duration and duration < min_succ_duration * duration_factor and duration < min_pred_duration * duration:
             candidates.append(node)
     for n in candidates:

@@ -34,7 +34,7 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png',
     # style nodes
     for node, node_data in nxgraph.nodes_iter(data=True):
         try:
-            life = nxgraph.lifespan(node)
+            life = nxgraph.lifespan_f(node)
             #if 100 <= node <= 110: print(life)
             if node_data.get('more', False):
                 gvgraph.node(str(node), label='...', shape='circle', style='filled', color='grey')

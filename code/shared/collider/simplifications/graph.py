@@ -65,8 +65,8 @@ class ColliderGraph(nx.DiGraph):
             other_data = self.node[other_node]
 
             # abscond with born/died
-            node_data['born'] = min(node_data['born'], other_data.pop('born'))
-            node_data['died'] = max(node_data['died'], other_data.pop('died'))
+            node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
+            node_data['died_f'] = max(node_data['died_f'], other_data.pop('died_f'))
 
             # note some nodes do not have born_f, died_f labels
             #node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
@@ -105,11 +105,16 @@ class ColliderGraph(nx.DiGraph):
         Verify that the graph contains the requisite data
         """
         for node, node_data in self.nodes_iter(data=True):
-            for req_key in ['born', 'died']:
+            for req_key in ['born_f', 'died_f', 'born_t', 'died_t']:
                 if req_key not in node_data:
                     raise AssertionError("Node {} missing required key '{}'".format(node, req_key))
 
-    def lifespan(self, node):
+    def lifespan_f(self, node):
         # +1 because something that was born & died on the same frame exists
         # for 1 frame.
-        return self.node[node]['died'] - self.node[node]['born'] + 1
+        return self.node[node]['died_f'] - self.node[node]['born_f'] + 1
+
+    def lifespan_t(self, node):
+        # +1 because something that was born & died on the same frame exists
+        # for 1 frame.
+        return self.node[node]['died_t'] - self.node[node]['born_t']

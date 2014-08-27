@@ -53,7 +53,7 @@ class ReportCard(object):
             else:
                 isolated_count += 1
             try:
-                durations.append(digraph.lifespan(node))
+                durations.append(digraph.lifespan_f(node))
             except KeyError:
                 pass
 

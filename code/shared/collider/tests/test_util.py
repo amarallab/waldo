@@ -28,7 +28,7 @@ def node_generate(nodes, timepoints, graph=None):
 
     birth = six.next(timepoints)
     for node_group, death in zip(nodes, timepoints):
-        graph.add_nodes_from(node_group, born=birth, died=death)
+        graph.add_nodes_from(node_group, born_f=birth, died_f=death)
         birth = death
 
     return graph

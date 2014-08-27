@@ -145,7 +145,7 @@ def show_collision(experiment, graph, target, direction='backwards'):
     bounds.height = max(180, bounds.height)
     #bounds.shape = 120, 180 # this seems to work well enough?
 
-    image = get_image(experiment, int(blob.born), 0)
+    image = get_image(experiment, blob.born_t, 0)
     vmin, vmax = np.percentile(image, [3, 97])
 
     collections = [collection_pre, collection_post]
