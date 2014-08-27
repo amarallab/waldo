@@ -262,13 +262,18 @@ def resolve_collisions(graph, experiment, collision_nodes):
             # data = [parent_masks[0], parent_masks[1], children_masks[0], children_masks[1]]
             # outmasks = {i: o for i, o in data if o is not None}
             #
-            # f, axs = plt.subplots(2, len(collision_result))
-            # for i, cr in enumerate(collision_result):
-            #     for col, id in enumerate(cr):
-            #         axs[i][col].axis('off')
-            #         if id in outmasks:
-            #             axs[i][col].imshow(outmasks[id], interpolation='none')
-            # plt.show()
+            # v = [len(c) for c in collision_result]
+            # if len(v) == 0:
+            #     print("Problems in collision_result: ", collision_result, " node: ", node)
+            # else:
+            #     cols = max(v)
+            #     f, axs = plt.subplots(cols, len(collision_result))
+            #     for i, cr in enumerate(collision_result):
+            #         for col, id in enumerate(cr):
+            #             axs[i][col].axis('off')
+            #             if id in outmasks:
+            #                 axs[i][col].imshow(outmasks[id], interpolation='none')
+            #     plt.show()
 
         except CollisionException:
             print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))

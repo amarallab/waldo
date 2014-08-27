@@ -10,17 +10,22 @@ def dist_2d(c1, c2):
     return math.hypot(xc, yc)
 
 
-def find_potential_collisions(graph, min_duration, duration_factor):
-    candidates = []
+def _iterate_collisions_by_structure(graph, num_succ_range=[2, 3], num_pred_range=[2, 3]):
     for node in graph.nodes():
         succs = graph.successors(node)
-        if len(succs) < 2:
+        if not (num_succ_range[0] <= len(succs) < num_succ_range[1]):
             continue
 
         preds = graph.predecessors(node)
-        if len(preds) < 2:
+        if not (num_pred_range[0] <= len(preds) < num_pred_range[1]):
             continue
 
+        yield (node, preds, succs)
+
+
+def find_time_based_collisions(graph, min_duration, duration_factor):
+    candidates = []
+    for node, preds, succs in _iterate_collisions_by_structure(graph, [1, 2000], [1, 2000]):
         min_succ_duration = None
         for s in succs:
             cur_preds = graph.predecessors(s)
@@ -51,7 +56,26 @@ def find_potential_collisions(graph, min_duration, duration_factor):
     return candidates
 
 
-def find_area_based_collisions(graph, experiment, debug=False):
+def find_bbox_based_collisions(graph, experiment, min_distance=10, verbose=False):
+    bounds_df = experiment.prepdata.load('bounds')
+    bounds_df.set_index('bid', inplace=True)
+    candidates = []
+    for node, preds, _ in _iterate_collisions_by_structure(graph):
+        moved = False
+        for pred in preds:
+            if pred in bounds_df.index:
+                bdata = bounds_df.loc[pred]
+                x_min, x_max, y_min, y_max = bdata['x_min'], bdata['x_max'], bdata['y_min'], bdata['y_max']
+                distance = (x_max - x_min) ** 2 + (y_max - y_min) ** 2
+                if distance > min_distance:
+                    moved = True
+                    break
+        if moved:
+            candidates.append(node)
+    return candidates
+
+
+def find_area_based_collisions(graph, experiment, verbose=False):
     ###TODO: Calculate Area Mean/Std correctly!!!
     terminals_df = experiment.prepdata.load('terminals')
     sizes_df = experiment.prepdata.load('sizes')
@@ -82,7 +106,7 @@ def find_area_based_collisions(graph, experiment, debug=False):
     area_mean = sizes_df['area_median'].loc[matches_ids].mean(axis=1)
     area_std = sizes_df['area_median'].loc[matches_ids].std(axis=1)
 
-    #if debug:
+    #if verbose:
     print("I: Area mean: %f, std: %f" % (area_mean, area_std))
 
     ###END
@@ -96,17 +120,9 @@ def find_area_based_collisions(graph, experiment, debug=False):
         return "%d (%s - %s) x %d" % (x, pos0, posN, area)
 
     candidates = []
-    for node in graph.nodes():
-        predecessors = graph.predecessors(node)
-        if len(predecessors) != 2:
-            continue
-
-        successors = graph.successors(node)
-        if len(successors) != 2:
-            continue
-
-        pred1, pred2 = predecessors
-        succ1, succ2 = successors
+    for node, preds, succs in _iterate_collisions_by_structure(graph):
+        pred1, pred2 = preds
+        succ1, succ2 = succs
 
         if node not in sizes_map \
                 or pred1 not in sizes_map or pred2 not in sizes_map \
@@ -126,22 +142,22 @@ def find_area_based_collisions(graph, experiment, debug=False):
         succ2_area = float(succ2_sizes['area_median'])
 
         if not (area_mean - area_std <= node_area < area_mean + area_std):
-            if debug:
+            if verbose:
                 print("E: Bad 'node' area: (%d, %d) - %d - (%d, %d)" % (pred1, pred2, node, succ1, succ2))
                 print("I: ", "\n  ".join(debug_data(x) for x in [pred1, pred2, node, succ1, succ2]))
             continue
 
         if pred1_area + pred2_area < area_mean + area_std:
-            if debug:
+            if verbose:
                 print("E: Bad 'pred1 + pred2' area: (%d, %d) - %d - (%d, %d)" % (pred1, pred2, node, succ1, succ2))
                 print("I: ", "\n  ".join(debug_data(x) for x in [pred1, pred2, node, succ1, succ2]))
             continue
 
         if succ1_area + succ2_area < area_mean + area_std:
-            if debug:
+            if verbose:
                 print("E: Bad 'succ1 + succ2' area: (%d, %d) - %d - (%d, %d)" % (pred1, pred2, node, succ1, succ2))
                 print("I: ", "\n  ".join(debug_data(x) for x in [pred1, pred2, node, succ1, succ2]))
             continue
 
-        candidates.append((pred1, pred2, node, succ1, succ2))
+        candidates.append(node)
     return candidates

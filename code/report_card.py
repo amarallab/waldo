@@ -141,7 +141,6 @@ def create_report_card(experiment, graph):
     threshold=2
     #suspects = collider.suspected_collisions(graph, threshold)
     suspects = collider.find_area_based_collisions(graph, experiment)
-    suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
     print('{n} suspects found with area difference'.format(n=len(suspects)))
     collider.resolve_collisions(graph, experiment, suspects)
     report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
@@ -241,7 +240,6 @@ def collision_iteration2(experiment, graph):
         ############### Collisions
 
         suspects = collider.find_area_based_collisions(graph, experiment)
-        suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
         print('{n} suspects found with area difference'.format(n=len(suspects)))
         collider.resolve_collisions(graph, experiment, suspects)
 
@@ -332,10 +330,10 @@ def main2():
 
     ############### Collisions
     threshold=2
-    suspects = collider.suspected_collisions(graph, threshold)
+    # suspects = collider.suspected_collisions(graph, threshold)
+    suspects = collider.find_bbox_based_collisions(graph, experiment)
     #suspects = collider.find_area_based_collisions(graph, experiment)
-    #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
-    print('{n} suspects found with area difference'.format(n=len(suspects)))
+    print('{n} suspects found with big bbox'.format(n=len(suspects)))
     collider.resolve_collisions(graph, experiment, suspects)
     report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
 
@@ -407,7 +405,7 @@ def determine_lost_and_found_causes(experiment, graph):
 if __name__ == '__main__':
     #main()
     experiment, graph = main2()
-    determine_lost_and_found_causes(experiment, graph)
+    # determine_lost_and_found_causes(experiment, graph)
 
     #ex_id = '20130318_131111'
 
