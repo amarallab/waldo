@@ -229,7 +229,7 @@ def create_reports():
         df.to_csv(savename)
 
         savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
-        graph2, df = collision_itteration(experiment, graph.copy())
+        graph2, df = collision_iteration(experiment, graph.copy())
         df.to_csv(savename)
 
 

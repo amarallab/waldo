@@ -107,7 +107,7 @@ def grab_outline(node, graph, experiment, first=True):
     nodes = [node]
     preds = graph.predecessors(node)
     while preds == 1:
-        current = succs[0]
+        current = preds[0]
         nodes.insert(0, current)
         preds = graph.predecessors(current)
 
