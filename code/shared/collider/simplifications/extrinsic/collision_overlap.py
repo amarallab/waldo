@@ -88,7 +88,8 @@ def grab_outline(node, graph, experiment, first=True, verbose=False):
     return None
 
 # TODO make this function agnostic to the number of parents.
-def create_collision_masks(graph, experiment, node, verbose=False):
+def create_collision_masks(graph, experiment, node, verbose=False,
+                           report=False):
     """
     return lists of (node_id, binary mask) tuples for
     the parents and children of the specified node.
@@ -107,6 +108,8 @@ def create_collision_masks(graph, experiment, node, verbose=False):
        the id (in graph) used to identify a collision
     verbose: (bool)
        a toggle to turn on/off print statements
+    report: (bool)
+       returns a dict with information about how well function ran
 
     returns
     -----
@@ -114,7 +117,11 @@ def create_collision_masks(graph, experiment, node, verbose=False):
        each element in parents is a tuple of (node_id, mask_for_node)
     children: (list of tuples)
        same structure as parents.
+
+    [status report]: (dict)
+       optional dictionary with values showing how well function ran.
     """
+
     p = list(set(graph.predecessors(node)))
     c = list(set(graph.successors(node)))
     if verbose:
@@ -153,8 +160,11 @@ def create_collision_masks(graph, experiment, node, verbose=False):
 
     parents = [(p[0], p0), (p[1], p1)]
     children = [(c[0], c0), (c[1], c1)]
-
-    return parents, children
+    status_report = {'mask_count': len(outline_list)}
+    if report:
+        return parents, children, status_report
+    else:
+        return parents, children
 
 
 #TODO: make agnostic to number of parents/children
@@ -255,11 +265,17 @@ def resolve_collisions(graph, experiment, collision_nodes):
        worms.
     """
     collision_results = {}
-    resolved_count = 0
+    result_report = {'resolved':[], 'missing_data':[], 'no_overlap':[]}
     for node in collision_nodes:
         try:
-            parent_masks, children_masks = create_collision_masks(graph, experiment, node)
+            a = create_collision_masks(graph, experiment, node,
+                                       report=True)
+
+            parent_masks, children_masks, report = a
             collision_result = compare_masks(parent_masks, children_masks)
+
+            if report['mask_count'] < 4:
+                result_report['missing_data'].append(node)
 
             #INFO: if you want to see the outmasks and the relation between them
             # data = [parent_masks[0], parent_masks[1], children_masks[0], children_masks[1]]
@@ -279,14 +295,17 @@ def resolve_collisions(graph, experiment, collision_nodes):
             #     plt.show()
 
         except CollisionException:
-            print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
+            #print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
+            result_report['missing_data'].append(node)
             continue
         #print(node, 'is', collision_result)
         if collision_result:
             collision_results[node] = collision_result
             untangle_collision(graph, node, collision_result)
-            resolved_count += 1
-    return resolved_count
+            result_report['resolved'].append(node)
+        else:
+            result_report['no_overlap'].append(node)
+    return result_report
 
 def untangle_collision(graph, collision_node, collision_result):
     """

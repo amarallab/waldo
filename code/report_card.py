@@ -346,40 +346,85 @@ def main2():
     report_df = report_card.report(show=True)
     return experiment, graph
 
-def collision_suite(experiment, graph):
+def collision_suite(experiment, graph, verbose=True):
 
     # bounding box method
-    n = 0
-    tried_suspects = set()
-    trying_new_suspects = True
-    while trying_new_suspects:
+    print 'collisions from bbox'
+
+    # initialize records
+    resolved = set()
+    overlap_fails = set()
+    data_fails = set()
+    dont_bother = set()
+
+    #trying_new_suspects = True
+    collisions_were_resolved = True
+    while collisions_were_resolved:
         suspects = set(collider.find_bbox_based_collisions(graph, experiment))
-        new_suspects = suspects - tried_suspects
-        tried_suspects = new_suspects | tried_suspects
-        print('{n} new suspects found'.format(n=len(new_suspects)))
-        if len(new_suspects):
-            n += collider.resolve_collisions(graph, experiment,
-                                             list(new_suspects))
-        else:
-            trying_new_suspects = False
+        s = suspects - dont_bother
+        ty = len(s & data_fails)
+        if verbose:
+            print('\t{s} suspects. trying {ty} again'.format(s=len(s),
+                                                             ty=ty))
 
-    print n, 'collisions from bbox'
+        if not s:
+            collisions_were_resolved = False
+            break
 
-    new_suspects = set(collider.find_area_based_collisions(graph, experiment))
-    suspects = list(new_suspects - tried_suspects)
-    tried_suspects = new_suspects | tried_suspects
-    n_area = collider.resolve_collisions(graph, experiment, suspects)
-    n += n_area
+        report = collider.resolve_collisions(graph, experiment,
+                                             list(s))
 
-    print(int(float(n) * 100. / float(len(tried_suspects))),
-          'percent of found collisions resolved')
+        newly_resolved = set(report['resolved'])
+        resolved = resolved | newly_resolved
+        collisions_were_resolved = len(newly_resolved) > 0
+
+        # keep track of all fails that had missing data that have
+        # not been resolved yet
+        data_fails = data_fails | set(report['missing_data'])
+        #data_fails = data_fails - resolved
+
+        # if overlap fails but data is missing try again later
+        # if overlap fails but data is there, dont bother
+        overlap_fails = overlap_fails | set(report['no_overlap'])
+        overlap_fails = overlap_fails - resolved
+        dont_bother = overlap_fails - data_fails
+
+    if verbose:
+        full_set = resolved | overlap_fails | data_fails | dont_bother
+        full_count = len(full_set)
+
+        n_res = len(resolved)
+        n_dat = len(data_fails)
+        no1 = len(data_fails & overlap_fails)
+        no2 = len(dont_bother)
+
+        p_res = int(100.0 * n_res/float(full_count))
+        p_dat = int(100.0 * len(data_fails)/float(full_count))
+        p_no1 = int(100.0 * no1/float(full_count))
+        p_no2 = int(100.0 * no2/float(full_count))
+
+        print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
+        print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
+        print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
+        print '\t{n} full data no,  overlap {p}%'.format(n=no2, p=p_no2)
 
 
-    print n_area, 'collisions from area', len(new_suspects)
-    print(int(float(n) * 100. / float(len(tried_suspects))),
-          'percent of found collisions resolved')
+    #print 'collisions from time'
+    # new_suspects = set(collider.find_area_based_collisions(graph, experiment))
+    # suspects = list(new_suspects - tried_suspects)
+    # tried_suspects = new_suspects | tried_suspects
+    # n_area = collider.resolve_collisions(graph, experiment, suspects)
+    # n += n_area
 
-    # new_suspects = set(collider.find_time_based_collisions(graph, 10, 2))
+    # print(int(float(n) * 100. / float(len(tried_suspects))),
+    #       'percent of found collisions resolved')
+
+
+    # print n_area, 'collisions from area', len(new_suspects)
+    # print(int(float(n) * 100. / float(len(tried_suspects))),
+    #       'percent of found collisions resolved')
+
+    # New_suspects = set(collider.find_time_based_collisions(graph, 10, 2))
     # suspects = list(new_suspects - tried_suspects)
     # tried_suspects = new_suspects | tried_suspects
     # n_time = collider.resolve_collisions(graph, experiment, suspects)
@@ -388,7 +433,7 @@ def collision_suite(experiment, graph):
     # print n_time, 'collisions resolved from time', len(new_suspects)
     # print(int(float(n) * 100. / float(len(tried_suspects))),
     #       'percent of found collisions resolved')
-    return n
+    return len(resolved)
 
 def determine_lost_and_found_causes(experiment, graph):
 
@@ -404,7 +449,7 @@ def determine_lost_and_found_causes(experiment, graph):
     terms['n-blobs'] = 1
     terms['id_change_found'] = False
     terms['id_change_lost'] = False
-
+    terms['lifespan_t'] = -1
     # loop through graph and assign all blob ids to cooresponding nodes.
     # also include if nodes have parents or children
 
@@ -421,7 +466,7 @@ def determine_lost_and_found_causes(experiment, graph):
             terms['node_id'].loc[list(known_comps)] = node_id
             terms['id_change_found'].loc[list(known_comps)] = has_pred
             terms['id_change_lost'].loc[list(known_comps)] = has_suc
-
+            terms['lifespan_t'].loc[list(known_comps)] = graph.lifespan_t(node_id)
     node_set = set(graph.nodes(data=False))
     print len(term_ids), 'blobs have terminal data'
     print len(node_set), 'nodes in graph'
@@ -432,12 +477,12 @@ def determine_lost_and_found_causes(experiment, graph):
     # split dataframe into seperate dfs concerned with starts and ends
     # standardize collumn names such that both have the same columns
 
-    start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found']]
+    start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found', 'lifespan_t']]
     start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y', 'f0':'f',
                                 'id_change_found': 'id_change'},
                        inplace=True)
 
-    end_terms = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost']]
+    end_terms = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost', 'lifespan_t']]
     end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y', 'fN':'f',
                               'id_change_lost': 'id_change'},
                      inplace=True)
@@ -495,8 +540,21 @@ def determine_lost_and_found_causes(experiment, graph):
     start_terms['timing'][start_terms['t'] < start_thresh] = True
     end_terms['timing'] = False
     end_terms['timing'][end_terms['t'] >= 3599] = True
-    return start_terms, end_terms
 
+    # by valueing certain reasons over others, we deterime a final reason.
+
+    def determine_reason(df):
+        df['reason'] = 'unknown'
+        reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+        for reason in reasons[1:]:
+            df['reason'][df[reason]] = reason
+
+    determine_reason(start_terms)
+    determine_reason(end_terms)
+
+    start_terms.sort('lifespan_t', inplace=True, ascending=False)
+    end_terms.sort('lifespan_t', inplace=True, ascending=False)
+    return start_terms, end_terms
 
 if __name__ == '__main__':
 
