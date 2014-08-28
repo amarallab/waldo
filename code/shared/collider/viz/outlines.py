@@ -8,17 +8,15 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 import itertools
+import collections
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from matplotlib.patches import Polygon, Wedge
 from matplotlib.collections import PatchCollection
-from scipy import ndimage
 
 import multiworm
-
-from .box import Box
+from . import tools as vt
 
 def before_and_after(experiment, target):
     """
@@ -68,45 +66,6 @@ def show_before_and_after(experiment, target):
 
     return f, axs
 
-def patch_contours(contours):
-    bounds = []
-    patches = []
-    for contour in contours:
-        contour = np.array(contour)
-        if contour.shape == (2,):
-            contour = np.reshape(contour, (-1, 2))
-        bbox = Box.fit(contour)
-        if len(contour) == 1:
-            patches.append(Wedge(contour, 10, 0, 360, 5, alpha=0.6))
-            bbox.size = 30, 30
-        else:
-            patches.append(Polygon(contour, closed=True, alpha=0.3))
-        bounds.append(bbox)
-
-    bounds = sum(bounds)
-    return bounds, patches
-
-def get_image(experiment, time, bounds):
-    actual_time, im_file = experiment.image_files.nearest(time=time)
-    img = ndimage.imread(str(im_file))
-    return img
-
-def get_contour(blob, index='first', centroid_fallback=True):
-    if index not in ['first', 'last']:
-        raise ValueError('index must be either "first" or "last"')
-
-    method = index + '_valid_index'
-
-    col = 'contour'
-    index = getattr(blob.df[col], method)()
-    if index is None:
-        if not centroid_fallback:
-            raise KeyError('No valid index')
-        col = 'centroid'
-        index = getattr(blob.df[col], method)()
-
-    return blob.df[col][index]
-
 def show_collision(experiment, graph, target, direction='backwards'):
     backwards = direction.startswith('back')
 
@@ -124,13 +83,13 @@ def show_collision(experiment, graph, target, direction='backwards'):
         other.df.decode_contour()
 
     if backwards:
-        blob_contour = get_contour(blob, index='first')
-        other_contours = [get_contour(other, index='last') for other in others if not other.empty]
+        blob_contour = vt.get_contour(blob, index='first')
+        other_contours = [vt.get_contour(other, index='last') for other in others if not other.empty]
 
     contours = [blob_contour]
     contours.extend(other_contours)
 
-    bounds, patches = patch_contours(contours)
+    bounds, patches = vt.patch_contours(contours)
     collection_pre = PatchCollection(patches[1:], cmap=plt.cm.autumn, alpha=0.3)
     collection_post = PatchCollection(patches[:1], facecolor='green', alpha=0.3)
     collection_pre.set_array(np.linspace(0.3, 0.9, len(patches) - 1))
@@ -145,7 +104,7 @@ def show_collision(experiment, graph, target, direction='backwards'):
     bounds.height = max(180, bounds.height)
     #bounds.shape = 120, 180 # this seems to work well enough?
 
-    image = get_image(experiment, blob.born_t, 0)
+    image = vt.get_image(experiment, time=blob.born_t)
     vmin, vmax = np.percentile(image, [3, 97])
 
     collections = [collection_pre, collection_post]
@@ -160,3 +119,64 @@ def show_collision(experiment, graph, target, direction='backwards'):
                 int(frame)))
 
     return f, axs
+
+def show_around(experiment, frame, bounds):
+    # get all blob outlines on given frame
+    df = vt.frame_dataframe(experiment, frame)
+    df = vt.fill_empty_contours(df)
+    df = df.reindex(np.random.permutation(df.index))
+    _, patches = vt.patch_contours(df['contour'])
+    pc = PatchCollection(patches, cmap=plt.cm.winter, alpha=0.3)
+    pc.set_array(np.linspace(0, 1, len(patches) - 1))
+
+    # load image
+    image = vt.get_image(experiment, frame=frame)
+    contrast_boost = 3
+    vmin, vmax = np.percentile(image, [contrast_boost, 100 - contrast_boost])
+
+    # tweak bounds
+    if isinstance(bounds, vt.Box):
+        pass
+    elif isinstance(bounds, collections.Mapping):
+        bounds = vt.Box(**bounds)
+    elif isinstance(bounds, collections.Iterable):
+        bounds = vt.Box(*bounds)
+    else:
+        bounds = vt.Box(bounds)
+
+    # plot
+    f, ax = plt.subplots()
+    f.set_size_inches((10, 10))
+    ax.imshow(image.T, cmap=plt.cm.Greys, interpolation='none', vmin=vmin, vmax=vmax)
+    ax.add_collection(pc)
+
+    # annotate blobs
+    for ix, row in df.iterrows():
+        centroid = row['centroid']
+        if centroid in bounds:
+            ax.text(*centroid, s=str(row['bid']),
+                    family='monospace', color='red', size='20',
+                    weight='bold', verticalalignment='center',
+                    horizontalalignment='center')
+
+    ax.set_title('Experiment {}, Frame {}'.format(experiment.id, int(frame)))
+    ax.set_xlim(bounds.x)
+    ax.set_ylim(bounds.y)
+    return f, ax, bounds
+
+def show_terminal(experiment, graph, target, end='tail', bounds=None):
+    "Show what's near the given target from the experiment/graph"
+    # find target time and place
+    target = experiment[target]
+    if target.empty:
+        raise ValueError('target is an empty blob')
+
+    if end == 'tail':
+        frame = target.died_f
+        place = target['centroid'][-1]
+    else:
+        frame = target.born_f
+        place = target['centroid'][0]
+
+    bounds = bounds if bounds else {'center': place, 'size': (200, 200)}
+    return show_around(experiment, frame, bounds=bounds) + (frame,)

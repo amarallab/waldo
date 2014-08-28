@@ -35,6 +35,9 @@ class Box(object):
         Box(x=[left, right], y=[bottom, top])
         Box(center=[x, y], size=[width, height])
         Box.fit(points)
+
+        Provides the following attributes to read/write: x, y, height, width,
+        center, size.
         """
         self.left, self.right, self.bottom, self.top = 0, 0, 0, 0
         if not (len(args) or len(kwargs)):
@@ -91,6 +94,10 @@ class Box(object):
         return self <= other and all(s != o for s, o in zip(self, other))
     def __gt__(self, other):
         return self >= other and all(s != o for s, o in zip(self, other))
+
+    def __contains__(self, point):
+        x, y = point
+        return (self.left <= x <= self.right) and (self.bottom <= y <= self.top)
 
     def __iter__(self):
         yield self.left

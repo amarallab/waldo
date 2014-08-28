@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+"""
+renderterminals
+
+"""
+from __future__ import print_function, absolute_import
+
+# standard library
+import sys
+import argparse
+
+# third party
+import matplotlib.pyplot as plt
+
+# project specific
+import pathcustomize
+
+import wio
+import collider
+import collider.viz.outlines as outlines
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('experiment_id',
+        help="Experiment ID to use.")
+    parser.add_argument('terminus', choices=['head', 'tail'])
+    parser.add_argument('input_file', type=argparse.FileType('r'),
+        help="File with blob IDs to render. Accepts stdin as -")
+
+    args = parser.parse_args()
+    eid = args.experiment_id
+    end = args.terminus
+
+    experiment = wio.Experiment(experiment_id=eid)
+    graph = experiment.graph.copy()
+    #collider.remove_nodes_outside_roi(graph, experiment)
+
+    for bid in args.input_file:
+        bid = int(bid.strip())
+        #print(repr(bid))
+        try:
+            f_ = outlines.show_terminal(experiment, graph, bid, end=end)
+            f = f_[0]
+            fn = '{}_{:05}_{}.png'.format(eid, bid, end)
+
+            f.savefig(fn)
+            print('Saved {} of blob {}'.format(end, bid))
+            plt.close('all')
+        except Exception as e:
+            print('Failed to process blob {}:\n >> {}'.format(bid, e))
+            raise e
+
+if __name__ == '__main__':
+    sys.exit(main())
