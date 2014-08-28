@@ -27,7 +27,6 @@ def suspected_collisions(digraph, threshold=2):
        all node ids that match the ciriterion of 'suspects'
 
     """
-    print('you are, in fact, running suspected_collisions')
     suspects = []
     for node in digraph:
         #print(node)

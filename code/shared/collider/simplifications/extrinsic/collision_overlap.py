@@ -27,7 +27,7 @@ __all__ = [
 class CollisionException(Exception):
     pass
 
-def grab_outline(node, graph, experiment, first=True):
+def grab_outline(node, graph, experiment, first=True, verbose=False):
     """
     return the first or last complete outline for a given node
     as a list of points.
@@ -82,11 +82,10 @@ def grab_outline(node, graph, experiment, first=True):
             if is_good:
                 outline_points = de.decode_outline([x, y, l, enc])
                 return outline_points
-
-    print('I: Failed to find outline in %d predeccessors' % node_count)
-    print('I: grabbing', node, type(node))
+    if verbose:
+        print('I: Failed to find outline in %d predeccessors' % node_count)
+        print('I: grabbing', node, type(node))
     return None
-
 
 # TODO make this function agnostic to the number of parents.
 def create_collision_masks(graph, experiment, node, verbose=False):
@@ -129,8 +128,11 @@ def create_collision_masks(graph, experiment, node, verbose=False):
     c1 = grab_outline(c[1], graph, experiment, first=True)
 
     # align outline masks
-    outline_list = [p0, p1, c0, c1]
-    masks, bbox = points_to_aligned_matrix([o for o in outline_list if o is not None])
+    outline_list = [o for o in [p0, p1, c0, c1] if o is not None]
+    #print(len(outline_list), 'outlines found for', node)
+    if not outline_list:
+        raise CollisionException
+    masks, bbox = points_to_aligned_matrix(outline_list)
 
     next = 0
 

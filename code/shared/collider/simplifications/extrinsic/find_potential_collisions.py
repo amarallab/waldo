@@ -88,8 +88,8 @@ def find_area_based_collisions(graph, experiment, verbose=False):
     #print(moved_df.head())
     #print(len(moving_ids), 'moving ids')
 
-    print(matches_df.head())
-    print(len(matches_ids), 'matches ids')
+    #print(matches_df.head())
+    #print(len(matches_ids), 'matches ids')
 
     terminals_map = {int(v['bid']): i for i, v in terminals_df.iterrows()}
     sizes_map = {int(v['bid']): i for i, v in sizes_df.iterrows()}

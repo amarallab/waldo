@@ -54,13 +54,22 @@ class ReportCard(object):
             else:
                 isolated_count += 1
             try:
-                durations.append(digraph.lifespan_f(node))
+                dur = digraph.lifespan_t(node)
+                if not np.isnan(dur):
+                    durations.append(dur)
             except KeyError:
                 pass
 
         duration_med = np.median(durations)
         duration_std = np.std(durations)
-        assert len(graph.nodes(data=False)) == graph.number_of_nodes()
+        n_nodes = graph.number_of_nodes()
+        # if len(durations) < n_nodes:
+        #     print '{x} durations found for {y} nodes'.format(x=len(durations),
+        #                                                  y=n_nodes)
+        #     print duration_med, duration_std
+        #     print round(duration_med, ndigits=2), round(duration_std, ndigits=2)
+
+        assert len(graph.nodes(data=False)) == n_nodes
         report = {'total-nodes':graph.number_of_nodes(),
                   'isolated-nodes': isolated_count,
                   'connected-nodes': connected_count,
@@ -139,13 +148,8 @@ def create_report_card(experiment, graph):
     report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
     ############### Collisions
-    threshold=2
-    #suspects = collider.suspected_collisions(graph, threshold)
-    suspects = collider.find_area_based_collisions(graph, experiment)
-    suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
-    print('{n} suspects found with area difference'.format(n=len(suspects)))
-    collider.resolve_collisions(graph, experiment, suspects)
-    report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
+    n = collision_suite(experiment, graph)
+    report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
     ############### Gaps
 
@@ -194,13 +198,8 @@ def collision_iteration(experiment, graph):
         report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
         ############### Collisions
-        threshold=2
-        suspects = collider.suspected_collisions(graph, threshold)
-        #suspects = collider.find_area_based_collisions(graph, experiment)
-        #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
-        print('{n} suspects found with area difference'.format(n=len(suspects)))
-        collider.resolve_collisions(graph, experiment, suspects)
-        report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
+        n = collision_suite(experiment, graph)
+        report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
         ############### Gaps
 
@@ -240,18 +239,9 @@ def collision_iteration2(experiment, graph):
         report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
         ############### Collisions
+        n = collision_suite(experiment, graph)
+        report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
-        suspects = collider.find_area_based_collisions(graph, experiment)
-        suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
-        print('{n} suspects found with area difference'.format(n=len(suspects)))
-        collider.resolve_collisions(graph, experiment, suspects)
-
-        threshold=2
-        suspects2 = collider.suspected_collisions(graph, threshold)
-        print('{n} suspects found with time difference'.format(n=len(suspects2)))
-        collider.resolve_collisions(graph, experiment, suspects2)
-
-        report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects) + len(suspects2)))
 
         ############### Simplify
         collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
@@ -303,7 +293,6 @@ def main():
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     graph = experiment.graph.copy()
 
-
     graph1, df = create_report_card(experiment, graph.copy())
     return experiment, graph, graph1
 
@@ -318,62 +307,88 @@ def main2():
 
     ############### Remove Known Junk
 
-    #collider.remove_nodes_outside_roi(graph, experiment)
-    # report_card.add_step(graph, 'roi')
+    collider.remove_nodes_outside_roi(graph, experiment)
+    report_card.add_step(graph, 'roi')
 
-    # collider.remove_blank_nodes(graph, experiment)
-    # report_card.add_step(graph, 'blank')
+    collider.remove_blank_nodes(graph, experiment)
+    report_card.add_step(graph, 'blank')
 
-    # ############### Cut Worms
-    # candidates = collider.find_potential_cut_worms(graph, experiment,
-    #                                                max_first_last_distance=40, max_sibling_distance=50)
-    # for candidate in candidates:
-    #     graph.condense_nodes(candidate[0], *candidate[1:])
-    # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+    ############### Cut Worms
+    candidates = collider.find_potential_cut_worms(graph, experiment,
+                                                   max_first_last_distance=40, max_sibling_distance=50)
+    for candidate in candidates:
+        graph.condense_nodes(candidate[0], *candidate[1:])
+    report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
-    # ############### Collisions
-    # n = collision_suite(experiment, graph)
-    # report_card.add_step(graph, 'collisions ({n})'.format(n=n))
-
-    ############### Simplify
-    #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
-    #collider.assimilate(graph, max_threshold=10)
-    # collider.remove_single_descendents(graph)
-    # collider.remove_fission_fusion(graph)
-    # collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-    # collider.remove_offshoots(graph, threshold=20)
-    # collider.remove_single_descendents(graph)
-    # report_card.add_step(graph, 'simplify')
+    ############### Collisions
+    n = collision_suite(experiment, graph)
+    report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
     ############### Gaps
 
-    # taper = tp.Taper(experiment=experiment, graph=graph)
-    # start, end = taper.find_start_and_end_nodes()
-    # gaps = taper.score_potential_gaps(start, end)
-    # taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-    # graph = taper._graph
-    # report_card.add_step(graph, 'gaps')
+    taper = tp.Taper(experiment=experiment, graph=graph)
+    start, end = taper.find_start_and_end_nodes()
+    gaps = taper.score_potential_gaps(start, end)
+    taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+    graph = taper._graph
+    report_card.add_step(graph, 'gaps')
+
+    ############### Simplify
+    collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+    #collider.assimilate(graph, max_threshold=10)
+    collider.remove_single_descendents(graph)
+    collider.remove_fission_fusion(graph)
+    collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+    collider.remove_offshoots(graph, threshold=20)
+    collider.remove_single_descendents(graph)
+    report_card.add_step(graph, 'simplify')
 
     report_df = report_card.report(show=True)
     return experiment, graph
 
 def collision_suite(experiment, graph):
-    suspects = collider.suspected_collisions(graph, threshold=2)
-    #suspects = collider.find_area_based_collisions(graph, experiment)
-    #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
-    print('{n} suspects found with area difference'.format(n=len(suspects)))
-    collider.resolve_collisions(graph, experiment, suspects)
-    return len(suspects)
-    #movement_suspects = collider.find_bbox_based_collisions()
 
-    # threshold=2
-    # suspects = collider.suspected_collisions(graph, threshold)
-    # #suspects = collider.find_area_based_collisions(graph, experiment)
-    # #suspects = [node for pred1, pred2, node, succ1, succ2 in suspects]
-    # print('{n} suspects found with area difference'.format(n=len(suspects)))
-    # collider.resolve_collisions(graph, experiment, suspects)
-    # report_card.add_step(graph, 'collisions ({n})'.format(n=len(suspects)))
+    # bounding box method
+    n = 0
+    tried_suspects = set()
+    trying_new_suspects = True
+    while trying_new_suspects:
+        suspects = set(collider.find_bbox_based_collisions(graph, experiment))
+        new_suspects = suspects - tried_suspects
+        tried_suspects = new_suspects | tried_suspects
+        print('{n} new suspects found'.format(n=len(new_suspects)))
+        if len(new_suspects):
+            n += collider.resolve_collisions(graph, experiment,
+                                             list(new_suspects))
+        else:
+            trying_new_suspects = False
 
+    print n, 'collisions from bbox'
+
+    new_suspects = set(collider.find_area_based_collisions(graph, experiment))
+    suspects = list(new_suspects - tried_suspects)
+    tried_suspects = new_suspects | tried_suspects
+    n_area = collider.resolve_collisions(graph, experiment, suspects)
+    n += n_area
+
+    print(int(float(n) * 100. / float(len(tried_suspects))),
+          'percent of found collisions resolved')
+
+
+    print n_area, 'collisions from area', len(new_suspects)
+    print(int(float(n) * 100. / float(len(tried_suspects))),
+          'percent of found collisions resolved')
+
+    # new_suspects = set(collider.find_time_based_collisions(graph, 10, 2))
+    # suspects = list(new_suspects - tried_suspects)
+    # tried_suspects = new_suspects | tried_suspects
+    # n_time = collider.resolve_collisions(graph, experiment, suspects)
+    # n += n_time
+
+    # print n_time, 'collisions resolved from time', len(new_suspects)
+    # print(int(float(n) * 100. / float(len(tried_suspects))),
+    #       'percent of found collisions resolved')
+    return n
 
 def determine_lost_and_found_causes(experiment, graph):
 
@@ -398,8 +413,7 @@ def determine_lost_and_found_causes(experiment, graph):
         predecessors = list(graph.predecessors(node_id))
         has_pred = len(predecessors) > 0
         has_suc = len(successors) > 0
-        node_data = graph[node_id]
-        print node_id, node_data
+        node_data = graph.node[node_id]
         comps = node_data.get('components', [node_id])
         known_comps = set(comps) & term_ids
         for comp in comps:
@@ -412,7 +426,7 @@ def determine_lost_and_found_causes(experiment, graph):
     print len(term_ids), 'blobs have terminal data'
     print len(node_set), 'nodes in graph'
     print len(term_ids & node_set), 'overlap'
-    compound_nodes = list(terms[terms['n-blobs'] > 1]['node_id'])
+    compound_nodes = set(terms[terms['n-blobs'] > 1]['node_id'])
     print len(compound_nodes), 'have more than 1 blob id in them'
 
     # split dataframe into seperate dfs concerned with starts and ends
@@ -464,13 +478,13 @@ def determine_lost_and_found_causes(experiment, graph):
 
     # mark if nodes start or end outside region of interest ROI
     ex_id = experiment.id
-    print ex_id
+    #print ex_id
     roi = fm.ImageMarkings(ex_id=ex_id).roi()
-    print roi
+    #print roi
     x, y, r = roi['x'], roi['y'], roi['r']
     def add_out_of_roi(df):
         dists = np.sqrt((df['x'] - x)**2 + (df['y'] - y)**2)
-        df['outside-roi'] = dists < r
+        df['outside-roi'] = dists > r
 
     add_out_of_roi(start_terms)
     add_out_of_roi(end_terms)
@@ -485,18 +499,10 @@ def determine_lost_and_found_causes(experiment, graph):
 
 
 if __name__ == '__main__':
-    ex_id = '20130318_131111'
-    experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-    graph = experiment.graph.copy()
-    print type(graph)
 
-    for node_id in graph: #.nodes(data=False):
-        print node_id, graph.node[node_id]
-        #print graph.lifespan_t(node_id)
-
-    experiment, graph, graph1 = main()
-    #experiment, graph = main2()
-    #determine_lost_and_found_causes(experiment, graph)
+    #experiment, graph, graph1 = main()
+    experiment, graph = main2()
+    determine_lost_and_found_causes(experiment, graph)
 
     #experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     #graph = experiment.graph.copy()
