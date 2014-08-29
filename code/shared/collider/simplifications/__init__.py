@@ -11,6 +11,7 @@ from .extrinsic.roi import *
 from .extrinsic.blank_nodes import *
 from .extrinsic.collision_overlap import *
 from .extrinsic.collision_unzip import *
+from .extrinsic.find_outlines import *
 from .extrinsic.find_potential_collisions import *
 from .extrinsic.find_potential_cut_worms import *
 from .extrinsic.node_validation import *

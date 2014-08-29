@@ -17,175 +17,14 @@ import encoding.decode_outline as de
 from images.manipulations import points_to_aligned_matrix
 from thinning.shape_thinning import skeletonize
 from importing.skeletonize_outline import calculate_branch_and_endpoints
+from .find_outlines import *
+from .collision_overlap import compare_masks, untangle_collision
 
 from ..util import consolidate_node_data
 
 __all__ = [
-    'find_potential_collisions',
     'unzip_resolve_collisions',
-    'get_outlines'
 ]
-
-class CollisionException(Exception):
-    pass
-
-
-def find_potential_collisions(graph, min_duration, duration_factor):
-    candidates = []
-    for node in graph.nodes():
-        succs = graph.successors(node)
-        if len(succs) < 2:
-            continue
-
-        preds = graph.predecessors(node)
-        if len(preds) < 2:
-            continue
-
-        min_succ_duration = None
-        for s in succs:
-            cur_preds = graph.predecessors(s)
-            if len(cur_preds) != 1 or cur_preds[0] != node:
-                min_succ_duration = None
-                break
-            duration = graph.lifespan_f(s)
-            if min_succ_duration is None or min_succ_duration > duration:
-                min_succ_duration = duration
-        if min_succ_duration is None:
-            continue
-
-        min_pred_duration = None
-        for p in preds:
-            cur_succs = graph.successors(p)
-            if len(cur_succs) != 1 or cur_succs[0] != node:
-                min_pred_duration = None
-                break
-            duration = graph.lifespan_f(p)
-            if min_pred_duration is None or min_pred_duration > duration:
-                min_pred_duration = duration
-        if min_pred_duration is None:
-            continue
-
-        duration = graph.lifespan_f(node)
-        if duration >= min_duration and duration < min_succ_duration * duration_factor and duration < min_pred_duration * duration:
-            candidates.append(node)
-    for n in candidates:
-        preds = (str(a) for a in graph.predecessors(n))
-        succs = (str(a) for a in graph.successors(n))
-        for a in graph.predecessors(n):
-            succ = graph.successors(a)
-            if len(succ) != 1 or succ[0] != n:
-                print("ERROR AT %d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
-        for a in graph.successors(n):
-            pred = graph.predecessors(a)
-            if len(pred) != 1 or pred[0] != n:
-                print("ERROR AT %d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
-    return candidates
-
-
-def grab_outline(node, graph, experiment, first=True):
-    """
-    return the first or last complete outline for a given node
-    as a list of points.
-
-    params
-    -----
-    node: (int or tuple)
-       the id (from graph) for a node.
-    graph: (networkx graph object)
-       a directed graph of node interactions
-    experiment: (multiworm experiment object)
-       the experiment from which data can be exctracted.
-    first: (bool)
-       toggle that deterimines if first or last outline is returned
-
-    returns
-    ----
-    outline: (list of tuples)
-       a list of (x,y) points
-    """
-
-    nodes = [node]
-    preds = graph.predecessors(node)
-    while preds == 1:
-        current = preds[0]
-        nodes.insert(0, current)
-        preds = graph.predecessors(current)
-
-    if not first:
-        nodes = nodes[::-1]
-
-    node_count = len(nodes)
-    while len(nodes) > 0:
-        node = nodes.pop(0)
-        df = consolidate_node_data(graph, experiment, node)
-        if df is None:
-            print('Failed to find node data')
-            #print('grabbing', node, type(node))
-            raise CollisionException
-        if not first:
-            df.sort(ascending=False, inplace=True)
-
-        for frame, row in df.iterrows():
-            x, y = row['contour_start']
-            l = row['contour_encode_len']
-            enc = row['contour_encoded']
-            is_good = True
-            if not enc or not l:
-                is_good = False
-            if not isinstance(enc, basestring):
-                is_good = False
-            if is_good:
-                outline_points = de.decode_outline([x, y, l, enc])
-                return outline_points
-
-    print('Failed to find outline in %d predeccessors' % node_count)
-    print('grabbing', node, type(node))
-    raise CollisionException
-
-def grab_outline_list(node, graph, experiment):
-    """
-    return the list of complete outline for a given node
-    as a list of "list of points".
-
-    params
-    -----
-    node: (int or tuple)
-       the id (from graph) for a node.
-    graph: (networkx graph object)
-       a directed graph of node interactions
-    experiment: (multiworm experiment object)
-       the experiment from which data can be exctracted.
-
-    returns
-    ----
-    outline_list: list of (list of tuples)
-       a list of outlines, outline is a list of (x,y) points
-    """
-
-    df = consolidate_node_data(graph, experiment, node)
-    if df is None:
-        print('Failed to find node data')
-        print('grabbing', node, type(node))
-        raise CollisionException
-
-    result = []
-    for frame, row in df.iterrows():
-        x, y = row['contour_start']
-        l = row['contour_encode_len']
-        enc = row['contour_encoded']
-        is_good = True
-        if not enc or not l:
-            is_good = False
-        if not isinstance(enc, basestring):
-            is_good = False
-        if is_good:
-            outline_points = de.decode_outline([x, y, l, enc])
-            result.append(outline_points)
-    if len(result) == 0:
-        print('Failed to find outline')
-        print('grabbing', node, type(node))
-        raise CollisionException
-    return result
 
 
 def calculate_distance_outline(outline):
@@ -208,13 +47,7 @@ def calculate_distance_outline(outline):
     return dist
 
 
-def get_outlines(graph, experiment, nodes):
-    outline_list = [grab_outline(node, graph, experiment, first=True) for node in nodes]
-    outline_list, _ = points_to_aligned_matrix(outline_list)
-    return outline_list
-
-
-def unzip_resolve_collisions(graph, experiment, collision_nodes):
+def unzip_resolve_collisions(graph, experiment, collision_nodes, verbose=False, yield_bevahior=False):
     """
 
     Removes all the collisions that can be resolved
@@ -235,28 +68,38 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
     """
     collision_results = {}
     for node in collision_nodes:
-        print("Node: %d" % node)
         preds = list(set(graph.predecessors(node)))
         if len(preds) != 2:
-            print("No preds: ", preds)
+            if verbose:
+                print("Node %d, No preds: " % node, preds)
             continue
 
         succs = list(set(graph.successors(node)))
         if len(succs) != 2:
-            print("No succs")
+            if verbose:
+                print("Node %d, No succs: " % node, succs)
             continue
 
         a, b = preds  # 'up' and 'down' predecessors
         x, y = succs  # 'up' and 'down' successors
 
-        print("Initial %d, %d" % (a, b))
-        print("Final %d, %d" % (x, y))
-
         # get the outlines
         outline_a = grab_outline(a, graph, experiment, first=False)
+        if outline_a is None:
+            continue
+
         outline_b = grab_outline(b, graph, experiment, first=False)
+        if outline_b is None:
+            continue
+
         outline_x = grab_outline(x, graph, experiment, first=True)
+        if outline_x is None:
+            continue
+
         outline_y = grab_outline(y, graph, experiment, first=True)
+        if outline_y is None:
+            continue
+
         outline_c_list = grab_outline_list(node, graph, experiment)
 
         # change to the same base
@@ -269,20 +112,26 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
         outline_b = outline_list[1]
         outline_x = outline_list[2]
         outline_y = outline_list[3]
-        outline_c_list = outline_list[4:]
 
         MAX_STEPS = 50
-        if len(outline_c_list) > MAX_STEPS:
-            #step = int(len(outline_c_list) / MAX_STEPS)
-            step = 1
+        if len(outline_c_list) > MAX_STEPS + 4:
+            step = int((len(outline_c_list) - 4) / MAX_STEPS)
             outline_c_list = outline_list[4::step]
+        else:
+            outline_c_list = outline_list[4:]
+
+        if yield_bevahior:
+            yield [outline_a, outline_b, outline_x, outline_y]
+
         result = []
-
-        print("OLA KE ASE")
-        yield [outline_a, outline_b]
-
-        count = 0
         while len(outline_c_list) > 0:
+            result = compare_masks([(a, outline_a), (b, outline_b)], [(x, outline_x), (y, outline_y)])
+            if len(result) > 0:
+                if verbose:
+                    print("%d, %d -> %d, %d, result: " % (a, b, x, y), result)
+                untangle_collision(graph, node, result)
+                break
+
             current_c = outline_c_list.pop(0)
 
             removed_a = outline_a - current_c
@@ -430,18 +279,13 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes):
             #     print("NEW_B BRANCHPOINTS: %d" % len(branchpoints))
 
             common = new_a * new_b
-            print("Removed areas: A %d, B %d" % (area_removed_a, area_removed_b))
-            count -= 1
-            #if count <= 0:
-            yield [outline_a, outline_b, current_c, new_a, new_b, common, outline_x, outline_y]
-            #    count = 5
+            if verbose:
+                print("Removed areas: A %d, B %d" % (area_removed_a, area_removed_b))
+            if yield_bevahior:
+                yield [outline_a, outline_b, current_c, new_a, new_b, common, outline_x, outline_y]
 
             outline_a = new_a
             outline_b = new_b
 
-
-        cas = []      # 'up' intermediate nodes
-        cbs = []      # 'down' intermediate nodes
-        #return result
-
-    #return collision_results
+        if len(result) == 0 and verbose:
+            print("%d, %d -> %d, %d, NO result." % (a, b, x, y))
