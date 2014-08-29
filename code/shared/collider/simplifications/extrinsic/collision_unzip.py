@@ -145,36 +145,50 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes, verbose=False, 
             dist_a = calculate_distance_outline(new_a)
             dist_b = calculate_distance_outline(new_b)
 
-            skel_a = skeletonize(new_a)
-            endpoints, _ = calculate_branch_and_endpoints(skel_a)
-            endpoints_a = endpoints if endpoints is not None and len(endpoints) >= 2 else []
+            endpoints_a = []
+            try:
+                skel_a = skeletonize(new_a)
+                endpoints, _ = calculate_branch_and_endpoints(skel_a)
+                if endpoints is not None and len(endpoints) >= 2:
+                    endpoints_a = endpoints
+            except:
+                pass
 
-            skel_b = skeletonize(new_b)
-            endpoints, _ = calculate_branch_and_endpoints(skel_b)
-            endpoints_b = endpoints if endpoints is not None and len(endpoints) >= 2 else []
+            endpoints_b = []
+            try:
+                skel_b = skeletonize(new_b)
+                endpoints, _ = calculate_branch_and_endpoints(skel_b)
+                if endpoints is not None and len(endpoints) >= 2:
+                    endpoints_b = endpoints
+            except:
+                pass
 
             # Calculate percentage of the lose points close to endpoints
-            closed_points_to_endpoint = [0] * len(endpoints_a)
-            if len(endpoints_a) > 0:
+            if len(endpoints_a) == 0:
+                percentage_adding_first_a = 0
+            else:
+                closed_points_to_endpoint = [0] * len(endpoints_a)
                 for i, j in itertools.product(*[range(a) for a in removed_a.shape]):
                     if removed_a[i][j] > 0:
                         d = [math.hypot(i - ep[0], j - ep[1]) for ep in endpoints_a]
                         closed_points_to_endpoint[np.argmin(d)] += 1
-            if closed_points_to_endpoint[0] == 0 and closed_points_to_endpoint[1] == 0:
-                percentage_adding_first_a = 0.5
-            else:
-                percentage_adding_first_a = closed_points_to_endpoint[0] / sum(closed_points_to_endpoint)
+                if closed_points_to_endpoint[0] == 0 and closed_points_to_endpoint[1] == 0:
+                    percentage_adding_first_a = 0.5
+                else:
+                    percentage_adding_first_a = closed_points_to_endpoint[0] / sum(closed_points_to_endpoint)
 
-            closed_points_to_endpoint = [0] * len(endpoints_b)
-            if len(endpoints_b) > 0:
+            if len(endpoints_b) == 0:
+                percentage_adding_first_b = 0
+            else:
+                closed_points_to_endpoint = [0] * len(endpoints_b)
                 for i, j in itertools.product(*[range(a) for a in removed_b.shape]):
                     if removed_b[i][j] > 0:
                         d = [math.hypot(i - ep[0], j - ep[1]) for ep in endpoints_b]
                         closed_points_to_endpoint[np.argmin(d)] += 1
-            if closed_points_to_endpoint[0] == 0 and closed_points_to_endpoint[1] == 0:
-                percentage_adding_first_b = 0.5
-            else:
-                percentage_adding_first_b = closed_points_to_endpoint[0] / sum(closed_points_to_endpoint)
+                if closed_points_to_endpoint[0] == 0 and closed_points_to_endpoint[1] == 0:
+                    percentage_adding_first_b = 0.5
+                else:
+                    percentage_adding_first_b = closed_points_to_endpoint[0] / sum(closed_points_to_endpoint)
 
 
             MIN_DIST = 5
