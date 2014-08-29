@@ -11,12 +11,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-def direct_degree_distribution(digraph, maximums=(4, 4), flip_y=False, cmap='Blues', ignore_zero=False):
+def direct_degree_distribution(digraph, maximums=(4, 4), nodes=None, flip_y=False, cmap='Blues', ignore_zero=False):
     cmap = plt.get_cmap(cmap)
 
     degrees = np.zeros(tuple(m+1 for m in maximums), dtype=int)
     for (in_node, in_deg), (out_node, out_deg) in zip(
-            digraph.in_degree_iter(), digraph.out_degree_iter()):
+            digraph.in_degree_iter(nodes), digraph.out_degree_iter(nodes)):
         assert in_node == out_node # hopefully the iterators are matched...
         degrees[min(in_deg, degrees.shape[0]-1)][min(out_deg, degrees.shape[1]-1)] += 1
 

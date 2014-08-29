@@ -37,8 +37,14 @@ def main():
     #collider.remove_nodes_outside_roi(graph, experiment)
 
     for bid in args.input_file:
-        bid = int(bid.strip())
-        #print(repr(bid))
+        try:
+            bid = int(bid.strip())
+        except ValueError:
+            continue
+
+        if not bid:
+            continue
+
         try:
             f_ = outlines.show_terminal(experiment, graph, bid, end=end)
             f = f_[0]
