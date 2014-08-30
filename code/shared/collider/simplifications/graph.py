@@ -9,24 +9,6 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import networkx as nx
 
-# class ColliderGraph(object):
-#     def __init__(self, digraph):
-#         self._digraph = digraph
-
-#     def __getattribute__(self, name):
-#         cls_attrs = ['_digraph', 'whereis', 'copy']
-#         if name not in cls_attrs:
-#             return object.__getattribute__(object.__getattribute__(self, '_digraph'), name)
-#         else:
-#             return object.__getattribute__(self, name)
-#         #return getattr(self._digraph, name)
-
-#     def whereis(self, node):
-#         """find a node inside other nodes of the digraph"""
-
-#     def copy(self):
-#         return ColliderGraph(self._digraph.copy())
-
 class ColliderGraph(nx.DiGraph):
     def __init__(self, *args, **kwargs):
         super(ColliderGraph, self).__init__(*args, **kwargs)
@@ -37,7 +19,7 @@ class ColliderGraph(nx.DiGraph):
         return ColliderGraph(self)
 
     def components(self, node):
-        return set(self.node[node].get('components', [node]))
+        return set(int(n) for n in self.node[node].get('components', [node]))
 
     def where_is(self, bid):
         return self._whereis_data.get(bid, bid)
@@ -56,8 +38,8 @@ class ColliderGraph(nx.DiGraph):
         Edges that *other_nodes* had will be taken by *node*, excepting those to
         *node* to prevent self-loops.
         """
-
         node_data = self.node[node]
+        #print('condensing', node, node_data)
         if 'components' not in node_data:
             node_data['components'] = set([node])
 
@@ -65,8 +47,15 @@ class ColliderGraph(nx.DiGraph):
             other_data = self.node[other_node]
 
             # abscond with born/died
-            node_data['born'] = min(node_data['born'], other_data.pop('born'))
-            node_data['died'] = max(node_data['died'], other_data.pop('died'))
+            node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
+            node_data['died_f'] = max(node_data['died_f'], other_data.pop('died_f'))
+
+            node_data['born_t'] = min(node_data['born_t'], other_data.pop('born_t'))
+            node_data['died_t'] = max(node_data['died_t'], other_data.pop('died_t'))
+
+            # note some nodes do not have born_f, died_f labels
+            #node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
+            #node_data['died_f'] = max(node_data['died_f'], other_data.pop('died_f'))
 
             # combine set/mapping data
             node_data['components'].update(
@@ -101,11 +90,16 @@ class ColliderGraph(nx.DiGraph):
         Verify that the graph contains the requisite data
         """
         for node, node_data in self.nodes_iter(data=True):
-            for req_key in ['born', 'died']:
+            for req_key in ['born_f', 'died_f', 'born_t', 'died_t']:
                 if req_key not in node_data:
                     raise AssertionError("Node {} missing required key '{}'".format(node, req_key))
 
-    def lifespan(self, node):
+    def lifespan_f(self, node):
         # +1 because something that was born & died on the same frame exists
         # for 1 frame.
-        return self.node[node]['died'] - self.node[node]['born'] + 1
+        return self.node[node]['died_f'] - self.node[node]['born_f'] + 1
+
+    def lifespan_t(self, node):
+        # This is off by one frame compared to the frame-based lifespan
+        # because we don't know for sure how long the frame lasted
+        return self.node[node]['died_t'] - self.node[node]['born_t']

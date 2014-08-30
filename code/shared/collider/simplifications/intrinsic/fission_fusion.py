@@ -114,10 +114,10 @@ def remove_fission_fusion_rel(digraph, split_rel_time):
     """
     def conditional(digraph, node, children, grandchild):
         # average age of focal node/gchild
-        endpoint_avg = mean([digraph.lifespan(node),
-                        digraph.lifespan(grandchild)])
+        endpoint_avg = mean([digraph.lifespan_f(node),
+                        digraph.lifespan_f(grandchild)])
         # average age of children
-        split_avg = mean([digraph.lifespan(c) for c in children])
+        split_avg = mean([digraph.lifespan_f(c) for c in children])
 
         return split_avg / endpoint_avg <= split_rel_time
 

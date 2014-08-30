@@ -28,7 +28,7 @@ class Experiment(multiworm.Experiment):
         if 'data_root' not in kwargs:
             kwargs['data_root'] = settings.MWT_DATA_ROOT
         super(Experiment, self).__init__(*args, **kwargs)
-        self.prepdata = fm.PrepData(self.experiment_id)
+        self.prepdata = fm.PrepData(self.id)
 
         # NOTE: this needs to be done in two steps for some reason
         self.graph = nx.freeze(collider.Graph(self.graph))
@@ -47,7 +47,7 @@ class Experiment(multiworm.Experiment):
             self._pull_prepdata()
 
         if 'in_roi' not in self._prep_df.columns:
-            prep_file = fm.ImageMarkings(ex_id=self.experiment_id)
+            prep_file = fm.ImageMarkings(ex_id=self.id)
             roi = prep_file.roi()
 
             x_mid = (self._prep_df.x_min + self._prep_df.x_max) / 2

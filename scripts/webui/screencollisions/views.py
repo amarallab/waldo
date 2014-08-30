@@ -54,7 +54,8 @@ def next_to_screen(user):
 
 @login_required
 def start(request):
-    return redirect(next_to_screen(request.user))
+    next_ = next_to_screen(request.user)
+    return redirect(next_ if next_ else 'sc:index')
 
 def collision(request, eid, bid):
     collision = get_object_or_404(Collision, experiment_id=eid, blob_id=bid)
@@ -77,7 +78,8 @@ def collision(request, eid, bid):
         curans.answer = request.POST['answer']
         curans.starred = request.POST.get('on', 'off') == 'on'
         curans.save()
-        return redirect(next_to_screen(request.user))
+        next_ = next_to_screen(request.user)
+        return redirect(next_ if next_ else 'sc:index')
 
 def category(request, cat):
     collisions = Collision.objects.prefetch_related('curatedanswer_set').all()

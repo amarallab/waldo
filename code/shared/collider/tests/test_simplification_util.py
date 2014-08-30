@@ -42,4 +42,4 @@ class TestNodeCondensing(GraphCheck):
 
         Gtest.condense_nodes(10, 20)
 
-        self.assertEquals(Gtest.node[10]['died'], 200)
+        self.assertEquals(Gtest.node[10]['died_f'], 200)

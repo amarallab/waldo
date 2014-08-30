@@ -14,10 +14,12 @@ import types
 import pandas as pd
 import networkx as nx
 
+import multiworm
+
 __all__ = [
     'flat_node_list',
     'component_size_summary',
-    'suspected_collisions',
+    #'suspected_collisions',
     'consolidate_node_data',
     'group_composite_nodes',
     'merge_bounds',
@@ -56,7 +58,7 @@ def flatten(l):
 def frame_filter(threshold):
     def conditional(graph, nodes):
         for node in nodes:
-            if graph.node[node]['died'] - graph.node[node]['born'] > threshold:
+            if graph.lifespan_f(node) > threshold:
                 return False
         return True
     return conditional
@@ -85,60 +87,35 @@ def component_size_summary(graph):
                 ', '.join(str(node) for node, _ in zip(G.nodes_iter(), range(5))),
                 '...' if len(G) > 5 else ''))
 
-def suspected_collisions(digraph, relative_threshold):
-    """
-    From *digraph*, return a list of possible collision nodes.  The average
-    duration of both parent and children nodes must exceed the suspected
-    collision node times *relative_threshold*.
-    """
-    suspects = []
-    for node in digraph:
-        #print(node)
-        parents = digraph.predecessors(node)
-        children = digraph.successors(node)
-        if len(parents) != 2 or len(children) != 2:
-            continue
+# def suspected_collisions(digraph, relative_threshold):
+#     """
+#     From *digraph*, return a list of possible collision nodes.  The average
+#     duration of both parent and children nodes must exceed the suspected
+#     collision node times *relative_threshold*.
+#     """
+#     suspects = []
+#     for node in digraph:
+#         #print(node)
+#         parents = digraph.predecessors(node)
+#         children = digraph.successors(node)
+#         if len(parents) != 2 or len(children) != 2:
+#             continue
 
-        node_life = digraph.lifespan(node)
-        parents_life = [digraph.lifespan(p) for p in parents]
-        children_life = [digraph.lifespan(c) for c in children]
+#         node_life = digraph.lifespan_f(node)
+#         parents_life = [digraph.lifespan_f(p) for p in parents]
+#         children_life = [digraph.lifespan_f(c) for c in children]
 
-        #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > relative_threshold:
-        if (sum(parents_life) / (2 * node_life) > relative_threshold and
-                sum(children_life) / (2 * node_life) > relative_threshold):
-            suspects.append(node)
+#         #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > relative_threshold:
+#         if (sum(parents_life) / (2 * node_life) > relative_threshold and
+#                 sum(children_life) / (2 * node_life) > relative_threshold):
+#             suspects.append(node)
 
-    return suspects
+#     return suspects
 
 def is_isolated(graph, node):
     """ returns True if node does not have any parents or children
     """
     return graph.degree(node) == 0
-
-
-# def is_offshoot(graph, node, subnode):
-#     """ returns True if subnode is offshoot.
-
-#     params
-#     ----
-#     graph: (networkx graph object)
-#        MUST BE NETWORK BEFORE COMPOUND NODES
-#     node: (tuple)
-#        the name of the compound node which the subnode is part of.
-
-#     subnode: the name of the subnode we are testing.
-#     """
-#     if type(node) != tuple: #node not compound. not offshoot.
-#         return False
-#     elif subnode in node: #node is start or end. not offshoot.
-#         return False
-#     # since start/end gone.  no children or parents = offshoot
-#     elif len(set(graph.successors(subnode))) == 0:
-#         return True
-#     elif len(set(graph.predecessors(subnode))) == 0:
-#         return True
-#     else: # has children and parents. not offshoot.
-#         return False
 
 #TODO: add remove offshoots?
 def consolidate_node_data(graph, experiment, node):
@@ -149,7 +126,7 @@ def consolidate_node_data(graph, experiment, node):
 
     params
     -----
-    graph: (networkx graph object)
+    graph: (collider.Graph object)
        a directed graph of node interactions
     experiment: (multiworm experiment object)
        the experiment from which data can be exctracted.
@@ -165,33 +142,20 @@ def consolidate_node_data(graph, experiment, node):
        'contour_encode_len', 'contour_encoded', 'contour_start',
        'midline', 'size', 'std_ortho', 'std_vector', 'time'
     """
-
-    components = list(graph.node[node].get('components', [node]))
-    #print('{n} components in {node}'.format(n=len(components),
-    #                                        node=node))
-
     data = []
-    for subnode in components:
-        blob_data = experiment[subnode].to_dict()
-        if blob_data is None:
-            continue
-        if 'frame' not in blob_data:
+    for subnode in graph.components(node):
+        try:
+            blob = experiment[subnode]
+            df = blob.df
+        except (KeyError, multiworm.MWTDataError) as e:
+            print('{e} reading blob {i}'.format(e=e, i=subnode))
             continue
 
-        df = pd.DataFrame(blob_data)
+        if blob.empty:
+            continue
+
         df.set_index('frame', inplace=True)
         df['blob'] = subnode
-        data.append(df)
-        try:
-            pass
-        except Exception as e:
-            print('df failed', blob_data)
-            print(type(blob_data))
-            for i in dir(blob_data):
-                print(i)
-            print(e)
-            print(dict(blob_data))
-            raise
         data.append(df)
     if data:
         all_data = pd.concat(data)

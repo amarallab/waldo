@@ -41,7 +41,7 @@ class TestPruneOffshoots(GraphCheck):
             itertools.count(step=100))
         Go.add_path([10, 20, 30, 40, 50])
         Go.add_edges_from([(10, 21), (20, 31), (30, 41), (40, 51)])
-        Go.node[50]['died'] = 1000
+        Go.node[50]['died_f'] = 1000
         Gtest = Go.copy()
 
         Gexpect = Go.copy()

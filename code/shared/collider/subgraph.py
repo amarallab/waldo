@@ -46,9 +46,9 @@ def neartime(digraph, fstart, fend):
     included = set()
     for node in digraph.nodes_iter():
         node_data = digraph.node[node]
-        if node_data['born'] <= fend and node_data['died'] >= fstart:
+        if node_data['born_f'] <= fend and node_data['died_f'] >= fstart:
             included.add(node)
-        # elif fstart <= node_data['died']:
+        # elif fstart <= node_data['died_f']:
         #     included.add(node)
 
     subdig = digraph.subgraph(included)

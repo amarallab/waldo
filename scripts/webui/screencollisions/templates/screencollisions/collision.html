@@ -18,7 +18,7 @@
     <form role="form" action="" method="POST">
       {% csrf_token %}
       <div class="form-group">
-      <div class="checkbox"><label><input type="checkbox" name="starred"> {% bootstrap_icon "star" %} Star/Flag as particularly curious</label></div>
+      <div class="checkbox"><label><input id="flag" type="checkbox" name="starred"> {% bootstrap_icon "star" %} Star/Flag as particularly curious</label></div>
       </div>
       <div class="form-group">
       <div class="well" style="width: 800px;">
@@ -58,44 +58,48 @@
     <script type="text/javascript">
       $(document).on("keyup", function (e) {
         switch (e.which) {
-          case 48:
-          case 96:
+          case 48:  // 0)
+          case 96:  // Num-0
             $("#ansunk").click();
             break;
 
-          case 110:
-          case 190:
+          case 190: // .>
+          case 110: // Num-.
             $("#ans05").click();
             break;
 
-          case 49:
-          case 97:
+          case 49:  // 1!
+          case 97:  // Num-1
             $("#ans10").click();
             break;
 
-          case 50:
-          case 98:
+          case 50:  // 2@
+          case 98:  // Num-2
             $("#ans20").click();
             break;
 
-          case 51:
-          case 99:
+          case 51:  // 3#
+          case 99:  // Num-3
             $("#ans30").click();
             break;
 
-          case 52:
-          case 100:
+          case 52:  // 4$
+          case 100: // Num-4
             $("#ans15").click();
             break;
 
-          case 53:
-          case 101:
+          case 53:  // 5%
+          case 101: // Num-5
             $("#ans25").click();
             break;
 
-          case 54:
-          case 102:
+          case 54:  // 6^
+          case 102: // Num-6
             $("#ans35").click();
+            break;
+
+          case 88:  // xX
+            $('#flag').click();
             break;
         }
       });

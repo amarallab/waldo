@@ -86,7 +86,7 @@ def assimilate(digraph, max_threshold):
                 L.debug('- checking relative {}'.format(rnode))
 
                 # check exclusions
-                if digraph.lifespan(rnode) > max_threshold:
+                if digraph.lifespan_f(rnode) > max_threshold:
                     L.debug(' - lifespan too short'.format(rnode))
                     continue
                 if meth['towards_degree'](rnode) != 1:
