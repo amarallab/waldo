@@ -63,6 +63,9 @@ class ReportCard(object):
         duration_med = np.median(durations)
         duration_std = np.std(durations)
         n_nodes = graph.number_of_nodes()
+        n_10_min = len([d for d in durations if d >= 600])
+        n_20_min = len([d for d in durations if d >= 1200])
+        n_30_min = len([d for d in durations if d >= 1200])
         # if len(durations) < n_nodes:
         #     print '{x} durations found for {y} nodes'.format(x=len(durations),
         #                                                  y=n_nodes)
@@ -77,14 +80,17 @@ class ReportCard(object):
                   'duration-med': round(duration_med, ndigits=2),
                   'duration-std': round(duration_std, ndigits=2),
                   '# components': len(components),
+                  '10min':  n_10_min,
+                  '20min':  n_20_min,
+                  '30min':  n_30_min,
                   'moving-nodes': len(compound_bl_filter(self.experiment,
                         digraph, threshold))
                   }
         return report, durations
 
     def report(self, show=True):
-        columns = ['step', 'total-nodes', 'isolated-nodes',
-                   'connected-nodes', 'giant-component-size',
+        columns = ['step', 'total-nodes', '10min', '20min', '30min',
+                   'isolated-nodes', 'connected-nodes', 'giant-component-size',
                    'duration-med', 'duration-std', '# components',
                    'moving-nodes']
 
