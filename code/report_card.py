@@ -524,6 +524,31 @@ def determine_lost_and_found_causes(experiment, graph):
     end_terms.sort('lifespan_t', inplace=True, ascending=False)
     return start_terms, end_terms
 
+def summarize_loss_report(df):
+    df = df.copy()
+    df['lifespan_t'] = df['lifespan_t'] / 60.0
+    bin_dividers = [1, 5, 10, 20, 61]
+    reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+    #stuff = pd.DataFrame(columns=reasons, index=bin_dividers)
+    data = []
+    for bd in bin_dividers:
+        b = df[df['lifespan_t'] < bd]
+        df = df[df['lifespan_t'] >= bd]
+        #print bd
+        #print b.head()
+        counts = {}
+        for reason in reasons:
+            counts[reason] = len(b[b['reason'] == reason])
+
+        data.append(counts)
+
+    report_summary = pd.DataFrame(data)
+    report_summary['lifespan'] = bin_dividers
+    report_summary.set_index('lifespan', inplace=True)
+    report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
+    print report_summary
+    return report_summary
+
 def create_reports():
     ex_ids = ['20130318_131111',
               '20130614_120518',
@@ -543,11 +568,12 @@ def create_reports():
         starts, ends = determine_lost_and_found_causes(experiment, graph)
 
         starts_name = '{eid}-starts.csv'.format(eid=ex_id)
-        starts.to_csv(starts_name)
+        df = summarize_loss_report(starts)
+        df.to_csv(starts_name)
 
         ends_name = '{eid}-ends.csv'.format(eid=ex_id)
-        ends.to_csv(ends_name)
-
+        df = summarize_loss_report(ends)
+        df.to_csv(ends_name)
 
 if __name__ == '__main__':
     create_reports()
