@@ -98,7 +98,7 @@ class ReportCard(object):
         report_df.set_index('step')
         if show:
             print report_df[['step', 'total-nodes', 'isolated-nodes', 'duration-med',
-            'moving-nodes']]
+                             '20min', 'moving-nodes']]
         return report_df
 
 # find me a better home
@@ -197,11 +197,11 @@ def collision_iteration(experiment, graph):
         report_card.add_step(graph, 'simplify')
 
         ############### Cut Worms
-        candidates = collider.find_potential_cut_worms(graph, experiment,
-                                                       max_first_last_distance=40, max_sibling_distance=50, debug=False)
-        for candidate in candidates:
-            graph.condense_nodes(candidate[0], *candidate[1:])
-        report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+        # candidates = collider.find_potential_cut_worms(graph, experiment,
+        #                                                max_first_last_distance=40, max_sibling_distance=50, debug=False)
+        # for candidate in candidates:
+        #     graph.condense_nodes(candidate[0], *candidate[1:])
+        # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
         ############### Collisions
         n = collision_suite(experiment, graph)
@@ -238,11 +238,11 @@ def collision_iteration2(experiment, graph):
         print('iteration', i+1)
 
         ############### Cut Worms
-        candidates = collider.find_potential_cut_worms(graph, experiment,
-                                                       max_first_last_distance=40, max_sibling_distance=50, debug=False)
-        for candidate in candidates:
-            graph.condense_nodes(candidate[0], *candidate[1:])
-        report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+        # candidates = collider.find_potential_cut_worms(graph, experiment,
+        #                                                max_first_last_distance=40, max_sibling_distance=50, debug=False)
+        # for candidate in candidates:
+        #     graph.condense_nodes(candidate[0], *candidate[1:])
+        # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
         ############### Collisions
         n = collision_suite(experiment, graph)
@@ -385,7 +385,7 @@ def collision_suite(experiment, graph, verbose=True):
 
         print '\ttrying to unzip collisions'
         collision_nodes = list(dont_bother)
-        unzip_resolve_collisions(graph, experiment, collision_nodes,
+        collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
                                  verbose=False, yield_bevahior=False)
 
     #print 'collisions from time'
@@ -562,15 +562,17 @@ def create_reports():
 
 
     for ex_id in ex_ids[1:]:
+        #try:
         experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
         graph = experiment.graph.copy()
 
         savename = '{eid}-report.csv'.format(eid=ex_id)
         #graph1, df = create_report_card(experiment, graph.copy())
-        experiment, graph, report_df = main2(ex_id)
+        #experiment, graph, report_df = main2(ex_id)
+        graph2, report_df = collision_iteration2(experiment, graph)
         report_df.to_csv(savename)
 
-        starts, ends = determine_lost_and_found_causes(experiment, graph)
+        starts, ends = determine_lost_and_found_causes(experiment, graph2)
 
         starts_name = '{eid}-starts.csv'.format(eid=ex_id)
         df = summarize_loss_report(starts)
@@ -579,6 +581,10 @@ def create_reports():
         ends_name = '{eid}-ends.csv'.format(eid=ex_id)
         df = summarize_loss_report(ends)
         df.to_csv(ends_name)
+        #except Exception as e:
+        #    print ex_id, 'failed due to:'
+        #    print e
+
 
 if __name__ == '__main__':
     create_reports()
