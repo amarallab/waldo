@@ -42,6 +42,32 @@ class Experiment(multiworm.Experiment):
 
         self._prep_df = pd.merge(bounds, sizes, on='bid')
 
+    def true_num(self):
+        """
+        returns an estimate for the mean number of worms in
+        the recordings region of interest as averaged across all
+        available images.
+
+        uses data from independent image analysis data for this
+        calculation.
+        """
+        image_matches = self.prepdata.load('matches')
+
+        counts = []
+        for frame, df in image_matches.groupby('frame'):
+            in_roi = df[df['roi']]
+            in_image = in_roi[in_roi['good']]
+            count = len(in_image)
+            counts.append(count)
+            #print(frame, count)
+            #print(df.head())
+
+        tn = float(np.mean(counts))
+        #float(counts.sum()) / len(counts)
+        #print('true num is', tn)
+        return tn
+
+
     def in_roi(self):
         if self._prep_df is None:
             self._pull_prepdata()

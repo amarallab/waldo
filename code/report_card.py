@@ -60,50 +60,88 @@ class ReportCard(object):
             except KeyError:
                 pass
 
+
         duration_med = np.median(durations)
+        duration_mean = np.mean(durations)
         duration_std = np.std(durations)
         n_nodes = graph.number_of_nodes()
-        n_10_min = len([d for d in durations if d >= 600])
-        n_20_min = len([d for d in durations if d >= 1200])
-        n_30_min = len([d for d in durations if d >= 1200])
+        duration_min = np.array(durations) / 60.0
+        n_10_min = len([d for d in duration_min if d >= 10])
+        n_20_min = len([d for d in duration_min if d >= 20])
+        n_30_min = len([d for d in duration_min if d >= 30])
+        n_40_min = len([d for d in duration_min if d >= 40])
+        n_50_min = len([d for d in duration_min if d >= 50])
+
+        bins = [50, 40, 30, 20, 10, 0]
+        worm_minutes = {} #'10min':0, '20min':0, '30min':0, '40min':0, '50min':0}
+        for b in bins:
+            worm_minutes[b] = 0
+
+        for d in duration_min:
+            for b in bins:
+                if d >= b:
+                    worm_minutes[b] = d + worm_minutes[b]
+                    break
+
+        wm = {}
+        for b, worm_m in worm_minutes.iteritems():
+            label = 'wm_{b}min'.format(b=b)
+            wm[label] = worm_m
+
+        moving_nodes = list(compound_bl_filter(self.experiment, digraph, threshold))
+        n1 = graph.number_of_nodes()
+        n2 = digraph.number_of_nodes()
+        m1 = len(moving_nodes)
+        m2 = len(set(moving_nodes))
+
+        if n1 != n2:
+            print 'WARNING: graphs have unequan number of nodes'
+            print n1, 'nodes in graph'
+            print n2, 'nodes in digraph'
+        if m1 > n1 or m1 > n2:
+            print 'WARNING: more moving nodes than nodes in graph'
+            print m1, 'moving nodes'
+            print m2, 'moving nodes, no repeats'
+
         # if len(durations) < n_nodes:
         #     print '{x} durations found for {y} nodes'.format(x=len(durations),
         #                                                  y=n_nodes)
         #     print duration_med, duration_std
         #     print round(duration_med, ndigits=2), round(duration_std, ndigits=2)
-        moving_nodes = list(compound_bl_filter(self.experiment, digraph, threshold))
-        print graph.number_of_nodes(), 'in graph'
-        print digraph.number_of_nodes(), 'in digraph'
-        print len(moving_nodes), 'nodes moving'
-        print len(set(moving_nodes)), ''
 
         assert len(graph.nodes(data=False)) == n_nodes
         report = {'total-nodes':graph.number_of_nodes(),
                   'isolated-nodes': isolated_count,
                   'connected-nodes': connected_count,
                   'giant-component-size':giant_size,
+                  'duration-mean': round(duration_mean, ndigits=2),
                   'duration-med': round(duration_med, ndigits=2),
                   'duration-std': round(duration_std, ndigits=2),
                   '# components': len(components),
-                  '10min':  n_10_min,
-                  '20min':  n_20_min,
-                  '30min':  n_30_min,
+                  '>10min':  n_10_min,
+                  '>20min':  n_20_min,
+                  '>30min':  n_30_min,
+                  '>40min':  n_40_min,
+                  '>50min':  n_50_min,
                   'moving-nodes': len(moving_nodes)
-
                   }
+        report.update(wm)
         return report, durations
 
     def report(self, show=True):
-        columns = ['step', 'total-nodes', '10min', '20min', '30min',
-                   'isolated-nodes', 'connected-nodes', 'giant-component-size',
-                   'duration-med', 'duration-std', '# components',
-                   'moving-nodes']
+        # columns = ['step', 'total-nodes', '>10min', '>20min', '30min', '40min', '50min',
+        #            'isolated-nodes', 'connected-nodes', 'giant-component-size',
+        #            'duration-mean', 'duration-med', 'duration-std', '# components',
+        #            'moving-nodes']
 
-        report_df = pd.DataFrame(self.reports, columns=columns)
+        report_df = pd.DataFrame(self.reports)
         report_df.set_index('step')
         if show:
             print report_df[['step', 'total-nodes', 'isolated-nodes', 'duration-med',
-                             '20min', 'moving-nodes']]
+                             'moving-nodes']]
+            print report_df[['step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min']]
+            print report_df[['step', 'wm_0min', 'wm_10min', 'wm_20min', 'wm_30min', 'wm_40min', 'wm_50min']]
+
         return report_df
 
 # find me a better home
@@ -173,7 +211,6 @@ def create_report_card(experiment, graph):
 
     report_df = report_card.report(show=True)
     return graph, report_df
-
 
 def collision_iteration(experiment, graph):
 
@@ -255,12 +292,18 @@ def collision_iteration2(experiment, graph):
 
 
         ############### Simplify
+        print 'collapse group'
         collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
         #collider.assimilate(graph, max_threshold=10)
+        print 'remove single desc'
         collider.remove_single_descendents(graph)
+        print 'fission fusion'
         collider.remove_fission_fusion(graph)
+        print 'fission fusion rel'
         collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+        print 'off'
         collider.remove_offshoots(graph, threshold=20)
+        print 'rem single desc'
         collider.remove_single_descendents(graph)
         report_card.add_step(graph, 'simplify')
 
@@ -386,7 +429,7 @@ def collision_suite(experiment, graph, verbose=True):
         print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
         print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
         print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
-        print '\t{n} full data no,  overlap {p}%'.format(n=no2, p=p_no2)
+        print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
 
         print '\ttrying to unzip collisions'
         collision_nodes = list(dont_bother)
@@ -562,11 +605,12 @@ def summarize_loss_report(df):
 def create_reports():
     ex_ids = ['20130318_131111',
               '20130614_120518',
-              '20130702_135704',
-              '20130614_120518']
+              '20130614_120518',
+              '20130702_135704']
+    #'20130702_135704'
 
 
-    for ex_id in ex_ids[1:]:
+    for ex_id in ex_ids[-1:]:
         #try:
         experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
         graph = experiment.graph.copy()

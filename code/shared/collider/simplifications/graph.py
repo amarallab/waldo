@@ -41,11 +41,12 @@ class ColliderGraph(nx.DiGraph):
         node_data = self.node[node]
 
         # keep track of lifespans to check if we are removing long tracks
-        orig_lifespan = self.lifespan_t(node)
+        orig_lifespan = round(self.lifespan_t(node), ndigits=2)
         lifespan_log = {}
-        for other_node in other_nodes:
-            lifespan_log[other_node]= self.lifespan_t(other_node)
+        born_log, died_log = {}, {}
 
+        born_log[node]= round(node_data['born_t'], ndigits=2)
+        died_log[node]= round(node_data['died_t'], ndigits=2)
 
         #print('condensing', node, node_data)
         if 'components' not in node_data:
@@ -54,6 +55,10 @@ class ColliderGraph(nx.DiGraph):
 
         for other_node in other_nodes:
             other_data = self.node[other_node]
+
+            lifespan_log[other_node]= self.lifespan_t(other_node)
+            born_log[other_node]= other_data['born_t']
+            died_log[other_node]= other_data['died_t']
 
             # abscond with born/died
             node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
@@ -88,12 +93,48 @@ class ColliderGraph(nx.DiGraph):
 
         final_lifespan = self.lifespan_t(node)
 
-        print(node, 'merging with', len(other_nodes), 'nodes')
-        print('{l1} to {l2}'.format(l1=orig_lifespan, l2=final_lifespan))
-        longer_lifespans = [l for l in lifespan_log.values() if l > final_lifespan]
-        warn = 'WARNING: {n} blobs with longer lifespans_removed'.format(n=len(longer_lifespans))
-        if len(longer_lifespans):
-            print(warn)
+        longer_lifespans = [] #l for l in lifespan_log.values() if l > 60 * 20]
+        no_lifespan_extentions = [] #l for l in lifespan_log.values() if l > final_lifespan]
+        for n, life in lifespan_log.iteritems():
+            if life > 60 * 20 and life + orig_lifespan > final_lifespan:
+                longer_lifespans.append(n)
+            if life > final_lifespan:
+                no_lifespan_extentions.append(n)
+
+        if len(longer_lifespans) or len(no_lifespan_extentions):
+            if longer_lifespans:
+                print('blob {id} merging with {n} other nodes'.format(id=int(node), n=len(other_nodes)))
+                l1, l2 = orig_lifespan, final_lifespan
+                print('\tWARNING: {n} blobs with longer lifespans removed'.format(n=len(longer_lifespans)))
+                print('\t{l1}s --> {l2}s. (gain={g}s)'.format(l1=l1, l2=l2, g=l2-l1))
+
+                #print('\tid, born, died, lifespan')
+                #print('\t', node, born_log[node], died_log[node], orig_lifespan)
+                'lifespan groupings'
+                for n in longer_lifespans:
+                    print('\t {id} | {l} + {l1} = {l2}'.format(id=int(n), l=lifespan_log[n],
+                                                               l1=l1, l2=lifespan_log[n] + l1))
+
+                print('\t merged node: born {b}-- died {d}'.format(b=node_data['born_t'], d=node_data['died_t']))
+                b1 = born_log[node]
+                d1 = died_log[node]
+                for n in longer_lifespans:
+                    b, d = born_log[n], died_log[n]
+                    if b < b1:
+                        overlap = (d - b1)
+                        if overlap <0:
+                            overlap = 0
+                        print('\t({b}-{d}) and ({b1}-{d1}) | overlap={o}s'.format(b=b, d=d, b1=b1, d1=d1, o=overlap))
+
+                    else:
+                        overlap = (d1 - b)
+                        if overlap <0:
+                            overlap = 0
+                        print('\t({b1}-{d1}) and ({b}-{d}) | overlap={o}s'.format(b=b, d=d, b1=b1, d1=d1, o=overlap))
+
+            if no_lifespan_extentions:
+                print('WARNING: {n} blobs with lifespans > 20 min'.format(n=len(no_lifespan_extentions)))
+                print(lifespan_log)
 
         # update what's where
         for component in node_data['components']:

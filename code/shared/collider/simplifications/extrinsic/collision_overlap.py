@@ -249,7 +249,8 @@ def resolve_collisions(graph, experiment, collision_nodes):
 
             # temporary reporting to track down where long tracks dissapear to.
             long_collisions = [l for l in result_report['collision_lifespans_t'].values() if l > 60 * 20]
-            print(len(long_collisions), 'collisions removed that were longer than 20min')
+            if long_collisions:
+                print(len(long_collisions), 'collisions removed that were longer than 20min')
         else:
             result_report['no_overlap'].append(node)
     return result_report
