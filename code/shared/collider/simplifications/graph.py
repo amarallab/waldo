@@ -28,7 +28,7 @@ class ColliderGraph(nx.DiGraph):
         """
         Incorporate all nodes in *other_nodes* into *node* in-place.
 
-        All nodes must have ``born`` and ``died`` keys, the condensed node
+        All nodes must have ``born_f`` and ``died_f`` keys, the condensed node
         born/died keys will maximize age.  All other key values will be used to
         ``.update()`` the condensed node data, so sets and mappings
         (dictionary-like objects) can be used.  The ``components`` key is
@@ -39,9 +39,18 @@ class ColliderGraph(nx.DiGraph):
         *node* to prevent self-loops.
         """
         node_data = self.node[node]
+
+        # keep track of lifespans to check if we are removing long tracks
+        orig_lifespan = self.lifespan_t(node)
+        lifespan_log = {}
+        for other_node in other_nodes:
+            lifespan_log[other_node]= self.lifespan_t(other_node)
+
+
         #print('condensing', node, node_data)
         if 'components' not in node_data:
             node_data['components'] = set([node])
+
 
         for other_node in other_nodes:
             other_data = self.node[other_node]
@@ -52,10 +61,6 @@ class ColliderGraph(nx.DiGraph):
 
             node_data['born_t'] = min(node_data['born_t'], other_data.pop('born_t'))
             node_data['died_t'] = max(node_data['died_t'], other_data.pop('died_t'))
-
-            # note some nodes do not have born_f, died_f labels
-            #node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
-            #node_data['died_f'] = max(node_data['died_f'], other_data.pop('died_f'))
 
             # combine set/mapping data
             node_data['components'].update(
@@ -81,9 +86,19 @@ class ColliderGraph(nx.DiGraph):
             # remove node
             self.remove_node(other_node)
 
+        final_lifespan = self.lifespan_t(node)
+
+        print(node, 'merging with', len(other_nodes), 'nodes')
+        print('{l1} to {l2}'.format(l1=orig_lifespan, l2=final_lifespan))
+        longer_lifespans = [l for l in lifespan_log.values() if l > final_lifespan]
+        warn = 'WARNING: {n} blobs with longer lifespans_removed'.format(n=len(longer_lifespans))
+        if len(longer_lifespans):
+            print(warn)
+
         # update what's where
         for component in node_data['components']:
             self._whereis_data[component] = node
+
 
     def validate(self):
         """

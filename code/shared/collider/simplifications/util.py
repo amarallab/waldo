@@ -87,37 +87,11 @@ def component_size_summary(graph):
                 ', '.join(str(node) for node, _ in zip(G.nodes_iter(), range(5))),
                 '...' if len(G) > 5 else ''))
 
-# def suspected_collisions(digraph, relative_threshold):
-#     """
-#     From *digraph*, return a list of possible collision nodes.  The average
-#     duration of both parent and children nodes must exceed the suspected
-#     collision node times *relative_threshold*.
-#     """
-#     suspects = []
-#     for node in digraph:
-#         #print(node)
-#         parents = digraph.predecessors(node)
-#         children = digraph.successors(node)
-#         if len(parents) != 2 or len(children) != 2:
-#             continue
-
-#         node_life = digraph.lifespan_f(node)
-#         parents_life = [digraph.lifespan_f(p) for p in parents]
-#         children_life = [digraph.lifespan_f(c) for c in children]
-
-#         #if (sum(parents_life) + sum(children_life)) / (4 * node_life) > relative_threshold:
-#         if (sum(parents_life) / (2 * node_life) > relative_threshold and
-#                 sum(children_life) / (2 * node_life) > relative_threshold):
-#             suspects.append(node)
-
-#     return suspects
-
 def is_isolated(graph, node):
     """ returns True if node does not have any parents or children
     """
     return graph.degree(node) == 0
 
-#TODO: add remove offshoots?
 def consolidate_node_data(graph, experiment, node):
     """
     Returns a pandas DataFrame with all blob data for a node.

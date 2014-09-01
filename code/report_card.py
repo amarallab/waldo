@@ -71,6 +71,11 @@ class ReportCard(object):
         #                                                  y=n_nodes)
         #     print duration_med, duration_std
         #     print round(duration_med, ndigits=2), round(duration_std, ndigits=2)
+        moving_nodes = list(compound_bl_filter(self.experiment, digraph, threshold))
+        print graph.number_of_nodes(), 'in graph'
+        print digraph.number_of_nodes(), 'in digraph'
+        print len(moving_nodes), 'nodes moving'
+        print len(set(moving_nodes)), ''
 
         assert len(graph.nodes(data=False)) == n_nodes
         report = {'total-nodes':graph.number_of_nodes(),
@@ -83,8 +88,8 @@ class ReportCard(object):
                   '10min':  n_10_min,
                   '20min':  n_20_min,
                   '30min':  n_30_min,
-                  'moving-nodes': len(compound_bl_filter(self.experiment,
-                        digraph, threshold))
+                  'moving-nodes': len(moving_nodes)
+
                   }
         return report, durations
 
