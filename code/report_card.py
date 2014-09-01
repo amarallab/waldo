@@ -272,38 +272,7 @@ def collision_iteration2(experiment, graph):
     return graph, report_df
 
 
-def create_reports():
-    ex_ids = ['20130318_131111',
-              '20130614_120518',
-              '20130702_135704',
-              '20130614_120518']
-    for ex_id in ex_ids:
-        experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-        graph = experiment.graph.copy()
-
-        savename = '{eid}-report.csv'.format(eid=ex_id)
-        graph1, df = create_report_card(experiment, graph.copy())
-        df.to_csv(savename)
-
-        savename = '{eid}-iterative-report.csv'.format(eid=ex_id)
-        graph2, df = collision_iteration(experiment, graph.copy())
-        df.to_csv(savename)
-
-
-def main():
-    ex_id = '20130318_131111'
-    #ex_id = '20130614_120518'
-    #ex_id = '20130702_135704' # many pics
-    # ex_id = '20130614_120518'
-
-    experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-    graph = experiment.graph.copy()
-
-    graph1, df = create_report_card(experiment, graph.copy())
-    return experiment, graph, graph1
-
-def main2():
-    ex_id = '20130318_131111'
+def main2(ex_id = '20130318_131111'):
 
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     graph = experiment.graph.copy()
@@ -350,7 +319,7 @@ def main2():
     report_card.add_step(graph, 'simplify')
 
     report_df = report_card.report(show=True)
-    return experiment, graph
+    return experiment, graph, report_df
 
 def collision_suite(experiment, graph, verbose=True):
 
@@ -414,7 +383,6 @@ def collision_suite(experiment, graph, verbose=True):
         print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
         print '\t{n} full data no,  overlap {p}%'.format(n=no2, p=p_no2)
 
-
     #print 'collisions from time'
     # new_suspects = set(collider.find_area_based_collisions(graph, experiment))
     # suspects = list(new_suspects - tried_suspects)
@@ -435,17 +403,11 @@ def collision_suite(experiment, graph, verbose=True):
     # tried_suspects = new_suspects | tried_suspects
     # n_time = collider.resolve_collisions(graph, experiment, suspects)
     # n += n_time
-
-    # print n_time, 'collisions resolved from time', len(new_suspects)
-    # print(int(float(n) * 100. / float(len(tried_suspects))),
-    #       'percent of found collisions resolved')
     return len(resolved)
 
 def determine_lost_and_found_causes(experiment, graph):
 
-
     # create a basic dataframe with information about all blob terminals
-
     terms = experiment.prepdata.load('terminals')
     terms = terms[np.isfinite(terms['t0'])]
     if 'bid' in terms.columns:
@@ -562,11 +524,36 @@ def determine_lost_and_found_causes(experiment, graph):
     end_terms.sort('lifespan_t', inplace=True, ascending=False)
     return start_terms, end_terms
 
-if __name__ == '__main__':
+def create_reports():
+    ex_ids = ['20130318_131111',
+              '20130614_120518',
+              '20130702_135704',
+              '20130614_120518']
 
+
+    for ex_id in ex_ids[:1]:
+        experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+        graph = experiment.graph.copy()
+
+        savename = '{eid}-report.csv'.format(eid=ex_id)
+        #graph1, df = create_report_card(experiment, graph.copy())
+        experiment, graph, report_df = main2(ex_id)
+        report_df.to_csv(savename)
+
+        starts, ends = determine_lost_and_found_causes(experiment, graph)
+
+        starts_name = '{eid}-starts.csv'.format(eid=ex_id)
+        starts.to_csv(starts_name)
+
+        ends_name = '{eid}-ends.csv'.format(eid=ex_id)
+        ends.to_csv(ends_name)
+
+
+if __name__ == '__main__':
+    create_reports()
     #experiment, graph, graph1 = main()
-    experiment, graph = main2()
-    determine_lost_and_found_causes(experiment, graph)
+    #experiment, graph = main2()
+    #determine_lost_and_found_causes(experiment, graph)
 
     #experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
     #graph = experiment.graph.copy()
