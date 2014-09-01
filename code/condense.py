@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+p#!/usr/bin/env python
 
 #TEST
 
@@ -31,17 +31,17 @@ from importing.datasets import write_combined_worm_percentiles, write_dset_summa
 from dsets.check_dset import show_dset, show_dset_completeness
 from metrics.measurement_switchboard import FULL_SET, STANDARD_MEASUREMENTS
 
-def main(args):    
+def main(args):
     for dset in args.dataset:
 
         data_types = FULL_SET[:]
         if args.run:
             # TODO: write a check to make dset is really a dataset.
             args.dist = args.perc = args.sum = True
-        if args.dist:            
-            preprocess_distribution_set(dset, data_types=data_types)        
+        if args.dist:
+            preprocess_distribution_set(dset, data_types=data_types)
         if args.sum:
-            write_dset_summaries(dset, data_types=data_types)        
+            write_dset_summaries(dset, data_types=data_types)
         if args.perc:
             write_combined_worm_percentiles(dset)
 
@@ -49,7 +49,7 @@ def main(args):
             # show how many recordings/worms we have for each condition
             show_dset(dset)
 
-        if args.check:            
+        if args.check:
             # show how complete the processing is for dataset
             show_dset_completeness(dset)
 
@@ -61,10 +61,10 @@ if __name__ == '__main__':
                                                  "processes, or aggregate your data.")
     parser.add_argument('dataset', metavar='N', type=str, nargs='+', help='dataset name')
     parser.add_argument('-c', help='configuration username')
-    parser.add_argument('--run', action='store_true', help='show')    
-    parser.add_argument('--dist', action='store_true', help='show')    
-    parser.add_argument('--perc', action='store_true', help='show')   
-    parser.add_argument('--sum', action='store_true', help='show')     
+    parser.add_argument('--run', action='store_true', help='show')
+    parser.add_argument('--dist', action='store_true', help='show')
+    parser.add_argument('--perc', action='store_true', help='show')
+    parser.add_argument('--sum', action='store_true', help='show')
     parser.add_argument('--show', action='store_true', help='show')
     parser.add_argument('--check', action='store_true', help='show')
-    main(args=parser.parse_args())    
+    main(args=parser.parse_args())
