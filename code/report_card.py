@@ -531,7 +531,7 @@ def create_reports():
               '20130614_120518']
 
 
-    for ex_id in ex_ids[:1]:
+    for ex_id in ex_ids[1:]:
         experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
         graph = experiment.graph.copy()
 
