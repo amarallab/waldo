@@ -383,6 +383,11 @@ def collision_suite(experiment, graph, verbose=True):
         print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
         print '\t{n} full data no,  overlap {p}%'.format(n=no2, p=p_no2)
 
+        print '\ttrying to unzip collisions'
+        collision_nodes = list(dont_bother)
+        unzip_resolve_collisions(graph, experiment, collision_nodes,
+                                 verbose=False, yield_bevahior=False)
+
     #print 'collisions from time'
     # new_suspects = set(collider.find_area_based_collisions(graph, experiment))
     # suspects = list(new_suspects - tried_suspects)
