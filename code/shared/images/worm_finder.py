@@ -31,6 +31,7 @@ from .grab_images import grab_images_in_time_range
 
 import multiworm
 from multiworm.readers import blob as blob_reader
+import wio
 import wio.file_manager as fm
 
 
@@ -379,8 +380,7 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
 
     # initialize experiment
     path = os.path.join(MWT_DIR, ex_id)
-    experiment = multiworm.Experiment(path)
-    experiment.load_summary()
+    experiment = wio.Experiment(path)
 
     time = closest_time
     img = mpimg.imread(closest_image)
