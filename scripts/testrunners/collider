@@ -1,0 +1,9 @@
+#!/bin/bash
+WALDO_SETTINGS=settings.waldo \
+PYTHONPATH=$PYTHONPATH:.. \
+nosetests \
+    --with-path=../../code/shared/joining/ \
+    --with-path=../../code/shared/ \
+    ../../code/shared/collider
+
+#WALDO_SETTINGS=settings.waldo PYTHONPATH=$PYTHONPATH:.. nosetests --with-path=../../code/shared/joining/ --with-path=../../code/shared/ ../../code/shared/collider/tests/test_fission_fusion.py

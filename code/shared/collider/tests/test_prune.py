@@ -9,7 +9,7 @@ import itertools
 import networkx as nx
 
 from .test_util import node_generate, GraphCheck
-from .. import remove_offshoots
+from .. import remove_offshoots, Graph
 
 class TestPruneOffshoots(GraphCheck):
     def setUp(self):
@@ -22,17 +22,17 @@ class TestPruneOffshoots(GraphCheck):
         nx.freeze(self.G_basic)
 
     def test_basic_threshold_cut(self):
-        Gtest = nx.DiGraph(self.G_basic).copy()
-        Gexpect = nx.DiGraph(self.G_basic).copy()
+        Gtest = Graph(self.G_basic).copy()
+        Gexpect = Graph(self.G_basic).copy()
         Gexpect.remove_node(31)
 
-        remove_offshoots(Gtest, 100)
+        remove_offshoots(Gtest, Gtest.lifespan_f(31))
         self.check_graphs_equal(Gtest, Gexpect)
 
     def test_basic_threshold_ignore(self):
-        Gtest = nx.DiGraph(self.G_basic).copy()
+        Gtest = Graph(self.G_basic).copy()
 
-        remove_offshoots(Gtest, 99)
+        remove_offshoots(Gtest, Gtest.lifespan_f(31) - 1)
         self.check_graphs_equal(Gtest, self.G_basic)
 
     def test_multi(self):
@@ -47,11 +47,14 @@ class TestPruneOffshoots(GraphCheck):
         Gexpect = Go.copy()
         Gexpect.remove_nodes_from([21, 31, 41, 51])
 
-        remove_offshoots(Gtest, 100)
+        remove_offshoots(Gtest, Go.lifespan_f(20))
         self.check_graphs_equal(Gtest, Gexpect)
 
     def test_recorded_in_parent_components(self):
-        Gtest = nx.DiGraph(self.G_basic).copy()
+        Gtest = Graph(self.G_basic).copy()
 
-        remove_offshoots(Gtest, 100)
-        self.assertEqual(Gtest.node[20]['components'], set([20, 31]))
+        remove_offshoots(Gtest, Gtest.lifespan_f(31))
+        try:
+            self.assertEqual(Gtest.node[20]['components'], set([20, 31]))
+        except KeyError:
+            self.fail("'components' key missing from node 20")

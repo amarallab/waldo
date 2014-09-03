@@ -5,7 +5,9 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import unittest
 
-import networkx as nx
+from collider import Graph
+
+FRAME_TIME = 1/8
 
 def node_generate(nodes, timepoints, graph=None):
     """
@@ -23,12 +25,12 @@ def node_generate(nodes, timepoints, graph=None):
         pass
 
     if graph is None:
-        graph = nx.DiGraph()
+        graph = Graph()
     timepoints = iter(timepoints)
 
-    birth = six.next(timepoints)
+    birth = next(timepoints)
     for node_group, death in zip(nodes, timepoints):
-        graph.add_nodes_from(node_group, born_f=birth, died_f=death)
+        graph.add_nodes_from(node_group, born_f=birth, died_f=death, born_t=birth*FRAME_TIME, died_t=death*FRAME_TIME)
         birth = death
 
     return graph
@@ -48,31 +50,30 @@ class GraphCheck(unittest.TestCase):
         nGe = set(Gexpect.nodes_iter())
         eGt = set(Gtest.edges_iter())
         eGe = set(Gexpect.edges_iter())
-        self.assertEqual(nGt, nGe, 'Node mismatch between graphs.\n\n'
+        self.assertTrue(nGt == nGe and eGt == eGe, 'Graph mismatch.\n\n'
                 'Unexpected nodes:        {}\n'
-                'Expected, missing nodes: {}'.format(
-                        ', '.join(str(x) for x in nGt-nGe),
-                        ', '.join(str(x) for x in nGe-nGt)))
-        self.assertEqual(eGt, eGe, 'Edge mismatch between graphs.\n\n'
+                'Expected, missing nodes: {}\n\n'
                 'Unexpected edges:        {}\n'
                 'Expected, missing edges: {}'.format(
+                        ', '.join(str(x) for x in nGt-nGe),
+                        ', '.join(str(x) for x in nGe-nGt),
                         ', '.join(str(x) for x in eGt-eGe),
                         ', '.join(str(x) for x in eGe-eGt)))
 
 
 class TestGraphChecking(GraphCheck):
     def setUp(self):
-        Go = nx.DiGraph()
+        Go = Graph()
         Go.add_path([1, 2, 3])
         self.Go = Go
 
     def test_pass(self):
-        Gtest = nx.DiGraph()
+        Gtest = Graph()
         Gtest.add_path([1, 2, 3])
         self.check_graphs_equal(self.Go, Gtest)
 
     def test_different_nodes(self):
-        Gtest = nx.DiGraph()
+        Gtest = Graph()
         Gtest.add_path([3, 2, 1])
         try:
             self.check_graphs_equal(self.Go, Gtest)
@@ -82,7 +83,7 @@ class TestGraphChecking(GraphCheck):
             self.fail('Graph checker passed bad graph (renamed nodes)')
 
     def test_excess_nodes(self):
-        Gtest = nx.DiGraph()
+        Gtest = Graph()
         Gtest.add_path([1, 2, 3])
         Gtest.add_node(4)
         try:
@@ -100,7 +101,7 @@ class TestGraphChecking(GraphCheck):
             self.fail('Graph checker passed bad graph (excess nodes in 1st graph)')
 
     def test_excess_edges(self):
-        Gtest = nx.DiGraph()
+        Gtest = Graph()
         Gtest.add_path([1, 2, 3])
         Gtest.add_edge(1, 3)
         try:

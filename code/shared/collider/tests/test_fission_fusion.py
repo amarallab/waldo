@@ -81,7 +81,7 @@ class TestFissionFusion(GraphCheck):
         Go.add_path([11, 20, 31, 40, 51])
         Gtest = Go.copy()
 
-        remove_fission_fusion(Gtest, max_split_frames=50)
+        remove_fission_fusion(Gtest, max_split_frames=Go.lifespan_f(30) - 1)
 
         self.check_graphs_equal(Gtest, Go)
 
@@ -94,11 +94,14 @@ class TestFissionFusion(GraphCheck):
 
         Gtest = Go.copy()
 
-        remove_fission_fusion(Gtest, max_split_frames=50)
+        remove_fission_fusion(Gtest, max_split_frames=Go.lifespan_f(30))
 
         Gexpect = nx.DiGraph()
         Gexpect.add_path([10, 20, 50])
         Gexpect.add_path([11, 20, 51])
+
+        print(list(Gexpect))
+        print(list(Gtest))
 
         self.check_graphs_equal(Gtest, Gexpect)
 
@@ -114,7 +117,7 @@ class TestFissionFusion(GraphCheck):
         Gexpect.add_path([10, 20, 70])
         Gexpect.add_path([11, 20, 71])
 
-        just_enough = 100
+        just_enough = Go.lifespan_f(30)
         self.threshold_compare(Gtest, Gexpect, just_enough)
 
     def test_component_conservation_chain(self):
@@ -166,7 +169,7 @@ class TestFissionFusion(GraphCheck):
         Go.add_path([11, 20, 31, 40, 51, 60, 71])
         Gtest = Go.copy()
 
-        remove_fission_fusion(Gtest, 100)
+        remove_fission_fusion(Gtest, max(Go.lifespan_f(30), Go.lifespan_f(50)))
 
         try:
             self.assertTrue(Gtest.node[20]['components'] == set([20, 31, 30, 40, 51, 50, 60]))
@@ -214,7 +217,7 @@ class TestFissionFusion(GraphCheck):
         Go.add_path([31, 40, 51])
         Gtest = Go.copy()
 
-        remove_fission_fusion(Gtest, 200)
+        remove_fission_fusion(Gtest, Go.lifespan_f(30) + 1000)
 
         self.check_graphs_equal(Gtest, Go)
 
@@ -235,7 +238,7 @@ class TestFissionFusion(GraphCheck):
         Gexpect = nx.DiGraph()
         Gexpect.add_path([0, 10, 60])
 
-        just_enough = 300
+        just_enough = Go.node[40]['died_f'] - Go.node[20]['born_f'] + 1
         self.threshold_compare(Gtest, Gexpect, just_enough)
 
     def test_nested_ff_some_too_big(self):
@@ -246,13 +249,13 @@ class TestFissionFusion(GraphCheck):
         Gexpect.add_path([0, 10, 20, 50, 60])
         Gexpect.add_path([10, 21, 50])
 
-        just_enough = 100
+        just_enough = Go.lifespan_f(30)
         self.threshold_compare(Gtest, Gexpect, just_enough)
 
     def test_nested_ff_all_too_big(self):
         Go = self._nested_gen(itertools.count(step=100))
         Gtest = Go.copy()
 
-        remove_fission_fusion(Gtest, 99)
+        remove_fission_fusion(Gtest, Go.lifespan_f(30) - 1)
 
         self.check_graphs_equal(Gtest, Go)

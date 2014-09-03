@@ -9,11 +9,13 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import itertools
 import collections
+import logging
 try:
     from statistics import mean # stdlib 3.4+
 except ImportError:
     def mean(x):
         return sum(x) / len(x)
+
 
 from ..util import frame_filter
 
@@ -21,6 +23,8 @@ __all__ = [
     'remove_fission_fusion',
     'remove_fission_fusion_rel',
 ]
+
+L = logging.getLogger(__name__)
 
 def remove_fission_fusion(digraph, max_split_frames=None):
     """
@@ -50,16 +54,20 @@ def remove_fission_fusion(digraph, max_split_frames=None):
         conditional = frame_filter(max_split_frames)
 
     all_nodes = digraph.nodes()
+    #all_nodes.sort(reverse=True)
 
     while all_nodes:
         node = all_nodes.pop()
         if node not in digraph:
             continue # node was already removed/abridged
 
+        L.debug('basis node: {}'.format(node))
         parents = set(digraph.predecessors(node))
         children = set(digraph.successors(node))
+        L.debug('- children: {}'.format(', '.join(str(x) for x in children)))
 
         if len(children) != 2:
+            L.debug('- not a split, abort')
             continue # no fission occured
             # (probably a job for remove_single_descendents())
 
@@ -72,19 +80,23 @@ def remove_fission_fusion(digraph, max_split_frames=None):
                 break
             grandchildren.update(new_gc)
         if abort:
+            L.debug('- child swap, abort')
             continue # see TestFissionFusion.test_child_swap
 
         if len(grandchildren) != 1:
+            L.debug('- multiple grandchildren, abort')
             continue # skip doing anything
 
         if conditional is not None:
             if not conditional(digraph, children):
+                L.debug('- too long (>{} frames), abort'.format(max_split_frames))
                 continue # children fail conditional testing
 
-        grandchild = grandchildren.pop()
-        greatgrandchildren = set(digraph.successors(grandchild))
+        #grandchild = grandchildren.pop()
+        #greatgrandchildren = set(digraph.successors(grandchild))
 
-        digraph.condense_nodes(node, *(children | set([grandchild])))
+        L.debug('- fusing nodes {}'.format(children | grandchildren))
+        digraph.condense_nodes(node, *(children | grandchildren))
 
         all_nodes.append(node) # recurse
 

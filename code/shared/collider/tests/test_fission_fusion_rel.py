@@ -39,7 +39,10 @@ class TestFissionFusion(GraphCheck):
         Gexpect.add_path([10, 20, 50])
         Gexpect.add_path([11, 20, 51])
 
-        self.threshold_compare(Gtest, Gexpect, 0.1)
+        self.threshold_compare(
+                Gtest,
+                Gexpect,
+                Go.lifespan_f(30) / Go.lifespan_f(20))
 
     def test_linear(self):
         """
@@ -64,7 +67,7 @@ class TestFissionFusion(GraphCheck):
         Go.add_path([11, 20, 31, 40, 51])
         Gtest = Go.copy()
 
-        remove_fission_fusion_rel(Gtest, 0.1)
+        remove_fission_fusion_rel(Gtest, Go.lifespan_f(30) / Go.lifespan_f(20))
 
         try:
             self.assertTrue(Gtest.node[20]['components'] == set([20, 31, 30, 40]))

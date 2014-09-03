@@ -10,6 +10,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import itertools
 import collections
 import types
+import logging
 
 import pandas as pd
 import networkx as nx
@@ -24,6 +25,8 @@ __all__ = [
     'group_composite_nodes',
     'merge_bounds',
 ]
+
+L = logging.getLogger(__name__)
 
 def _check_assumptions(graph):
     for node in graph:
@@ -58,7 +61,9 @@ def flatten(l):
 def frame_filter(threshold):
     def conditional(graph, nodes):
         for node in nodes:
-            if graph.lifespan_f(node) > threshold:
+            lifespan = graph.lifespan_f(node)
+            if lifespan > threshold:
+                L.debug('node {} was older than threshold ({} > {})'.format(node, lifespan, threshold))
                 return False
         return True
     return conditional
