@@ -217,7 +217,7 @@ def write_summary_file(ex_id='00000000_000001'):
     """
 
     # initialize everything
-    column_names = ['frame', 'time', 'N', 'N', '5', '6', '7', '8', '9'
+    column_names = ['frame', 'time', 'N', 'N', '5', '6', '7', '8', '9',
                     '10', '11', '12', '13', '14', '15', '%%', 'index']
     frames = []
     times = []
@@ -347,4 +347,3 @@ if __name__ == '__main__':
     #write_blob_file_for_test_folder()
     #write_summary_file()
     write_index_file()
-

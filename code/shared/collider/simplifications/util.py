@@ -76,10 +76,12 @@ def flat_node_list(graph):
     node_ids = []
     for node in graph:
         node_data = graph.node[node]
+        #print(node_data)
         if 'components' in node_data:
-            internal_nodes = list(node)
+            internal_nodes = list(node_data['components'])
+            internal_nodes.append(node)
         else:
-            internal_nodes = list(node)
+            internal_nodes = [node]
         node_ids.extend(internal_nodes)
     return list(set(node_ids))
 
