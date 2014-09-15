@@ -106,8 +106,192 @@ def create_collision_masks(graph, experiment, node, verbose=False,
     else:
         return parents, children
 
+def generalized_create_collision_masks(graph, experiment, parents, children, verbose=False,
+                           report=False):
+    """
+    return lists of (node_id, binary mask) tuples for
+    lists of parent and children nodes.
 
-#TODO: make agnostic to number of parents/children
+    binary masks are boolean np.arrays containing the filled area
+    of the worm shape. all masks are in the same, reduced
+    coordinate system.
+
+    params
+    -----
+    graph: (networkx graph object)
+       a directed graph of node interactions
+    experiment: (multiworm experiment object)
+       the experiment object cooresponding to the same nodes
+    parents: (list)
+       the list of node ids (in graph) used to identify parents of a collision
+    children: (list)
+       the list of node ids (in graph) used to identify children of a collision
+    verbose: (bool)
+       a toggle to turn on/off print statements
+    report: (bool)
+       returns a dict with information about how well function ran
+
+    returns
+    -----
+    parents: (list of tuples)
+       each element in parents is a tuple of (node_id, mask_for_node)
+    children: (list of tuples)
+       same structure as parents.
+
+    [status report]: (dict)
+       optional dictionary with values showing how well function ran.
+    """
+
+    if verbose:
+        print('parents:{p}'.format(p=parents))
+        print('children:{c}'.format(c=children))
+
+
+    # grab outline data
+    outlines = {}
+    not_none = []
+    for p in parents:
+        o = grab_outline(p[0], graph, experiment, first=False)
+        outlines[p] = o
+        if o:
+            not_none.append(p)
+    for c in children:
+        o = grab_outline(c[0], graph, experiment, first=True)
+        outlines[c] = o
+        if o:
+            not_none.append(p)
+
+    outline_list = [outlines[i] for i in not_none]
+    if not non_none:
+        raise CollisionException
+
+    # align outline masks
+    mask_dict = {}
+    masks, bbox = points_to_aligned_matrix(outline_list)
+    for node, mask in zip(not_none, masks):
+        mask_dict[node] = mask
+
+    parent_data = [(p, mask_dict.get(p, None)) for p in parents]
+    child_data = [(c, mask_dict.get(c, None)) for c in children]
+
+    status_report = {'parent_count': len(parents),
+                     'child_count': len(children),
+                     'mask_count': len(non_none)}
+    if report:
+        return parent_data, child_data, status_report
+    else:
+        return parent_data, child_data
+
+
+def generalized_compare_masks(parents, children, err_margin=10, verbose=False):
+    """
+    returns a list of [parent, child] matches that maximize the
+    amount of pixel overlap between parents and children.
+
+    The winning matchup must have > err_margin pixels overlapping
+    to be counted as a match. If this is not met, return empty list.
+
+    if the number of overlapping pixes for (1) > (2) + err_margin,
+    then (1) is the output.
+
+    params
+    -----
+    parents: (list of tuples)
+       Each element in parents is a (node_id, mask_for_node) tuple.
+       This list must contain only two parents.
+    children: (list of tuples)
+       same structure as parents.
+    err_margin: (int)
+       number of pixels a match-up must exceed the other to be legit.
+    verbose: (bool)
+       a toggle to turn on/off print statements
+
+    returns
+    -----
+    parent_child_matches: (list of lists)
+       each element in the list contains a [parent, child] match as
+       determined by the best set of overlapping
+    """
+    none_overlap_value = 0
+    p_nodes, _ = zip(*parents)
+    c_nodes, _ = zip(*children)
+    comparison = pd.DataFrame(index=p_nodes, columns=c_nodes) if verbose else None
+    for i, (p, p_mask) in enumerate(parents):
+        for j, (c, c_mask) in enumerate(children):
+            if p_mask is None or c_mask is None:
+                overlap = none_overlap_value
+            else:
+                overlap = (p_mask & c_mask).sum()
+            comparison.loc[p, c] = overlap
+
+    def parent_child_match(comparison):
+        scores = []
+        n_worms = len(comparison)
+        c_nodes = comparison.columns
+        c_shuffle = list(itertools.permutations(c_nodes, n_worms))
+        i = np.identify(n_worms)
+        for c_order in c_shuffle:
+            df = comparison[list(c_order)] * i
+            scores.append(df.sum().sum())
+        scores = np.array(scores)
+        rank = np.argsort(scores)[::-1]
+        best_score = scores[rank[0]]
+        second_best = scores[rank[1]]
+        best_solution = list(zip(p_nodes, c_shuffle[rank[0]]))
+        return best_score, second_best, best_solution
+
+    def parent_child_mismatch(comparison):
+        h, w = comparison.shape
+        transpose = w > h
+        if transpose:
+            comparison = comparison.T
+        # TODO:
+        # 1. create comparison
+        best_scores = []
+        second_best_scores = []
+        solutions = []
+        for c in c_shuffle:
+            d = pd.DataFrame(index=df.index)
+            d[c[-1]] = df[c[-1]]
+            d[(c[0], c[1])] = df[c[0]] + df[c[1]]
+            bs, sb, sol = parent_child_match(d)
+            best_scores,
+
+        if transpose:
+            comparison = comparison.T
+
+        return best_score, second_best, best_solution
+
+
+    # if simple solution if parents and children in same
+    if len(p_nodes) == len(c_nodes):
+        best_score, second_best, best_solution = parent_child_match(comparison)
+        # scores = []
+        # n_worms = len(c_nodes)
+        # c_shuffle = list(itertools.permutations(c_nodes, n_worms))
+        # i = np.identify(n_worms)
+        # for c_order in c_shuffle:
+        #     # sum along the diagnal
+        #     df = comparison[list(c_order)] * i
+        #     scores.append(df.sum().sum())
+        # scores = np.array(scores)
+        # rank = np.argsort(scores)[::-1]
+        # best_score = scores[rank[0]]
+        # second_best = scores[rank[1]]
+        # best_solution = list(zip(p_nodes, c_shuffle[rank[0]]))
+
+    else:
+        best_score, second_best, best_solution = parent_child_mismatch(comparison)
+
+    best_score = max(scores)
+    if best_score < err_margin:
+        return [], 'no-overlap'
+    elif best_score < second_best + err_margin:
+        return [], 'close'
+    else:
+        return best_solution, 'success'
+
+
 def compare_masks(parents, children, err_margin=10, verbose=False):
     """
     returns a list of [parent, child] matches that maximize the
@@ -254,6 +438,8 @@ def resolve_collisions(graph, experiment, collision_nodes):
         else:
             result_report['no_overlap'].append(node)
     return result_report
+
+
 
 def untangle_collision(graph, collision_node, collision_result):
     """
