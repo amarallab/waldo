@@ -1,37 +1,30 @@
 import os
 import sys
-from glob import glob
 import pickle
 import itertools
-
-import pandas as pd
-import numpy as np
-import networkx as nx
-
-import matplotlib.pyplot as plt
-import prettyplotlib as ppl
-from statsmodels.distributions.empirical_distribution import ECDF
-
-import setpath
 import pickle
 import glob
+import pandas as pd
+import numpy as np
+
+
+import setpath
 os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
-
 from conf import settings
-from wio import Experiment
+#from wio import Experiment
 
-import collider
-import wio.file_manager as fm
-import report_card
+#import collider
+#import wio.file_manager as fm
+
 DATA_DIR = settings.LOGISTICS['filesystem_data']
 CHORE_DIR = os.path.abspath('./../data/chore/')
 print DATA_DIR
 
 
 def get_graph(graph_pickle_name):
-
     print graph_pickle_name
     if not os.path.exists(graph_pickle_name):
+        import report_card
         print 'calculating graph'
         graph2, report_df = report_card.collision_iteration2(experiment, graph)
         pickle.dump(graph2, open(graph_pickle_name, 'w'))
@@ -41,9 +34,22 @@ def get_graph(graph_pickle_name):
     return graph2
 
 
-def write_blob_file(bid, n, basename, blob_data):
-    # TODO write this thing
-    pass
+def write_blob_file(graph, experiment, basename='chore'):
+    file_management = {}
+    for i, node in enumerate(graph):
+
+        print node
+        node_data = graph.node[node]
+        died_f = node_data['died_f']
+        if died_f not in file_manager:
+            file_manager[died_f] = []
+
+        location = '{f}.{pos}'.format(f=i, pos=0)
+        file_manager[died_f].extend([[node, location]])
+
+        df = consolidate_node_data(graph, experiment, node)
+
+    return file_management
 
 
 def load_summary(ex_dir):
@@ -64,33 +70,46 @@ def load_summary(ex_dir):
     print summary_df.head()
     return basename, summary_df
 
+def create_lost_and_found(graph):
+    lost_and_found = {}
+    for i, node in enumerate(graph):
+        print node
+        node_data = graph.node[node]
+        print node_data
+        successors = list(graph.successors(node))
+        predecessors = list(graph.predecessors(node))
+        s_data = [[node, 0]]
+        p_data = [[0, node]]
+
+        if successors:
+            s_data =[[node, s] for s in successors]
+        if predecessors:
+            p_data = [[p, node] for p in predecessors]
+
+        born_f = node_data['born_f']
+        died_f = node_data['died_f']
+
+        if died_f not in lost_and_found:
+            lost_and_found[died_f] = []
+        if born_f not in lost_and_found:
+            lost_and_found[born_f] = []
+
+        lost_and_found[died_f].extend(s_data)
+        lost_and_found[born_f].extend(p_data)
+    return lost_and_found
+
+
 if __name__ == '__main__':
     ex_id = '20130318_131111'
     chore_dir = os.path.join(CHORE_DIR, ex_id)
     data_dir  = os.path.join(DATA_DIR, ex_id)
     print chore_dir
-
-    experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-    graph = experiment.graph.copy()
+    #experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+    #graph = experiment.graph.copy()
     graph_pickle_name = os.path.join(chore_dir, 'graph.pickle')
-    #graph2 = get_graph(graph_pickle_name)
+    graph2 = get_graph(graph_pickle_name)
+    #basename, summary_df = load_summary(data_dir)
+    basename, summary_df = [], []
+    lost_and_found = create_lost_and_found(graph2)
 
-    basename, summary_df = load_summary(data_dir)
-
-    lost_and_found = {}
-    graph2 = []
-    for i, node in enumerate(graph2):
-        print node
-        node_data = graph.node[node]
-        print node_data
-        successors = graph.successors(node)
-        predecessors = graph.predecessors(node)
-
-        print successors
-        print predecessors
-
-        blob_df = []
-        write_blob_file(bid=node, n=i, basename=basename, blob_data=blob_df)
-
-        if i > 5:
-            break
+    file_management = write_blob_file(basename=basename, blob_data=blob_df)
