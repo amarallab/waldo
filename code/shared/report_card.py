@@ -21,8 +21,6 @@ import wio.file_manager as fm
 
 L = logging.getLogger(__name__)
 
-DATA_DIR = settings.LOGISTICS['filesystem_data']
-
 class ReportCard(object):
 
     def __init__(self, experiment):
@@ -324,8 +322,9 @@ def collision_iteration2(experiment, graph):
         ############### Gaps
         L.warn('Patch Gaps')
         taper = tp.Taper(experiment=experiment, graph=graph)
-        start, end = taper.find_start_and_end_nodes()
-        gaps = taper.score_potential_gaps(start, end)
+        gap_start, gap_end = taper.find_start_and_end_nodes()
+        gaps = taper.score_potential_gaps(gap_start, gap_end)
+        gaps.to_csv('debug_gaps.csv')
         taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
         graph = taper._graph
         graph.validate()
@@ -346,7 +345,7 @@ def collision_iteration2(experiment, graph):
 
 def main2(ex_id = '20130318_131111'):
 
-    experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+    experiment = Experiment(experiment_id=ex_id, data_root=settings.LOGISTICS['filesystem_data'])
     graph = experiment.graph.copy()
 
     report_card = ReportCard(experiment)

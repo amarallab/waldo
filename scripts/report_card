@@ -14,7 +14,7 @@ def create_reports():
 
     for ex_id in ex_ids:
         #try:
-        experiment = wio.Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+        experiment = wio.Experiment(experiment_id=ex_id)
         graph = experiment.graph.copy()
 
         savename = '{eid}-report.csv'.format(eid=ex_id)

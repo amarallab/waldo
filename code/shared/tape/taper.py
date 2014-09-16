@@ -61,91 +61,91 @@ class Taper(object):
         terminals = self._terminals
 
         # go through graph and find all node ids for start/stop canidates
-        start_nodes = [x for x in graph.nodes() if len(graph.predecessors(x)) == 0]
-        stop_nodes = [x for x in graph.nodes() if len(graph.successors(x)) == 0]
+        gap_end_nodes = [x for x in graph.nodes() if len(graph.predecessors(x)) == 0]
+        gap_start_nodes = [x for x in graph.nodes() if len(graph.successors(x)) == 0]
 
         # reformat terminals dataframe.
         terms = terminals.copy()
         terms.reset_index(inplace=True)
         terms = terms[np.isfinite(terms['t0'])] # drop NaN rows
-        term_ids = set(terms['bid']) # get set of all bids with data
         terms.set_index('bid', inplace=True)
         terms['node_id'] = 0
 
         # make sets that contain bids of all components
-        stop_components = []
-        for bid in stop_nodes:
+        gap_start_components = []
+        for bid in gap_start_nodes:
             comps = graph[bid].get('components', [bid])
-            stop_components.extend(comps)
-        stop_components = set(stop_components)
+            gap_start_components.extend(comps)
+        gap_start_components = set(gap_start_components)
 
-        start_components = []
-        for bid in start_nodes:
+        gap_end_components = []
+        for bid in gap_end_nodes:
             comps = graph[bid].get('components', [bid])
-            start_components.extend(comps)
-        start_components = set(start_components)
+            gap_end_components.extend(comps)
+        gap_end_components = set(gap_end_components)
 
         # print(len(term_ids), 'term ids')
-        # print(len(start_components), 'start set')
-        # print(len(stop_components), 'stop set')
-        # print(len(stop_components & start_components), 'start/stop overlap')
+        # print(len(gap_end_components), 'start set')
+        # print(len(gap_start_components), 'stop set')
+        # print(len(gap_start_components & gap_end_components), 'start/stop overlap')
 
-        start_bids = start_components & term_ids
-        stop_bids = stop_components & term_ids
+        term_ids = set(terms.index) # get set of all bids with data
+        gap_end_bids = gap_end_components & term_ids
+        gap_start_bids = gap_start_components & term_ids
 
         # split up terminals dataframe into two smaller ones containing
         # only relevant information.
         terms.reset_index(inplace=True)
-        start_terms = terms.loc[list(start_bids)][['bid', 't0', 'x0', 'y0', 'f0', 'node_id']]
-        end_terms = terms.loc[list(stop_bids)][['bid', 'tN', 'xN', 'yN', 'fN', 'node_id']]
+        gap_end_terms = terms.loc[list(gap_end_bids)][['bid', 't0', 'x0', 'y0', 'f0', 'node_id']]
+        gap_start_terms = terms.loc[list(gap_start_bids)][['bid', 'tN', 'xN', 'yN', 'fN', 'node_id']]
 
-        start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y',
+        gap_end_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y',
                                     'f0':'f'}, inplace=True)
 
-        end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y',
+        gap_start_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y',
                                   'fN':'f'}, inplace=True)
 
         # add in the node_id values into the dataframes
-        for node_id in start_nodes:
+        for node_id in gap_end_nodes:
             comps = graph[node_id].get('components', [node_id])
             for comp in comps:
-                if comp in start_bids:
-                    start_terms['node_id'].loc[comp] = node_id
+                if comp in gap_end_bids:
+                    gap_end_terms['node_id'].loc[comp] = node_id
 
-        for node_id in stop_nodes:
+        for node_id in gap_start_nodes:
             comps = graph[node_id].get('components', [node_id])
             for comp in comps:
-                if comp in stop_bids:
-                    end_terms['node_id'].loc[comp] = node_id
+                if comp in gap_start_bids:
+                    gap_start_terms['node_id'].loc[comp] = node_id
 
         # drop rows with NaN as 't' (most other data will be missing)
-        start_terms = start_terms[np.isfinite(start_terms['t'])]
-        end_terms = end_terms[np.isfinite(end_terms['t'])]
+        gap_end_terms = gap_end_terms[np.isfinite(gap_end_terms['t'])]
+        gap_start_terms = gap_start_terms[np.isfinite(gap_start_terms['t'])]
 
         # print('dropped NaN values')
-        # print(len(start_terms), 'start terms')
-        # print(len(end_terms), 'end terms')
+        # print(len(gap_end_terms), 'start terms')
+        # print(len(gap_start_terms), 'end terms')
 
         # sort nodes using time.
-        start_terms.sort(columns='t', inplace=True)
-        end_terms.sort(columns='t', inplace=True)
+        gap_end_terms.sort(columns='t', inplace=True)
+        gap_start_terms.sort(columns='t', inplace=True)
 
         # drop rows that have duplicate node_ids.
         # for starts, take the first row (lowest time)
-        start_terms.drop_duplicates('node_id', take_last=False,
+        gap_end_terms.drop_duplicates('node_id', take_last=False,
                                     inplace=True)
         # for ends, take the last row (highest time)
-        end_terms.drop_duplicates('node_id', take_last=True,
+        gap_start_terms.drop_duplicates('node_id', take_last=True,
                                   inplace=True)
 
         #print('removed all but one component for node_ids')
-        #print(len(start_terms), 'start terms')
-        #print(len(end_terms), 'end terms')
+        #print(len(gap_end_terms), 'start terms')
+        #print(len(gap_start_terms), 'end terms')
 
-        return start_terms, end_terms
+        return gap_start_terms, gap_end_terms
 
 
-    def score_potential_gaps(self, start_terms, end_terms):
+    def score_potential_gaps(self, gap_start_terms, gap_end_terms):
         """
 
         creates a dataframe with the following columns:
@@ -159,10 +159,10 @@ class Taper(object):
 
         params
         -----
-        start_terms: (pandas DataFrame)
-        end_terms: (pandas DataFrame)
+        gap_start_terms: (pandas DataFrame)
+        gap_end_terms: (pandas DataFrame)
 
-        *start_terms* and *end_terms* must have columns with: node_id, bid,
+        *gap_end_terms* and *gap_start_terms* must have columns with: node_id, bid,
         x, y, t, f
 
         """
@@ -173,20 +173,22 @@ class Taper(object):
 
         buffer = 10
         all_gap_dfs = []
-        #print(end_terms.columns)
+        #print(gap_start_terms.columns)
 
-        start_num = len(start_terms)
-        for row_id, row in end_terms.iterrows():
+        start_num = len(gap_end_terms)
+        for row_id, row in gap_start_terms.iterrows():
             x, y = row['x'], row['y']
             f, t = row['f'], row['t']
             node1, blob1 = row['node_id'], row['bid']
-            #if int(blob1) !=  4879:
-            #    continue
+
             # start narrowing down data frame by time
-            gap_df = start_terms.copy()
-            gap_df['dt'] = start_terms['t'] - t
-            gap_df['df'] = start_terms['f'] - f
-            gap_df = gap_df[(0 < gap_df['df']) & (gap_df['df'] <= settings.TAPE_FRAME_SEARCH_LIMIT)]
+            gap_df = gap_end_terms.copy()
+            gap_df['dt'] = gap_end_terms['t'] - t
+            gap_df['df'] = gap_end_terms['f'] - f
+            gap_df = gap_df[
+                    (0 < gap_df['df']) &
+                    (gap_df['df'] <= settings.TAPE_FRAME_SEARCH_LIMIT)
+                ]
 
             # stop doing calculations if no canidates
             if not len(gap_df):
