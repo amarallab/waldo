@@ -7,7 +7,11 @@ from __future__ import (
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
+import logging
+
 from ..util import frame_filter
+
+L = logging.getLogger(__name__)
 
 __all__ = [
     'remove_single_descendents',
@@ -74,6 +78,6 @@ def remove_offshoots(digraph, threshold):
         # add to components of parent then remove node
         parent = digraph.predecessors(node)[0]
 
-        digraph.condense_nodes(parent, node)
+        digraph.condense_nodes(parent, node, skip_life_recalc=True)
 
     # graph is modified in-place

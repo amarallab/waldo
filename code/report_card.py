@@ -1,8 +1,10 @@
+#!/usr/bin/env python
 import os
 import sys
 from glob import glob
 import pickle
 import itertools
+import logging
 
 import pandas as pd
 import numpy as np
@@ -13,13 +15,15 @@ import prettyplotlib as ppl
 from statsmodels.distributions.empirical_distribution import ECDF
 
 import setpath
-os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
+os.environ.setdefault('WALDO_SETTINGS', 'settings')
 
 from conf import settings
 from wio import Experiment
 import tape.taper as tp
 import collider
 import wio.file_manager as fm
+
+L = logging.getLogger(__name__)
 
 DATA_DIR = settings.LOGISTICS['filesystem_data']
 
@@ -227,7 +231,7 @@ def collision_iteration(experiment, graph):
 
     ############### Simplify
     for i in range(6):
-        print('iteration', i+1)
+        print 'iteration {}'.format(i + 1)
         ############### Simplify
         #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
         collider.assimilate(graph, max_threshold=10)
@@ -276,9 +280,10 @@ def collision_iteration2(experiment, graph):
     report_card.add_step(graph, 'blank')
 
     ############### Simplify
+    last_graph = None
     for i in range(6):
-        print('iteration', i+1)
-
+        L.warn('Iteration {}'.format(i + 1))
+        graph.validate()
         ############### Cut Worms
         # candidates = collider.find_potential_cut_worms(graph, experiment,
         #                                                max_first_last_distance=40, max_sibling_distance=50, debug=False)
@@ -288,33 +293,56 @@ def collision_iteration2(experiment, graph):
 
         ############### Collisions
         n = collision_suite(experiment, graph)
+        graph.validate()
         report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
 
         ############### Simplify
-        print 'collapse group'
+        L.warn('Collapse Group')
         collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+        graph.validate()
         #collider.assimilate(graph, max_threshold=10)
-        print 'remove single desc'
+
+        L.warn('Remove Single Descendents')
         collider.remove_single_descendents(graph)
-        print 'fission fusion'
+        graph.validate()
+
+        L.warn('Remove Fission-Fusion')
         collider.remove_fission_fusion(graph)
-        print 'fission fusion rel'
+        graph.validate()
+
+        L.warn('Remove Fission-Fusion (relative)')
         collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-        print 'off'
+        graph.validate()
+
+        L.warn('Remove Offshoots')
         collider.remove_offshoots(graph, threshold=20)
-        print 'rem single desc'
+        graph.validate()
+
+        L.warn('Remove Single Descendents')
         collider.remove_single_descendents(graph)
+        graph.validate()
+
         report_card.add_step(graph, 'simplify')
 
         ############### Gaps
-
+        L.warn('Patch Gaps')
         taper = tp.Taper(experiment=experiment, graph=graph)
         start, end = taper.find_start_and_end_nodes()
         gaps = taper.score_potential_gaps(start, end)
         taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
         graph = taper._graph
+        graph.validate()
         report_card.add_step(graph, 'gaps')
+
+        if (last_graph is not None and
+                set(last_graph.nodes()) == set(graph.nodes()) and
+                set(last_graph.edges()) == set(graph.edges())
+                ):
+            L.warn('No change since last iteration, halting')
+            break
+
+        last_graph = graph.copy()
 
     report_df = report_card.report(show=True)
     return graph, report_df
@@ -603,14 +631,14 @@ def summarize_loss_report(df):
     return report_summary
 
 def create_reports():
-    ex_ids = ['20130318_131111',
-              '20130614_120518',
-              '20130614_120518',
-              '20130702_135704']
-    #'20130702_135704'
+    ex_ids = [
+        #'20130318_131111',
+        #'20130614_120518',
+        #'20130614_120518',
+        '20130702_135704',
+    ]
 
-
-    for ex_id in ex_ids[-1:]:
+    for ex_id in ex_ids:
         #try:
         experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
         graph = experiment.graph.copy()

@@ -7,7 +7,19 @@ from __future__ import (
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
+import logging
+
 import networkx as nx
+
+from conf import settings
+
+if settings.DEBUG:
+    import inspect
+    import pickle
+    import random
+    import string
+
+L = logging.getLogger(__name__)
 
 class ColliderGraph(nx.DiGraph):
     def __init__(self, *args, **kwargs):
@@ -24,7 +36,16 @@ class ColliderGraph(nx.DiGraph):
     def where_is(self, bid):
         return self._whereis_data.get(bid, bid)
 
-    def condense_nodes(self, node, *other_nodes):
+    def _debug_dump(self):
+        if not settings.DEBUG:
+            raise RuntimeError("cannot run without DEBUG being set")
+
+        word = ''.join(random.choice(string.lowercase) for _ in range(10))
+        fname = 'graph_{}.pkl'.format(word)
+        pickle.dump(self, fname)
+        L.error('Dumped graph to {}'.format(fname))
+
+    def condense_nodes(self, node, *other_nodes, **kwargs):
         """
         Incorporate all nodes in *other_nodes* into *node* in-place.
 
@@ -35,46 +56,69 @@ class ColliderGraph(nx.DiGraph):
         slightly special, it will be created as a 1-element set with the
         node's name if non-existent.
 
-        Edges that *other_nodes* had will be taken by *node*, excepting those to
+        Edges that *other_nodes* had will be taken by *node*, except those to
         *node* to prevent self-loops.
+
+        If *skip_life_recalc* is True, born/died times on *node* will not be
+        changed. Use with care.
         """
-        node_data = self.node[node]
+        skip_life_recalc = kwargs.get('skip_life_recalc', False)
+        nd = self.node[node]
+        L.debug('Node {} incorporating {}'.format(
+                node, ', '.join(str(x) for x in other_nodes)))
 
-        # keep track of lifespans to check if we are removing long tracks
-        orig_lifespan = round(self.lifespan_t(node), ndigits=2)
-        lifespan_log = {}
-        born_log, died_log = {}, {}
+        subg = self.subgraph((node,) + other_nodes)
+        if nx.number_connected_components(subg.to_undirected()) != 1:
+            raise ValueError('Attempting to merge unconnected nodes.')
 
-        born_log[node]= round(node_data['born_t'], ndigits=2)
-        died_log[node]= round(node_data['died_t'], ndigits=2)
+        # for a, b in subg.edges_iter():
+        #     if subg.node[a]['died_f'] != subg.node[b]['born_f'] - 1:
+        #         raise ValueError('Non-concurrnet')
 
-        #print('condensing', node, node_data)
-        if 'components' not in node_data:
-            node_data['components'] = set([node])
+        #####
+        if settings.DEBUG:
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            L.debug('Requestor function: {}'.format(calframe[1][3]))
 
+            lifespans = {n: self.lifespan_f(n) for n in other_nodes}
+            orig_lifespan = self.lifespan_f(node)
+
+            births = {n: self.node[n]['born_f'] for n in other_nodes}
+            deaths = {n: self.node[n]['died_f'] for n in other_nodes}
+
+            births[node] = nd['born_f']
+            deaths[node] = nd['died_f']
+
+            orig_graph = self.copy()
+
+        #####
+
+        if 'components' not in nd:
+            nd['components'] = set([node])
 
         for other_node in other_nodes:
             other_data = self.node[other_node]
 
-            lifespan_log[other_node]= self.lifespan_t(other_node)
-            born_log[other_node]= other_data['born_t']
-            died_log[other_node]= other_data['died_t']
-
             # abscond with born/died
-            node_data['born_f'] = min(node_data['born_f'], other_data.pop('born_f'))
-            node_data['died_f'] = max(node_data['died_f'], other_data.pop('died_f'))
+            if not skip_life_recalc:
+                nd['born_f'] = min(nd['born_f'], other_data.pop('born_f'))
+                nd['died_f'] = max(nd['died_f'], other_data.pop('died_f'))
 
-            node_data['born_t'] = min(node_data['born_t'], other_data.pop('born_t'))
-            node_data['died_t'] = max(node_data['died_t'], other_data.pop('died_t'))
+                nd['born_t'] = min(nd['born_t'], other_data.pop('born_t'))
+                nd['died_t'] = max(nd['died_t'], other_data.pop('died_t'))
+            else:
+                for key in ('born_f', 'died_f', 'born_t', 'died_t'):
+                    del other_data[key]
 
             # combine set/mapping data
-            node_data['components'].update(
+            nd['components'].update(
                     other_data.pop('components', set([other_node])))
             for k, v in six.iteritems(other_data):
-                if k in node_data:
-                    node_data[k].update(v)
+                if k in nd:
+                    nd[k].update(v)
                 else:
-                    node_data[k] = v
+                    nd[k] = v
 
             # transfer edges
             self.add_edges_from(
@@ -91,64 +135,84 @@ class ColliderGraph(nx.DiGraph):
             # remove node
             self.remove_node(other_node)
 
-        final_lifespan = self.lifespan_t(node)
+        # update what's where
+        for component in nd['components']:
+            self._whereis_data[component] = node
 
-        longer_lifespans = [] #l for l in lifespan_log.values() if l > 60 * 20]
-        no_lifespan_extentions = [] #l for l in lifespan_log.values() if l > final_lifespan]
-        for n, life in lifespan_log.iteritems():
-            if life > 60 * 20 and life + orig_lifespan > final_lifespan:
-                longer_lifespans.append(n)
-            if life > final_lifespan:
-                no_lifespan_extentions.append(n)
+        #####
+        if settings.DEBUG:
+            final_lifespan = self.lifespan_f(node)
 
-        if len(longer_lifespans) or len(no_lifespan_extentions):
+            longer_lifespans = []
+            no_lifespan_extentions = []
+            for n, life in lifespans.iteritems():
+                if life > 60 * 20 * 15 and life + orig_lifespan > final_lifespan:
+                    longer_lifespans.append(n)
+                if life > final_lifespan:
+                    no_lifespan_extentions.append(n)
+
             if longer_lifespans:
-                print('blob {id} merging with {n} other nodes'.format(id=int(node), n=len(other_nodes)))
+                L.warn('Requestor function: {}'.format(calframe[1][3]))
+                L.warn('Blob {} merging with {} other nodes'.format(
+                        node, len(other_nodes)))
+                for n in (node,) + other_nodes:
+                    L.warn('Node {:6}, born_f {:6}, died_f {:6}'.format(
+                            int(n), births[n], deaths[n]))
                 l1, l2 = orig_lifespan, final_lifespan
-                print('\tWARNING: {n} blobs with longer lifespans removed'.format(n=len(longer_lifespans)))
-                print('\t{l1}s --> {l2}s. (gain={g}s)'.format(l1=l1, l2=l2, g=l2-l1))
+                L.warn('\tWARNING: {} blobs with longer lifespans removed'.format(
+                        len(longer_lifespans)))
+                L.warn('\t{} fr --> {} fr. (gain={} fr)'.format(l1, l2, l2 - l1))
 
-                #print('\tid, born, died, lifespan')
-                #print('\t', node, born_log[node], died_log[node], orig_lifespan)
-                'lifespan groupings'
                 for n in longer_lifespans:
-                    print('\t {id} | {l} + {l1} = {l2}'.format(id=int(n), l=lifespan_log[n],
-                                                               l1=l1, l2=lifespan_log[n] + l1))
+                    L.warn('\t {} | {} + {} = {}'.format(
+                        int(n), lifespans[n], l1, lifespans[n] + l1))
 
-                print('\t merged node: born {b}-- died {d}'.format(b=node_data['born_t'], d=node_data['died_t']))
-                b1 = born_log[node]
-                d1 = died_log[node]
+                L.warn('\t merged node: born {} -- died {}'.format(
+                        nd['born_f'], nd['died_f']))
+                b1 = births[node]
+                d1 = deaths[node]
                 for n in longer_lifespans:
-                    b, d = born_log[n], died_log[n]
+                    b, d = births[n], deaths[n]
                     if b < b1:
                         overlap = (d - b1)
                         if overlap <0:
                             overlap = 0
-                        print('\t({b}-{d}) and ({b1}-{d1}) | overlap={o}s'.format(b=b, d=d, b1=b1, d1=d1, o=overlap))
+                        L.warn('\t({}-{}) and ({}-{}) | overlap={} fr'.format(
+                                b, d, b1, d1, overlap))
 
                     else:
                         overlap = (d1 - b)
                         if overlap <0:
                             overlap = 0
-                        print('\t({b1}-{d1}) and ({b}-{d}) | overlap={o}s'.format(b=b, d=d, b1=b1, d1=d1, o=overlap))
+                        L.warn('\t({}-{}) and ({}-{}) | overlap={} fr'.format(
+                                b, d, b1, d1, overlap))
 
-            if no_lifespan_extentions:
-                print('WARNING: {n} blobs with lifespans > 20 min'.format(n=len(no_lifespan_extentions)))
-                print(lifespan_log)
-
-        # update what's where
-        for component in node_data['components']:
-            self._whereis_data[component] = node
-
+            elif no_lifespan_extentions:
+                L.warn('WARNING: {} blobs with lifespans > 20 min'.format(
+                        len(no_lifespan_extentions)))
+                L.warn(lifespans)
+        #####
 
     def validate(self):
         """
-        Verify that the graph contains the requisite data
+        Verify that the graph:
+
+        * contains the requisite data attached to each node
+        * contains only causal links
         """
         for node, node_data in self.nodes_iter(data=True):
             for req_key in ['born_f', 'died_f', 'born_t', 'died_t']:
                 if req_key not in node_data:
-                    raise AssertionError("Node {} missing required key '{}'".format(node, req_key))
+                    raise AssertionError("Node {} missing required key '{}'".format(
+                            node, req_key))
+
+        for a, b in self.edges_iter():
+            f_delta = self.node[b]['born_f'] - self.node[a]['died_f']
+            if f_delta < 1:
+                raise AssertionError("Edge from {} to {} is acausal, going "
+                        "back in time {:0.0f} frames".format(a, b, -f_delta))
+
+        L.warn('Validation pass')
 
     def lifespan_f(self, node):
         # +1 because something that was born & died on the same frame exists

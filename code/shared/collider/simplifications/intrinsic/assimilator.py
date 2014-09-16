@@ -8,9 +8,10 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 import logging
-L = logging.getLogger(__name__)
 
 import networkx as nx
+
+L = logging.getLogger(__name__)
 
 __all__ = [
     'assimilate',
@@ -54,6 +55,8 @@ def assimilate(digraph, max_threshold):
 
     Who would get the small node?  Nobody hopefully.
     """
+    L.debug('Begin assimilate method'.format(node))
+
     #digraph.validate()
     methods = {
         'down': {
@@ -79,25 +82,25 @@ def assimilate(digraph, max_threshold):
             if node not in digraph:
                 continue
 
-            L.debug('basis node: {}'.format(node))
+            L.debug('Basis node: {}'.format(node))
             relatives = set(meth['relatives'](node))
             while relatives:
                 rnode = relatives.pop()
-                L.debug('- checking relative {}'.format(rnode))
+                L.debug('Checking relative {}'.format(rnode))
 
                 # check exclusions
                 if digraph.lifespan_f(rnode) > max_threshold:
-                    L.debug(' - lifespan too short'.format(rnode))
+                    L.debug('Abort: lifespan too short'.format(rnode))
                     continue
                 if meth['towards_degree'](rnode) != 1:
-                    L.debug(' - towards degree not 1'.format(rnode))
+                    L.debug('Abort: towards degree not 1'.format(rnode))
                     continue
 
                 # new relatives after condensing
                 relatives.update(meth['relatives'](rnode))
 
                 # assimilate relative
-                L.debug(' - absorbing node {} into {}'.format(rnode, node))
+                L.debug('Success: Absorbing node {} into {}'.format(rnode, node))
                 digraph.condense_nodes(node, rnode)
 
-
+    L.debug('End assimilate method'.format(node))
