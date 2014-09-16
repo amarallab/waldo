@@ -15,6 +15,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import os
 import importlib #2.7+
 import warnings
+import logging.config
 
 from . import defaults
 
@@ -56,9 +57,11 @@ class Settings(object):
         # locally, but will crash when internal code attempts to reference a
         # non-existent attribute (gonna have a bad time).
         if rogue_fields:
-            warnings.warn("Local settings included field(s): {} which have no "
-                    "defaults.  Possible typo?"
+            raise EnvironmentError("Local settings included field(s): {} "
+                    "which have no defaults.  Possible typo?"
                     .format(', '.join("'{}'".format(f) for f in rogue_fields)))
 
 local_settings = os.environ.get(ENVIRONMENT_VARIABLE)
 settings = Settings(local_settings)
+
+logging.config.dictConfig(settings.LOG_CONFIGURATION)
