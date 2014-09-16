@@ -43,6 +43,9 @@ class FingerprintStack(object):
         self.refresh_images()
 
     def refresh_images(self):
+        """
+        stores paths to all png files that belong to a specific worm
+        """
         img_paths = glob(self.worm_dir + '/*_img.png')
         frame_path = [(int(ip.split('/')[-1].split('_')[0]), ip) for ip
                       in img_paths]
@@ -52,6 +55,9 @@ class FingerprintStack(object):
         self.image_paths = [p for (f,p) in frame_path]
 
     def dump(self, frames, plus, minus):
+        """
+        saves an hdf5 file with stack and fingerprint data.
+        """
         #filename = 'fingerprint_stack.h5'
         filename = '{wid}_fingerprint_stack.h5'.format(wid=self.wid)
         filepath = os.path.join(self.base_dir, filename)
@@ -77,6 +83,10 @@ class FingerprintStack(object):
                              compression='lzf')
 
     def load(self):
+        """
+        returns the values for all stack and fingerprint data
+        stored in the hd5f file for this particular worm.
+        """
         filename = '{wid}_fingerprint_stack.h5'.format(wid=self.wid)
         filepath = os.path.join(self.base_dir, filename)
         with h5py.File(filepath, 'r') as f:
@@ -89,6 +99,10 @@ class FingerprintStack(object):
         return frames, plus, minus
 
     def compute_fingerprints(self):
+        """
+        calculate the fingerprint data for all images with known
+        paths.
+        """
         plus_stack = []
         minus_stack = []
         frames = []
@@ -116,66 +130,49 @@ class FingerprintStack(object):
         return frames, plus_3d, minus_3d
 
 
-# def compare_all_frames_same_worm(plus, minus):
-#     l = len(plus)
-#     index = range(l)
-#     plus_dists = np.zeros((l,l))
-#     minus_dists = np.zeros((l,l))
-#     pairs = [p for p in itertools.combinations(index, 2)]
-#     def fp_distance(array1, array2):
-#         dif = np.fabs(array1-array2)
-#         mean_dif = dif.mean()
-#         return dif, mean_dif
-
-#     for pair in pairs:
-#         print pair
-#         p0, p1 = pair
-#         pdif, mean_pdif = fp_distance(plus[p0], plus[p1])
-#         plus_dists[p0, p1] = mean_pdif
-#         plus_dists[p1, p0] = mean_pdif
-
-#         mdif, mean_mdif = fp_distance(minus[p0], minus[p1])
-#         minus_dists[p0, p1] = mean_mdif
-#         minus_dists[p1, p0] = mean_mdif
-
-#         if False:
-#             fig, ax = plt.subplots(2,3)
-#             ax[0, 0].imshow(plus[p0])
-#             ax[0, 1].imshow(plus[p1])
-#             ax[0, 2].imshow(pdif)
-#             ax[0,0].set_ylabel('i1 + i2')
-#             ax[0,2].set_title('difference')
-
-#             ax[1, 0].imshow(minus[p0])
-#             ax[1, 1].imshow(minus[p1])
-#             ax[1, 2].imshow(mdif)
-#             ax[1,0].set_ylabel('|i1 - i2|')
-#             plt.show()
-
-#     fig, ax = plt.subplots()
-#     ppl.pcolormesh(fig, ax, plus_dists)
-#     ax.set_title('i1 + i2')
-#     ax.set_xlabel('frame')
-#     ax.set_ylabel('frame')
-
-#     fig, ax = plt.subplots()
-#     ppl.pcolormesh(fig, ax, minus_dists)
-#     ax.set_title('|i1 - i2|')
-#     ax.set_xlabel('frame')
-#     ax.set_ylabel('frame')
-
-#     plt.show()
-#def assign(fingerprint, reference_stacks):
-
 def best_fit(fprint, stack):
+    """
+    returns the minimum distance between one 2d fingerprint array
+    and a stack of reference fingerprints (ie. one 3d np.ndarray
+
+    params
+    -----
+    fprint: (np.ndarray)
+        a 2d np array containing a fingerprint
+    stack: (np.ndarray)
+        a 3d np array containing many fingerprint stacks
+    """
     distances = np.fabs(stack - fprint).mean(axis=1).mean(axis=1)
     min_dist = np.min(distances)
     return min_dist
 
-#plus_reference_stacks = []
-#minus_reference_stacks = []
 
 def get_data(base_dir):
+    """
+    shorthand function to split all worms into test and reference
+    stacks for plus and minus fingerprints.
+
+    params
+    -----
+    base_dir: (str)
+        the path to where all the fingerprint hdf5 files are saved.
+
+    returns
+    ------
+
+    wids: (list)
+         list of worm ids in the same order as they are arranged in all
+        other outputs
+    reference_p: (list of np.ndarrays)
+        list of all reference np.ndarrays for plus pixel intensity
+    reference_m: (list of np.ndarrays)
+        list of all reference np.ndarrays for minus pixel intensity
+    reference_p: (list of np.ndarrays)
+        list of all test np.ndarrays for plus pixel intensity
+    reference_m: (list of np.ndarrays)
+        list of all test np.ndarrays for minus pixel intensity
+    """
+
     print os.path.isdir(base_dir)
     #wormdirs = glob(base_dir + '/worm_*')
     fingerprint_stacks = glob(base_dir + '/*_finger*')
@@ -209,6 +206,20 @@ def get_data(base_dir):
 
 
 def test_distances(test_stack, reference_stacks):
+    """
+    returns dataframe with the minimum distances between each row
+    of the test_stack and every stack in the reference stacks.
+
+    params
+    -----
+    test_stack: (np.ndarray)
+        a single np.ndarray containing all fingerprints that should
+        be compared against each of the reference stacks.
+
+    reference_stacks: (list of np.ndarrays)
+          all reference np.ndarrays (image num, x, y) that should
+          be compared against
+    """
     min_dists = np.zeros((len(test_stack), len(reference_stacks)), dtype=float)
     for i, p in enumerate(test_stack):
         for j, stack in enumerate(reference_stacks):
@@ -216,12 +227,19 @@ def test_distances(test_stack, reference_stacks):
     df = pd.DataFrame(min_dists, columns= wids)
     return df
 
-############## Code starts here.
-# load all data.
 
+
+
+############## Code starts here. ##############
+
+# load all data.
 wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
 
+print reference_p[0].shape
+
+
 for test_num, test_worm in enumerate(wids):
+
     print 'testing', test_worm
 
     savename_p = '{wid}_dists_plus.csv'.format(wid=test_worm)
@@ -230,6 +248,8 @@ for test_num, test_worm in enumerate(wids):
     print savename_p
 
     df = test_distances(test_stack=test_p[test_num], reference_stacks=reference_p)
+    print df
+    break
     df.to_csv(savename_p)
 
     order = np.array(df).argsort(axis=1)
