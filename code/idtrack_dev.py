@@ -237,24 +237,27 @@ def test_distances(test_stack, reference_stacks, begin_frame=None, end_frame=Non
 
 ############## Code starts here. ##############
 
-WINDOW_SIZE_LIST = [100, 200, 500]
+WINDOW_SIZE_LIST = [1000, 200, 50]
 
 loop_count = 0
-max_loop_count = 10
+max_loop_count = 20
 
 # load all data.
 wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
 
+results = []
 for window_size in WINDOW_SIZE_LIST:
     print reference_p[0].shape
     for test_num, test_worm in enumerate(wids):
         test_p_stack = test_p[test_num]
         test_m_stack = test_m[test_num]
         frame_count = len(test_p_stack)
+        print "Frame count: ", frame_count
         for begin_frame in range(0, frame_count, window_size):
             end_frame = begin_frame + window_size
 
             if len(test_p_stack[begin_frame:end_frame]) == 0:
+                print "Nooooo", len(test_p_stack)
                 continue
 
             print ':::: Window size: {size}[{begin}:{end}], testing {worm} ::::'.format(size=window_size,
@@ -262,34 +265,49 @@ for window_size in WINDOW_SIZE_LIST:
                                                                                         end=end_frame,
                                                                                         worm=test_worm)
 
-            savename_p = '{wid}_dists_plus.csv'.format(wid=test_worm)
-            savename_m = '{wid}_dists_minus.csv'.format(wid=test_worm)
-            print savename_m
-            print savename_p
-
+            # savename_p = '{wid}_dists_plus.csv'.format(wid=test_worm)
+            # savename_m = '{wid}_dists_minus.csv'.format(wid=test_worm)
+            # print savename_m
+            # print savename_p
+            #
             df = test_distances(test_stack=test_p_stack, reference_stacks=reference_p,
                                 begin_frame=begin_frame, end_frame=end_frame)
 
-            df.to_csv(savename_p)
+            # df.to_csv(savename_p)
 
             order = np.array(df).argsort(axis=1)
-            accuracy = float((order[:, 0] == test_num).sum()) / len(order)
-            print 'worm: {worm} PLUS, acc: {acc}%'.format(worm=test_worm, acc=round(accuracy * 100.0, ndigits=2))
+            acc_p = float((order[:, 0] == test_num).sum()) / len(order)
+            print 'worm: {worm} PLUS, acc: {acc}%'.format(worm=test_worm, acc=round(acc_p * 100.0, ndigits=2))
             # print df
 
             df = test_distances(test_stack=test_m_stack, reference_stacks=reference_m,
                                 begin_frame=begin_frame, end_frame=end_frame)
 
-            df.to_csv(savename_m)
+            # df.to_csv(savename_m)
             order = np.array(df).argsort(axis=1)
-            accuracy = float((order[:, 0] == test_num).sum()) / len(order)
+            acc_m = float((order[:, 0] == test_num).sum()) / len(order)
 
-            print 'worm: {worm} MINUS, acc: {acc}%'.format(worm=test_worm, acc=round(accuracy * 100.0, ndigits=2))
+            print 'worm: {worm} MINUS, acc: {acc}%'.format(worm=test_worm, acc=round(acc_m * 100.0, ndigits=2))
             # print df
+
+            # row = {'window_size': window_size,
+            #        'begin_frame': begin_frame,
+            #        'end_frame': end_frame,
+            #        'wid': test_worm,
+            #        'acc_p': acc_p,
+            #        'acc_m': acc_m}
+            results.append([window_size, begin_frame, end_frame, test_worm, acc_p, acc_m])
 
             loop_count += 1
             if loop_count >= max_loop_count:
-                sys.exit(0)
+                break
+        if loop_count >= max_loop_count:
+            break
+    if loop_count >= max_loop_count:
+        break
+
+results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'wid', 'acc_p', 'acc_m'))
+results_df.to_csv('acc_window_size_results.csv')
 
             # fig, ax = plt.subplots()
             # for l, w in zip(wids, worm_dists):
