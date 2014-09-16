@@ -14,7 +14,7 @@ from conf import settings
 import images.worm_finder as wf
 import wio.file_manager as fm
 import prettyplotlib as ppl
-import fingerprint.fingerprint as fp
+#import fingerprint.fingerprint as fp
 
 CUTOUT_DIR = 'home/projects/worm_movement/Data/cutouts/'
 base_dir = '/home/projects/worm_movement/Data/cutouts/20130702_135704'
@@ -130,7 +130,7 @@ class FingerprintStack(object):
         return frames, plus_3d, minus_3d
 
 
-def best_fit(fprint, stack):
+def best_fit(fprint, stack, begin_frame, end_frame):
     """
     returns the minimum distance between one 2d fingerprint array
     and a stack of reference fingerprints (ie. one 3d np.ndarray
@@ -142,7 +142,11 @@ def best_fit(fprint, stack):
     stack: (np.ndarray)
         a 3d np array containing many fingerprint stacks
     """
-    distances = np.fabs(stack - fprint).mean(axis=1).mean(axis=1)
+    values = np.fabs(stack[begin_frame:end_frame, :, :] - fprint)
+    if len(values) == 0:
+        return -1
+
+    distances = values.mean(axis=1).mean(axis=1)
     min_dist = np.min(distances)
     return min_dist
 
@@ -205,7 +209,7 @@ def get_data(base_dir):
 
 
 
-def test_distances(test_stack, reference_stacks):
+def test_distances(test_stack, reference_stacks, begin_frame=None, end_frame=None):
     """
     returns dataframe with the minimum distances between each row
     of the test_stack and every stack in the reference stacks.
@@ -220,11 +224,12 @@ def test_distances(test_stack, reference_stacks):
           all reference np.ndarrays (image num, x, y) that should
           be compared against
     """
-    min_dists = np.zeros((len(test_stack), len(reference_stacks)), dtype=float)
-    for i, p in enumerate(test_stack):
+    eff_test_stack = test_stack[begin_frame:end_frame]
+    min_dists = np.zeros((len(eff_test_stack), len(reference_stacks)), dtype=float)
+    for i, p in enumerate(eff_test_stack):
         for j, stack in enumerate(reference_stacks):
-            min_dists[i, j] = best_fit(p, stack)
-    df = pd.DataFrame(min_dists, columns= wids)
+            min_dists[i, j] = best_fit(p, stack, begin_frame, end_frame)
+    df = pd.DataFrame(min_dists, columns=wids)
     return df
 
 
@@ -232,48 +237,70 @@ def test_distances(test_stack, reference_stacks):
 
 ############## Code starts here. ##############
 
+WINDOW_SIZE_LIST = [100, 200, 500]
+
+loop_count = 0
+max_loop_count = 10
+
 # load all data.
 wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
 
-print reference_p[0].shape
+for window_size in WINDOW_SIZE_LIST:
+    print reference_p[0].shape
+    for test_num, test_worm in enumerate(wids):
+        test_p_stack = test_p[test_num]
+        test_m_stack = test_m[test_num]
+        frame_count = len(test_p_stack)
+        for begin_frame in range(0, frame_count, window_size):
+            end_frame = begin_frame + window_size
 
+            if len(test_p_stack[begin_frame:end_frame]) == 0:
+                continue
 
-for test_num, test_worm in enumerate(wids):
+            print ':::: Window size: {size}[{begin}:{end}], testing {worm} ::::'.format(size=window_size,
+                                                                                        begin=begin_frame,
+                                                                                        end=end_frame,
+                                                                                        worm=test_worm)
 
-    print 'testing', test_worm
+            savename_p = '{wid}_dists_plus.csv'.format(wid=test_worm)
+            savename_m = '{wid}_dists_minus.csv'.format(wid=test_worm)
+            print savename_m
+            print savename_p
 
-    savename_p = '{wid}_dists_plus.csv'.format(wid=test_worm)
-    savename_m = '{wid}_dists_minus.csv'.format(wid=test_worm)
-    print savename_m
-    print savename_p
+            df = test_distances(test_stack=test_p_stack, reference_stacks=reference_p,
+                                begin_frame=begin_frame, end_frame=end_frame)
 
-    df = test_distances(test_stack=test_p[test_num], reference_stacks=reference_p)
-    print df
-    break
-    df.to_csv(savename_p)
+            df.to_csv(savename_p)
 
-    order = np.array(df).argsort(axis=1)
-    accuracy = float((order[: ,0] == test_num).sum()) / len(order)
-    print test_worm, 'plus', round(accuracy, ndigits=2), '%'
+            order = np.array(df).argsort(axis=1)
+            accuracy = float((order[:, 0] == test_num).sum()) / len(order)
+            print 'worm: {worm} PLUS, acc: {acc}%'.format(worm=test_worm, acc=round(accuracy * 100.0, ndigits=2))
+            # print df
 
+            df = test_distances(test_stack=test_m_stack, reference_stacks=reference_m,
+                                begin_frame=begin_frame, end_frame=end_frame)
 
-    df = test_distances(test_stack=test_m[test_num], reference_stacks=reference_m)
+            df.to_csv(savename_m)
+            order = np.array(df).argsort(axis=1)
+            accuracy = float((order[:, 0] == test_num).sum()) / len(order)
 
-    df.to_csv(savename_m)
-    order = np.array(df).argsort(axis=1)
-    accuracy = float((order[: ,0] == test_num).sum()) / len(order)
+            print 'worm: {worm} MINUS, acc: {acc}%'.format(worm=test_worm, acc=round(accuracy * 100.0, ndigits=2))
+            # print df
 
-    print test_worm, 'minus', round(accuracy, ndigits=2), '%'
+            loop_count += 1
+            if loop_count >= max_loop_count:
+                sys.exit(0)
 
-    # fig, ax = plt.subplots()
-    # for l, w in zip(wids, worm_dists):
-    #     if w != test_worm:
-    #         ppl.plot(ax, w, label=l, alpha=0.5)
-    #     else:
-    #         ppl.plot(ax, w, label=l, alpha=0.5)
+            # fig, ax = plt.subplots()
+            # for l, w in zip(wids, worm_dists):
+            #     if w != test_worm:
+            #         ppl.plot(ax, w, label=l, alpha=0.5)
+            #     else:
+            #         ppl.plot(ax, w, label=l, alpha=0.5)
 
-    # title = test_worm + ' ' + str(accuracy) + '% correct'
-    # ax.set_title(title)
-    # ax.legend()
-    # #plt.show()
-    # plt.savefig(test_worm + '_id_test.png')
+            # title = test_worm + ' ' + str(accuracy) + '% correct'
+            # ax.set_title(title)
+            # ax.legend()
+            # #plt.show()
+            # plt.savefig(test_worm + '_id_test.png')
+
