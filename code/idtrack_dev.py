@@ -6,6 +6,8 @@ import prettyplotlib as ppl
 import matplotlib.pyplot as plt
 from glob import glob
 import h5py
+import collections
+
 import itertools
 import setpath
 os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
@@ -252,12 +254,11 @@ for window_size in WINDOW_SIZE_LIST:
         test_p_stack = test_p[test_num]
         test_m_stack = test_m[test_num]
         frame_count = len(test_p_stack)
-        print "Frame count: ", frame_count
         for begin_frame in range(0, frame_count, window_size):
             end_frame = begin_frame + window_size
 
-            if len(test_p_stack[begin_frame:end_frame]) == 0:
-                print "Nooooo", len(test_p_stack)
+            current_frame_count = len(test_p_stack[begin_frame:end_frame])
+            if current_frame_count == 0:
                 continue
 
             print ':::: Window size: {size}[{begin}:{end}], testing {worm} ::::'.format(size=window_size,
@@ -286,6 +287,10 @@ for window_size in WINDOW_SIZE_LIST:
             # df.to_csv(savename_m)
             order = np.array(df).argsort(axis=1)
             acc_m = float((order[:, 0] == test_num).sum()) / len(order)
+            best, _ = collections.Counter(order[:, 0]).most_common()[0]
+
+            print "Order: ", order[:, 0]
+            print "Best: ", best
 
             print 'worm: {worm} MINUS, acc: {acc}%'.format(worm=test_worm, acc=round(acc_m * 100.0, ndigits=2))
             # print df
@@ -296,7 +301,7 @@ for window_size in WINDOW_SIZE_LIST:
             #        'wid': test_worm,
             #        'acc_p': acc_p,
             #        'acc_m': acc_m}
-            results.append([window_size, begin_frame, end_frame, test_worm, acc_p, acc_m])
+            results.append([window_size, begin_frame, end_frame, current_frame_count, test_worm, acc_p, acc_m, wids[best]])
 
             loop_count += 1
             if loop_count >= max_loop_count:
@@ -306,7 +311,7 @@ for window_size in WINDOW_SIZE_LIST:
     if loop_count >= max_loop_count:
         break
 
-results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'wid', 'acc_p', 'acc_m'))
+results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best'))
 results_df.to_csv('acc_window_size_results.csv')
 
             # fig, ax = plt.subplots()
