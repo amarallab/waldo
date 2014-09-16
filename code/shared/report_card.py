@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import os
 import sys
 from glob import glob
@@ -13,8 +12,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import prettyplotlib as ppl
 from statsmodels.distributions.empirical_distribution import ECDF
-
-import pathcustomize
 
 from conf import settings
 from wio import Experiment
@@ -628,47 +625,3 @@ def summarize_loss_report(df):
     report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
     print report_summary
     return report_summary
-
-def create_reports():
-    ex_ids = [
-        #'20130318_131111',
-        #'20130614_120518',
-        #'20130614_120518',
-        '20130702_135704',
-    ]
-
-    for ex_id in ex_ids:
-        #try:
-        experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-        graph = experiment.graph.copy()
-
-        savename = '{eid}-report.csv'.format(eid=ex_id)
-        #graph1, df = create_report_card(experiment, graph.copy())
-        #experiment, graph, report_df = main2(ex_id)
-        graph2, report_df = collision_iteration2(experiment, graph)
-        report_df.to_csv(savename)
-
-        starts, ends = determine_lost_and_found_causes(experiment, graph2)
-
-        starts_name = '{eid}-starts.csv'.format(eid=ex_id)
-        df = summarize_loss_report(starts)
-        df.to_csv(starts_name)
-
-        ends_name = '{eid}-ends.csv'.format(eid=ex_id)
-        df = summarize_loss_report(ends)
-        df.to_csv(ends_name)
-        #except Exception as e:
-        #    print ex_id, 'failed due to:'
-        #    print e
-
-
-if __name__ == '__main__':
-    create_reports()
-    #experiment, graph, graph1 = main()
-    #experiment, graph = main2()
-    #determine_lost_and_found_causes(experiment, graph)
-
-    #experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-    #graph = experiment.graph.copy()
-    #collision_iteration2(experiment, graph)
-    #collision_iteration(experiment, graph)
