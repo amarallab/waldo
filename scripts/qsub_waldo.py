@@ -20,6 +20,7 @@ SHARED_DIR = CODE_DIR + '/shared/'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
+import pathcustomize
 # nonstandard imports
 from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, list_ex_ids_with_raw_data

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import sys
 import pickle
@@ -8,8 +9,7 @@ import pandas as pd
 import numpy as np
 
 
-import setpath
-os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
+import pathcustomize
 from conf import settings
 #from wio import Experiment
 

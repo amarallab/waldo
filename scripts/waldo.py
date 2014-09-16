@@ -37,7 +37,7 @@ import json
 import cProfile as profile
 import logging
 
-import setpath
+import pathcustomize
 
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))

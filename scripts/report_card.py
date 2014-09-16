@@ -14,8 +14,7 @@ import matplotlib.pyplot as plt
 import prettyplotlib as ppl
 from statsmodels.distributions.empirical_distribution import ECDF
 
-import setpath
-os.environ.setdefault('WALDO_SETTINGS', 'settings')
+import pathcustomize
 
 from conf import settings
 from wio import Experiment

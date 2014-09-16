@@ -8,11 +8,6 @@ else:
 #MWT_DATA_ROOT = pathlib.Path() / '..' / 'Waldo' / 'data' / 'mwt'
 
 try:
-    from multiworm_local import *
-except ImportError:
-    pass
-
-try:
     from waldo_local import *
 except ImportError:
     pass
