@@ -2,6 +2,9 @@ __author__ = 'heltena'
 
 import math
 
+__all__ = [
+    'find_potential_cut_worms',
+]
 
 def dist_2d(c1, c2):
     xc = c1[0] - c2[0]

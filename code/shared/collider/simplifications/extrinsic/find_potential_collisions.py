@@ -4,6 +4,12 @@ import math
 from importing.flags_and_breaks import fit_gaussian
 import numpy as np
 
+__all__ = [
+    'find_bbox_based_collisions',
+    'find_time_based_collisions',
+    'find_area_based_collisions',
+]
+
 def dist_2d(c1, c2):
     xc = c1[0] - c2[0]
     yc = c1[1] - c2[1]
