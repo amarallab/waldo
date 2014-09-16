@@ -33,21 +33,39 @@ def get_graph(graph_pickle_name):
         graph2 = pickle.load(open(graph_pickle_name, 'r'))
     return graph2
 
+def format_number_string(num, ndigits=5):
+    s = str(int(num))
+    for i in range(ndigits):
+        if len(s) < ndigits:
+            s = '0' + s
+    return s
 
 def write_blob_file(graph, experiment, basename='chore'):
     file_management = {}
-    for i, node in enumerate(graph):
+    print basename
+    file_path = os.path.join(CHORE_DIR, basename)
+    print file_path
 
+    for i, node in enumerate(graph):
+        # get save file name in order.
+        node_file = '{p}_{n}k.blobs'.format(p=file_path,
+                                            n=format_number_string(i))
         print node
+        print node_file
+
+        # start storing blob index into file_manager dict.
         node_data = graph.node[node]
         died_f = node_data['died_f']
         if died_f not in file_manager:
             file_manager[died_f] = []
-
         location = '{f}.{pos}'.format(f=i, pos=0)
         file_manager[died_f].extend([[node, location]])
 
+        # pull all blob data
         df = consolidate_node_data(graph, experiment, node)
+
+        #TODO format for print
+        df.to_csv(node_file, delimeter=' ', index=False, header=None)
 
     return file_management
 
@@ -97,6 +115,24 @@ def create_lost_and_found(graph):
         lost_and_found[died_f].extend(s_data)
         lost_and_found[born_f].extend(p_data)
     return lost_and_found
+
+def recreate_summary_file(summary_df, lost_and_found, file_management):
+    summary_df['lost_found'] = ''
+    summary_df['location'] = ''
+
+    for frame, lf in lost_and_found.iteritems():
+        lf_line = '%'
+        for a, b in lf:
+            lf_line = lf_line + ' {a} {b}'.format(a=a, b=b)
+        print frame, lf_line
+
+    for frame, fm in file_management.iteritems():
+        fm_line = '%%'
+        for a, b in fm:
+            fm_line = fm_line + ' {a} {b}'.format(a=a, b=b)
+        print frame, fm_line
+
+    # TODO: add both lines to summary file.
 
 
 if __name__ == '__main__':
