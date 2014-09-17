@@ -293,7 +293,7 @@ def collision_iteration2(experiment, graph):
 
         ############### Simplify
         L.warn('Collapse Group')
-        #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
         graph.validate()
         #collider.assimilate(graph, max_threshold=10)
 
