@@ -58,3 +58,5 @@ db.sqlite3
 # Local settings files (in /scripts and /workbooks)
 settings/waldo_local.py
 settings/multiworm_local.py
+workbooks/report_card_heltena.ipynb
+workbooks/validate_collision_finder.ipynb

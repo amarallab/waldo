@@ -457,8 +457,9 @@ def collision_suite(experiment, graph, verbose=True):
 
         print '\ttrying to unzip collisions'
         collision_nodes = list(dont_bother)
-        collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
-                                 verbose=False, yield_bevahior=False)
+        print(collision_nodes)
+        #collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
+        #                         verbose=False, yield_bevahior=False)
 
     #print 'collisions from time'
     # new_suspects = set(collider.find_area_based_collisions(graph, experiment))

@@ -19,20 +19,38 @@ def collapse_group_of_nodes(graph, max_duration, debug=False):
             current_group = [node]
             last_safe = None
             while len(remain) > 0 and last_died - born < max_duration:
+                remain = sorted(remain, key=lambda x: graph.node[x]['born_t'])
                 current = remain.pop()
                 pred = graph.predecessors(current)
                 if len(set(pred) - set(current_group)) > 0:
                     break
+
                 succ = graph.successors(current)
                 if len(succ) > 0 and current not in current_group:
-                    for s in succ:
-                        if s not in remain and s not in current_group:
-                            remain.append(s)
-                    last_died = max(last_died, graph.node[current]['died_t'])
-                    current_group.append(current)
-                if len(remain) == 1 and len(current_group) > 1 and last_died - born < max_duration:
-                    last_safe = list(current_group)
-                    last_safe.append(remain[0])
+                    tmp_succs = []
+                    for c in current_group:
+                        tmp_succs.extend(graph.successors(c))
+                    tmp_succs = set(tmp_succs) - set(current_group) - set([current])
+                    if len(tmp_succs) > 0:
+                        first_succ_born = min([graph.node[s]['born_t'] for s in tmp_succs])
+                    else:
+                        first_succ_born = None
+
+                    tmp_last_died = max(last_died, graph.node[current]['died_t'])
+                    if first_succ_born is None or first_succ_born > tmp_last_died:
+                        last_died = tmp_last_died
+                        for s in succ:
+                            if s not in remain and s not in current_group:
+                                remain.append(s)
+                        current_group.append(current)
+
+                        if len(remain) == 1 and \
+                                len(current_group) > 1 and \
+                                last_died - born < max_duration:
+                            last_safe = list(current_group)
+                            pred = graph.predecessors(remain[0])
+                            if len(set(pred) - set(last_safe)) == 0:
+                                last_safe.append(remain[0])
             if last_safe is not None:
                 candidates.append(last_safe)
 
