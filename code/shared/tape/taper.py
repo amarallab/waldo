@@ -55,8 +55,7 @@ class Taper(object):
             Dy = lost.yN - found.y0
             Dr = math.sqrt(Dx**2 + Dy**2)
             Df = lost.fN - found.f0
-
-        return self._scorer(Dr, Df)
+        return self._scorer(frame_gap=Df, distance_gap=Dr)
 
     def find_start_and_end_nodes(self):
         graph = self._graph
@@ -175,7 +174,8 @@ class Taper(object):
         """
         def score(row):
             #print(row)
-            s = self._scorer(row['df'], row['dist'])
+            s = self._scorer(frame_gap=row['df'],
+                             distance_gap=row['dist'])
             return s
 
         buffer = 10

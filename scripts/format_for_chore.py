@@ -44,12 +44,15 @@ def format_number_string(num, ndigits=5):
     return s
 
 def write_blob_files(graph, experiment, basename='chore', summary_df=None):
+
+    #all_frames = [int(f) for f in summary_df.index]
+    #sdf = summary_df.reindex(all_frames)
     sdf = summary_df.set_index(0)
 
     file_management = {}
-    print basename
+    #print basename
     file_path = os.path.join(CHORE_DIR, basename)
-    print file_path
+    #print file_path
 
     mashup_history = []
 
@@ -121,23 +124,30 @@ def write_blob_files(graph, experiment, basename='chore', summary_df=None):
         existing_frames = list(compiled_lines['frame'])
         all_frames = np.arange(int(existing_frames[0]), int(existing_frames[-1]) + 1)
         all_frames = [int(i) for i in all_frames]
-
+        #print all_frames[0], type(all_frames[0])
         if len(existing_frames) != len(all_frames):
-            print len(existing_frames), 'existing'
-            print len(all_frames), 'with gaps filled'
-            print compiled_lines.head()
+            #print len(existing_frames), 'existing'
+            #print len(all_frames), 'with gaps filled'
+            #print compiled_lines.head(2)
 
             compiled_lines.set_index('frame', inplace=True)
+            compiled_lines = compiled_lines.reindex(all_frames)
+            #print compiled_lines.head()
+            for f in compiled_lines[compiled_lines['time'].isnull()].index:
+                t = round(sdf.loc[f][1], ndigits=3)
+                #print f, t, 'fill time'
+                compiled_lines['time'].loc[f] = t
+
+
 
             compiled_lines['x'] = compiled_lines['x'].interpolate()
             compiled_lines['y'] = compiled_lines['y'].interpolate()
-            for f in compiled_lines[compiled_lines['time'].isnull()].index:
-                t = round(sdf[1].loc[f], ndigits=3)
-                print f, t, 'fill time'
-                compiled_lines['time'].loc[f] = t
-            cl = compiled_lines.reindex(all_frames).fillna(method='ffill').fillna(method='bfill')
+            for i in range(10, len(compiled_lines.columns)):
+                compiled_lines[i] = compiled_lines[i].fillna(' ')
+
+            cl = compiled_lines.fillna(method='ffill')
             compiled_lines = cl.reset_index()
-            print compiled_lines.head()
+            #print compiled_lines.head()
 
         with open(node_file, 'w') as f:
             f.write('% {n}\n'.format(n=node))
@@ -169,7 +179,10 @@ def load_summary(ex_dir):
     cleaned_lines = []
     for line in lines:
         line = line.split('%')[0]
-        cleaned_lines.append(line.split())
+        parts = line.split()
+        parts[0] = int(parts[0])
+        parts[1] = round(float(parts[1]), ndigits=3)
+        cleaned_lines.append(parts)
     summary_df = pd.DataFrame(cleaned_lines)
     #print summary_df.head()
     return basename, summary_df
@@ -224,7 +237,7 @@ def recreate_summary_file(summary_df, lost_and_found, file_management, basename=
 
     lines = []
     for i, row in summary_df.iterrows():
-        line = ' '.join(row)
+        line = ' '.join(['{i}'.format(i=i) for i in row])
         frame = int(row[0])
         #print frame
         line = line + lf_lines.get(frame, '')
