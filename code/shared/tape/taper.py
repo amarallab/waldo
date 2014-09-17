@@ -10,6 +10,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 # standard library
 import math
+import logging
 
 # third party
 import numpy as np
@@ -18,6 +19,8 @@ import pandas as pd
 # project specific
 from conf import settings
 from .scorer import Scorer
+
+L = logging.getLogger(__name__)
 
 class Taper(object):
     """
@@ -56,33 +59,24 @@ class Taper(object):
         return self._scorer(Dr, Df)
 
     def find_start_and_end_nodes(self):
-
         graph = self._graph
-        terminals = self._terminals
+        terms = self._terminals.copy()
 
         # go through graph and find all node ids for start/stop canidates
-        gap_end_nodes = [x for x in graph.nodes() if len(graph.predecessors(x)) == 0]
         gap_start_nodes = [x for x in graph.nodes() if len(graph.successors(x)) == 0]
+        gap_end_nodes = [x for x in graph.nodes() if len(graph.predecessors(x)) == 0]
 
         # reformat terminals dataframe.
-        terms = terminals.copy()
-        terms.reset_index(inplace=True)
         terms = terms[np.isfinite(terms['t0'])] # drop NaN rows
-        terms.set_index('bid', inplace=True)
-        terms['node_id'] = 0
 
         # make sets that contain bids of all components
-        gap_start_components = []
+        gap_start_components = set()
         for bid in gap_start_nodes:
-            comps = graph[bid].get('components', [bid])
-            gap_start_components.extend(comps)
-        gap_start_components = set(gap_start_components)
+            gap_start_components.update(graph.components(bid))
 
-        gap_end_components = []
+        gap_end_components = set()
         for bid in gap_end_nodes:
-            comps = graph[bid].get('components', [bid])
-            gap_end_components.extend(comps)
-        gap_end_components = set(gap_end_components)
+            gap_end_components.update(graph.components(bid))
 
         # print(len(term_ids), 'term ids')
         # print(len(gap_end_components), 'start set')
@@ -90,64 +84,69 @@ class Taper(object):
         # print(len(gap_start_components & gap_end_components), 'start/stop overlap')
 
         term_ids = set(terms.index) # get set of all bids with data
-        gap_end_bids = gap_end_components & term_ids
         gap_start_bids = gap_start_components & term_ids
+        gap_end_bids = gap_end_components & term_ids
 
         # split up terminals dataframe into two smaller ones containing
         # only relevant information.
-        terms.reset_index(inplace=True)
-        gap_end_terms = terms.loc[list(gap_end_bids)][['bid', 't0', 'x0', 'y0', 'f0', 'node_id']]
-        gap_start_terms = terms.loc[list(gap_start_bids)][['bid', 'tN', 'xN', 'yN', 'fN', 'node_id']]
+        gap_start_terms = terms.loc[list(gap_start_bids)][['tN', 'xN', 'yN', 'fN']]
+        gap_end_terms = terms.loc[list(gap_end_bids)][['t0', 'x0', 'y0', 'f0']]
+        gap_start_terms.index.name = gap_end_terms.index.name = 'bid'
 
-        gap_end_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y',
-                                    'f0':'f'}, inplace=True)
-
-        gap_start_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y',
-                                  'fN':'f'}, inplace=True)
+        gap_start_terms.rename(
+                columns={'tN': 't', 'xN': 'x', 'yN': 'y', 'fN': 'f'},
+                inplace=True)
+        gap_end_terms.rename(
+                columns={'t0': 't', 'x0': 'x', 'y0': 'y', 'f0': 'f'},
+                inplace=True)
 
         # add in the node_id values into the dataframes
+        gap_start_terms['node_id'] = np.nan
+        for node_id in gap_start_nodes:
+            comps = graph.components(node_id)
+            for comp in comps:
+                if comp in gap_start_bids:
+                    gap_start_terms['node_id'].loc[comp] = node_id
+
+        gap_end_terms['node_id'] = np.nan
         for node_id in gap_end_nodes:
             comps = graph[node_id].get('components', [node_id])
             for comp in comps:
                 if comp in gap_end_bids:
                     gap_end_terms['node_id'].loc[comp] = node_id
 
-        for node_id in gap_start_nodes:
-            comps = graph[node_id].get('components', [node_id])
-            for comp in comps:
-                if comp in gap_start_bids:
-                    gap_start_terms['node_id'].loc[comp] = node_id
-
         # drop rows with NaN as 't' (most other data will be missing)
-        gap_end_terms = gap_end_terms[np.isfinite(gap_end_terms['t'])]
         gap_start_terms = gap_start_terms[np.isfinite(gap_start_terms['t'])]
+        gap_end_terms = gap_end_terms[np.isfinite(gap_end_terms['t'])]
 
         # print('dropped NaN values')
         # print(len(gap_end_terms), 'start terms')
         # print(len(gap_start_terms), 'end terms')
 
         # sort nodes using time.
-        gap_end_terms.sort(columns='t', inplace=True)
         gap_start_terms.sort(columns='t', inplace=True)
+        gap_end_terms.sort(columns='t', inplace=True)
 
         # drop rows that have duplicate node_ids.
-        # for starts, take the first row (lowest time)
-        gap_end_terms.drop_duplicates('node_id', take_last=False,
-                                    inplace=True)
-        # for ends, take the last row (highest time)
-        gap_start_terms.drop_duplicates('node_id', take_last=True,
-                                  inplace=True)
+        # for gap starts, take the last row (higce=True)
+        # for gap ends, take the first row (lowehest time)
+        gap_start_terms.drop_duplicates(
+                'node_id', take_last=True, inplace=True)
+        gap_end_terms.drop_duplicates(
+                'node_id', take_last=False, inplace=True)
 
         #print('removed all but one component for node_ids')
         #print(len(gap_end_terms), 'start terms')
         #print(len(gap_start_terms), 'end terms')
 
-        return gap_start_terms, gap_end_terms
+        # clean up after using index
+        gap_start_terms.reset_index(inplace=True)
+        gap_end_terms.reset_index(inplace=True)
 
+        return gap_start_terms, gap_end_terms
 
     def score_potential_gaps(self, gap_start_terms, gap_end_terms):
         """
-
         creates a dataframe with the following columns:
 
         node1, node2, blob1, blob2, dist, dt, df, score
@@ -306,24 +305,15 @@ class Taper(object):
             the list of (node1 --> node2) tuples that were joined.
         """
         gaps = gaps_df.copy()
-        link_list = []
         gaps = gaps[gaps['score'] > threshold]
-        link_list = list(zip(gaps['node1'], gaps['node2']))
+        link_list = zip(gaps['node1'], gaps['node2'])
         if add_edges:
             self._add_taped_edges_to_graph(link_list)
         return link_list
 
     def _add_taped_edges_to_graph(self, link_list):
         """
-        adds edges to the self.digraph. all added edges have a
-        'taped': True attribute.
-
-        params
-        -----
-        link_list: (list of tuples)
-
+        Adds edges from *link_list* to the graph. All added edges have the
+        'taped' property set True.
         """
-        #print(len(link_list))
-        #print('starting edge number', self._graph.number_of_edges())
-        self._graph.add_edges_from((n1, n2) for (n1, n2) in link_list)
-        #print('after edge number', self._graph.number_of_edges())
+        self._graph.add_edges_from(link_list, taped=True)

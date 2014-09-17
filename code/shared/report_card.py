@@ -326,7 +326,6 @@ def collision_iteration2(experiment, graph):
         gaps = taper.score_potential_gaps(gap_start, gap_end)
         gaps.to_csv('debug_gaps.csv')
         taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-        graph = taper._graph
         graph.validate()
         report_card.add_step(graph, 'gaps')
 
