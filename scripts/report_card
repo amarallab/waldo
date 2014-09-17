@@ -36,9 +36,10 @@ def create_reports():
         #    print ex_id, 'failed due to:'
         #    print e
 
-
 if __name__ == '__main__':
-    create_reports()
+    #create_reports()
+    report_card.gap_dev(ex_id='20130318_131111')
+
     #experiment, graph, graph1 = main()
     #experiment, graph = main2()
     #determine_lost_and_found_causes(experiment, graph)

@@ -61,6 +61,8 @@ class Taper(object):
     def find_start_and_end_nodes(self):
         graph = self._graph
         terms = self._terminals.copy()
+        #print('raw terms')
+        #print(terms.head(20))
 
         # go through graph and find all node ids for start/stop canidates
         gap_start_nodes = [x for x in graph.nodes() if len(graph.successors(x)) == 0]
@@ -99,6 +101,9 @@ class Taper(object):
         gap_end_terms.rename(
                 columns={'t0': 't', 'x0': 'x', 'y0': 'y', 'f0': 'f'},
                 inplace=True)
+
+        #print('start terms1')
+        #print(gap_start_terms.head(10))
 
         # add in the node_id values into the dataframes
         gap_start_terms['node_id'] = np.nan
@@ -143,9 +148,12 @@ class Taper(object):
         gap_start_terms.reset_index(inplace=True)
         gap_end_terms.reset_index(inplace=True)
 
+        #print('start terms2')
+        #print(gap_start_terms.head(10))
+
         return gap_start_terms, gap_end_terms
 
-    def score_potential_gaps(self, gap_start_terms, gap_end_terms):
+    def score_potential_gaps(self, gap_start_terms, gap_end_terms, preserve_history=True):
         """
         creates a dataframe with the following columns:
 
@@ -199,6 +207,16 @@ class Taper(object):
             dist = np.sqrt(dy**2 + dx**2)
             gap_df['dist'] = dist
 
+            if preserve_history:
+                gap_df['x1'] = x
+                gap_df['y1'] = y
+                gap_df['t1'] = t
+                gap_df['f1'] = f
+                gap_df['x2'] = gap_df['x']
+                gap_df['y2'] = gap_df['y']
+                gap_df['t2'] = gap_df['t']
+                gap_df['f2'] = gap_df['f']
+
 
             speed = gap_df['dist'] / gap_df['df']
             gap_df = gap_df[ speed < (self.max_speed + buffer)]
@@ -211,11 +229,17 @@ class Taper(object):
             if len(gap_df):
                 # some gaps were left, reformat df.
                 gap_df.rename(columns={'bid':'blob2',
-                                         'node_id':'node2'},
+                                       'node_id':'node2'},
                                 inplace=True)
                 gap_df['node1'] = node1
                 gap_df['blob1'] = blob1
-                gap_df = gap_df[['node1', 'node2', 'blob1', 'blob2',
+                if not preserve_history:
+                    gap_df = gap_df[['node1', 'node2', 'blob1', 'blob2',
+                                     'dist', 'dt', 'df']]
+                else:
+                    gap_df = gap_df[['node1', 'node2', 'blob1', 'blob2',
+                                     'x1', 'x2', 'y1', 'y2',
+                                     'f1', 'f2', 't1', 't2',
                                      'dist', 'dt', 'df']]
 
                 a = gap_df[['dist', 'df']].apply(score, axis=1)
@@ -223,7 +247,9 @@ class Taper(object):
                 all_gap_dfs.append(gap_df)
 
         potential_gaps = pd.concat(all_gap_dfs)
-        #print(potential_gaps.head())
+        #print('p gaps')
+        #print(potential_gaps.head(10))
+        #print(len(potential_gaps))
         return potential_gaps
 
     def make_gaps_file(self):

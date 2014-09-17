@@ -293,7 +293,7 @@ def collision_iteration2(experiment, graph):
 
         ############### Simplify
         L.warn('Collapse Group')
-        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+        #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
         graph.validate()
         #collider.assimilate(graph, max_threshold=10)
 
@@ -325,7 +325,9 @@ def collision_iteration2(experiment, graph):
         gap_start, gap_end = taper.find_start_and_end_nodes()
         gaps = taper.score_potential_gaps(gap_start, gap_end)
         gaps.to_csv('debug_gaps.csv')
-        taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+        thresh = 0.001
+        print 'gap threshold', thresh
+        taper.greedy_tape(gaps, threshold=thresh, add_edges=True)
         graph.validate()
         report_card.add_step(graph, 'gaps')
 
@@ -598,6 +600,34 @@ def determine_lost_and_found_causes(experiment, graph):
     start_terms.sort('lifespan_t', inplace=True, ascending=False)
     end_terms.sort('lifespan_t', inplace=True, ascending=False)
     return start_terms, end_terms
+
+def gap_dev(ex_id):
+    # simplify
+    import wio
+    experiment = wio.Experiment(experiment_id=ex_id)
+    graph_pickle = '{e}-simplegraph.pickle'.format(e=ex_id)
+
+    if not os.path.exists(graph_pickle):
+        graph = experiment.graph.copy()
+        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+        #collider.assimilate(graph, max_threshold=10)
+        collider.remove_single_descendents(graph)
+        collider.remove_fission_fusion(graph)
+        collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+        collider.remove_offshoots(graph, threshold=20)
+        collider.remove_single_descendents(graph)
+
+        pickle.dump(graph, open(graph_pickle, 'w'))
+    else:
+        graph = pickle.load(open(graph_pickle, 'r'))
+
+    taper = tp.Taper(experiment=experiment, graph=graph)
+    start, end = taper.find_start_and_end_nodes()
+    gaps = taper.score_potential_gaps(start, end)
+    taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+    graph = taper._graph
+
+
 
 def summarize_loss_report(df):
     df = df.copy()

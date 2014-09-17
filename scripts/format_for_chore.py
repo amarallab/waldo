@@ -23,11 +23,12 @@ CHORE_DIR = os.path.abspath('./../data/chore/')
 print DATA_DIR
 
 
-def get_graph(graph_pickle_name):
+def get_graph(graph_pickle_name, experiment, overwrite=False):
     print graph_pickle_name
-    if not os.path.exists(graph_pickle_name):
+    if not os.path.exists(graph_pickle_name) or overwrite:
         import report_card
         print 'calculating graph'
+        graph = experiment.graph.copy()
         graph2, report_df = report_card.collision_iteration2(experiment, graph)
         pickle.dump(graph2, open(graph_pickle_name, 'w'))
     else:
@@ -50,6 +51,8 @@ def write_blob_files(graph, experiment, basename='chore', summary_df=None):
     file_path = os.path.join(CHORE_DIR, basename)
     print file_path
 
+    mashup_history = []
+
     for i, node in enumerate(graph):
         # get save file name in order.
         node_file = '{p}_{n}k.blobs'.format(p=file_path,
@@ -71,6 +74,7 @@ def write_blob_files(graph, experiment, basename='chore', summary_df=None):
         #print components
 
         line_data = []
+        component_record = []
         for bid in components:
             try:
                 lines = [l for l in experiment._blob_lines(bid)]
@@ -94,13 +98,20 @@ def write_blob_files(graph, experiment, basename='chore', summary_df=None):
                 parts[2] = float(parts[2])
                 parts[3] = float(parts[3])
                 line_data.append(parts)
-
+                component_record.append(bid)
         if not line_data:
             continue
         compiled_lines = pd.DataFrame(line_data)
         compiled_lines.fillna(' ', inplace=True)
         compiled_lines.rename(columns={0:'frame', 1:'time', 2:'x', 3:'y'},
                               inplace=True)
+
+
+        mashup_df = compiled_lines[['frame', 'time', 'x', 'y']]
+        mashup_df['node'] = node
+        mashup_df['bid'] = component_record
+        mashup_df = mashup_df[mashup_df.duplicated('frame')]
+        mashup_history.append(mashup_df)
 
         compiled_lines.sort('frame', inplace=True)
         compiled_lines.drop_duplicates('frame', take_last=False,
@@ -138,10 +149,14 @@ def write_blob_files(graph, experiment, basename='chore', summary_df=None):
                 row = row + '\n'
                 f.write(row)
 
+    all_mashups = pd.concat(mashup_history)
+    all_mashups.sort('frame', inplace=True)
+    all_mashups.to_csv('mashup_record.csv', index=False)
     print file_management
     return file_management
 
 def load_summary(ex_dir):
+
     search_path = os.path.join(ex_dir, '*.summary')
     print 'summary:', glob.glob(search_path)
     # TODO
@@ -231,9 +246,9 @@ def main():
     data_dir  = os.path.join(DATA_DIR, ex_id)
     print chore_dir
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
-    #graph = experiment.graph.copy()
+
     graph_pickle_name = os.path.join(chore_dir, 'graph.pickle')
-    graph2 = get_graph(graph_pickle_name)
+    graph2 = get_graph(graph_pickle_name, experiment)
     basename, summary_df = load_summary(data_dir)
 
     #basename, summary_df = [], []
