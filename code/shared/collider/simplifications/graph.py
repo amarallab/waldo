@@ -77,9 +77,10 @@ class ColliderGraph(nx.DiGraph):
 
         #####
         if settings.DEBUG:
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            L.debug('Requestor function: {}'.format(calframe[1][3]))
+            # warning: kinda slow
+            #curframe = inspect.currentframe()
+            #calframe = inspect.getouterframes(curframe, 2)
+            #L.debug('Requestor function: {}'.format(calframe[1][3]))
 
             lifespans = {n: self.lifespan_f(n) for n in other_nodes}
             orig_lifespan = self.lifespan_f(node)
@@ -89,9 +90,6 @@ class ColliderGraph(nx.DiGraph):
 
             births[node] = nd['born_f']
             deaths[node] = nd['died_f']
-
-            orig_graph = self.copy()
-
         #####
 
         if 'components' not in nd:
