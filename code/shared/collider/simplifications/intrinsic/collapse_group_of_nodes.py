@@ -1,14 +1,10 @@
 __author__ = 'heltena'
 
-# This algorithm looks for a group of nodes that:
+ # This algorithm looks for a group of nodes that:
 #  - all the predecessors are in the group except for the first one
 #  - all the succesors are in the group except the last one
 #  - the "time" between the "died" value from the first one and the "died" value from the last one is less than
 #    max_duration
-# The algorithm is always keeping the last safe group of nodes that reach the conditions.
-# One the candidate list are completed, the algorithm loops the list ordered by inverse length (bigger first). For
-# each candidate, remove from the remain list all the lists that contains at least one of the nodes in the candidate.
-# The algorithm loops until no candidates found.
 def collapse_group_of_nodes(graph, max_duration, verbose=False):
     nodes = set(graph.nodes())
     while len(nodes) > 0:
@@ -42,7 +38,7 @@ def collapse_group_of_nodes(graph, max_duration, verbose=False):
                         else:
                             line.append(head)
                 if valid and head == current:
-                    # Yes, it is a line from 'root' to 'current'
+                    # Yes, it is a line from 'root' to 'current', collapse it
                     if verbose:
                         print("I: Line between {root} and {current}: {line}".format(root=root, current=current, line=line))
                     graph.condense_nodes(line[0], *line[1:])
