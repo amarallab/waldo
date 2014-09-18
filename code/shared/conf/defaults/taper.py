@@ -12,7 +12,7 @@ TAPE_MIN_TRACE_WARN = 30
 TAPE_TRACE_LIMIT_NUM = 400
 
 # Only search for connections this many frames out
-TAPE_FRAME_SEARCH_LIMIT = 300
+TAPE_FRAME_SEARCH_LIMIT = 600
 
 # Take this many samples in the KDE to generate a scoring function
 TAPE_KDE_SAMPLES = 100

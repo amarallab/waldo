@@ -6,10 +6,9 @@ import report_card
 
 def create_reports():
     ex_ids = [
-        #'20130318_131111',
+        '20130318_131111',
         #'20130614_120518',
-        #'20130614_120518',
-        '20130702_135704',
+        #'20130702_135704',
     ]
 
     for ex_id in ex_ids:
@@ -37,8 +36,8 @@ def create_reports():
         #    print e
 
 if __name__ == '__main__':
-    #create_reports()
-    report_card.gap_dev(ex_id='20130318_131111')
+    create_reports()
+    #report_card.gap_dev(ex_id='20130318_131111')
 
     #experiment, graph, graph1 = main()
     #experiment, graph = main2()

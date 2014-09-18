@@ -261,10 +261,10 @@ def collision_iteration(experiment, graph):
     return graph, report_df
 
 def collision_iteration2(experiment, graph):
-
+    ex_id = experiment.id
     report_card = ReportCard(experiment)
     report_card.add_step(graph, 'raw')
-
+    taper = tp.Taper(experiment=experiment, graph=graph)
     ############### Remove Known Junk
 
     collider.remove_nodes_outside_roi(graph, experiment)
@@ -275,7 +275,9 @@ def collision_iteration2(experiment, graph):
 
     ############### Simplify
     last_graph = None
+    gap_validation = []
     for i in range(6):
+
         L.warn('Iteration {}'.format(i + 1))
         graph.validate()
         ############### Cut Worms
@@ -293,7 +295,7 @@ def collision_iteration2(experiment, graph):
 
         ############### Simplify
         L.warn('Collapse Group')
-        #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
         graph.validate()
         #collider.assimilate(graph, max_threshold=10)
 
@@ -321,15 +323,13 @@ def collision_iteration2(experiment, graph):
 
         ############### Gaps
         L.warn('Patch Gaps')
-        taper = tp.Taper(experiment=experiment, graph=graph)
         gap_start, gap_end = taper.find_start_and_end_nodes()
         gaps = taper.score_potential_gaps(gap_start, gap_end)
-        gaps.to_csv('debug_gaps.csv')
-        thresh = 0.0001
-        print 'gap threshold', thresh
-        taper.greedy_tape(gaps, threshold=thresh, add_edges=True)
+        gap_validation.append(gaps[['blob1', 'blob2']])
+        ll1, gaps = taper.short_tape(gaps, add_edges=True)
+        ll2, gaps = taper.greedy_tape(gaps, threshold=0.0001, add_edges=True)
         graph.validate()
-        report_card.add_step(graph, 'gaps')
+        report_card.add_step(graph, 'gaps ({n})'.format(n=len(ll1) + len(ll2)))
 
         if (last_graph is not None and
                 set(last_graph.nodes()) == set(graph.nodes()) and
@@ -340,6 +340,9 @@ def collision_iteration2(experiment, graph):
 
         last_graph = graph.copy()
 
+    #for saving all potential gap bids:
+    #gaps = pd.concat(gap_validation)
+    #gaps.to_csv('{eid}-gaps.csv'.format(eid=ex_id), index=False, header=False)
     report_df = report_card.report(show=True)
     return graph, report_df
 

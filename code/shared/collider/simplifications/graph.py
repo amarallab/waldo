@@ -75,6 +75,12 @@ class ColliderGraph(nx.DiGraph):
         #     if subg.node[a]['died_f'] != subg.node[b]['born_f'] - 1:
         #         raise ValueError('Non-concurrnet')
 
+
+        # was an important precaution... bug probably fixed.
+        #if node in other_nodes:
+        #    other_nodes = list(other_nodes)
+        #    other_nodes.pop(other_nodes.index(node))
+
         #####
         if settings.DEBUG:
             # warning: kinda slow
@@ -191,7 +197,7 @@ class ColliderGraph(nx.DiGraph):
                 L.warn(lifespans)
         #####
 
-    def validate(self):
+    def validate(self, acceptable_f_delta=-10):
         """
         Verify that the graph:
 
@@ -206,7 +212,7 @@ class ColliderGraph(nx.DiGraph):
 
         for a, b in self.edges_iter():
             f_delta = self.node[b]['born_f'] - self.node[a]['died_f']
-            if f_delta < 1:
+            if f_delta < acceptable_f_delta:
                 raise AssertionError("Edge from {} to {} is acausal, going "
                         "back in time {:0.0f} frames".format(a, b, -f_delta))
 
