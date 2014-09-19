@@ -107,6 +107,79 @@ def grab_blob_data(experiment, time):
             blob_data.append((bid, blob['centroid'][0], outline))
     return frame, blob_data
 
+def reformat_missing(df):
+    """
+    reformats missing objects DataFrame to be ready for storage.
+
+    Two main chages:
+
+    - index is changed to be strings beginning with the letter 'm'
+    - if an object in the subsequent image is detected in the same
+    place as a current object, that object's id is recorded in the
+    'next' column'
+    - the order of the columns is changed.
+
+    params
+    -----
+    df: (pandas DataFrame)
+        a dataframe containing:
+        'f' - (int) frame number
+        't' - (float) time
+        'x', 'y' - centroid coordinates
+        'xmin', 'ymin', 'xmax', 'ymax' -- bounding box coordinates.
+
+    returns
+    -----
+    df: (pandas DataFrame)
+        the reformatted dataframe
+
+    """
+    # Reformat names of objects
+    #df.reindex(index=range(len(df)))
+    #df.reset_index(index=range(len(df)))
+    #print(df)
+    ids = ['m{i}'.format(i=i) for i in range(len(df.index))]
+    frames = list(set(df['f']))
+    frames.sort()
+    df['id'] = ids
+    df = df.set_index('id')
+
+    # find any potential matches
+    for i, f in enumerate(frames[:-1]):
+        current_df = df[df['f'] == f]
+        next_df = df[df['f'] == frames[i+1]]
+        matches = {}
+        for c_id, c in current_df.iterrows():
+
+            bbox = c['xmin'], c['ymin'], c['xmax'], c['ymax']
+            x, y = c['x'], c['y']
+
+            for n_id, n in next_df.iterrows():
+                bbox2 = n['xmin'], n['ymin'], n['xmax'], n['ymax']
+                nx, ny = n['x'], n['y']
+                if do_boxes_overlap(bbox, bbox2):
+                    match = matches.get(c_id, None)
+                    # save this match if no other match already found.
+                    if not match:
+                        matches[c_id] = n_id
+
+                    # save closer match if other match found.
+                    else:
+                        m = df.loc[match]
+                        mx, my = m['x'] ,m['y']
+                        nd = np.sqrt((x-nx)**2 + (y-ny)**2)
+                        md = np.sqrt((x-mx)**2 + (y-my)**2)
+                        if nd < md:
+                            matches[c_id] = n_id
+
+    print('persisting image objects:')
+    print(matches)
+
+    next_list = [matches.get(c_id, ' ') for c_id in df.index]
+    df['next'] = next_list
+
+    return df[['f', 't', 'x', 'y',
+               'xmin', 'ymin', 'xmax', 'ymax', 'next']]
 
 def match_objects(bids, blob_centroids, blob_outlines, image_objects,
                   roi=None, maxdist=20, verbose=False):
@@ -188,7 +261,6 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
                     closest_dist = d
 
         if closest_obj != -1:
-
             # for match bid outline must have more overlapping than
             # overreaching pixels.
             # ie. object must be mostly on top of the image_object
@@ -241,16 +313,33 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
                 if not inside_roi:
                     print ('Warning! obj outside roi counted as FP')
 
+    # store locations of missing data
+    # loop through all image objects
+    missing_data = []
+    for im_obj, in_roi in zip(image_objects, img_roi_check):
 
+        matching_blobs = blobs_by_object.get(im_obj.label, [])
+        #print(im_obj.label, matching_blobs, in_roi)
+        # test if inside roi and has not blob matches.
+        if in_roi and not matching_blobs:
+
+            x, y = im_obj.centroid
+            xmin, ymin, xmax, ymax = im_obj.bbox
+            m = {'x': x, 'y':y,
+                 'xmin':xmin, 'ymin':ymin,
+                 'xmax':xmax, 'ymax':ymax}
+            #print(m)
+            missing_data.append(m)
+    missing_objects = pd.DataFrame(missing_data)
     blobs_to_join = []              # reformat joins
-    false_neg = 0                   # initialize missed count
+    false_neg_count = 0                   # initialize missed count
 
     for label, in_roi in zip(img_labels, img_roi_check):
         matched_ids = blobs_by_object[label]
         if len(matched_ids) > 1:
             blobs_to_join.append(matched_ids)
         if len(matched_ids) == 0 and in_roi:
-            false_neg += 1
+            false_neg_count += 1
 
     if verbose:
         print(len(blob_centroids), 'blobs tracked by MWT')
@@ -260,14 +349,15 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
         print(img_outside_roi, 'img outsid roi')
 
     more = {'blobs_by_object': blobs_by_object,
-            'false-neg': false_neg,
+            'false-neg': false_neg_count,
             'false-pos': len(false_pos),
             'true-pos': len(matches),
             'lines': lines,
             'roi':roi,
             'bid-outside':bid_outside_roi,
             'img-outside':img_outside_roi,
-            'outside_objects':outside_objects}
+            'outside_objects':outside_objects,
+            'missing_df': missing_objects}
 
     return matches, false_pos, blobs_to_join, more
 
@@ -287,6 +377,8 @@ def analyze_image(experiment, time, img, background, threshold,
     match = match_objects(bids, blob_centroids, outlines,
                           image_objects, roi=roi)
     matches, false_pos, blobs_to_join, more = match
+
+    ##### for plotting
 
     # show how well blobs are matched at this threshold.
     if show:
@@ -312,13 +404,17 @@ def analyze_image(experiment, time, img, background, threshold,
             ymax, xmax = img.T.shape
             ax.set_xlim([0, xmax])
             ax.set_ylim([0, ymax])
-
         return f, ax
+
+
+    #### for acuracy calculations
 
     base_accuracy = {'frame':frame, 'time':time,
                      'false-neg':more['false-neg'],
                      'false-pos':more['false-pos'],
                      'true-pos':more['true-pos']}
+
+    #### for matching blobs to img objects
 
     # consolidate history of matching objects.
     outside = []
@@ -340,18 +436,14 @@ def analyze_image(experiment, time, img, background, threshold,
             #print(bid_matching['bid'] == b)
             bid_matching['join'][bid_matching['bid'] == b] = join_key
 
-
     assert more['true-pos'] == len(matches)
 
-    # A = more['false-pos']
-    # B = len(bids) - len(matches) -len(outside)
-    # C = len([b for b in bids
-    #          if (b not in matches and b not in outside)])
-    # print('false pos', frame, A, B, C)
+    #### for missing img data
 
-    #assert more['false-pos'] == len(bids) - len(matches)
-
-    return bid_matching, base_accuracy
+    missing_df = more['missing_df']
+    missing_df['f'] = int(frame)
+    missing_df['t'] = time
+    return bid_matching, base_accuracy, missing_df
 
 def draw_colors_on_image(ex_id, time, ax=None, colors=None):
 
@@ -500,7 +592,6 @@ def show_matched_image(ex_id, threshold, time, roi=None):
     # initialize experiment
     path = os.path.join(MWT_DIR, ex_id)
     experiment = multiworm.Experiment(path)
-    experiment.load_summary()
 
     time = closest_time
     img = mpimg.imread(closest_image)
@@ -543,7 +634,6 @@ def worm_cutouts(ex_id, savedir, threshold=None, roi=None):
     # for blob matching
     path = os.path.join(MWT_DIR, ex_id)
     experiment = multiworm.Experiment(path)
-    experiment.load_summary()
 
     print(len(impaths), 'images')
     for i, (time, impath) in enumerate(zip(times, impaths)):
@@ -665,24 +755,26 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     # initialize experiment
     path = os.path.join(MWT_DIR, ex_id)
     experiment = multiworm.Experiment(path)
-    experiment.load_summary()
 
     full_experiment_check = []
     accuracy = []
-
+    full_missing = []
     for i, (time, impath) in enumerate(zip(times, impaths)):
         # get the objects from the image
         #print(impath)
         img = mpimg.imread(impath)
-        bid_matching, base_acc = analyze_image(experiment, time, img,
+        bid_matching, base_acc, miss = analyze_image(experiment, time, img,
                                                background, threshold,
                                                roi=roi, show=False)
         #print(base_acc)
         full_experiment_check.append(bid_matching)
         accuracy.append(base_acc)
+        full_missing.append(miss)
 
     bid_matching = pd.concat(full_experiment_check)
     base_accuracy = pd.DataFrame(accuracy)
+    missing_worms = pd.concat(full_missing)
+    missing_worms = reformat_missing(missing_worms)
 
     # save datafiles
     prep_data = fm.PrepData(ex_id)
@@ -690,6 +782,8 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
                    index=False)
     prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
                    index=False)
+    prep_data.dump(data_type='missing', dataframe=missing_worms,
+                   index=True)
 
 
 def summarize(ex_id, overwrite=True):

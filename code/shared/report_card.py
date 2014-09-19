@@ -204,7 +204,6 @@ def create_report_card(experiment, graph):
     start, end = taper.find_start_and_end_nodes()
     gaps = taper.score_potential_gaps(start, end)
     taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-    graph = taper._graph
     report_card.add_step(graph, 'gaps')
 
     report_df = report_card.report(show=True)
@@ -323,7 +322,20 @@ def collision_iteration2(experiment, graph):
 
         ############### Gaps
         L.warn('Patch Gaps')
-        gap_start, gap_end = taper.find_start_and_end_nodes()
+        gap_start, gap_end = taper.find_start_and_end_nodes(use_missing_objects=True)
+        gaps = taper.score_potential_gaps(gap_start, gap_end)
+        gap_validation.append(gaps[['blob1', 'blob2']])
+        ll1, gaps = taper.short_tape(gaps, add_edges=True)
+        ll2, gaps = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+        ll3, gaps = taper.short_tape(gaps, add_edges=True)
+        print len(ll1), 'short gaps'
+        print len(ll2), 'standard gaps'
+        print len(ll3), 'long gaps'
+        link_total = len(ll1) + len(ll2) + len(ll3)
+        graph.validate()
+        report_card.add_step(graph, 'gaps w/missing ({n})'.format(n=link_total))
+
+        gap_start, gap_end = taper.find_start_and_end_nodes(use_missing_objects=False)
         gaps = taper.score_potential_gaps(gap_start, gap_end)
         gap_validation.append(gaps[['blob1', 'blob2']])
         ll1, gaps = taper.short_tape(gaps, add_edges=True)
@@ -463,9 +475,10 @@ def collision_suite(experiment, graph, verbose=True):
         print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
         print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
 
-        print '\ttrying to unzip collisions'
-        collision_nodes = list(dont_bother)
-        print(collision_nodes)
+
+        #print '\ttrying to unzip collisions'
+        #collision_nodes = list(dont_bother)
+        #print(collision_nodes)
         #collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
         #                         verbose=False, yield_bevahior=False)
 
