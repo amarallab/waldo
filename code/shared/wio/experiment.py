@@ -132,3 +132,8 @@ class Experiment(multiworm.Experiment):
             self._typical_bodylength = np.median(good_midlines)
 
         return self._typical_bodylength
+
+    def calculate_node_worm_count(self):
+        node_worm_count = collider.network_number_wizard(self.graph, self, False)
+        for k, v in node_worm_count.items():
+            self.graph.node[k]['worm_count'] = v

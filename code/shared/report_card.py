@@ -287,10 +287,14 @@ def collision_iteration2(experiment, graph):
         # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
         ############### Collisions
+        graph_orig = graph.copy()
         n = collision_suite(experiment, graph)
         graph.validate()
         report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
+        n = collision_suite_heltena(experiment, graph_orig)
+        graph_orig.validate()
+        report_card.add_step(graph, 'collisions (heltena) ({n})'.format(n=n))
 
         ############### Simplify
         L.warn('Collapse Group')
@@ -479,6 +483,97 @@ def collision_suite(experiment, graph, verbose=True):
         #print '\ttrying to unzip collisions'
         #collision_nodes = list(dont_bother)
         #print(collision_nodes)
+        #collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
+        #                         verbose=False, yield_bevahior=False)
+
+    #print 'collisions from time'
+    # new_suspects = set(collider.find_area_based_collisions(graph, experiment))
+    # suspects = list(new_suspects - tried_suspects)
+    # tried_suspects = new_suspects | tried_suspects
+    # n_area = collider.resolve_collisions(graph, experiment, suspects)
+    # n += n_area
+
+    # print(int(float(n) * 100. / float(len(tried_suspects))),
+    #       'percent of found collisions resolved')
+
+
+    # print n_area, 'collisions from area', len(new_suspects)
+    # print(int(float(n) * 100. / float(len(tried_suspects))),
+    #       'percent of found collisions resolved')
+
+    # New_suspects = set(collider.find_time_based_collisions(graph, 10, 2))
+    # suspects = list(new_suspects - tried_suspects)
+    # tried_suspects = new_suspects | tried_suspects
+    # n_time = collider.resolve_collisions(graph, experiment, suspects)
+    # n += n_time
+    return len(resolved)
+
+def collision_suite_heltena(experiment, graph, verbose=True):
+
+    # bounding box method
+    print 'collisions from bbox'
+
+    # initialize records
+    resolved = set()
+    overlap_fails = set()
+    data_fails = set()
+    dont_bother = set()
+
+    #trying_new_suspects = True
+    collisions_were_resolved = True
+    while collisions_were_resolved:
+        worm_count = collider.network_number_wizard(graph, experiment)
+        suspects = set([k for k, v in worm_count.items() if v == 2])
+        s = suspects - dont_bother
+        ty = len(s & data_fails)
+        if verbose:
+            print('\t{s} suspects. trying {ty} again'.format(s=len(s),
+                                                             ty=ty))
+
+        if not s:
+            collisions_were_resolved = False
+            break
+
+        report = collider.resolve_multicollisions(graph, experiment,
+                                                  list(s), worm_count)
+
+        newly_resolved = set(report['resolved'])
+        resolved = resolved | newly_resolved
+        collisions_were_resolved = len(newly_resolved) > 0
+
+        # keep track of all fails that had missing data that have
+        # not been resolved yet
+        data_fails = data_fails | set(report['missing_data'])
+        #data_fails = data_fails - resolved
+
+        # if overlap fails but data is missing try again later
+        # if overlap fails but data is there, dont bother
+        overlap_fails = overlap_fails | set(report['no_overlap'])
+        overlap_fails = overlap_fails - resolved
+        dont_bother = overlap_fails - data_fails
+
+    if verbose:
+        full_set = resolved | overlap_fails | data_fails | dont_bother
+        full_count = len(full_set)
+
+        n_res = len(resolved)
+        n_dat = len(data_fails)
+        no1 = len(data_fails & overlap_fails)
+        no2 = len(dont_bother)
+
+        p_res = int(100.0 * n_res/float(full_count))
+        p_dat = int(100.0 * len(data_fails)/float(full_count))
+        p_no1 = int(100.0 * no1/float(full_count))
+        p_no2 = int(100.0 * no2/float(full_count))
+
+        print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
+        print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
+        print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
+        print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
+
+        print '\ttrying to unzip collisions'
+        collision_nodes = list(dont_bother)
+        print(collision_nodes)
         #collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
         #                         verbose=False, yield_bevahior=False)
 
