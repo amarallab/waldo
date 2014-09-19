@@ -153,32 +153,36 @@ def generalized_create_collision_masks(graph, experiment, parents, children, ver
     outlines = {}
     not_none = []
     for p in parents:
-        o = grab_outline(p[0], graph, experiment, first=False)
+        o = grab_outline(p, graph, experiment, first=False)
         outlines[p] = o
         if o:
             not_none.append(p)
     for c in children:
-        o = grab_outline(c[0], graph, experiment, first=True)
+        o = grab_outline(c, graph, experiment, first=True)
         outlines[c] = o
         if o:
-            not_none.append(p)
+            not_none.append(c)
 
     outline_list = [outlines[i] for i in not_none]
-    if not non_none:
+    if not not_none:
         raise CollisionException
 
     # align outline masks
     mask_dict = {}
-    masks, bbox = points_to_aligned_matrix(outline_list)
-    for node, mask in zip(not_none, masks):
-        mask_dict[node] = mask
+    if outline_list is not None and len(outline_list) > 0:
+        masks, bbox = points_to_aligned_matrix(outline_list)
+        for node, mask in zip(not_none, masks):
+            mask_dict[node] = mask
 
-    parent_data = [(p, mask_dict.get(p, None)) for p in parents]
-    child_data = [(c, mask_dict.get(c, None)) for c in children]
+        parent_data = [(p, mask_dict.get(p, None)) for p in parents]
+        child_data = [(c, mask_dict.get(c, None)) for c in children]
+    else:
+        parent_data = []
+        child_data = []
 
     status_report = {'parent_count': len(parents),
                      'child_count': len(children),
-                     'mask_count': len(non_none)}
+                     'mask_count': len(not_none)}
     if report:
         return parent_data, child_data, status_report
     else:
@@ -617,7 +621,29 @@ def untangle_collision2(graph, collision_node, collision_result):
 
 
 
-def resolve_multicollisions(graph, experiment, collision_nodes):
+###TODO: Set in the correct file
+def find_related(graph, experiment, worm_count, node, count, search_parents):
+    result = []
+    remain = set([node])
+    used_nodes = set()
+    while len(remain) > 0:
+        current = remain.pop()
+        if worm_count[current] == 1:
+            result.append(current)
+            if len(result) == count:
+                return (result, used_nodes) if len(remain) == 0 else (None, None)
+        else:
+            used_nodes.add(current)
+            if search_parents:
+                remain |= set(graph.predecessors(current))
+            else:
+                remain |= set(graph.successors(current))
+            remain -= used_nodes
+    return (None, None)
+###END TODO
+
+
+def resolve_multicollisions(graph, experiment, collision_nodes, worm_count):
     """
 
     Removes all the collisions that can be resolved
@@ -641,25 +667,30 @@ def resolve_multicollisions(graph, experiment, collision_nodes):
                      'collision_lifespans_t': {}}
     for node in collision_nodes:
         try:
-            a = generalized_create_collision_masks(graph, experiment, node,
-                                                   report=True)
-            parent_masks, children_masks, report = a
-            collision_result = generalized_compare_masks(parent_masks, children_masks)
+            parents, _ = find_related(graph, experiment, worm_count, node, worm_count[node], True)
+            children, _ = find_related(graph, experiment, worm_count, node, worm_count[node], False)
 
-            # TODO make this more general
-            if report['mask_count'] < 4:
-                result_report['missing_data'].append(node)
+            if parents is None or children is None:
+                collision_result = False
+            else:
+                a = generalized_create_collision_masks(graph, experiment, parents, children,
+                                                       report=True)
+                parent_masks, children_masks, report = a
+                collision_result = generalized_compare_masks(parent_masks, children_masks)
+                # TODO make this more general
+                if report['mask_count'] < 4:
+                    result_report['missing_data'].append(node)
 
         except CollisionException:
             #print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
             result_report['missing_data'].append(node)
             continue
-        #print(node, 'is', collision_result)
+        print(node, 'is', collision_result)
         if collision_result:
             result_report['collision_lifespans_t'][node] = graph.lifespan_t(node)
-            collision_results[node] = collision_result
+            collision_results[node] = collision_result[0]
             # this is for multi
-            untangle_collision2(graph, node, collision_result)
+            untangle_collision2(graph, node, collision_result[0])
             result_report['resolved'].append(node)
 
             # temporary reporting to track down where long tracks dissapear to.
