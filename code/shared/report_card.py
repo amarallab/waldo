@@ -331,9 +331,14 @@ def collision_iteration2(experiment, graph):
         gaps = taper.score_potential_gaps(gap_start, gap_end)
         gap_validation.append(gaps[['blob1', 'blob2']])
         ll1, gaps = taper.short_tape(gaps, add_edges=True)
-        ll2, gaps = taper.greedy_tape(gaps, threshold=0.0001, add_edges=True)
+        ll2, gaps = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+        ll3, gaps = taper.short_tape(gaps, add_edges=True)
+        print len(ll1), 'short gaps'
+        print len(ll2), 'standard gaps'
+        print len(ll3), 'long gaps'
+        link_total = len(ll1) + len(ll2) + len(ll3)
         graph.validate()
-        report_card.add_step(graph, 'gaps ({n})'.format(n=len(ll1) + len(ll2)))
+        report_card.add_step(graph, 'gaps ({n})'.format(n=link_total))
 
         if (last_graph is not None and
                 set(last_graph.nodes()) == set(graph.nodes()) and
