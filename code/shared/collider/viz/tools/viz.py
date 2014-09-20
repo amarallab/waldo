@@ -19,7 +19,7 @@ __all__ = [
     'get_contour',
 ]
 
-def patch_contours(contours):
+def patch_contours(contours, flip=False):
     """
     Convert all the contours (Nx2 series of points) into matplotlib patches
     and return the enclosing bounding box and a list of patches.
@@ -30,6 +30,8 @@ def patch_contours(contours):
         contour = np.array(contour)
         if contour.shape == (2,):
             contour = np.reshape(contour, (-1, 2))
+        if flip:
+            contour = np.fliplr(contour)
         bbox = Box.fit(contour)
         if len(contour) == 1:
             patches.append(Wedge(contour, 10, 0, 360, 5, alpha=0.6))

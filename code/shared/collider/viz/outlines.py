@@ -164,8 +164,8 @@ def show_around(experiment, frame, bounds):
     ax.set_ylim(bounds.y)
     return f, ax, bounds
 
-def show_terminal(experiment, graph, target, end='tail', bounds=None):
-    "Show what's near the given target from the experiment/graph"
+def show_terminal(experiment, target, end='tail', bounds=None):
+    "Show what's near the given target from the experiment"
     # find target time and place
     target = experiment[target]
     if target.empty:

@@ -1,4 +1,5 @@
 from __future__ import division
+import math
 from inspect import isclass
 from functools import wraps
 
@@ -195,6 +196,15 @@ class Box(object):
         self.bottom -= delta
         self.right += delta
         self.top += delta
+
+    @property
+    def PIL(self):
+        return (
+            int(math.floor(self.left)),
+            int(math.floor(self.bottom)),
+            int(math.ceil(self.right)),
+            int(math.ceil(self.top)),
+        )
 
 if __name__ == '__main__':
     print('Crude tests...')

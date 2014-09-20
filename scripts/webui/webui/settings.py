@@ -27,9 +27,7 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
-
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,7 +36,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bootstrap3',
+    'webui',
     'screencollisions',
+    #'screengaps',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -55,10 +55,8 @@ ROOT_URLCONF = 'webui.urls'
 
 WSGI_APPLICATION = 'webui.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -68,21 +66,14 @@ DATABASES = {
 
 # Internationalization
 # https://docs.djangoproject.com/en/dev/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'America/Chicago'
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
-
 STATIC_URL = '/static/'
 
 COLLISION_IMAGES = (pathlib.Path(BASE_DIR) /
@@ -90,8 +81,14 @@ COLLISION_IMAGES = (pathlib.Path(BASE_DIR) /
         '..' / # waldo/
         'data' / 'screen' / 'images')
 
+GAP_IMAGES = (pathlib.Path(BASE_DIR) /
+        '..' / # waldo/scripts/
+        '..' / # waldo/
+        'data' / 'gaps' / 'images')
+
 STATICFILES_DIRS = (
     str(COLLISION_IMAGES),
+    str(GAP_IMAGES),
 )
 
 
