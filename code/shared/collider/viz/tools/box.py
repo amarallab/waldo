@@ -206,6 +206,16 @@ class Box(object):
             int(math.ceil(self.top)),
         )
 
+    @property
+    def vflip(self):
+        return (
+            self.left,
+            self.right,
+            self.top,
+            self.bottom,
+        )
+
+
 if __name__ == '__main__':
     print('Crude tests...')
 
