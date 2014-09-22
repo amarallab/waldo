@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
+from __future__ import absolute_import, print_function
 '''
 Filename: grab_images.py
 Description: functions for finding and returning particular aspects of the MWT raw data such as images or outlines for
 a particular time.
 '''
-
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -26,7 +25,7 @@ import math
 
 # nonstandard imports
 from conf import settings
-from grab_outlines import find_frame_for_time
+from .grab_outlines import find_frame_for_time
 
 # Globals
 DATA_DIR = settings.LOGISTICS['filesystem_data']
@@ -35,7 +34,7 @@ def get_base_image_path(ex_id, data_dir=DATA_DIR):
     search_path = data_dir + ex_id + '/*.png'
     images = glob.glob(search_path)
     if not images:
-        print 'something may be wrong with search path. no images found:', search_path
+        print('something may be wrong with search path. no images found:', search_path)
         return None
     basename = ['z' for _ in range(1000)]
     for i in images:
@@ -54,7 +53,7 @@ def create_image_directory(ex_id, data_dir=DATA_DIR):
     search_path = data_dir + ex_id + '/*.png'
     images = glob.glob(search_path)
     if not images:
-        print 'something may be wrong with search path. no images found:', search_path
+        print('something may be wrong with search path. no images found:', search_path)
         return None
     basename = ['z' for _ in range(1000)]
     for i in images:
@@ -67,9 +66,9 @@ def create_image_directory(ex_id, data_dir=DATA_DIR):
         time = i.split(basename)[-1].split('.png')[0]
         if time:
             if time + '.png' == i:
-                print 'i', i
-                print 'base', basename
-                print 'time', time
+                print('i', i)
+                print('base', basename)
+                print('time', time)
                 continue
             #time = '%.3f' % (int(time) / 1000.0)
             time = '{t}'.format(t=round(int(time) / 1000.0), ndigits=3)
@@ -124,4 +123,4 @@ if __name__ == '__main__':
     temp_filename = '{dr}{ex_id}/frame{frame}_blobs.tmp'.format(frame=frame, dr=DATA_DIR, ex_id=ex_id)
     with open(temp_filename, 'r') as f:
         for line in f:
-            print line
+            print(line)

@@ -1,5 +1,6 @@
 # This notebook is for finding the segmentation threshold that most clearly finds worms in a recording.
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
+from __future__ import print_function, absolute_import
 
 # standard library
 import sys
@@ -19,8 +20,8 @@ from skimage.measure import regionprops
 
 # project specific
 from conf import settings
-from grab_images import grab_images_in_time_range
 from wio.file_manager import ensure_dir_exists
+from .grab_images import grab_images_in_time_range
 
 MWT_DIR = settings.LOGISTICS['filesystem_data']
 DATA_DIR = settings.LOGISTICS['filesystem_data']
@@ -180,9 +181,9 @@ class InteractivePlot:
         try:
             with open(self.annotation_filename, "rt") as f:
                 self.data = json.loads(f.read())
-        except IOError, ex:
+        except IOError as ex:
             self.data = {}
-            print "E: %s (%s)" % (os.strerror(ex.errno), self.annotation_filename)
+            print("E: {} ({})".format(os.strerror(ex.errno), self.annotation_filename))
 
     def save_data(self):
         # note: the image is usually transposed. we didn't here,
@@ -264,7 +265,7 @@ class InteractivePlot:
             for k, v in x.iteritems():
                 cache_thresholds[float(k)] = v
         except:
-            print "NO cache threshold for %s" % self.current_id
+            print("NO cache threshold for {}".format(self.current_id))
 
         self.thresholds = []
         for i, t in enumerate(thresholds):

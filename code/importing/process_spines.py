@@ -133,7 +133,7 @@ def process_ex_id(ex_id, debug=False, just_centroid=False, overwrite=True, repro
         try:
             #basic_data_to_smoothspine(blob_id, verbose=True, **kwargs)
             pass
-        except Exception, e:
+        except Exception as e:
             e.printStackTrace()
         if debug:
             break

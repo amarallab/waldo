@@ -36,7 +36,7 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
 
     #frames, true_pos, false_pos, false_neg = [], [], [], []
     data = {}
-    #print base_accuracy.head()
+    #print(base_accuracy.head())
     ba = base_accuracy.set_index('frame')
     for frame, df in matches.groupby('frame'):
         tp_bids = list(df[df['good']]['bid'])
@@ -45,23 +45,23 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
         fp_bids = list(df[check]['bid'])
 
         row = ba.loc[frame]
-        #print row
+        #print(row)
         base_tp = row['true-pos']
         base_fp = row['false-pos']
         base_fn = row['false-neg']
 
-        #print len(tp_bids), len(fp_bids)
+        #print(len(tp_bids), len(fp_bids))
 
         if unforgiving:
-            #print 'in roi', (df['roi'] == True).sum()
+            #print('in roi', (df['roi'] == True).sum())
 
-            #print 'fp', base_fp, row['false-pos']
-            #print 'tp', base_tp
-            #print 'fn', base_fn
+            #print('fp', base_fp, row['false-pos'])
+            #print('tp', base_tp)
+            #print('fn', base_fn)
             assert (df['roi'] == True).sum() == base_fp + base_tp
-            ##print base_fp, len(fp_bids)
-            print 'fp', len(fp_bids)
-            print fp_bids
+            ##print(base_fp, len(fp_bids))
+            print('fp', len(fp_bids))
+            print(fp_bids)
             #assert base_fp == len(fp_bids)
 
         if len(bids) > 0:
@@ -107,14 +107,14 @@ def plot_accuracy_bar(df, title=''):
     bars = [df['true-pos'].std(),
             df['false-pos'].std(),
             df['false-neg'].std()]
-    #print data
+    #print(data)
     ymax = max([data[i] + bars[i] for i in [0,1,2]])
 
     coverage = float(data[0]) / float(data[0] + data[2])
-    print int(100 * coverage), '% coverage'
+    print(int(100 * coverage), '% coverage')
 
     truth = float(data[0]) / float(data[0] + data[1])
-    print int(100 * truth), '% true worms'
+    print(int(100 * truth), '% true worms')
 
     n = 3
     ppl.bar(ax, np.arange(n), data, yerr = bars,

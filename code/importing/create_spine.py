@@ -4,7 +4,7 @@
 Filename: create_spine.py
 Description: find_ex_ids_to_update function is create_spine_from_outline
 '''
-import math
+from six.moves import zip
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -13,8 +13,10 @@ __status__ = 'prototype'
 # standard imports
 import os
 import sys
+import math
+
+# third party packages
 import numpy as np
-from itertools import izip
 
 # path definitions
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -50,7 +52,7 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
     flagged_timepoints = []
     num_short_spines = 0
 
-    for t, encoded_outline in izip(times, encoded_outlines):
+    for t, encoded_outline in zip(times, encoded_outlines):
         outline = decode_outline(encoded_outline)
         # if error in decoding outline
         if len(outline) == 0:
@@ -133,7 +135,7 @@ def create_spine_from_outline(blob_id, store_tmp=True, verbose=False, **kwargs):
 #     xs, ys = zip(*points)
 #     filtered_xs = list(savitzky_golay(np.array(xs), window_size=window_size, order=poly_order))
 #     filtered_ys = list(savitzky_golay(np.array(ys), window_size=window_size, order=poly_order))
-#     return equally_space(zip(filtered_xs, filtered_ys), points=point_num)
+#     return equally_space(list(zip(filtered_xs, filtered_ys), points=point_num))
 # '''
 
 def treat_spine(times, spines, poly_order=settings.SMOOTHING['spine_order'],
@@ -160,7 +162,7 @@ def treat_spine(times, spines, poly_order=settings.SMOOTHING['spine_order'],
     goodcount = 0
     badcount = 0
     treated_spines = []
-    for t, spine in izip(times, spines):
+    for t, spine in zip(times, spines):
         #spine = spine_timedict[t_key]
         #print len(spine), 'num points in raw spine'
 
@@ -168,7 +170,7 @@ def treat_spine(times, spines, poly_order=settings.SMOOTHING['spine_order'],
             xs, ys = zip(*spine)
             filtered_xs = list(savitzky_golay(np.array(xs), window_size, poly_order))
             filtered_ys = list(savitzky_golay(np.array(ys), window_size, poly_order))
-            treated_spines.append(zip(filtered_xs, filtered_ys))
+            treated_spines.append(list(zip(filtered_xs, filtered_ys)))
             #t_keys.append(t_key)
             goodcount += 1
         else:
@@ -190,7 +192,7 @@ def treat_spine(times, spines, poly_order=settings.SMOOTHING['spine_order'],
     for spine in spines:
         x, y = zip(*spine)
         x, y = equally_space_N_xy_points(x, y)
-        spaced.append(zip(x, y))
+        spaced.append(list(zip(x, y)))
     treated_spines = spaced
     '''
     #standardized_spines = [treated_spines[0]]
@@ -260,7 +262,7 @@ def reverse_points_if_backwards(xy, xy_next):
         distance_rev += (x[k] - xnext_rev[k]) ** 2 + (y[k] - ynext_rev[k]) ** 2
         if (distance_original > distance_rev):
             #print "reversed", index, distance_rev, distance_original
-            newxy = zip(xnext_rev, ynext_rev)
+            newxy = list(zip(xnext_rev, ynext_rev))
             return (newxy, True)
         else:
             #print "ok", index

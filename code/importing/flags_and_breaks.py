@@ -10,10 +10,11 @@ __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
+from six.moves import zip
+
 # standard imports
 import os
 import sys
-from itertools import izip
 import math
 import numpy as np
 import scipy
@@ -36,14 +37,14 @@ def consolidate_flags(all_flags):
     '''
     if isinstance(all_flags, dict):
         flag_lists = [all_flags[i] for i in all_flags]
-        return [all(i) for i in izip(*flag_lists)]
+        return [all(i) for i in zip(*flag_lists)]
     else:
-        return [all(i) for i in all_flags] 
+        return [all(i) for i in all_flags]
 
 def fit_gaussian(x, num_bins=200):
     # some testdata has no variance whatsoever, this is escape clause
     if math.fabs(max(x) - min(x)) < 1e-5:
-        print 'fit_gaussian exit'
+        print('fit_gaussian exit')
         return max(x), 1
 
     n, bin_edges = np.histogram(x, num_bins, normed=True)
@@ -52,7 +53,7 @@ def fit_gaussian(x, num_bins=200):
     # Target function
     #fitfunc = lambda p, x: mlab.normpdf(x, p[0], p[1])
     fitfunc = lambda p, x: scipy.stats.norm.pdf(x, p[0], p[1])
-    # Distance to the target function 
+    # Distance to the target function
     errfunc = lambda p, x, y: fitfunc(p, x) - y
 
     # Initial guess for the parameters
@@ -72,10 +73,10 @@ def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
     # some testdata has no variance whatsoever, this is escape clause
     if math.fabs(max(x) - min(x)) < 1e-5:
         if verbose:
-            print 'no variance, skipping flagging'
+            print('no variance, skipping flagging')
         return min(x), max(x)
     if len(x) < 5:
-        print 'where is x?', len(x), x
+        print('where is x?', len(x), x)
 
     mu = np.mean(x)
     sigma = np.std(x)
@@ -84,7 +85,7 @@ def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
         return min(x), max(x)
 
     N = len(x)
-    mu, sigma = fit_gaussian(x) 
+    mu, sigma = fit_gaussian(x)
     a = 2 * ((1 - p) ** (1. / N)) - 1
     b = scipy.special.erfinv(a)
     xmax = b * sigma * math.sqrt(2) + mu
@@ -92,12 +93,12 @@ def calculate_threshold(x, p=0.05, acceptable_error=0.05, verbose=False):
 
     #xmin, xmax = min(x), max(x)
     if verbose:
-        print 'N=', N
-        print 'fit sigma', sigma, 'fit mu', mu, 'min, max', min(x), max(x)
-        print 'raw sigma', sigma, 'raw mu', mu, 'min, max', min(x), max(x)
-        #print 'a%f' %a
-        #print 'erfinv', b
-        print 'min threshold', xmin, 'max threshold', xmax
+        print('N=', N)
+        print('fit sigma', sigma, 'fit mu', mu, 'min, max', min(x), max(x))
+        print('raw sigma', sigma, 'raw mu', mu, 'min, max', min(x), max(x))
+        #print('a%f' %a)
+        #print('erfinv', b)
+        print('min threshold', xmin, 'max threshold', xmax)
 
     return xmin, xmax
 
@@ -110,9 +111,9 @@ def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
     assert options in ['short', 'long', 'both', 'bypass']
 
     # note: we have passed -1 in certain parts of the data to indicate an error in processing.
-    # here we remove all -1s to calculate threshold, 
-    # later we automatically flag all times that had -1       
-    
+    # here we remove all -1s to calculate threshold,
+    # later we automatically flag all times that had -1
+
     data = [d for d in values if d not in null_flags]
     min_threshold, max_threshold = calculate_threshold(data, p=0.05)
 
@@ -123,7 +124,7 @@ def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
         flag_criterion = lambda k: min_threshold <= k
     elif options == 'long':
         flag_criterion = lambda k: k <= max_threshold
-        
+
     flags = []
     for k in values:
         if k in null_flags:
@@ -135,8 +136,8 @@ def flag_outliers(values, options='both', null_flags=NULL_FLAGS):
 def flag_blob_data(blob_id, data_type, options='both', verbose=True, **kwargs):
     '''
     inputs:
-    blob_id - 
-    data_type - 
+    blob_id -
+    data_type -
     '''
     times, data = get_timeseries(ID=blob_id, data_type=data_type, **kwargs)
     # check to see if all data is correct type
@@ -145,7 +146,7 @@ def flag_blob_data(blob_id, data_type, options='both', verbose=True, **kwargs):
                                                     t=type(x))
     for d in data:
         if type(d) not in [int, float, np.float64, np.int32, np.int64]:
-            print 'print weird datatype:', d, type(d)
+            print('print weird datatype:', d, type(d))
     # if more than half of points are zero, flag everything.
     N = len(data)
     zeros = len([x for x in data if x == 0.0])
@@ -156,9 +157,9 @@ def flag_blob_data(blob_id, data_type, options='both', verbose=True, **kwargs):
         msg = '\t{dt} {p} % of N = {N}'.format(p=round(100*zeros/float(N),
                                                        ndigits=2),
                                                dt=data_type, N=N)
-        msg += 'points are 0.0 | flag all'     
-        print msg
-        return [False] * N    
+        msg += 'points are 0.0 | flag all'
+        print(msg)
+        return [False] * N
     data = [d for d in data if not np.isnan(d)]
     return flag_outliers(data, options=options)
 
@@ -168,11 +169,11 @@ def flag_report(blob_id):
         l = len(x) - sum(x)
         x = flag_blob_data(blob_id, data_type, options='short')
         s = len(x) - sum(x)
-        print data_type, 'has %i flags (%i short and %i long) out of %i' % (l + s, s, l, len(x))
+        print(data_type, 'has %i flags (%i short and %i long) out of %i' % (l + s, s, l, len(x)))
         #for i in sorted(x):
         #    print i, x[i]
 
-    print 'for', blob_id
+    print('for', blob_id)
     count_flagged_points(blob_id, 'width20')
     count_flagged_points(blob_id, 'width50')
     count_flagged_points(blob_id, 'width80')
@@ -181,9 +182,9 @@ def flag_report(blob_id):
 
 def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     times, _ = get_timeseries(blob_id, data_type='width20')
-    flag_types = [('width20','long'), ('width50', 'long'), ('width80', 'long'),    
+    flag_types = [('width20','long'), ('width50', 'long'), ('width80', 'long'),
                   ('length_rough', 'short'), ('length_rough', 'long')]
-                  
+
     N_rows = len(times)
     N_cols = len(flag_types)
 
@@ -191,7 +192,7 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     for i, (data_type, options)  in enumerate(flag_types):
         #hey = np.array(flag_blob_data(blob_id, data_type, options=options), dtype=bool)
         all_flags[:, i] = np.array(flag_blob_data(blob_id, data_type, options=options), dtype=bool)
-    
+
     if store_tmp:
         write_timeseries_file(ID=blob_id, data_type='flags',
                               data=all_flags, times=times)
@@ -202,16 +203,16 @@ def flag_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
         #good = np.count_nonzero(flag_list)
         good = len([i for i in flags if i])
         bad = N - good
-        print '\tall flags: {flags} | N: {N} | {r} %'.format(flags=bad, N=N, r=100 * bad / N)
+        print('\tall flags: {flags} | N: {N} | {r} %'.format(flags=bad, N=N, r=100 * bad / N))
     return all_flags
 
 def remove_loner_flags(flags, window_size=21, min_nonflag_fraction=0.7,
                        verbose=False):
     '''
-    returns flags with scattered flags removed. Flags will be removed from resulting list if    
+    returns flags with scattered flags removed. Flags will be removed from resulting list if
     the fraction of good timepoints within the running window size is greater than min_nonflag_fraction
 
-    :param flags: the list of boolean values    
+    :param flags: the list of boolean values
     :param window_size: the size of the window used to evaluate local (odd value int)
     :param min_nonflag_fraction: the fraction of flags around a loner_flag required to remove that loner_flag
     (float between 0 and 1)
@@ -230,8 +231,8 @@ def remove_loner_flags(flags, window_size=21, min_nonflag_fraction=0.7,
             if fraction_true >= min_nonflag_fraction:
                 new_flags[i] = True
             if verbose:
-                print 'tested', i, this_flag, 'to', new_flags[i]
-                print 'range:', window, fraction_true
+                print('tested', i, this_flag, 'to', new_flags[i])
+                print('range:', window, fraction_true)
     return new_flags
 
 def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
@@ -243,13 +244,13 @@ def create_breaks_for_blob_id(blob_id, verbose=True, store_tmp=True, **kwargs):
     :param insert: toggle to turn on/off the import of resulting break_list into the database.
     """
     #times, all_flags = get_timeseries(blob_id, data_type='flags')
-    times, all_flags = get_timeseries(ID=blob_id, data_type='flags')    
+    times, all_flags = get_timeseries(ID=blob_id, data_type='flags')
     # find general breakpoints
     flags = consolidate_flags(all_flags)
     break_list = create_break_list(times, flags)
     if verbose:
-        print '\tbreaks from flags: {i}'.format(i=len(break_list))
-    data_type = 'breaks'                            
+        print('\tbreaks from flags: {i}'.format(i=len(break_list)))
+    data_type = 'breaks'
     if store_tmp:
         write_metadata_file(blob_id, data_type=data_type, data=break_list)
     return break_list
@@ -293,18 +294,18 @@ def create_break_list(times, flags, verbose=False):
     flags_no_loners = remove_loner_flags(flags)
     flagged_areas = flag_trouble_areas(flags_no_loners)
 
-    break_starts, break_ends = [], []    
-    is_good, t = True, times[0]    
-    for time, this_flag in izip(times, flagged_areas):
+    break_starts, break_ends = [], []
+    is_good, t = True, times[0]
+    for time, this_flag in zip(times, flagged_areas):
         is_good, was_good = this_flag, is_good
         t, last_t = time, t
-        #print t, is_good
+        #print(t, is_good)
         if was_good and not is_good:
             break_starts.append(t)
-            #print 'break start', t, is_good
+            #print('break start', t, is_good)
         if is_good and not was_good:
             break_ends.append(last_t)
-            #print 'break ends', t, is_good
+            #print('break ends', t, is_good)
 
     if len(break_starts) == len(break_ends) + 1:
         break_ends.append(times[-1])
@@ -312,32 +313,32 @@ def create_break_list(times, flags, verbose=False):
     # match the start and endpoints together.
     msg = 'not an even number of starts and ends:'
     msg =  '{m} s{s} e{e}'.format(m=msg, s=len(break_starts), e=len(break_ends))
-    #print len(break_ends), len(break_starts)
+    #print(len(break_ends), len(break_starts))
     assert len(break_ends) == len(break_starts), msg
     break_list = []
     # if no breaks found, return empty break list.
     if not break_starts:
         return []
     # otherwise continue
-    for st, et in izip(break_starts, break_ends):
+    for st, et in zip(break_starts, break_ends):
         # remove breaks where start and end points are equal
         if st != et:
             if verbose:
-                print '\tbreak: {st} to {et}'.format(st=st, et=et)
+                print('\tbreak: {st} to {et}'.format(st=st, et=et))
             msg = 'start:{st}\tend:{et}\n'.format(st=st, et=et)
             assert st < et, msg
             break_list.append((st, et))
     return break_list
 
 def get_flagged_times(blob_id):
-    times, all_flags = get_timeseries(ID=blob_id, data_type='flags')    
+    times, all_flags = get_timeseries(ID=blob_id, data_type='flags')
     flags = consolidate_flags(all_flags)
     return [t for (t, f) in zip(times, flags) if f==False]
 
 def good_segments_from_data(break_list, times, data, flagged_times, verbose=True, null_flags=NULL_FLAGS):
-    
+
     def remove_flagged_points(region, flagged_times, null_flags=null_flags):
-        ''' returns a region with all the 
+        ''' returns a region with all the
         flagged timepoints removed and all the timepoints with
         null data values removed. '''
         filtered_region = []
@@ -346,7 +347,7 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
 
             if type(d) == np.ndarray:
                 if d.any() in null_flags:
-                    print d.shape
+                    print(d.shape)
                     is_good = False
             elif d in null_flags:
                 is_good = False
@@ -360,31 +361,31 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
             if is_good:
                 filtered_region.append((t,d))
         return filtered_region
-    
+
     if len(times) ==0:
-        print 'error -- no times:', times
+        print('error -- no times:', times)
         return []
 
     if len(break_list) == 0:
         if verbose:
             s, e = times[0], times[-1]
-            print '\tfrom start: {s}s | end: {e}s | N regions: 1'.format(s=s, e=e)
+            print('\tfrom start: {s}s | end: {e}s | N regions: 1'.format(s=s, e=e))
         # this returns a list with one region.
         return [remove_flagged_points(zip(times, data), flagged_times)]
-    
-    bstarts, bstops = zip(*break_list)
-    #print bstarts, bstops
 
-    # start these as false so 
+    bstarts, bstops = zip(*break_list)
+    #print(bstarts, bstops)
+
+    # start these as false so
     is_good, was_good = True, False
     region_start = times[0]
     good_regions, region, region_boundaries = [], [], []
 
-    for t, datum in izip(times, data):        
-        # for is_good to be true t cannot be between break start and stop 
+    for t, datum in zip(times, data):
+        # for is_good to be true t cannot be between break start and stop
         # and must have legit datum.
-        new_bool = True            
-        for start, stop in izip(bstarts, bstops):
+        new_bool = True
+        for start, stop in zip(bstarts, bstops):
             if (start <= t <= stop): # or not datum:
                 new_bool = False
 
@@ -392,34 +393,34 @@ def good_segments_from_data(break_list, times, data, flagged_times, verbose=True
         (is_good, was_good) = (new_bool, is_good)
         if is_good and not was_good:
             # start a new region with this timepoin
-            #print 'starting good region', t, len(datum) 
+            #print('starting good region', t, len(datum) )
             region = [(t, datum)]
             region_start = t
 
         elif is_good and was_good:
             # keep extending the region if region has things in it.
             region.append((t, datum))
-                
+
         elif not is_good and was_good and region:
             # region ended so add it to the good regions if anything is in region.
-            #print 'ending good region', t, len(datum)
+            #print('ending good region', t, len(datum))
             good_regions.append(remove_flagged_points(region, flagged_times))
             region_boundaries.append((region_start, t))
-        
+
     # if the loop ends with a good timepoint, store the region.
     if is_good:
         good_regions.append(remove_flagged_points(region, flagged_times))
         region_boundaries.append((region_start, t))
-        
+
     if verbose:
         s, e, r = times[0], times[-1], len(region_boundaries)
-        print '\tfrom start: {s}s | end: {e}s | N regions: {r}'.format(s=s, e=e, r=r)
-        #print 'from', times[0], 'to', times[-1], 'regions are:', region_boundaries
+        print('\tfrom start: {s}s | end: {e}s | N regions: {r}'.format(s=s, e=e, r=r))
+        #print('from', times[0], 'to', times[-1], 'regions are:', region_boundaries)
     return good_regions
 
 if __name__ == '__main__':
     #blob_id = '20120914_172813_01708'
-    #print shift_index('3?000')
+    #print(shift_index('3?000'))
 
     blob_id = '00000000_000001_00003'
     blob_id = '20130319_150235_01070'
@@ -427,23 +428,22 @@ if __name__ == '__main__':
     blob_id = '00000000_000001_00008'
     blob_id = '20130319_150235_01830'
     blob_id = '20130719_124520_00951'
-    print 'using blob_id', blob_id
+    print('using blob_id', blob_id)
     #find_coils(blob_id)
 
     flag_report(blob_id)
-    flag_blob_id(blob_id)    
-    
+    flag_blob_id(blob_id)
+
     breaks = create_breaks_for_blob_id(blob_id, insert=False)
-    print breaks
+    print(breaks)
     times, all_flags = get_timeseries(ID=blob_id, data_type='flags')
     flags = consolidate_flags(all_flags)
     flagged_times = get_flagged_times(blob_id)
-    good_segments = good_segments_from_data(break_list=breaks, times=times, data=flags, 
+    good_segments = good_segments_from_data(break_list=breaks, times=times, data=flags,
                                             flagged_times=flagged_times)
-    print type(good_segments)
-    print len(good_segments)
+    print(type(good_segments))
+    print(len(good_segments))
     for i in good_segments:
-        print
-        print i
-        print
-    
+        print()
+        print(i)
+        print()

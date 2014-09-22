@@ -46,13 +46,13 @@ def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, 
 
         lines = []
         for blob_id in eligable_blobs:
-            print blob_id
+            print(blob_id)
             all_outlines = pull_data_type_for_blob(blob_id=blob_id, data_type='encoded_outline', **kwargs)['data']
             encoded_outline = all_outlines.get(timekey, None)
             if encoded_outline:
                 xy, l, code = encoded_outline
                 line = '{tk} {blob_id} %% {x} {y} {l} {code} \n'.format(tk=timekey, blob_id=blob_id, x=xy[0], y=xy[1], l=l, code=code)
-                print line
+                print(line)
                 lines.append(line)
 
         with open(temp_filename, 'w') as f:
@@ -64,16 +64,16 @@ def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, 
 def db_check(ex_id, pictime=500):
     import grab_images as raw
 
-    print 'time chosen:', pictime
+    print('time chosen:', pictime)
     image_times = raw.create_image_directory(ex_id=ex_id)
     closest_image_time, closest_image = raw.get_closest_image(target_time=pictime, image_dict=image_times)
-    print 'closest image time:', closest_image_time
-    #print image_times
+    print('closest image time:', closest_image_time)
+    #print(image_times)
     frame, timepoint = find_frame_for_time(ex_id=ex_id, time=closest_image_time)
-    print 'closest frame and time:', frame, timepoint
+    print('closest frame and time:', frame, timepoint)
     outlines = grab_db_outlines(ex_id=ex_id, timepoint=timepoint)
     for i in outlines:
-        print i
+        print(i)
 '''
 
 def find_outlines_for_timepoint(ex_id, frame, data_dir=DATA_DIR, overwrite_temp=False):
@@ -89,7 +89,7 @@ def find_outlines_for_timepoint(ex_id, frame, data_dir=DATA_DIR, overwrite_temp=
     """
     # specify the name of the temporary file, and use grep to write to it.
     temp_filename = '{dr}{ex_id}/frame{frame}_blobs.tmp'.format(frame=frame, dr=data_dir, ex_id=ex_id)
-    print temp_filename
+    print(temp_filename)
     if overwrite_temp or not os.path.exists(temp_filename):
         cmd = 'grep -h \'^{frame}\' {dr}{ex_id}/*.blobs > {tmp_file}'.format(frame=frame, dr=data_dir, ex_id=ex_id,
                                                                              tmp_file=temp_filename)
@@ -101,7 +101,7 @@ def parse_temp_file_into_outlines(temp_filename):
     # parse the temp file and only extract encoded outline info.
     with open(temp_filename, 'r') as f:
         blobs = [line.split('%%')[-1].split() for line in f.readlines() if '%%' in line]
-    #print len(blobs), 'blobs found for frame', frame
+    #print(len(blobs), 'blobs found for frame', frame)
 
     # decode all outlines and convert them into point form (ie. lists of (x,y) tuples)
     outlines = []
@@ -129,7 +129,7 @@ def create_good_outline_file(ex_id, frame, size_threshold=300, data_dir=DATA_DIR
         # if no .blobs files are in this directory, the path was probably specified wrong
         files = glob.glob('{path}/*.blobs'.format(path=data_dir + ex_id))
         if len(files) <1:
-            print 'Warning: {path}\n may not be the correct directory. no blobs files found'.format(path=data_dir+ex_id)
+            print('Warning: {path}\n may not be the correct directory. no blobs files found'.format(path=data_dir+ex_id))
 
         # sift through all data and grab 'good' outlines
         good_lines = []
@@ -142,7 +142,7 @@ def create_good_outline_file(ex_id, frame, size_threshold=300, data_dir=DATA_DIR
                         # checking for local id ensures not first line.
                         if local_id and line_for_frame:
                             isGood = test_sizes(sizes)
-                            #print isGood, line_for_frame.split()
+                            #print(isGood, line_for_frame.split())
                             if isGood:
                                 good_lines.append(line_for_frame)
                         local_id = line[1:].strip()
@@ -155,7 +155,7 @@ def create_good_outline_file(ex_id, frame, size_threshold=300, data_dir=DATA_DIR
         if test_sizes(sizes) and line_for_frame:
             good_lines.append(line)
 
-        print temp_filename
+        print(temp_filename)
         # write the temp file so that we can skip the 'data sifting' step next time.
         with open(temp_filename, 'w') as f:
             for line in good_lines:

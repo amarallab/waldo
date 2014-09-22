@@ -4,10 +4,10 @@ import sys
 def intersection_point_between_lines(p1, p2, m, q1):
     '''
         p1 and p2 are two points between we draw a line
-        the other line is specified by the angular coefficient 
+        the other line is specified by the angular coefficient
         and one point q1
     '''
-    
+
     # p1=list(p1)
     # p2=list(p2)
     # if p1[0] == p2[0]:
@@ -41,7 +41,7 @@ def intersection_point_between_lines(p1, p2, m, q1):
 #         xs.append(p1[0] + k)
 #         ys.append(p1[1] + m * (xs[-1]-p1[0]))
 #     return xs, ys
-    
+
 def points_along_straight_line(m, p1):
     x, y = p1
     xs = [x - 0.2, x + 0.2]
@@ -66,11 +66,11 @@ def get_ortogonal_to_spine(spine, index):
     if p1[0] == p2[0]:
         p1[0] += 1e-6
     m= (p2[1]-p1[1])/(p2[0]-p1[0])
-    #print m, 'angular coefficient'
+    #print(m, 'angular coefficient')
     if m == 0:
         m = 1e-6
     return -1./m, p1
-    
+
 def find_intersection_points(q1, m, outline):
     try:
         xs, ys = [], []
@@ -89,8 +89,8 @@ def find_intersection_points(q1, m, outline):
             #    xs.append(ip[0])
             #    ys.append(ip[1])
             p1 = p2
-    except Exception, e:
-        print "HELTENA: ", e.message
+    except Exception as e:
+        print("HELTENA: ", e.message)
         sys.exit(-1)
     return xs, ys
 

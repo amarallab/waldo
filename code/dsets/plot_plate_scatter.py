@@ -12,10 +12,11 @@ __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
+from six.moves import zip
+
 # standard imports
 import os
 import sys
-from itertools import izip
 import matplotlib.pyplot as plt
 from mpltools import style
 import pandas as pd
@@ -38,8 +39,8 @@ def plot_timeseries(ax, labels, xs, ys, bars):
     for c, l in zip(colors, labels):
         x = xs[l]
         y = ys[l]
-        set_bars = bars[l]        
-        for xi, b in izip(x, set_bars):
+        set_bars = bars[l]
+        for xi, b in zip(x, set_bars):
             b1, b2 = b
             ax.plot([xi, xi], [b1, b2], lw=0.5, color=c)
         ax.plot(x,y, color=c, lw=0, marker='o', alpha=1.0, label=l)
@@ -51,14 +52,14 @@ def plot_plate_scatter(ax, dataset, data_type, show_mean, age_range=[0,1000000],
         return
     df = pd.DataFrame(data)
     # calculate two kinds of error bars
-    df['std1'], df['std2'] = zip(*[[m-s, m+s] for (m,s) in izip(df['mean'], df['std'])])
+    df['std1'], df['std2'] = zip(*[[m-s, m+s] for (m,s) in zip(df['mean'], df['std'])])
     df['q1'], df['median'], df['q3'] = zip(*df['quartiles'])
 
     print df.head()
-                
+
     if labels == 'all':
         labels = list(set(df['labels']))
-       
+
     if show_mean:
         primary = 'mean'
         bar_l, bar_u = ('std1', 'std2')
@@ -73,8 +74,8 @@ def plot_plate_scatter(ax, dataset, data_type, show_mean, age_range=[0,1000000],
             set_names.append(l)
             set_xs[l] = grp['hours']
             set_ys[l] = grp[primary]
-            set_bars[l] = zip(grp[bar_l], grp[bar_u])
-            
+            set_bars[l] = list(zip(grp[bar_l], grp[bar_u]))
+
     plot_data = {'ax':ax,
                  'labels':sorted(set_names),
                  'xs':set_xs, 'ys':set_ys,
@@ -83,24 +84,24 @@ def plot_plate_scatter(ax, dataset, data_type, show_mean, age_range=[0,1000000],
     plot_timeseries(**plot_data)
     ax.set_ylabel(data_type)
     return plot_data
-                        
+
 def plot_dset(dataset, data_types=FULL_SET, show_mean=False,
               age_range=[0,1000000], labels='all'):
 
     N = len(data_types)
     fig, axes = plt.subplots(N, 1, sharex=True)
     for ax, data_type in zip(axes, data_types):
-        plot_plate_scatter(ax, dataset, data_type, show_mean, 
+        plot_plate_scatter(ax, dataset, data_type, show_mean,
                                       age_range=age_range, labels=labels)
     plt.legend()
-    plt.show()                                        
+    plt.show()
 
 if __name__ == '__main__':
     dataset = 'disease_models'
     dataset = 'N2_aging'
     #data_type = 'length_mm'
     #data_type = 'curve_w'
-    
+
     # data source toggles
     # plot toggles
     show_mean = False
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     # optional toggles
     age_range=[0,1000000]
     #age_range=[40,210]
-    #age_range=[40,260]    
+    #age_range=[40,260]
 
     dtypes = FULL_SET[:-2]
 
@@ -127,4 +128,4 @@ if __name__ == '__main__':
         #labels = ['N2', 'NQ67']
 
     sets = plot_dset(dataset=dataset, show_mean=show_mean, age_range=age_range, data_types=dtypes, labels=labels)
-    
+

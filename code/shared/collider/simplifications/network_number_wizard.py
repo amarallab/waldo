@@ -14,7 +14,7 @@ def node_is_moving(node, terminals_df, MIN_DIST=10, MIN_ALIVE=0.25):
         p0 = row['x0'], row['y0'], row['t0']
         p1 = row['xN'], row['yN'], row['tN']
         return dist_Nd(p0[0:2], p1[0:2]) > MIN_DIST and p1[2] - p0[2] > MIN_ALIVE
-    except KeyError, e:
+    except KeyError as e:
         return False
 
 
@@ -29,7 +29,7 @@ def area_for_node(node, terminals_df, sizes_df, default=None, MIN_ALIVE=0.25):
         if math.isnan(value):
             return default
         return value
-    except KeyError, e:
+    except KeyError as e:
         return default
 
 

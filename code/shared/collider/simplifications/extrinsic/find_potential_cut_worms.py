@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
 import math
@@ -63,7 +65,7 @@ def find_potential_cut_worms(graph, experiment, max_first_last_distance=40, max_
             if debug:
                 print("I: Distance between 'node' and 'last' is greater than %f: %d - (%d, %d) - %d" % \
                       (max_first_last_distance, node, sibling1, sibling2, last))
-                print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+                print(" ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last]))
             continue
 
         sibling1_terminals = terminals_df.iloc[terminals_map[sibling1]]
@@ -74,7 +76,7 @@ def find_potential_cut_worms(graph, experiment, max_first_last_distance=40, max_
             if debug:
                 print("I: Distance between siblings is greater than %f: %d - (%d, %d) - %d" % \
                       (max_sibling_distance, node, sibling1, sibling2, last))
-                print " ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last])
+                print(" ", "\n  ".join(debug_data(x) for x in [node, sibling1, sibling2, last]))
             continue
 
         node_sizes = sizes_df.iloc[sizes_map[node]]

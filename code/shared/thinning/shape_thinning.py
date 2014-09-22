@@ -91,14 +91,14 @@ def iterate_z(Z, subiteration=0):
         #north_wind[1:-1,1:-1] = p[2] * p[6] * p[8]
         north_wind[1:-1,1:-1] = p06 * p[4] # p[0] * p[4] * p[6] # offset p[-2]!!
         check4 = (north_wind == 0)
-        
+
     removal = check1 & check2 & check3 & check4
     Z1 = (Z == 1)
     removed = Z1 & (removal == 1)
     points_removed = removed.any()
     Z = np.array(Z1 & (removal == 0), int)
     return Z, points_removed
-        
+
 def skeletonize(im_array):
     """
     :param image_array:
@@ -108,16 +108,16 @@ def skeletonize(im_array):
     Z = add_border(im_array)
     for i in range(1000):
         Z, points_removed1 = iterate_z(Z, subiteration=0)
-        Z, points_removed2 = iterate_z(Z, subiteration=1)        
+        Z, points_removed2 = iterate_z(Z, subiteration=1)
         if not points_removed1 and not points_removed2:
             break
     else:
-        print 'manually stopped thinning algorithm at 1000 interations'
+        print('manually stopped thinning algorithm at 1000 interations')
     thinned_image = remove_border(Z)
     return thinned_image
 
 if __name__ == '__main__':
-    '''    
+    '''
     im_array = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, 0, 1, 1, 1, 1, 1, 0, 0],
                          [0, 0, 1, 1, 1, 1, 1, 0, 0],
@@ -135,13 +135,13 @@ if __name__ == '__main__':
                             [0, 0, 0, 1, 1, 1, 0, 0, 0]])
 
 
-    #print im_array
+    #print(im_array)
     #profiling.begin()
     for i in range(10000):
         skim = skeletonize(im_array)
     #profiling.end()
-    #print 'final'
-    print skim
+    #print('final')
+    print(skim)
     #calculate_M(im_array, 'first')
     #im = Image.new('1',[x_range, y_range])
     #im.show()

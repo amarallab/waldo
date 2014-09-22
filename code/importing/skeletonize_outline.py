@@ -2,8 +2,10 @@
 
 '''
 Filename: skeletonize_outline.py
-Description: 
+Description:
 '''
+from __future__ import absolute_import, print_function
+from six.moves import zip
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
@@ -28,7 +30,7 @@ sys.path.append(shared_directory)
 # if directory to store deviant does not exist, create it.
 if not os.path.exists(exception_directory):
     os.makedirs(exception_directory)
-    
+
 # nonstandard imports
 from deviant.record_exceptions import write_pathological_input
 from thinning.shape_thinning import skeletonize
@@ -87,7 +89,7 @@ def cut_branchpoints_from_spine_matrix(spine_matrix):
     # having more than two endpoints means there are some branchpoints. this removes them.
     while len(endpoints) > 2:
         spine_matrix, endpoints, branchpoints = trim_spine_matrix(spine_matrix, endpoints, branchpoints)
-    
+
     if len(endpoints) < 2: return spine_matrix, endpoints
     assert len(endpoints) == 2, ('there should be two endpoints, not: ' + str(endpoints)
                                  + '\n' + str(spine_matrix))
@@ -143,7 +145,7 @@ def compute_skeleton_from_outline(outline, return_intermediate_steps=False, verb
         else:
             # short spines can't be helped.
             if verbose:
-                print 'warning: spine too short to find endpoints!'
+                print('warning: spine too short to find endpoints!')
             return []
 
     # change spine matrix back to a list of points and reverse the previous coordinate shift
@@ -168,8 +170,8 @@ def compute_closest_point(im, pt, safe_mode=False):
     nearest_neighbors = [(i - 1, j), (i, j - 1), (i, j + 1), (i + 1, j)]
     diagonal_neighbors = [(i - 1, j - 1), (i - 1, j + 1), (i + 1, j - 1), (i + 1, j + 1)]
     actual_neighbors = []
-    #print 'im size', len(im), len(im[0])
-    #print nearest_neighbors
+    #print('im size', len(im), len(im[0]))
+    #print(nearest_neighbors)
     # first we check neighbors which are closer (not on the diagonal)
     for n in nearest_neighbors:
         # make sure none of neighbors are out of bounds.
@@ -221,7 +223,7 @@ def close_outline_border(outline, verbose=False):
 
     if need_filler:
         if verbose:
-            print 'fixing:', pt_1, (new_x, new_y), pt_N
+            print('fixing:', pt_1, (new_x, new_y), pt_N)
         outline.append((new_x, new_y))
         # if one gap needed to be filled, check recursively to see if a gap still present.
         close_outline_border(outline)
@@ -240,14 +242,14 @@ def line_matrix_to_ordered_points(matrix, endpoints):
             write_pathological_input((matrix.tolist(), endpoints), input_type='spine_matrix/endpoints', note='next point error')
             assert next_pt != None, 'next point error'
 
-        #print next_pt, points[-1]
+        #print(next_pt, points[-1])
         points.append(next_pt)
-        #print points
+        #print(points)
         sm[next_pt[0], next_pt[1]] = 0
         #plot_np_array(sm, points)
-        #print 'endpoints', endpoints
+        #print('endpoints', endpoints)
         if next_pt == endpoints[1]:
-            #print 'hit endpoint'
+            #print('hit endpoint')
             break
     return points
 

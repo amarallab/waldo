@@ -37,7 +37,7 @@ def before_and_after(experiment, target):
                 outline = multiworm.readers.blob.decode_outline_line(experiment[child], i)
                 children_outlines.append(outline)
                 break
-            except ValueError, IndexError:
+            except (ValueError, IndexError):
                 pass
             i += 1
 
@@ -48,7 +48,7 @@ def before_and_after(experiment, target):
                 outline = multiworm.readers.blob.decode_outline_line(experiment[parent], i)
                 parent_outlines.append(outline)
                 break
-            except ValueError, IndexError:
+            except (ValueError, IndexError):
                 pass
             i += -1
     return parent_outlines, children_outlines

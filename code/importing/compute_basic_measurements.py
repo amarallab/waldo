@@ -5,11 +5,13 @@ Description:
 
 __author__ = 'peterwinter + Andrea L.'
 
+from six.moves import zip
+
 # standard imports
 import os
 import sys
 import math
-from itertools import izip, combinations
+from itertools import combinations
 import numpy as np
 
 # Path definitions
@@ -97,7 +99,7 @@ def calculate_widths_for_blob_id(blob_id, store_tmp=True, **kwargs):
     times, spines = get_timeseries(ID=blob_id, data_type='spine_rough')
     times, encoded_outlines = get_timeseries(ID=blob_id, data_type='encoded_outline')
     width20, width50, width80 = [], [], []
-    for spine, en_outline in izip(spines, encoded_outlines):
+    for spine, en_outline in zip(spines, encoded_outlines):
         # make sure to catch not a number. not sure if necessary.
         if len(spine) > 0 and np.isnan(spine[0][0]):
             spine = []
