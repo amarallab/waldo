@@ -12,6 +12,8 @@ import logging
 import networkx as nx
 
 from conf import settings
+from .network_number_wizard import network_number_wizard
+from .network_number_wizard import node_is_moving
 
 if settings.DEBUG:
     import inspect
@@ -23,12 +25,18 @@ L = logging.getLogger(__name__)
 
 class ColliderGraph(nx.DiGraph):
     def __init__(self, *args, **kwargs):
-        super(ColliderGraph, self).__init__(*args, **kwargs)
+        self.experiment = None
 
+        ## including this causes major problems with the to_undirected()
+        ## function ... not worth it.
+        #self.experiment = kwargs.get('experiment', None)
+
+        super(ColliderGraph, self).__init__(*args, **kwargs)
         self._whereis_data = {}
 
+
     def copy(self):
-        return ColliderGraph(self)
+        return ColliderGraph(self, experiment=self.experiment)
 
     def components(self, node):
         return set(int(n) for n in self.node[node].get('components', [node]))
@@ -66,6 +74,7 @@ class ColliderGraph(nx.DiGraph):
         nd = self.node[node]
         L.debug('Node {} incorporating {}'.format(
                 node, ', '.join(str(x) for x in other_nodes)))
+
 
         subg = self.subgraph((node,) + other_nodes)
         if nx.number_connected_components(subg.to_undirected()) != 1:
@@ -227,3 +236,50 @@ class ColliderGraph(nx.DiGraph):
         # This is off by one frame compared to the frame-based lifespan
         # because we don't know for sure how long the frame lasted
         return self.node[node]['died_t'] - self.node[node]['born_t']
+
+    def count_worms(self, experiment):
+        worm_count_dict = network_number_wizard(self, experiment)
+        for node, count in worm_count_dict.iteritems():
+            self.node[node]['worm_count'] = count
+
+    def determine_moving(self, experiment):
+        # code following network_number_wizard logic for determining
+        # seeds
+        terminals_df = experiment.prepdata.load('terminals')
+        for node in self.nodes():
+            is_moving = 0
+            if node_is_moving(node, terminals_df):
+                is_moving = 1
+            self.node[node]['moved'] = is_moving
+
+    def add_node_attributes(self, attribute_name, node_dict, default=False):
+        """
+        adds a new attribute to a set of nodes in the graph and passes
+        values to set the attribute to.
+
+        params
+        -----
+        attribute_name: (str)
+            the key used to store the new attribute in node_data
+        node_dict: (dict)
+            a dictionary with {node: value} pairs specifying what
+            the new attribute value is for each node.
+        default:
+            the default value for nodes that are not in the node_dict.
+            if default == False, no attribute will be created.
+        """
+        nodes_found = 0
+        nodes_not_found = 0
+        for node in self.nodes():
+            #print(type(node))
+            #print(node, node in node_dict)
+            if node in node_dict:
+                self.node[node][attribute_name] = node_dict[node]
+                nodes_found += 1
+            elif default == False: # do not add anything
+                nodes_not_found += 1
+            else: # add a None placeholder
+                nodes_not_found += 1
+                self.node[node][attribute_name] = default
+        print(nodes_found, 'nodes found')
+        print(nodes_not_found, 'nodes not found')
