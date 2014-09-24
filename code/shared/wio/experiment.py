@@ -31,7 +31,8 @@ class Experiment(multiworm.Experiment):
         self.prepdata = fm.PrepData(self.id)
 
         # NOTE: this needs to be done in two steps for some reason
-        self.graph = nx.freeze(collider.Graph(self.graph))
+        graph = collider.Graph(self.graph, experiment=self)
+        self.graph = nx.freeze(graph)
 
         self._prep_df = None
         self._typical_bodylength = None
@@ -133,7 +134,8 @@ class Experiment(multiworm.Experiment):
 
         return self._typical_bodylength
 
-    def calculate_node_worm_count(self):
-        node_worm_count = collider.network_number_wizard(self.graph, self, False)
-        for k, v in node_worm_count.items():
-            self.graph.node[k]['worm_count'] = v
+    # def calculate_node_worm_count(self, graph=self.graph):
+    #     return
+    #     node_worm_count = collider.network_number_wizard(graph, self, False)
+    #     for k, v in node_worm_count.items():
+    #         self.graph.node[k]['worm_count'] = v

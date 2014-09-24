@@ -20,5 +20,3 @@ from .extrinsic.suspected_collisions import suspected_collisions
 from .util import *
 
 from .graph import ColliderGraph as Graph
-
-from .network_number_wizard import network_number_wizard
