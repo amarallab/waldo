@@ -27,9 +27,6 @@ def patch_contours(contours, flip=False):
     bounds = []
     patches = []
     for contour in contours:
-        contour = np.array(contour)
-        if contour.shape == (2,):
-            contour = np.reshape(contour, (-1, 2))
         if flip:
             contour = np.fliplr(contour)
         bbox = Box.fit(contour)
@@ -53,6 +50,14 @@ def get_image(experiment, **kwargs):
     return img
 
 def get_contour(blob, index='first', centroid_fallback=True):
+    """
+    Return the `'first'` or `'last'` valid contour in *blob* as *index*
+    dictates as a 2-D :py:class:`numpy.ndarray` with X and Y as the two
+    columns.
+
+    If *centroid_fallback* is True, fall back to using the centroid (will
+    just return a single point, obviously) if no valid contour found.
+    """
     if index not in ['first', 'last']:
         raise ValueError('index must be either "first" or "last"')
 
@@ -66,4 +71,9 @@ def get_contour(blob, index='first', centroid_fallback=True):
         col = 'centroid'
         index = getattr(blob.df[col], method)()
 
-    return blob.df[col][index]
+    contour = np.array(blob.df[col][index])
+
+    if contour.shape == (2,):
+        contour = np.reshape(contour, (-1, 2))
+
+    return contour

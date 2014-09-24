@@ -1,7 +1,18 @@
 #!/usr/bin/env python
 """
-renderterminals
+rendergaps
 
+Creates images for screening from a two-column CSV of gaps
+
+Example:
+    ./rendergaps 20130702_135652 gaps.csv
+
+Running the script in it's own empty folder is advisable as it will generate
+a few thousand images.
+
+    mkdir ../data/testset1
+    cd ../data/testset1
+    ../../scripts/rendergaps 20130702_135652 ../mypath/gaps.csv
 """
 from __future__ import print_function, absolute_import
 
@@ -21,185 +32,7 @@ from PIL import Image, ImageOps, ImageChops
 import pathcustomize
 
 import wio
-import collider
-
-import collider.viz.tools as vt
-import collider.viz.outlines as outlines
-
-def merge_stack(images):
-    '''
-    Merges a series of *images* using ***math***.
-
-    Parameters
-    ----------
-    images : iterable of :py:class:`PIL.Image.Image` (from either Pillow or PIL)
-        Image stack
-
-    Returns
-    -------
-    :py:class:`PIL.Image.Image`
-        Merged image
-    '''
-    def equalize(h):
-        # robbed from http://effbot.org/zone/pil-histogram-equalization.htm
-        lut = []
-        for b in range(0, len(h), 256):
-            # step size
-            step = reduce(operator.add, h[b:b+256]) / 255
-            # create equalization lookup table
-            n = 0
-            for i in range(256):
-                lut.append(n / step)
-                n = n + h[i+b]
-        return lut
-
-    # Guards
-    if not images:
-        raise ValueError('No images provided')
-    elif len(images) == 1:
-        return images[0]
-
-    # Convert Image
-    # - compress first
-    #print images[0].histogram()
-    #lut = equalize(images[0].histogram())
-
-    # - reduce 16-bit greyscale to 8-bit
-    for i, im in enumerate(images):
-        im = im.point([int(x/256) for x in range(2**16)], 'L')
-        im = ImageOps.autocontrast(im, cutoff=0)
-        images[i] = im
-    
-    # stack up, keeping darkest pixels
-    composite = ImageChops.darker(images[0], images[1])
-    for im in images[2:]:
-        composite = ImageChops.darker(composite, im)
-    return composite
-
-#def get_
-
-def terminal_info(blob, fields, index='first'):
-    """
-    For the :py:class:`multiworm.blob.Blob` object *blob*, return *fields* from 
-    either the ``'first'`` or ``'last'`` valid frame.
-    
-    Note that the data might be spread across different frames in the case
-    where the geometry is not included in the blob (happens occasionally at the
-    start of a blob)
-    """
-    if index not in ['first', 'last']:
-        raise ValueError('index must be either "first" or "last"')
-
-    blob.df.decode_contour()
-
-    method = index + '_valid_index'
-    
-    for col in fields:
-        index = getattr(blob.df[col], method)()
-        yield blob.df[col][index] if index is not None else None        
-        
-class AxisTransformer(object):
-    def __init__(self, subset_bounds, scale=1, transpose=False):
-        self.subset_bounds = subset_bounds
-        self.scale = scale
-        self.transpose = transpose
-
-    def __call__(self, coord):
-        if self.transpose:
-            y, x = coord
-        else:
-            x, y = coord
-        x -= self.subset_bounds[0]
-        y -= self.subset_bounds[1]
-        x *= self.scale
-        y *= self.scale
-        return x, y
-
-def merge_stack(images):
-    '''
-    Merges a series of *images* using ***math***.
-
-    Parameters
-    ----------
-    images : iterable of :py:class:`PIL.Image.Image`
-        Image stack
-
-    Returns
-    -------
-    :py:class:`PIL.Image.Image`
-        Merged image
-    '''
-    # Guards
-    if not images:
-        raise ValueError('No images provided')
-    elif len(images) == 1:
-        return images[0]
-
-    # Convert Image
-    # - compress first
-    #print images[0].histogram()
-    #lut = equalize(images[0].histogram())
-
-    # - reduce 16-bit greyscale to 8-bit
-    for i, im in enumerate(images):
-        im = im.point([int(x/256) for x in range(2**16)], 'L')
-        im = ImageOps.autocontrast(im, cutoff=0)
-        images[i] = im
-    
-    # stack up, keeping darkest pixels
-    composite = ImageChops.darker(images[0], images[1])
-    for im in images[2:]:
-        composite = ImageChops.darker(composite, im)
-    return composite
-    
-def show_gap(experiment, from_bid, to_bid):
-    # "a to b" used throughout.
-    
-    # get when and where they are, what they look like
-    fields = ['time', 'centroid', 'contour']
-    a_time, a_cent, a_contour = terminal_info(experiment[from_bid], fields, index='last')
-    b_time, b_cent, b_contour = terminal_info(experiment[to_bid], fields, index='first')
-    
-    # determine bounds to get from images
-    bounds = vt.Box.fit([a_cent, b_cent])
-    bounds.grow(30)
-    bounds.height = max(150, bounds.height)
-    bounds.width = max(150, bounds.width)
-    
-    transform = AxisTransformer((bounds.left, bounds.bottom))
-    # figure out which images span the gap
-    # load and crop images into a stack
-    stack = []
-    for image_filename in experiment.image_files[a_time:b_time]:
-        image = Image.open(image_filename.open('rb'))
-        image.load()
-        image = image.crop(bounds.T.PIL)
-        image.load() # applies crop
-        stack.append(image)
-    
-    # flatten the images together
-    composite = merge_stack(stack)
-    #composite = ImageOps.invert(composite)
-    
-    # maybe do some compositing
-    # - lets plot the contours
-    contours = [
-        a_contour if a_contour else a_cent,
-        b_contour if b_contour else b_cent
-    ]
-    _, patches = vt.patch_contours(contours, flip=True)
-    assert len(patches) == 2
-    coll = PatchCollection(patches, facecolor='red', alpha=0.5)
-    #coll.set_array([0.2, 0.8])
-    
-    f, ax = plt.subplots()
-    f.set_size_inches((10, 10))
-    bounds.height = -bounds.height
-    ax.imshow(composite, cmap=plt.cm.Greys, extent=bounds.T)
-    ax.add_collection(coll)
-        
-    return f, ax
-
+from tape.viz import show_gap
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -213,7 +46,7 @@ def main():
     eid = args.experiment_id
 
     experiment = wio.Experiment(experiment_id=eid)
-    
+
     for line in args.input_file:
         try:
             gap = [int(x) for x in line.split(',')]
@@ -228,12 +61,12 @@ def main():
             print('Wrong gap length {}:\n >> {}'.format(len(gap), line))
 
         try:
-            f_ = show_gap(experiment, *gap)
-            f = f_[0]
-            fn = '../dump/gaps/{}_{:05}_{:05}.png'.format(eid, *gap)
+            f, ax = show_gap(experiment, *gap)
+            fn = '{}_{:05}_{:05}.png'.format(eid, *gap)
 
             f.savefig(fn)
             print('Saved gap from blob {} to {}'.format(*gap))
+
             plt.close('all')
         except Exception as e:
             print('Failed to process gap {}'.format(gap))

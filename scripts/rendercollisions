@@ -31,7 +31,7 @@ import pathcustomize
 
 import wio
 import collider
-import collider.viz.outlines as outlines
+from collider.viz import show_collision
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -50,7 +50,7 @@ def main():
     print(','.join(['eid', 'bid', 'frame', 'filename']))
     for bid in gen:
         try:
-            f, ax = outlines.show_collision(experiment, graph, bid)
+            f, ax = show_collision(experiment, graph, bid)
             fn = '{}_{:05}.png'.format(eid, bid)
             f.savefig(fn)
             plt.close('all')
