@@ -9,9 +9,9 @@ urlpatterns = patterns('',
 
     url(r'^admin/', include(admin.site.urls)),
 
-    url(r'^collisions/', include('screencollisions.urls', namespace='sc')),
-    url(r'^gaps/', include('screengaps.urls', namespace='sg')),
-    url(r'^$', RedirectView.as_view(pattern_name='sc:index', permanent=False), name='home'),
+    url(r'^collisions/', include('screencollisions.urls', namespace='collisions')),
+    url(r'^gaps/', include('screengaps.urls', namespace='gaps')),
+    url(r'^$', RedirectView.as_view(pattern_name='collisions:index', permanent=False), name='home'),
 
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', name="login"),
     url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', name="logout"),

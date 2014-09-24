@@ -38,7 +38,7 @@ INSTALLED_APPS = (
     'bootstrap3',
     'webui',
     'screencollisions',
-    #'screengaps',
+    'screengaps',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -79,12 +79,12 @@ STATIC_URL = '/static/'
 COLLISION_IMAGES = (pathlib.Path(BASE_DIR) /
         '..' / # waldo/scripts/
         '..' / # waldo/
-        'data' / 'screen' / 'images')
+        'data' / 'screen' / 'collisions')
 
 GAP_IMAGES = (pathlib.Path(BASE_DIR) /
         '..' / # waldo/scripts/
         '..' / # waldo/
-        'data' / 'gaps' / 'images')
+        'data' / 'screen' / 'gaps')
 
 STATICFILES_DIRS = (
     str(COLLISION_IMAGES),

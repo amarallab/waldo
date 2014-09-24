@@ -21,9 +21,9 @@
         </div>
         <div class='navbar-collapse'>
           <ul class='nav navbar-nav'>
-            <li><a href="{% url 'sc:index' %}">Collisions</a></li>
+            <li><a href="{% url 'collisions:index' %}">Collisions</a></li>
             {% ifappexists screengaps %}
-              <li><a href="{% url 'sg:index' %}">Gaps</a></li>
+              <li><a href="{% url 'gaps:index' %}">Gaps</a></li>
             {% endifappexists %}
           </ul>
           <ul class='nav navbar-nav navbar-right'>

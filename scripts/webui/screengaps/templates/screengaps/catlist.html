@@ -16,7 +16,7 @@
                 <tr>
                     <td>{{ c.experiment_id }}</td>
                     <td>{{ c.blob_id }}</td>
-                    <td><a href="{% url 'collisions:collision' eid=c.experiment_id bid=c.blob_id %}">Show...</a></td>
+                    <td><a href="{% url 'sc:collision' eid=c.experiment_id bid=c.blob_id %}">Show...</a></td>
                 </tr>
             {% endfor %}
         </tbody>

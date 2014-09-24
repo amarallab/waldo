@@ -52,7 +52,7 @@ class CuratedAnswer(models.Model):
     )
     collision = models.ForeignKey(Collision)
     answer = models.CharField(max_length=60, choices=ANSWERS)
-    curator = models.ForeignKey(User, editable=False)
+    curator = models.ForeignKey(User, editable=False, related_name='collision_answer_user')
     starred = models.BooleanField(default=False)
 
     class Meta:

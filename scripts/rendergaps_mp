@@ -60,10 +60,18 @@ def painter(experiment, gapq):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
 
+    cpus = mp.cpu_count()
+
     parser.add_argument('experiment_id',
         help="Experiment ID to use.")
     parser.add_argument('input_file', type=argparse.FileType('r'),
         help="File with blob IDs to render. Accepts stdin as -")
+    parser.add_argument('-p', '--processes', type=int, default=2*cpus
+        help="Number of processes to launch, defaults to twice the number "
+             "of CPUs ({}). I wouldn't go higher than that, cut the number to "
+             "maybe half your CPU count ({}) if you want to work on the same "
+             "machine without it eating all your RAM and CPU.".format(
+                2* cpus, cpus//2))
 
     args = parser.parse_args()
     eid = args.experiment_id
@@ -71,8 +79,8 @@ def main():
     print('Loading experiment')
     experiment = wio.Experiment(experiment_id=eid)
 
-    n_workers = mp.cpu_count()
-    taskq = mp.JoinableQueue(2 * mp.cpu_count())
+    n_workers = args.processes
+    taskq = mp.JoinableQueue(args.processes)
 
     print('Creating workers')
     workers = [mp.Process(

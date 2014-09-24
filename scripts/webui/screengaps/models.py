@@ -24,7 +24,8 @@ class Gap(models.Model):
 
     def image_file(self):
         return (settings.GAP_IMAGES /
-                '{}_{:05}.png'.format(self.experiment_id, self.blob_id))
+                '{}_{:05}_{:05}.png'.format(
+                    self.experiment_id, self.from_blob, self.to_blob))
 
     def answer_count(self):
         return CuratedAnswer.objects.filter(object_pk=self.id).count()
@@ -43,19 +44,14 @@ class Gap(models.Model):
 
 class CuratedAnswer(models.Model):
     ANSWERS = (
-        ('00', 'No worms'),
-        ('05', '>0, <1 worms'),
-        ('10', '1 worm'),
-        ('15', '>1, <2 worms'),
-        ('20', '2 worms'),
-        ('25', '>2, <3 worms'),
-        ('30', '3 worms'),
-        ('35', '>3 worms'),
+        ('valid', 'Valid connection'),
+        ('invalid', 'Invalid connection'),
+        ('unclear', 'Unclear'),
     )
-    collision = models.ForeignKey(Gap)
+    gap = models.ForeignKey(Gap)
     answer = models.CharField(max_length=60, choices=ANSWERS)
-    curator = models.ForeignKey(User, editable=False)
+    curator = models.ForeignKey(User, editable=False, related_name='gap_answer_user')
     starred = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('collision', 'curator')
+        unique_together = ('gap', 'curator')
