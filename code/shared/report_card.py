@@ -142,6 +142,164 @@ class ReportCard(object):
 
         return report_df
 
+    def determine_lost_and_found_causes(self, graph):
+        experiment = self.experiment
+
+        # create a basic dataframe with information about all blob terminals
+        terms = experiment.prepdata.load('terminals')
+        terms = terms[np.isfinite(terms['t0'])]
+        if 'bid' in terms.columns:
+            terms.set_index('bid', inplace=True)
+        term_ids = set(terms.index) # get set of all bids with data
+        terms['node_id'] = 0
+        terms['n-blobs'] = 1
+        terms['id_change_found'] = False
+        terms['id_change_lost'] = False
+        terms['lifespan_t'] = -1
+        # loop through graph and assign all blob ids to cooresponding nodes.
+        # also include if nodes have parents or children
+
+        for node_id in graph.nodes(data=False):
+            successors = list(graph.successors(node_id))
+            predecessors = list(graph.predecessors(node_id))
+            has_pred = len(predecessors) > 0
+            has_suc = len(successors) > 0
+            node_data = graph.node[node_id]
+            comps = node_data.get('components', [node_id])
+            known_comps = set(comps) & term_ids
+            for comp in comps:
+                terms['n-blobs'].loc[list(known_comps)] = len(comps)
+                terms['node_id'].loc[list(known_comps)] = node_id
+                terms['id_change_found'].loc[list(known_comps)] = has_pred
+                terms['id_change_lost'].loc[list(known_comps)] = has_suc
+                terms['lifespan_t'].loc[list(known_comps)] = graph.lifespan_t(node_id)
+        node_set = set(graph.nodes(data=False))
+        print len(term_ids), 'blobs have terminal data'
+        print len(node_set), 'nodes in graph'
+        print len(term_ids & node_set), 'overlap'
+        compound_nodes = set(terms[terms['n-blobs'] > 1]['node_id'])
+        print len(compound_nodes), 'have more than 1 blob id in them'
+
+        # split dataframe into seperate dfs concerned with starts and ends
+        # standardize collumn names such that both have the same columns
+
+        start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found', 'lifespan_t']]
+        start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y', 'f0':'f',
+                                    'id_change_found': 'id_change'},
+                           inplace=True)
+
+        end_terms = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost', 'lifespan_t']]
+        end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y', 'fN':'f',
+                                  'id_change_lost': 'id_change'},
+                         inplace=True)
+
+        # precautionary drop rows with NaN as 't' (most other data will be missing)
+        start_terms = start_terms[np.isfinite(start_terms['t'])]
+        end_terms = end_terms[np.isfinite(end_terms['t'])]
+
+        # drop rows that have duplicate node_ids.
+        # for starts, take the first row (lowest time)
+
+        start_terms.sort(columns='t', inplace=True)
+        start_terms.drop_duplicates('node_id', take_last=False,
+                                    inplace=True)
+        # for ends, take the last row (highest time)
+        end_terms.sort(columns='t', inplace=True)
+        end_terms.drop_duplicates('node_id', take_last=True,
+                                  inplace=True)
+
+        # mark if nodes start or end on the edge of the image.
+
+        edge_thresh = 80
+        start_thresh = 30
+
+        plate_size = [1728, 2352]
+        xlow, xhigh = edge_thresh, plate_size[0] - edge_thresh
+        ylow, yhigh = edge_thresh, plate_size[1] - edge_thresh
+
+        def add_on_edge(df):
+            df['on_edge'] = False
+            df['on_edge'][df['x'] < xlow] = True
+            df['on_edge'][df['y'] < ylow] = True
+            df['on_edge'][ xhigh < df['x']] = True
+            df['on_edge'][ yhigh < df['y']] = True
+
+        add_on_edge(start_terms)
+        add_on_edge(end_terms)
+
+        # mark if nodes start or end outside region of interest ROI
+        ex_id = experiment.id
+        #print ex_id
+        roi = fm.ImageMarkings(ex_id=ex_id).roi()
+        #print roi
+        x, y, r = roi['x'], roi['y'], roi['r']
+        def add_out_of_roi(df):
+            dists = np.sqrt((df['x'] - x)**2 + (df['y'] - y)**2)
+            df['outside-roi'] = dists > r
+
+        add_out_of_roi(start_terms)
+        add_out_of_roi(end_terms)
+
+        # mark if nodes start or end with the start/end of the recording.
+
+        start_terms['timing'] = False
+        start_terms['timing'][start_terms['t'] < start_thresh] = True
+        end_terms['timing'] = False
+        end_terms['timing'][end_terms['t'] >= 3599] = True
+
+        # by valueing certain reasons over others, we deterime a final reason.
+
+        def determine_reason(df):
+            df['reason'] = 'unknown'
+            reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+            for reason in reasons[1:]:
+                df['reason'][df[reason]] = reason
+
+        determine_reason(start_terms)
+        determine_reason(end_terms)
+
+        start_terms.sort('lifespan_t', inplace=True, ascending=False)
+        end_terms.sort('lifespan_t', inplace=True, ascending=False)
+        return start_terms, end_terms
+
+    def summarize_loss_report(self, df):
+        df = df.copy()
+        df['lifespan_t'] = df['lifespan_t'] / 60.0
+        bin_dividers = [1, 5, 10, 20, 61]
+        reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+        #stuff = pd.DataFrame(columns=reasons, index=bin_dividers)
+        data = []
+        for bd in bin_dividers:
+            b = df[df['lifespan_t'] < bd]
+            df = df[df['lifespan_t'] >= bd]
+            #print bd
+            #print b.head()
+            counts = {}
+            for reason in reasons:
+                counts[reason] = len(b[b['reason'] == reason])
+
+            data.append(counts)
+
+        report_summary = pd.DataFrame(data)
+        report_summary['lifespan'] = bin_dividers
+        report_summary.set_index('lifespan', inplace=True)
+        report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
+        print report_summary
+        return report_summary
+
+    def save_reports(self, graph):
+        experiment = self.experiment
+        report = self.report(graph, show=False)
+        experiment.prepdata.dump('report-card.csv', report)
+        starts, ends = self.determine_lost_and_found_causes(graph)
+        experiment.prepdata.dump('starts.csv', starts)
+        experiment.prepdata.dump('ends.csv', ends)
+        start_report = self.summarize_loss_report(starts)
+        end_report = self.summarize_loss_report(ends)
+        experiment.prepdata.dump('start_report.csv', start_report)
+        experiment.prepdata.dump('end_report.csv', end_report)
+        return report
+
 # find me a better home
 def compound_bl_filter(experiment, graph, threshold):
     """
@@ -209,56 +367,6 @@ def create_report_card(experiment, graph):
     report_df = report_card.report(show=True)
     return graph, report_df
 
-def collision_iteration(experiment, graph):
-
-    report_card = ReportCard(experiment)
-    report_card.add_step(graph, 'raw')
-
-    ############### Remove Known Junk
-
-    collider.remove_nodes_outside_roi(graph, experiment)
-    report_card.add_step(graph, 'roi')
-
-    collider.remove_blank_nodes(graph, experiment)
-    report_card.add_step(graph, 'blank')
-
-    ############### Simplify
-    for i in range(6):
-        print 'iteration {}'.format(i + 1)
-        ############### Simplify
-        #collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
-        collider.assimilate(graph, max_threshold=10)
-        collider.remove_single_descendents(graph)
-        collider.remove_fission_fusion(graph)
-        collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-        collider.remove_offshoots(graph, threshold=20)
-        collider.remove_single_descendents(graph)
-        report_card.add_step(graph, 'simplify')
-
-        ############### Cut Worms
-        # candidates = collider.find_potential_cut_worms(graph, experiment,
-        #                                                max_first_last_distance=40, max_sibling_distance=50, debug=False)
-        # for candidate in candidates:
-        #     graph.condense_nodes(candidate[0], *candidate[1:])
-        # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
-
-        ############### Collisions
-        n = collision_suite(experiment, graph)
-        report_card.add_step(graph, 'collisions ({n})'.format(n=n))
-
-        ############### Gaps
-
-        taper = tp.Taper(experiment=experiment, graph=graph)
-        start, end = taper.find_start_and_end_nodes()
-        gaps = taper.score_potential_gaps(start, end)
-        taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-        graph = taper._graph
-        report_card.add_step(graph, 'gaps')
-
-
-    report_df = report_card.report(show=True)
-    return graph, report_df
-
 def collision_iteration2(experiment, graph):
     ex_id = experiment.id
     report_card = ReportCard(experiment)
@@ -287,14 +395,14 @@ def collision_iteration2(experiment, graph):
         # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
         ############### Collisions
-        graph_orig = graph.copy()
+        #graph_orig = graph.copy()
         n = collision_suite(experiment, graph)
         graph.validate()
         report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
-        n = collision_suite_heltena(experiment, graph_orig)
-        graph_orig.validate()
-        report_card.add_step(graph, 'collisions (heltena) ({n})'.format(n=n))
+        #n = collision_suite_heltena(experiment, graph_orig)
+        #graph_orig.validate()
+        #report_card.add_step(graph, 'collisions (heltena) ({n})'.format(n=n))
 
         ############### Simplify
         L.warn('Collapse Group')
@@ -365,57 +473,8 @@ def collision_iteration2(experiment, graph):
     #gaps = pd.concat(gap_validation)
     #gaps.to_csv('{eid}-gaps.csv'.format(eid=ex_id), index=False, header=False)
     report_df = report_card.report(show=True)
+    report_df = report_card.save_reports(graph)
     return graph, report_df
-
-
-def main2(ex_id = '20130318_131111'):
-
-    experiment = Experiment(experiment_id=ex_id, data_root=settings.LOGISTICS['filesystem_data'])
-    graph = experiment.graph.copy()
-
-    report_card = ReportCard(experiment)
-    report_card.add_step(graph, 'raw')
-
-    ############### Remove Known Junk
-
-    collider.remove_nodes_outside_roi(graph, experiment)
-    report_card.add_step(graph, 'roi')
-
-    collider.remove_blank_nodes(graph, experiment)
-    report_card.add_step(graph, 'blank')
-
-    ############### Cut Worms
-    candidates = collider.find_potential_cut_worms(graph, experiment,
-                                                   max_first_last_distance=40, max_sibling_distance=50)
-    for candidate in candidates:
-        graph.condense_nodes(candidate[0], *candidate[1:])
-    report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
-
-    ############### Collisions
-    n = collision_suite(experiment, graph)
-    report_card.add_step(graph, 'collisions ({n})'.format(n=n))
-
-    ############### Gaps
-
-    taper = tp.Taper(experiment=experiment, graph=graph)
-    start, end = taper.find_start_and_end_nodes()
-    gaps = taper.score_potential_gaps(start, end)
-    taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-    graph = taper._graph
-    report_card.add_step(graph, 'gaps')
-
-    ############### Simplify
-    collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
-    #collider.assimilate(graph, max_threshold=10)
-    collider.remove_single_descendents(graph)
-    collider.remove_fission_fusion(graph)
-    collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-    collider.remove_offshoots(graph, threshold=20)
-    collider.remove_single_descendents(graph)
-    report_card.add_step(graph, 'simplify')
-
-    report_df = report_card.report(show=True)
-    return experiment, graph, report_df
 
 def collision_suite(experiment, graph, verbose=True):
 
@@ -599,125 +658,6 @@ def collision_suite_heltena(experiment, graph, verbose=True):
     # n += n_time
     return len(resolved)
 
-def determine_lost_and_found_causes(experiment, graph):
-
-    # create a basic dataframe with information about all blob terminals
-    terms = experiment.prepdata.load('terminals')
-    terms = terms[np.isfinite(terms['t0'])]
-    if 'bid' in terms.columns:
-        terms.set_index('bid', inplace=True)
-    term_ids = set(terms.index) # get set of all bids with data
-    terms['node_id'] = 0
-    terms['n-blobs'] = 1
-    terms['id_change_found'] = False
-    terms['id_change_lost'] = False
-    terms['lifespan_t'] = -1
-    # loop through graph and assign all blob ids to cooresponding nodes.
-    # also include if nodes have parents or children
-
-    for node_id in graph.nodes(data=False):
-        successors = list(graph.successors(node_id))
-        predecessors = list(graph.predecessors(node_id))
-        has_pred = len(predecessors) > 0
-        has_suc = len(successors) > 0
-        node_data = graph.node[node_id]
-        comps = node_data.get('components', [node_id])
-        known_comps = set(comps) & term_ids
-        for comp in comps:
-            terms['n-blobs'].loc[list(known_comps)] = len(comps)
-            terms['node_id'].loc[list(known_comps)] = node_id
-            terms['id_change_found'].loc[list(known_comps)] = has_pred
-            terms['id_change_lost'].loc[list(known_comps)] = has_suc
-            terms['lifespan_t'].loc[list(known_comps)] = graph.lifespan_t(node_id)
-    node_set = set(graph.nodes(data=False))
-    print len(term_ids), 'blobs have terminal data'
-    print len(node_set), 'nodes in graph'
-    print len(term_ids & node_set), 'overlap'
-    compound_nodes = set(terms[terms['n-blobs'] > 1]['node_id'])
-    print len(compound_nodes), 'have more than 1 blob id in them'
-
-    # split dataframe into seperate dfs concerned with starts and ends
-    # standardize collumn names such that both have the same columns
-
-    start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found', 'lifespan_t']]
-    start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y', 'f0':'f',
-                                'id_change_found': 'id_change'},
-                       inplace=True)
-
-    end_terms = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost', 'lifespan_t']]
-    end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y', 'fN':'f',
-                              'id_change_lost': 'id_change'},
-                     inplace=True)
-
-    # precautionary drop rows with NaN as 't' (most other data will be missing)
-    start_terms = start_terms[np.isfinite(start_terms['t'])]
-    end_terms = end_terms[np.isfinite(end_terms['t'])]
-
-    # drop rows that have duplicate node_ids.
-    # for starts, take the first row (lowest time)
-
-    start_terms.sort(columns='t', inplace=True)
-    start_terms.drop_duplicates('node_id', take_last=False,
-                                inplace=True)
-    # for ends, take the last row (highest time)
-    end_terms.sort(columns='t', inplace=True)
-    end_terms.drop_duplicates('node_id', take_last=True,
-                              inplace=True)
-
-    # mark if nodes start or end on the edge of the image.
-
-    edge_thresh = 80
-    start_thresh = 30
-
-    plate_size = [1728, 2352]
-    xlow, xhigh = edge_thresh, plate_size[0] - edge_thresh
-    ylow, yhigh = edge_thresh, plate_size[1] - edge_thresh
-
-    def add_on_edge(df):
-        df['on_edge'] = False
-        df['on_edge'][df['x'] < xlow] = True
-        df['on_edge'][df['y'] < ylow] = True
-        df['on_edge'][ xhigh < df['x']] = True
-        df['on_edge'][ yhigh < df['y']] = True
-
-    add_on_edge(start_terms)
-    add_on_edge(end_terms)
-
-    # mark if nodes start or end outside region of interest ROI
-    ex_id = experiment.id
-    #print ex_id
-    roi = fm.ImageMarkings(ex_id=ex_id).roi()
-    #print roi
-    x, y, r = roi['x'], roi['y'], roi['r']
-    def add_out_of_roi(df):
-        dists = np.sqrt((df['x'] - x)**2 + (df['y'] - y)**2)
-        df['outside-roi'] = dists > r
-
-    add_out_of_roi(start_terms)
-    add_out_of_roi(end_terms)
-
-    # mark if nodes start or end with the start/end of the recording.
-
-    start_terms['timing'] = False
-    start_terms['timing'][start_terms['t'] < start_thresh] = True
-    end_terms['timing'] = False
-    end_terms['timing'][end_terms['t'] >= 3599] = True
-
-    # by valueing certain reasons over others, we deterime a final reason.
-
-    def determine_reason(df):
-        df['reason'] = 'unknown'
-        reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
-        for reason in reasons[1:]:
-            df['reason'][df[reason]] = reason
-
-    determine_reason(start_terms)
-    determine_reason(end_terms)
-
-    start_terms.sort('lifespan_t', inplace=True, ascending=False)
-    end_terms.sort('lifespan_t', inplace=True, ascending=False)
-    return start_terms, end_terms
-
 def gap_dev(ex_id):
     # simplify
     import wio
@@ -743,30 +683,3 @@ def gap_dev(ex_id):
     gaps = taper.score_potential_gaps(start, end)
     taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
     graph = taper._graph
-
-
-
-def summarize_loss_report(df):
-    df = df.copy()
-    df['lifespan_t'] = df['lifespan_t'] / 60.0
-    bin_dividers = [1, 5, 10, 20, 61]
-    reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
-    #stuff = pd.DataFrame(columns=reasons, index=bin_dividers)
-    data = []
-    for bd in bin_dividers:
-        b = df[df['lifespan_t'] < bd]
-        df = df[df['lifespan_t'] >= bd]
-        #print bd
-        #print b.head()
-        counts = {}
-        for reason in reasons:
-            counts[reason] = len(b[b['reason'] == reason])
-
-        data.append(counts)
-
-    report_summary = pd.DataFrame(data)
-    report_summary['lifespan'] = bin_dividers
-    report_summary.set_index('lifespan', inplace=True)
-    report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
-    print report_summary
-    return report_summary

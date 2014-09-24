@@ -15,7 +15,7 @@ import networkx as nx
 import graphviz
 
 GRAPHVIZ_ATTRIBUTES = ['shape', 'label', 'style',
-                       'penwidth', 'color', 'fill']
+                       'penwidth', 'color', 'colorscheme']
 
 def render_nx_as_dot(nxgraph, output_file=None, format='png',
                      colormap='jet_r', ref=None):
@@ -35,6 +35,7 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png',
     unsafe_attributes = []
     for node, node_data in nxgraph.nodes_iter(data=True):
         safe_ones = {}
+        #print(node, node_data)
         for attribute, value in node_data.iteritems():
             #print(attribute, value)
             if attribute in GRAPHVIZ_ATTRIBUTES:
