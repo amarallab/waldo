@@ -8,15 +8,15 @@ from glob import glob
 import h5py
 import collections
 
-import itertools
-import setpath
-os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
-
-from conf import settings
-import images.worm_finder as wf
-import wio.file_manager as fm
-import prettyplotlib as ppl
-#import fingerprint.fingerprint as fp
+# import itertools
+# # import setpath
+# os.environ.setdefault('WALDO_SETTINGS', 'default_settings')
+#
+# from conf import settings
+# import images.worm_finder as wf
+# import wio.file_manager as fm
+# import prettyplotlib as ppl
+# #import fingerprint.fingerprint as fp
 
 CUTOUT_DIR = 'home/projects/worm_movement/Data/cutouts/'
 base_dir = '/home/projects/worm_movement/Data/cutouts/20130702_135704'
@@ -211,7 +211,7 @@ def get_data(base_dir):
 
 
 
-def test_distances(test_stack, reference_stacks, begin_frame=None, end_frame=None):
+def test_distances(wids, test_stack, reference_stacks, begin_frame=None, end_frame=None):
     """
     returns dataframe with the minimum distances between each row
     of the test_stack and every stack in the reference stacks.
@@ -236,94 +236,193 @@ def test_distances(test_stack, reference_stacks, begin_frame=None, end_frame=Non
 
 
 
-
 ############## Code starts here. ##############
 
-WINDOW_SIZE_LIST = [1000, 200, 50]
+class FinishLoopException(Exception):
+    pass
 
-loop_count = 0
-max_loop_count = 20
 
-# load all data.
-wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
+def main_window_size():
+    WINDOW_SIZE_LIST = [1000, 200, 50]
 
-results = []
-for window_size in WINDOW_SIZE_LIST:
-    print reference_p[0].shape
-    for test_num, test_worm in enumerate(wids):
-        test_p_stack = test_p[test_num]
-        test_m_stack = test_m[test_num]
-        frame_count = len(test_p_stack)
-        for begin_frame in range(0, frame_count, window_size):
-            end_frame = begin_frame + window_size
+    loop_count = 0
+    max_loop_count = 20
 
-            current_frame_count = len(test_p_stack[begin_frame:end_frame])
-            if current_frame_count == 0:
-                continue
+    # load all data.
+    wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
 
-            print ':::: Window size: {size}[{begin}:{end}], testing {worm} ::::'.format(size=window_size,
-                                                                                        begin=begin_frame,
-                                                                                        end=end_frame,
-                                                                                        worm=test_worm)
+    results = []
+    try:
+        for window_size in WINDOW_SIZE_LIST:
+            print reference_p[0].shape
+            for test_num, test_worm in enumerate(wids):
+                test_p_stack = test_p[test_num]
+                test_m_stack = test_m[test_num]
+                frame_count = len(test_p_stack)
+                for begin_frame in range(0, frame_count, window_size):
+                    end_frame = begin_frame + window_size
 
-            # savename_p = '{wid}_dists_plus.csv'.format(wid=test_worm)
-            # savename_m = '{wid}_dists_minus.csv'.format(wid=test_worm)
-            # print savename_m
-            # print savename_p
-            #
-            df = test_distances(test_stack=test_p_stack, reference_stacks=reference_p,
-                                begin_frame=begin_frame, end_frame=end_frame)
+                    current_frame_count = len(test_p_stack[begin_frame:end_frame])
+                    if current_frame_count == 0:
+                        continue
 
-            # df.to_csv(savename_p)
+                    print ':::: Window size: {size}[{begin}:{end}], testing {worm} ::::'.format(size=window_size,
+                                                                                                begin=begin_frame,
+                                                                                                end=end_frame,
+                                                                                                worm=test_worm)
 
-            order = np.array(df).argsort(axis=1)
-            acc_p = float((order[:, 0] == test_num).sum()) / len(order)
-            print 'worm: {worm} PLUS, acc: {acc}%'.format(worm=test_worm, acc=round(acc_p * 100.0, ndigits=2))
-            # print df
+                    # savename_p = '{wid}_dists_plus.csv'.format(wid=test_worm)
+                    # savename_m = '{wid}_dists_minus.csv'.format(wid=test_worm)
+                    # print savename_m
+                    # print savename_p
+                    #
+                    df = test_distances(wids=wids,
+                                        test_stack=test_p_stack, reference_stacks=reference_p,
+                                        begin_frame=begin_frame, end_frame=end_frame)
 
-            df = test_distances(test_stack=test_m_stack, reference_stacks=reference_m,
-                                begin_frame=begin_frame, end_frame=end_frame)
+                    # df.to_csv(savename_p)
 
-            # df.to_csv(savename_m)
-            order = np.array(df).argsort(axis=1)
-            acc_m = float((order[:, 0] == test_num).sum()) / len(order)
-            best, _ = collections.Counter(order[:, 0]).most_common()[0]
+                    order = np.array(df).argsort(axis=1)
+                    acc_p = float((order[:, 0] == test_num).sum()) / len(order)
+                    print 'worm: {worm} PLUS, acc: {acc}%'.format(worm=test_worm, acc=round(acc_p * 100.0, ndigits=2))
+                    # print df
 
-            print "Order: ", order[:, 0]
-            print "Best: ", best
+                    df = test_distances(wids=wids,
+                                        test_stack=test_m_stack, reference_stacks=reference_m,
+                                        begin_frame=begin_frame, end_frame=end_frame)
 
-            print 'worm: {worm} MINUS, acc: {acc}%'.format(worm=test_worm, acc=round(acc_m * 100.0, ndigits=2))
-            # print df
+                    # df.to_csv(savename_m)
+                    order = np.array(df).argsort(axis=1)
+                    acc_m = float((order[:, 0] == test_num).sum()) / len(order)
+                    best, _ = collections.Counter(order[:, 0]).most_common()[0]
 
-            # row = {'window_size': window_size,
-            #        'begin_frame': begin_frame,
-            #        'end_frame': end_frame,
-            #        'wid': test_worm,
-            #        'acc_p': acc_p,
-            #        'acc_m': acc_m}
-            results.append([window_size, begin_frame, end_frame, current_frame_count, test_worm, acc_p, acc_m, wids[best]])
+                    print "Order: ", order[:, 0]
+                    print "Best: ", best
 
-            loop_count += 1
-            if loop_count >= max_loop_count:
-                break
-        if loop_count >= max_loop_count:
-            break
-    if loop_count >= max_loop_count:
-        break
+                    print 'worm: {worm} MINUS, acc: {acc}%'.format(worm=test_worm, acc=round(acc_m * 100.0, ndigits=2))
+                    # print df
 
-results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best'))
-results_df.to_csv('acc_window_size_results.csv')
+                    # row = {'window_size': window_size,
+                    #        'begin_frame': begin_frame,
+                    #        'end_frame': end_frame,
+                    #        'wid': test_worm,
+                    #        'acc_p': acc_p,
+                    #        'acc_m': acc_m}
+                    results.append([window_size, begin_frame, end_frame, current_frame_count, test_worm, acc_p, acc_m, wids[best]])
 
-            # fig, ax = plt.subplots()
-            # for l, w in zip(wids, worm_dists):
-            #     if w != test_worm:
-            #         ppl.plot(ax, w, label=l, alpha=0.5)
-            #     else:
-            #         ppl.plot(ax, w, label=l, alpha=0.5)
+                    loop_count += 1
+                    if loop_count >= max_loop_count:
+                        raise FinishLoopException()
+    except FinishLoopException, ex:
+        pass
 
-            # title = test_worm + ' ' + str(accuracy) + '% correct'
-            # ax.set_title(title)
-            # ax.legend()
-            # #plt.show()
-            # plt.savefig(test_worm + '_id_test.png')
 
+    results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best'))
+    results_df.to_csv('acc_window_size_results.csv')
+
+                # fig, ax = plt.subplots()
+                # for l, w in zip(wids, worm_dists):
+                #     if w != test_worm:
+                #         ppl.plot(ax, w, label=l, alpha=0.5)
+                #     else:
+                #         ppl.plot(ax, w, label=l, alpha=0.5)
+
+                # title = test_worm + ' ' + str(accuracy) + '% correct'
+                # ax.set_title(title)
+                # ax.legend()
+                # #plt.show()
+                # plt.savefig(test_worm + '_id_test.png')
+
+
+def main_window_best_assignment():
+    WINDOW_SIZE_LIST = [200, 50]
+
+    loop_count = 0
+    max_loop_count = 5
+
+    # load all data.
+    wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
+    # if len(set([len(x) for x in test_p]) | set([len(x) for x in test_m])) != 1:
+    #     print 'E: test_p and test_m have not the same item sizes'
+    #     return
+    frame_count = len(test_p[0])
+
+    try:
+        results = []
+        for window_size in WINDOW_SIZE_LIST:
+            print reference_p[0].shape
+            for begin_frame in range(0, frame_count, window_size):
+                end_frame = begin_frame + window_size
+                assigned_wids = {}
+                # assigned_wids[13286] = 12
+                current_reference_p = reference_p[:]
+                current_reference_m = reference_m[:]
+                remain_wids = wids[:]
+                while len(assigned_wids) < len(wids):
+                    for test_num, test_worm in enumerate(wids):
+                        test_p_stack = test_p[test_num]
+                        test_m_stack = test_m[test_num]
+
+                        current_frame_count = len(test_p_stack[begin_frame:end_frame])
+                        if current_frame_count == 0:
+                            assigned_wids[test_worm] = (None, None)
+                            continue
+
+                        df = test_distances(wids=remain_wids,
+                                            test_stack=test_p_stack, reference_stacks=current_reference_p,
+                                            begin_frame=begin_frame, end_frame=end_frame)
+
+                        # df.to_csv(savename_p)
+
+                        order = np.array(df).argsort(axis=1)
+                        acc_p = float((order[:, 0] == test_num).sum()) / len(order)
+
+                        df = test_distances(wids=remain_wids,
+                                            test_stack=test_m_stack, reference_stacks=current_reference_m,
+                                            begin_frame=begin_frame, end_frame=end_frame)
+
+                        order = np.array(df).argsort(axis=1)
+                        best, _ = collections.Counter(order[:, 0]).most_common()[0]
+                        acc_m = float((order[:, 0] == test_num).sum()) / len(order)
+
+                        assigned_wids[test_worm] = (remain_wids[best], acc_m)
+                        results.append([window_size, begin_frame, end_frame, current_frame_count, test_worm, acc_p, acc_m, remain_wids[best]])
+                        print 'Window size: {size}[{begin}:{end}], {worm:>5s} assigned {assigned:>5s} (acc: {acc})'\
+                            .format(size=window_size,
+                                    begin=begin_frame,
+                                    end=end_frame,
+                                    worm=test_worm,
+                                    assigned=remain_wids[best],
+                                    acc=acc_m)
+
+                        current_reference_p.pop(best)
+                        current_reference_m.pop(best)
+                        remain_wids.pop(best)
+
+                loop_count += 1
+                if loop_count >= max_loop_count:
+                    raise FinishLoopException()
+    except FinishLoopException, ex:
+        pass
+
+    results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best'))
+    results_df.to_csv('acc_window_best_assignment_results.csv')
+
+                # fig, ax = plt.subplots()
+                # for l, w in zip(wids, worm_dists):
+                #     if w != test_worm:
+                #         ppl.plot(ax, w, label=l, alpha=0.5)
+                #     else:
+                #         ppl.plot(ax, w, label=l, alpha=0.5)
+
+                # title = test_worm + ' ' + str(accuracy) + '% correct'
+                # ax.set_title(title)
+                # ax.legend()
+                # #plt.show()
+                # plt.savefig(test_worm + '_id_test.png')
+
+
+
+# main_window_size()  # First algorithm
+
+main_window_best_assignment()
