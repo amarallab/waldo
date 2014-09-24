@@ -66,6 +66,9 @@ class Box(object):
         else:
             raise ValueError('unexpected group of keyword arguments')
 
+    def __len__(self):
+        return 4
+
     def __repr__(self):
         return 'Box(left={0}, right={1}, bottom={2}, top={3})'.format(*self)
 
@@ -215,6 +218,13 @@ class Box(object):
             self.bottom,
         )
 
+    def square(self, method='outer'):
+        if method == 'outer':
+            self.size = (max(self.width, self.height),)*2
+        elif method == 'inner':
+            self.size = (min(self.width, self.height),)*2
+        else:
+            raise ValueError('Unknown method specified, use "inner" or "outer"')
 
 if __name__ == '__main__':
     print('Crude tests...')

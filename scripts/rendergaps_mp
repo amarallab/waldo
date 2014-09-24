@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+"""
+rendergaps_mp
+
+Creates images for screening from a two-column CSV of gaps
+
+Example:
+    ./rendergaps_mp 20130702_135652 gaps.csv
+
+Running the script in it's own empty folder is advisable as it will generate
+a few thousand images.
+
+    mkdir ../data/testset1
+    cd ../data/testset1
+    ../../scripts/rendergaps_mp 20130702_135652 ../mypath/gaps.csv
+"""
+from __future__ import print_function, absolute_import
+from six.moves import range
+
+# standard library
+import sys
+import argparse
+import multiprocessing as mp
+import signal
+
+# third party
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.collections import PatchCollection
+from PIL import Image, ImageOps, ImageChops
+
+# project specific
+import pathcustomize
+
+import wio
+from tape.viz import show_gap
+
+def painter(experiment, gapq):
+    while True:
+        try:
+            gap = gapq.get()
+            if gap is None:
+                gapq.task_done()
+                break
+
+            f, ax = show_gap(experiment, *gap)
+            fn = '{}_{:05}_{:05}.png'.format(experiment.id, *gap)
+
+            f.savefig(fn)
+            print('Saved gap from blob {} to {}'.format(*gap))
+            plt.close('all')
+            gapq.task_done()
+        except (KeyboardInterrupt, SystemExit):
+            return
+        except ValueError:
+            print('Failed to render gap {}'.format(gap))
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('experiment_id',
+        help="Experiment ID to use.")
+    parser.add_argument('input_file', type=argparse.FileType('r'),
+        help="File with blob IDs to render. Accepts stdin as -")
+
+    args = parser.parse_args()
+    eid = args.experiment_id
+
+    print('Loading experiment')
+    experiment = wio.Experiment(experiment_id=eid)
+
+    n_workers = mp.cpu_count()
+    taskq = mp.JoinableQueue(2 * mp.cpu_count())
+
+    print('Creating workers')
+    workers = [mp.Process(
+            name='Painter-{}'.format(n),
+            target=painter,
+            args=(experiment, taskq)) for n in range(n_workers)]
+
+    print('GO!')
+    for worker in workers:
+        worker.start()
+
+    try:
+        for line in args.input_file:
+            try:
+                gap = [int(x) for x in line.split(',')]
+            except:
+                continue
+
+            if not gap:
+                continue
+
+            if len(gap) != 2:
+                continue
+                print('Wrong gap length {}:\n >> {}'.format(len(gap), line))
+
+            taskq.put(gap)
+    except KeyboardInterrupt:
+        print("Ctrl-C: Killing workers...")
+        for worker in workers:
+            worker.terminate()
+    else:
+        print('Waiting for workers to finish...')
+        for n in range(n_workers):
+            taskq.put(None)
+        taskq.join()
+
+if __name__ == '__main__':
+    sys.exit(main())
