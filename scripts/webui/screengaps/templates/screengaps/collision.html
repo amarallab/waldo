@@ -25,7 +25,10 @@
           <label><p>Is the lost worm (red outline) the same as the found worm (blue outline)?</p><p>Click the button or use the keyboard to answer.</p></label>
           <div class="row" style="margin-bottom: 15px;">
             <div class="col-md-3">
-              <button id="ansvalid" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="00">Valid<kbd>Y</kbd></button>
+              <button id="ansvalid" type="submit" class="btn {% if prev_ans == 'valid' %} btn-success {% else %}
+                btn-primary
+              {% endif %} btn-lg btn-block" name="answer" value="00">Valid<kbd>Y</kbd></button>
+              }
             </div>
             <div class="col-md-3">
               <button id="ansinvalid" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="10">Invalid <kbd>N</kbd></button>

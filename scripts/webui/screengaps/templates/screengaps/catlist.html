@@ -3,20 +3,21 @@
 {% load bootstrap3 %}
 
 {% block html_title %}
-    Collision Type: {{ catname }}
+    Gap Type: {{ catname }}
 {% endblock %}
 
 {% block content %}
-    <h1>Worm Collision Type: {{ catname }}</h1>
+    <h1>Worm Gap Type: {{ catname }}</h1>
 
     <table class='table'>
-        <thead><tr><th>Experiment ID</th><th>Blob ID</th><th>Image</th></tr></thead>
+        <thead><tr><th>Experiment ID</th><th>Lost Blob</th><th>Found Blob</th><th>Image</th></tr></thead>
         <tbody>
             {% for c in collisions %}
                 <tr>
                     <td>{{ c.experiment_id }}</td>
-                    <td>{{ c.blob_id }}</td>
-                    <td><a href="{% url 'sc:collision' eid=c.experiment_id bid=c.blob_id %}">Show...</a></td>
+                    <td>{{ c.lost_blob }}</td>
+                    <td>{{ c.found_blob }}</td>
+                    <td><a href="{% url 'sg:gap' eid=c.experiment_id bid=c.blob_id %}">Show...</a></td>
                 </tr>
             {% endfor %}
         </tbody>
