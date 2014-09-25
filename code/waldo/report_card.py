@@ -128,7 +128,7 @@ class ReportCard(object):
         report.update(wm)
         return report, durations
 
-    def report(self, show=True):
+    def report(self, show=False):
         # columns = ['step', 'total-nodes', '>10min', '>20min', '30min', '40min', '50min',
         #            'isolated-nodes', 'connected-nodes', 'giant-component-size',
         #            'duration-mean', 'duration-med', 'duration-std', '# components',
@@ -291,15 +291,15 @@ class ReportCard(object):
 
     def save_reports(self, graph):
         experiment = self.experiment
-        report = self.report(graph, show=False)
-        experiment.prepdata.dump('report-card.csv', report)
+        report = self.report(graph)
+        experiment.prepdata.dump('report-card', report)
         starts, ends = self.determine_lost_and_found_causes(graph)
-        experiment.prepdata.dump('starts.csv', starts)
-        experiment.prepdata.dump('ends.csv', ends)
+        experiment.prepdata.dump('starts', starts)
+        experiment.prepdata.dump('ends', ends)
         start_report = self.summarize_loss_report(starts)
         end_report = self.summarize_loss_report(ends)
-        experiment.prepdata.dump('start_report.csv', start_report)
-        experiment.prepdata.dump('end_report.csv', end_report)
+        experiment.prepdata.dump('start_report', start_report)
+        experiment.prepdata.dump('end_report', end_report)
         return report
 
 # find me a better home
@@ -324,50 +324,50 @@ def compound_bounding_box(experiment, graph):
     return bounds.groupby(graph.where_is).agg(
             {'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
 
-def create_report_card(experiment, graph):
+# def create_report_card(experiment, graph):
 
-    report_card = ReportCard(experiment)
-    report_card.add_step(graph, 'raw')
+#     report_card = ReportCard(experiment)
+#     report_card.add_step(graph, 'raw')
 
-    ############### Remove Known Junk
+#     ############### Remove Known Junk
 
-    collider.remove_nodes_outside_roi(graph, experiment)
-    report_card.add_step(graph, 'roi')
+#     collider.remove_nodes_outside_roi(graph, experiment)
+#     report_card.add_step(graph, 'roi')
 
-    collider.remove_blank_nodes(graph, experiment)
-    report_card.add_step(graph, 'blank')
+#     collider.remove_blank_nodes(graph, experiment)
+#     report_card.add_step(graph, 'blank')
 
-    ############### Simplify
-    collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
-    #collider.assimilate(graph, max_threshold=10)
-    collider.remove_single_descendents(graph)
-    collider.remove_fission_fusion(graph)
-    collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-    collider.remove_offshoots(graph, threshold=20)
-    collider.remove_single_descendents(graph)
-    report_card.add_step(graph, 'simplify')
+#     ############### Simplify
+#     collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+#     #collider.assimilate(graph, max_threshold=10)
+#     collider.remove_single_descendents(graph)
+#     collider.remove_fission_fusion(graph)
+#     collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+#     collider.remove_offshoots(graph, threshold=20)
+#     collider.remove_single_descendents(graph)
+#     report_card.add_step(graph, 'simplify')
 
-    ############### Cut Worms
-    candidates = collider.find_potential_cut_worms(graph, experiment,
-                                                   max_first_last_distance=40, max_sibling_distance=50, debug=False)
-    for candidate in candidates:
-        graph.condense_nodes(candidate[0], *candidate[1:])
-    report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+#     ############### Cut Worms
+#     candidates = collider.find_potential_cut_worms(graph, experiment,
+#                                                    max_first_last_distance=40, max_sibling_distance=50, debug=False)
+#     for candidate in candidates:
+#         graph.condense_nodes(candidate[0], *candidate[1:])
+#     report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
 
-    ############### Collisions
-    n = collision_suite(experiment, graph)
-    report_card.add_step(graph, 'collisions ({n})'.format(n=n))
+#     ############### Collisions
+#     n = collision_suite(experiment, graph)
+#     report_card.add_step(graph, 'collisions ({n})'.format(n=n))
 
-    ############### Gaps
+#     ############### Gaps
 
-    taper = tp.Taper(experiment=experiment, graph=graph)
-    start, end = taper.find_start_and_end_nodes()
-    gaps = taper.score_potential_gaps(start, end)
-    taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-    report_card.add_step(graph, 'gaps')
+#     taper = tp.Taper(experiment=experiment, graph=graph)
+#     start, end = taper.find_start_and_end_nodes()
+#     gaps = taper.score_potential_gaps(start, end)
+#     taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+#     report_card.add_step(graph, 'gaps')
 
-    report_df = report_card.report(show=True)
-    return graph, report_df
+#     report_df = report_card.report(show=True)
+#     return graph, report_df
 
 def collision_iteration2(experiment, graph):
     ex_id = experiment.id

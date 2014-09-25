@@ -242,15 +242,18 @@ class ColliderGraph(nx.DiGraph):
         for node, count in worm_count_dict.iteritems():
             self.node[node]['worm_count'] = count
 
-    def determine_moving(self, experiment):
+    def determine_moving(self, experiment, **kwargs):
         # code following network_number_wizard logic for determining
         # seeds
         terminals_df = experiment.prepdata.load('terminals')
+        moved = []
         for node in self.nodes():
             is_moving = 0
-            if node_is_moving(node, terminals_df):
+            if node_is_moving(node, terminals_df, **kwargs):
                 is_moving = 1
+                moved.append(node)
             self.node[node]['moved'] = is_moving
+        return moved
 
     def add_node_attributes(self, attribute_name, node_dict, default=False):
         """

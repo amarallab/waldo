@@ -91,36 +91,37 @@ def format_graph_for_lifespan(nxgraph, focus=None, ref=False, cmap='jet'):
                              color=lifespan_to_color(ref))
 
 def format_graph_for_moved(nxgraph, cmap='jet', ref=False):
-    cm = plt.cm.get_cmap(cmap)
-
-    def bin_to_color(wc):
-        wc = int(wc) / 3.0
-        color = mplcolors.rgb2hex(cm(wc)[:3])
-        return color
+    #cm = plt.cm.get_cmap(cmap)
+    # def bin_to_color(wc):
+    #     wc = int(wc) / 3.0
+    #     color = mplcolors.rgb2hex(cm(wc)[:3])
+    #     return color
 
     for node, node_data in nxgraph.nodes_iter(data=True):
         m = node_data.get('moved', None)
         if m is None:
             continue
-
-        m = node_data['moved']
-        node_data['color'] = bin_to_color(m)
-        node_data['shape'] = 'ellipse'
-        if m:
-            node_data['style'] = 'filled'
-
         if node_data.get('more', False):
             node_data['label'] = '...'
             node_data['shape'] = 'circle'
             node_data['style'] = 'filled'
             node_data['color'] = 'grey'
+            continue
+
+        m = node_data['moved']
+        node_data['color'] = str(int(m) + 1)
+        node_data['colorscheme'] = 'paired5'
+        node_data['shape'] = 'ellipse'
+        if m:
+            node_data['style'] = 'filled'
+
 
     if ref:
         nxgraph.add_edge('moved < 10 pxl', 'moved >= 10pxl')
         nxgraph.add_node('moved < 10pxl', penwidth='5',
-                         color=bin_to_color(ref))
+                         color=str(int(ref) + 1))
         nxgraph.add_node('moved >= 10pxl', penwidth='5',
-                         color=bin_to_color(ref),
+                         color=str(int(ref) + 1),
                          style='filled')
 
 def format_graph_for_worm_counts(nxgraph, cmap='jet', ref=False):
@@ -137,16 +138,18 @@ def format_graph_for_worm_counts(nxgraph, cmap='jet', ref=False):
         worm_count = node_data.get('worm_count', None)
         if worm_count is None:
             continue
-
-        node_data['color'] = wc_to_color(worm_count)
-        node_data['shape'] = 'ellipse'
-        node_data['style'] = 'filled'
-
         if node_data.get('more', False):
             node_data['label'] = '...'
             node_data['shape'] = 'circle'
             node_data['style'] = 'filled'
             node_data['color'] = 'grey'
+            continue
+
+        node_data['color'] = str(int(worm_count) + 1) #wc_to_color(worm_count)
+        node_data['shape'] = 'ellipse'
+        node_data['style'] = 'filled'
+        node_data['colorscheme'] = 'paired5'
+
 
     if ref:
         # reference
@@ -159,7 +162,7 @@ def format_graph_for_worm_counts(nxgraph, cmap='jet', ref=False):
             source = dest
         for ref, ref_node in zip(reference, ref_nodes):
             nxgraph.add_node(ref_node, penwidth='5',
-                             color=wc_to_color(ref),
+                             color=str(int(ref) + 1),
                              style='filled')
 
 def format_graph_for_true_counts(nxgraph, cmap='jet', ref=True):
@@ -173,18 +176,21 @@ def format_graph_for_true_counts(nxgraph, cmap='jet', ref=True):
         return color
 
     for node, node_data in nxgraph.nodes_iter(data=True):
-        worm_count = node_data.get('true_count', 0)
-        node_data['color'] = wc_to_color(worm_count)
-        node_data['shape'] = 'ellipse'
-
-        if worm_count:
-            node_data['style'] = 'filled'
-
         if node_data.get('more', False):
             node_data['label'] = '...'
             node_data['shape'] = 'circle'
             node_data['style'] = 'filled'
             node_data['color'] = 'grey'
+            continue
+
+        worm_count = node_data.get('true_count', 0)
+        node_data['color'] = str(int(worm_count) + 1)#wc_to_color(worm_count)
+        node_data['shape'] = 'ellipse'
+        node_data['colorscheme'] = 'paired5'
+
+        if worm_count:
+            node_data['style'] = 'filled'
+
 
     if ref:
         # reference
@@ -201,7 +207,7 @@ def format_graph_for_true_counts(nxgraph, cmap='jet', ref=True):
 
         for ref, ref_node in zip(reference, ref_nodes[1:]):
             nxgraph.add_node(ref_node, penwidth='5',
-                             color=wc_to_color(ref),
+                             color=str(int(ref) + 1),
                              style='filled')
 
 def format_graph_for_id(nxgraph, cmap='jet'):
