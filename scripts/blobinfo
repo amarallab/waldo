@@ -16,8 +16,10 @@ import scipy.stats as sps
 import scipy.signal as ss
 
 import pathcustomize
+from waldo import wio
+
+from waldo.extern import multiworm
 import multiworm.analytics.sgolay
-import wio
 
 def IQR(dist):
     return np.percentile(dist, 75) - np.percentile(dist, 25)
@@ -200,7 +202,6 @@ def main(argv=None):
     args = parser.parse_args()
 
     experiment = wio.Experiment(experiment_id=args.data_set)
-    experiment.load_summary()
     if args.blob_id not in experiment:
         print('Blob ID {0} not found.'.format(args.blob_id), file=sys.stderr)
         sys.exit(1)
@@ -236,7 +237,7 @@ def main(argv=None):
     life_f = blob['frame'][-1] - blob['frame'][0]
 
     fld('Lifetime (s, frames)', life_s, life_f)
-    fld('Time Range (s)', blob.born, blob.died, joiner=' - ')
+    fld('Time Range (s)', blob.born_t, blob.died_t, joiner=' - ')
     fld('Frame Range', blob.born_f, blob.died_f, joiner=' - ')
     fld('Found at', *blob['centroid'][0])
     fld('Lost at', *blob['centroid'][-1])

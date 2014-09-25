@@ -13,8 +13,11 @@ import errno
 import numpy as np
 
 import pathcustomize
-import multiworm.analytics
-import wio
+
+import waldo.wio as wio
+
+from waldo.extern import multiworm
+from multiworm import analytics
 
 def longest_10(experiment, ten=10):
     df = experiment.summary.copy()
@@ -23,9 +26,9 @@ def longest_10(experiment, ten=10):
     return df.head()
 
 def assess_noise(experiment, npoints=10, plot=False):
-    noise_est = multiworm.analytics.NoiseEstimator()
+    noise_est = analytics.NoiseEstimator()
 
-    analyzer = multiworm.analytics.ExperimentAnalyzer()
+    analyzer = analytics.ExperimentAnalyzer()
     analyzer.add_analysis_method(noise_est)
 
     analyzer.analyze((bid, experiment.parse_blob(bid)) for (bid, lifetime) in longest_10(experiment, ten=npoints))

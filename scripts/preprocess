@@ -38,11 +38,11 @@ from docopt import docopt
 # project specific
 import pathcustomize
 
-from conf import settings
-import images
-import prepare
-import wio.file_manager as fm
-from wio.id_handeling import parse_ids
+from waldo.conf import settings
+from waldo import images
+from waldo import prepare
+from waldo.wio import file_manager as fm
+from waldo.wio.id_handeling import parse_ids
 
 PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
 IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')

@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 import pathcustomize
-import multiworm
+from waldo import wio
+from waldo.extern import multiworm
 from multiworm.readers import blob as blob_reader
-import wio
 
 # Derived from http://stackoverflow.com/a/2566508/194586
 # However, I claim these as below the threshold of originality
@@ -73,7 +73,6 @@ def main(argv=None):
     args = parser.parse_args(argv[1:])
 
     experiment = wio.Experiment(experiment_id=args.data_set)
-    experiment.load_summary()
 
     spec_time = args.time
     if args.frame:
