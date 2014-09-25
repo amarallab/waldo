@@ -13,8 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageOps, ImageChops
 
-from collider.viz.tools.box import Box
-from collider.viz.tools import get_contour, patch_contours
+from waldo.collider.viz.tools import get_contour, patch_contours, Box
 
 def pillowed(img_file):
     """

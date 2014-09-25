@@ -19,7 +19,7 @@ from scipy.interpolate import RectBivariateSpline
 from scipy.signal import lfilter, boxcar
 
 # project specific
-from conf import settings
+from waldo.conf import settings
 from . import core
 
 

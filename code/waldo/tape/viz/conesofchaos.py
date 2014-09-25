@@ -16,7 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # project specific
-import wio
+from waldo import wio
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

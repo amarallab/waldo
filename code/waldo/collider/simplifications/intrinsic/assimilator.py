@@ -60,7 +60,7 @@ def assimilate(digraph, max_threshold):
 
     Who would get the small node?  Nobody hopefully.
     """
-    L.debug('Begin assimilate method'.format(node))
+    L.debug('Begin assimilate method')
 
     #digraph.validate()
     methods = {

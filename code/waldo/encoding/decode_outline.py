@@ -12,23 +12,18 @@ __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
-# standard imports
-import os
+# standard library
 import sys
+import os
 import math
 
-# path definitinos
-SHARED_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../'
-sys.path.append(SHARED_DIR)
+# third party
 
-# nonstandard imports
-#from database.mongo_retrieve import pull_data_type_for_blob
-from filtering.filter_utilities import compute_polynomial_xy_smoothing_by_index
+# package imports
 
 # globals
 # for whatever reason they start counting at askey char 48
 ARBIRARY_CONVERSION_FACTOR = 48
-
 
 def bin1(s):
     ''' converts an integer into a string of 1s and 0s '''
@@ -299,33 +294,6 @@ def decode_outline(params):
 
             byte <<= 2
     return points
-
-# functions from the database days
-"""
-def pull_outline(blob_id, **kwargs):
-    #''' returns outline in point form from database using the blob_id as a key '''
-
-    entry = pull_data_type_for_blob(blob_id, 'encoded_outline', **kwargs)
-    encoded_outline_timedict = entry['data']
-    outline_timedict = {}
-    for t in sorted(encoded_outline_timedict):
-        outline_timedict[t] = decode_outline(encoded_outline_timedict[t])
-    return outline_timedict
-
-
-def pull_smoothed_outline(blob_id, poly_order=4, window_size=25, **kwargs):
-    #''' returns a smoothed outline in point form from database using the blob_id as a key '''
-
-    entry = pull_data_type_for_blob(blob_id, 'encoded_outline', **kwargs)
-    encoded_outline_timedict = entry['data']
-    outline_timedict = {}
-    for t in sorted(encoded_outline_timedict):
-        raw_outline = decode_outline(encoded_outline_timedict[t])
-        outline_timedict[t] = compute_polynomial_xy_smoothing_by_index(raw_outline,
-                                                                       window_size=window_size,
-                                                                       poly_order=poly_order)
-    return outline_timedict
-"""
 
 def make_square():
     ''' returns a series of x,y coordinates that coorespond to the outside of a square '''

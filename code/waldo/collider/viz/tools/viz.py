@@ -27,6 +27,9 @@ def patch_contours(contours, flip=False):
     bounds = []
     patches = []
     for contour in contours:
+        contour = np.array(contour)
+        if contour.shape == (2,):
+            contour = np.reshape(contour, (-1, 2))
         if flip:
             contour = np.fliplr(contour)
         bbox = Box.fit(contour)

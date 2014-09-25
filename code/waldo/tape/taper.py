@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 # project specific
-from conf import settings
+from waldo.conf import settings
 from .scorer import Scorer
 
 L = logging.getLogger(__name__)
