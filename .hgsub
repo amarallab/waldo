@@ -1,3 +1,3 @@
 data/annotation = ssh://hg@bitbucket.org/peterbwinter/worm-annotation
 data/prep = ssh://hg@bitbucket.org/peterbwinter/worm-preprocessing
-code/waldo/extern/multiworm-hg = code/waldo/extern/multiworm-hg
+code/waldo/extern/multiworm-hg = ssh://hg@bitbucket.org/nick_timkovich/multi-worm-tracker-adapter
