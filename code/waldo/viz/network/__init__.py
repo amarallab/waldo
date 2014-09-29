@@ -5,3 +5,4 @@ from .dot import render_nx_as_dot
 from .outlines import show_before_and_after
 from .ages import age_distribution
 from .collision import show_collision
+from .notebook import look, save_graphs

@@ -36,7 +36,7 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png',
     for node, node_data in nxgraph.nodes_iter(data=True):
         safe_ones = {}
         #print(node, node_data)
-        for attribute, value in node_data.iteritems():
+        for attribute, value in six.iteritems(node_data):
             #print(attribute, value)
             if attribute in GRAPHVIZ_ATTRIBUTES:
                 safe_ones[attribute] =  value

@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 
 import multiworm
-from . import tools as vt
+from .. import tools as vt
 
 def before_and_after(experiment, target):
     """

@@ -13,73 +13,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageOps, ImageChops
 
-from waldo.collider.viz.tools import get_contour, patch_contours, Box
+from waldo.viz.tools import get_contour, patch_contours, Box
 
-def pillowed(img_file):
-    """
-    PIL load...haha.
-
-    Transposes the image into the correct coordinate system
-    """
-    img = Image.open(img_file)
-    img = img.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.ROTATE_90)
-    return img
-
-def pil_crop(img, box):
-    """
-    Crops the given PIL image around the given box (dimensions must be
-    integers to align with pixels). Returns another PIL image and actual
-    extent box (if box exceeds image borders)
-    """
-    extents = Box(box)
-    width, height = img.size
-    extents.bottom = max(0, extents.bottom)
-    extents.left = max(0, extents.left)
-    extents.top = min(height, extents.top)
-    extents.right = min(width, extents.right)
-
-    retimg = img.crop(extents.PIL)
-    extents.center = (c - 0.5 for c in extents.center)
-    return retimg, extents
-
-def adjust_image(im):
-    # - reduce 16-bit greyscale to 8-bit
-    im = im.point([int(x/256) for x in range(2**16)], 'L')
-    im = ImageOps.autocontrast(im, cutoff=0)
-    return im
-
-def merge_stack(images):
-    '''
-    Merges a series of *images* using ***math***.
-
-    Parameters
-    ----------
-    images : iterable of :py:class:`PIL.Image.Image`
-        Image stack
-
-    Returns
-    -------
-    :py:class:`PIL.Image.Image`
-        Merged image
-    '''
-    # Guards
-    if not images:
-        raise ValueError('No images provided')
-    elif len(images) == 1:
-        return images[0]
-
-    # Convert Image
-    # - compress first
-    #print images[0].histogram()
-    #lut = equalize(images[0].histogram())
-
-    # stack up, keeping darkest pixels
-    composite = ImageChops.darker(images[0], images[1])
-    for im in images[2:]:
-        composite = ImageChops.darker(composite, im)
-    return composite
-
-def show_gap(experiment, lost_bid, found_bid):
+def show_collision_choices(experiment, parents, children):
     boxes = []
     blobs = []
     shapes = []

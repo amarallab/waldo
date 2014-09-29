@@ -9,7 +9,6 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import numpy as np
 import matplotlib.pyplot as plt
-import networkx as nx
 
 def age_distribution(*digraphs, **kwargs):
     """
