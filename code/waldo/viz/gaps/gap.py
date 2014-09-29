@@ -12,37 +12,12 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ..tools import get_contour, patch_contours, Box
+from .. import tools
 from . import pil
-
-def load_terminal_data(experiment, bid, end):
-    if end not in ['first', 'last']:
-        raise ValueError('end must be either "first" or "last"')
-
-    blob = experiment[bid]
-    blob.df.decode_contour()
-
-    shape = get_contour(blob, end)
-    bounds = Box.fit(shape)
-    idx = -1 if end == 'last' else 0
-    time = blob.df['time'].iloc[idx]
-    centroid = blob.df['centroid'].iloc[idx]
-
-    if len(shape) == 1:
-        bounds.size = 30, 30
-
-    terminal = {
-        'bid': bid,
-        'shape': shape,
-        'time': time,
-        'centroid': centroid,
-        'bounds': bounds,
-    }
-    return terminal
 
 def show_gap(experiment, lost_bid, found_bid):
     data = [
-            load_terminal_data(experiment, bid, end)
+            tools.terminal_data(experiment, bid, end)
             for bid, end
             in zip([lost_bid, found_bid], ['last', 'first'])
         ]
@@ -60,13 +35,13 @@ def show_gap(experiment, lost_bid, found_bid):
     if bounds.height < min_sq_dim:
         bounds.height = min_sq_dim
     bounds.square()
+    bounds.round()
 
     # load all images and crop
     image_fns = experiment.image_files.spanning(times=times)
     images = []
-    crop_box = Box([int(x) for x in bounds])
     for f in image_fns:
-        im, extents = pil.crop(pil.load(str(f)), crop_box)
+        im, extents = pil.crop(pil.load(str(f)), bounds)
         images.append(pil.adjust(im))
 
     # merge and convert to array (matplotlib doesn't work well w/ PIL)
@@ -85,15 +60,15 @@ def show_gap(experiment, lost_bid, found_bid):
             math.sqrt(dx**2 + dy**2), times[1] - times[0],
             experiment.id))
 
-    ax.fill([crop_box.left, crop_box.left, crop_box.right, crop_box.right],
-            [crop_box.bottom, crop_box.top, crop_box.top, crop_box.bottom],
+    ax.fill([bounds.left, bounds.left, bounds.right, bounds.right],
+            [bounds.bottom, bounds.top, bounds.top, bounds.bottom],
             hatch='////', facecolor='0.7', edgecolor='0.9',
             zorder=-10)
 
     ax.imshow(comparr, cmap=plt.cm.YlGn, extent=extents.vflip,
               interpolation='nearest')
 
-    _, patches = patch_contours(shapes)
+    _, patches = tools.patch_contours(shapes)
     for patch, color in zip(patches, ['red', 'blue']):
         patch.set_facecolor(color)
         patch.set_alpha(0.6)
@@ -104,7 +79,7 @@ def show_gap(experiment, lost_bid, found_bid):
              width=1.5, head_length=6, head_width=4, length_includes_head=True,
              color='yellow', alpha=0.8)
 
-    ax.set_xlim(crop_box.x)
-    ax.set_ylim(crop_box.y)
+    ax.set_xlim(bounds.x)
+    ax.set_ylim(bounds.y)
 
     return f, ax

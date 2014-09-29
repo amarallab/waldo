@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import absolute_import, division
 import math
 from inspect import isclass
 from functools import wraps
@@ -225,6 +225,20 @@ class Box(object):
             self.size = (min(self.width, self.height),)*2
         else:
             raise ValueError('Unknown method specified, use "inner" or "outer"')
+
+    def round(self):
+        for attr in ('left', 'right', 'top', 'bottom'):
+            setattr(self, attr, int(round(getattr(self, attr))))
+
+    def set_aspect(self, ratio, method='outer'):
+        raise NotImplementedError()
+        if method == 'outer':
+            self.size = (max(self.width, self.height),)*2
+        elif method == 'inner':
+            self.size = (min(self.width, self.height),)*2
+        else:
+            raise ValueError('Unknown method specified, use "inner" or "outer"')
+
 
 if __name__ == '__main__':
     print('Crude tests...')
