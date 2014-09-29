@@ -2,14 +2,14 @@
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
 # standard library
-import sys
-import os
+#import sys
+#import os
 
 # third party
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import matplotlib.cm as cm
+#import matplotlib.cm as cm
 from scipy import ndimage
 from skimage import morphology
 #from skimage.measure import regionprops
@@ -57,6 +57,16 @@ def outline_to_outline_matrix(outline, bbox=None):
         outline_matrix[i, j] = 1
     return ndimage.morphology.binary_fill_holes(outline_matrix)
 
+def create_roi_mask(x, y, r, shape):
+    nx, ny = shape
+    xs = np.arange(0, nx)
+    ys = np.arange(0, ny)
+    xv, yv = np.meshgrid(xs, ys)
+    dy = yv - y
+    dx = xv - x
+    d = np.sqrt(dy**2 + dx**2).T
+    roi_mask = d <= r
+    return roi_mask
 
 def create_backround(impaths):
     """
@@ -302,6 +312,7 @@ def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
     offsets = ((xmin2 - xmin), (ymin2 - ymin))
     new2 = fit_old_array_into_new_shape(a=array2, off=offsets, shape=box_shape)
     return new1, new2, bbox
+
 
 # TODO: make this transformation happen.
 def filled_image_to_outline_points(bbox, img):

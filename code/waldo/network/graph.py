@@ -132,7 +132,11 @@ class Graph(nx.DiGraph):
                     other_data.pop('components', set([other_node])))
             for k, v in six.iteritems(other_data):
                 if k in nd:
-                    nd[k].update(v)
+                    # works for dicts and sets.
+                    try:
+                        nd[k].update(v)
+                    except TypeError:
+                        pass
                 else:
                     nd[k] = v
 
@@ -244,16 +248,20 @@ class Graph(nx.DiGraph):
         worm_count_dict = network_number_wizard(self, experiment)
         for node, count in worm_count_dict.iteritems():
             self.node[node]['worm_count'] = count
+            #print(self.node[node])
 
     def determine_moving(self, experiment):
         # code following network_number_wizard logic for determining
         # seeds
         terminals_df = experiment.prepdata.load('terminals')
+        moving = []
         for node in self.nodes():
             is_moving = 0
             if node_is_moving(node, terminals_df):
                 is_moving = 1
+                moving.append(node)
             self.node[node]['moved'] = is_moving
+        return moving
 
     def add_node_attributes(self, attribute_name, node_dict, default=False):
         """
