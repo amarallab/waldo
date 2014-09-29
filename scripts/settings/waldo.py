@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 import pathlib
 
@@ -8,6 +9,6 @@ else:
 #MWT_DATA_ROOT = pathlib.Path() / '..' / 'Waldo' / 'data' / 'mwt'
 
 try:
-    from waldo_local import *
+    from .waldo_local import *
 except ImportError:
     pass

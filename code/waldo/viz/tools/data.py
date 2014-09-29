@@ -10,6 +10,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import itertools
 import collections
 
+from waldo.extern import multiworm
 from multiworm.blob import BlobDataFrame
 from multiworm.readers.blob import parse as parse_blob
 

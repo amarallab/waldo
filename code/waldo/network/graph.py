@@ -165,7 +165,7 @@ class Graph(nx.DiGraph):
 
             longer_lifespans = []
             no_lifespan_extentions = []
-            for n, life in lifespans.iteritems():
+            for n, life in six.iteritems(lifespans):
                 if life > 60 * 20 * 15 and life + orig_lifespan > final_lifespan:
                     longer_lifespans.append(n)
                 if life > final_lifespan:
@@ -246,9 +246,15 @@ class Graph(nx.DiGraph):
 
     def count_worms(self, experiment):
         worm_count_dict = network_number_wizard(self, experiment)
-        for node, count in worm_count_dict.iteritems():
+        for node, count in six.iteritems(worm_count_dict):
             self.node[node]['worm_count'] = count
             #print(self.node[node])
+
+    def giant(self):
+        """Return a subgraph copy of the giant component"""
+        giant = sorted(nx.connected_component_subgraphs(self.to_undirected()),
+                       key=len, reverse=True)[0]
+        return giant
 
     def determine_moving(self, experiment):
         # code following network_number_wizard logic for determining

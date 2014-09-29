@@ -44,16 +44,9 @@ DSET_DIR = os.path.abspath(LOGISTICS['dsets'])
 IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
 TIME_SERIES_FILE_TYPE = LOGISTICS['time-series-file-type']
 
-if TIME_SERIES_FILE_TYPE == 'hdf5':
-    TIME_SERIES_FILE_TYPE = 'h5'
-    # dont import if hdf5 not chosen. h5py may not be installed.
-    from .h5_interface import write_h5_timeseries_base
-    from .h5_interface import read_h5_timeseries_base
-
 DSET_OPTIONS = ['d', 'ds', 'dset', 'dataset', 's', 'data_set']
 RECORDING_OPTIONS = ['p', 'plate', 'ex_id', 'eid']
 WORM_OPTIONS = ['w', 'worm', 'blob', 'b', 'bid', 'blob_id']
-
 
 class ImageMarkings(object):
     # a class for interacting with preprocessing data
@@ -79,14 +72,11 @@ class ImageMarkings(object):
         self.ex_id = ex_id
         self.data = None
 
-        #print(self.path)
-        #print(self.dset)
-
         self.file = os.path.join(self.path,
                                  'threshold-{d}.json'.format(d=dset))
-
+                                 
     def dump(self, data, ex_id=None):
-        return json.dump(open(self.file, 'r'), data)
+        json.dump(open(self.file, 'r'), data)
 
     def load(self):
         self.data = json.load(open(self.file, 'r'))

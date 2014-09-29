@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 
-from . import tools as vt
+from waldo.viz import tools as vt
 
 def show_collision(experiment, graph, target, direction='backwards'):
     backwards = direction.startswith('back')
