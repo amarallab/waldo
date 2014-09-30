@@ -28,7 +28,7 @@ __all__ = [
     'generalized_compare_masks',
     'resolve_collisions',
     'resolve_multicollisions',
-    'untangle_collision',
+    #'untangle_collision',
 ]
 
 # for 2 parents, 2 children
@@ -500,7 +500,7 @@ def resolve_collisions(graph, experiment, collision_nodes):
         if collision_result:
             result_report['collision_lifespans_t'][node] = graph.lifespan_t(node)
             collision_results[node] = collision_result
-            untangle_collision(graph, node, collision_result)
+            graph.untangle_collision(node, collision_result)
             result_report['resolved'].append(node)
 
             # temporary reporting to track down where long tracks dissapear to.
@@ -510,60 +510,6 @@ def resolve_collisions(graph, experiment, collision_nodes):
         else:
             result_report['no_overlap'].append(node)
     return result_report
-
-def untangle_collision(graph, collision_node, collision_result):
-    """
-    this untangles collisions by removing the collision
-    nodes and merging the parent-child pairs that belong
-    to the same worm.
-
-
-    A   C
-     \ /
-   collision    ==>  (A, B) and (C, D)
-     / \
-    B   D
-
-    The collision node and all nodes in collision result are
-    removed from the graph and replaced by compound nodes.
-
-
-    params
-    --------
-    graph: (networkx graph object)
-    collision_node: (int or tuple)
-       the node id (in graph) that identifies the collision.
-    collision_result: (list)
-       Values are lists of node pairs to be joined.
-
-       example:
-       [[node_A, node_B], [node_C, node_D]]
-    """
-
-    if collision_result:
-        graph.remove_node(collision_node)
-
-    #print(col)
-    for (n1, n2) in collision_result:
-        #print(cr)
-
-        #parents = set(graph.predecessors(n1))
-        #children = set(graph.successors(n2))
-
-        # combine data
-        #new_node, new_node_data = graph.condense_nodes(n1, n2)
-        if 'collision' not in graph.node[n1]:
-            graph.node[n1]['collisions'] = set()
-        graph.node[n1]['collisions'].add(collision_node)
-
-        # add merged node and link to previous parents/children
-        #graph.add_node(new_node, **new_node_data)
-        #graph.add_edges_from((p, new_node) for p in parents)
-        #graph.add_edges_from((c, new_node) for c in children)
-        graph.add_edge(n1, n2)
-        # remove old nodes.
-        #graph.remove_node(n1)
-        #graph.remove_node(n2)
 
 
 # WORKING COPY TO GET MULI-COLLISIONS WORKING

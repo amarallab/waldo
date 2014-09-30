@@ -16,7 +16,7 @@ import prettyplotlib as ppl
 # import sys
 #from os.path import join, abspath
 #from settings.local import LOGISTICS
-import wio.file_manager as fm
+import waldo.wio as wio
 
 
 __author__ = 'Peter B. Winter'
@@ -25,7 +25,7 @@ __status__ = 'prototype'
 
 def grab_files(ex_id):
     print(ex_id)
-    prep_data = fm.PrepData(ex_id)
+    prep_data = wio.file_manager.PrepData(ex_id)
     matches = prep_data.load('matches')
     base_accuracy = prep_data.load('base_accuracy')
     # do I need to set index col to 'frame'?

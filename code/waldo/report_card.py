@@ -88,7 +88,8 @@ class ReportCard(object):
             label = 'wm_{b}min'.format(b=b)
             wm[label] = worm_m
 
-        moving_nodes = list(compound_bl_filter(self.experiment, digraph, threshold))
+        moving_nodes = list(compound_bl_filter(self.experiment,
+                                               digraph, threshold))
         n1 = graph.number_of_nodes()
         n2 = digraph.number_of_nodes()
         m1 = len(moving_nodes)
@@ -321,8 +322,13 @@ def compound_bounding_box(experiment, graph):
     experiment prepdata and graph node components.
     """
     bounds = experiment.prepdata.bounds
-    return bounds.groupby(graph.where_is).agg(
-            {'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
+    def wh(row):
+        return graph.where_is(row['bid'])
+
+    bounds['node'] = bounds.apply(wh, axis=1)
+    groups = bounds.groupby('node')
+    b = groups.agg({'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
+    return b
 
 # def create_report_card(experiment, graph):
 
@@ -385,6 +391,8 @@ def collision_iteration2(experiment, graph):
     ############### Simplify
     last_graph = None
     gap_validation = []
+
+    report_card.add_step(graph, 'iter 0')
     for i in range(6):
 
         L.warn('Iteration {}'.format(i + 1))
@@ -470,7 +478,7 @@ def collision_iteration2(experiment, graph):
             break
 
         last_graph = graph.copy()
-
+        report_card.add_step(graph, 'iter {i}'.format(i=i+1))
     #for saving all potential gap bids:
     #gaps = pd.concat(gap_validation)
     #gaps.to_csv('{eid}-gaps.csv'.format(eid=ex_id), index=False, header=False)

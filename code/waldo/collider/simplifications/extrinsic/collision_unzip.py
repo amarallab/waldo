@@ -21,7 +21,7 @@ from waldo.images.manipulations import points_to_aligned_matrix
 from waldo.thinning.shape_thinning import skeletonize
 #from importing.skeletonize_outline import calculate_branch_and_endpoints
 from .find_outlines import *
-from .collision_overlap import compare_masks, untangle_collision
+from .collision_overlap import compare_masks
 
 from ..util import consolidate_node_data
 
@@ -132,7 +132,7 @@ def unzip_resolve_collisions(graph, experiment, collision_nodes, verbose=False, 
             if len(result) > 0:
                 if verbose:
                     print("%d, %d -> %d, %d, result: " % (a, b, x, y), result)
-                untangle_collision(graph, node, result)
+                graph.untangle_collision(node, result)
                 break
 
             current_c = outline_c_list.pop(0)

@@ -97,15 +97,21 @@ def grab_blob_data(experiment, time):
     #outlines, centroids, outline_ids = [], [], []
     parser = frame_parser_spec(frame)
     blob_data = []
+    bad_blobs = []
     for bid in bids:
-        blob = experiment.parse_blob(bid, parser)
-        if blob['contour_encode_len'][0]:
-            outline = blob_reader.decode_outline(
-                blob['contour_start'][0],
-                blob['contour_encode_len'][0],
-                blob['contour_encoded'][0],
+        try:
+            blob = experiment.parse_blob(bid, parser)
+            if blob['contour_encode_len'][0]:
+                outline = blob_reader.decode_outline(
+                    blob['contour_start'][0],
+                    blob['contour_encode_len'][0],
+                    blob['contour_encoded'][0],
                 )
-            blob_data.append((bid, blob['centroid'][0], outline))
+                blob_data.append((bid, blob['centroid'][0], outline))
+        except ValueError:
+            bad_blobs.append(bid)
+    if bad_blobs:
+        print('Warning: {n} blobs failed to load data'.format(n=len(bad_blobs)))
     return frame, blob_data
 
 def reformat_missing(df):

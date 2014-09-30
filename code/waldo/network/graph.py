@@ -36,7 +36,7 @@ class Graph(nx.DiGraph):
 
         super(Graph, self).__init__(*args, **kwargs)
         self._whereis_data = {}
-
+        self._collisions = {}
 
     def copy(self):
         return type(self)(self, experiment=self.experiment)
@@ -300,3 +300,61 @@ class Graph(nx.DiGraph):
                 self.node[node][attribute_name] = default
         print(nodes_found, 'nodes found')
         print(nodes_not_found, 'nodes not found')
+
+    def untangle_collision(self, collision_node, collision_result):
+        """
+        this untangles collisions by removing the collision
+        nodes and merging the parent-child pairs that belong
+        to the same worm.
+
+
+        A   C
+         \ /              A     C
+       collision    ==>   | and |
+         / \              B     D
+        B   D
+
+        The collision node and all nodes in collision result are
+        removed from the self and replaced by compound nodes.
+
+
+        params
+        --------
+        collision_node: (int or tuple)
+           the node id (in self) that identifies the collision.
+        collision_result: (list)
+           Values are lists of node pairs to be joined.
+
+           example:
+           [[node_A, node_B], [node_C, node_D]]
+        """
+
+        if collision_result:
+            self.remove_node(collision_node)
+
+        if 'collisions' not in self:
+            self._collisions = {}
+
+        self._collisions[collision_node] = collision_result
+
+        #print(col)
+        for (n1, n2) in collision_result:
+            #print(cr)
+
+            #parents = set(self.predecessors(n1))
+            #children = set(self.successors(n2))
+
+            # combine data
+            #new_node, new_node_data = self.condense_nodes(n1, n2)
+            if 'collision' not in self.node[n1]:
+                self.node[n1]['collisions'] = set()
+            self.node[n1]['collisions'].add(collision_node)
+
+            # add merged node and link to previous parents/children
+            #self.add_node(new_node, **new_node_data)
+            #self.add_edges_from((p, new_node) for p in parents)
+            #self.add_edges_from((c, new_node) for c in children)
+            self.add_edge(n1, n2)
+            # remove old nodes.
+            #self.remove_node(n1)
+            #self.remove_node(n2)

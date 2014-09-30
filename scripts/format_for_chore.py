@@ -7,13 +7,14 @@ import pickle
 import glob
 import pandas as pd
 import numpy as np
-import json
+
 
 import pathcustomize
-from conf import settings
-from wio import Experiment
+from waldo.conf import settings
+from waldo.wio import Experiment
+import waldo.wio as wio
 
-import collider
+import waldo.collider
 import multiworm
 
 #import wio.file_manager as fm
@@ -26,7 +27,7 @@ print DATA_DIR
 def get_graph(graph_pickle_name, experiment, overwrite=False):
     print graph_pickle_name
     if not os.path.exists(graph_pickle_name) or overwrite:
-        import report_card
+        import waldo.report_card as report_card
         print 'calculating graph'
         graph = experiment.graph.copy()
         graph2, report_df = report_card.collision_iteration2(experiment, graph)
@@ -252,12 +253,13 @@ def recreate_summary_file(summary_df, lost_and_found, file_management, basename=
     # TODO: add both lines to summary file.
     return lines
 
-def main():
+def main(ex_id = '20130318_131111'):
     #if __name__ == '__main__':
-    ex_id = '20130318_131111'
+
     chore_dir = os.path.join(CHORE_DIR, ex_id)
     data_dir  = os.path.join(DATA_DIR, ex_id)
     print chore_dir
+    wio.file_manager.ensure_dir_exists(chore_dir)
     experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
 
     graph_pickle_name = os.path.join(chore_dir, 'graph.pickle')
@@ -281,4 +283,4 @@ def main():
         for line in lines:
             f.write(line)
 
-main()
+main('20130614_120518')
