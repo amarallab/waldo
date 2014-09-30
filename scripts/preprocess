@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""prep.
+"""preprocess.
 
 Usage:
-  prep.py <command> [options] <id>...
-  prep.py (-h | --help)
-  prep.py --version
+  preprocess <command> [options] <id>...
+  preprocess (-h | --help)
+  preprocess --version
 
 Commands:
   cache            precalculate image threshold values to speed up marking
@@ -12,6 +12,7 @@ Commands:
   prepare          convert text data into CSVs
   images           use annotated images to calculate
   finish           runs both 'prepare' and 'images'
+  score            scores recording based on image quality
 
 Arguments:
    id              can be either dataset names or experiment ids
@@ -89,7 +90,7 @@ def reduce_unecessary_work(eids, overwrite, job='prepare'):
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='prep 0.1')
-    print(arguments)
+    #print(arguments)
     eids_by_dset = parse_ids(arguments['<id>'])
     cmd = arguments['<command>']
     overwrite = arguments['--overwrite']
@@ -123,3 +124,7 @@ if __name__ == '__main__':
             p_eids = reduce_unecessary_work(eids, overwrite, 'prepare')
             for ex_id in p_eids:
                 images.summarize(ex_id) #csvs from blob data
+
+        elif cmd  == 'score':
+            for ex_id in eids:
+                images.score(ex_id)
