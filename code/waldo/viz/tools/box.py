@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import absolute_import, division
 import math
 from inspect import isclass
 from functools import wraps
@@ -218,15 +218,37 @@ class Box(object):
             self.bottom,
         )
 
+    def round(self):
+        for attr in ('left', 'right', 'top', 'bottom'):
+            setattr(self, attr, int(round(getattr(self, attr))))
+
     def square(self, method='outer'):
+        self.adjust_aspect(1, method)
+
+    @property
+    def aspect(self):
+        return self.width / self.height
+
+    def adjust_aspect(self, ratio, method='outer'):
+        """Ratio is width over height"""
         if method == 'outer':
-            self.size = (max(self.width, self.height),)*2
+            if self.aspect < ratio:
+                # expand width
+                self.width = self.height * ratio
+            else:
+                # expand height
+                self.height = self.width / ratio
         elif method == 'inner':
-            self.size = (min(self.width, self.height),)*2
+            if self.aspect < ratio:
+                # shrink height
+                self.height = self.width / ratio
+            else:
+                # shrink width
+                self.width = self.height * ratio
         else:
             raise ValueError('Unknown method specified, use "inner" or "outer"')
 
-if __name__ == '__main__':
+def _tests():
     print('Crude tests...')
 
     def cmpall(one, two):
@@ -310,4 +332,29 @@ if __name__ == '__main__':
     b.grow(10)
     assert cmpall(b, (-10, 20, -10, 15)), 'grow broken'
 
+    # rounding
+    b = Box(x=(0.1, 10.4), y=(0.6, 10.9))
+    b.round()
+    assert cmpall(b, (0, 10, 1, 11))
+
+    # squaring/aspects
+    b = Box(x=(0, 20), y=(0, 10))
+    b.square()
+    assert cmpall(b, (0, 20, -5, 15))
+
+    b = Box(x=(0, 10), y=(0, 20))
+    b.square('inner')
+    assert cmpall(b, (0, 10, 5, 15))
+
+    b = Box(x=(0, 10), y=(0, 20))
+    b.adjust_aspect(3/2)
+    assert cmpall(b, (-10, 20, 0, 20))
+
+    b = Box(x=(0, 10), y=(0, 20))
+    b.adjust_aspect(6/20, 'inner')
+    assert cmpall(b, (2, 8, 0, 20))
+
     print('OK!')
+
+if __name__ == '__main__':
+    _tests()

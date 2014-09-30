@@ -10,6 +10,9 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import itertools
 import collections
 
+from .box import Box
+from .viz import get_contour
+
 from waldo.extern import multiworm
 from multiworm.blob import BlobDataFrame
 from multiworm.readers.blob import parse as parse_blob
@@ -17,6 +20,7 @@ from multiworm.readers.blob import parse as parse_blob
 __all__ = [
     'frame_dataframe',
     'fill_empty_contours',
+    'terminal_data',
 ]
 
 def nth(iterable, n, default=None):
@@ -59,3 +63,38 @@ def fill_empty_contours(df):
 
     df['contour'] = df.apply(_fill, axis=1)
     return df
+
+def terminal_datum(experiment, bid, end):
+    if end not in ['first', 'last']:
+        raise ValueError('end must be either "first" or "last"')
+
+    blob = experiment[bid]
+    blob.df.decode_contour()
+
+    shape = get_contour(blob, end)
+    bounds = Box.fit(shape)
+    if len(shape) == 1:
+        bounds.size = 30, 30
+
+    idx = -1 if end == 'last' else 0
+    terminal = {
+        'bid': bid,
+        'shape': shape,
+        'time': blob.df['time'].iloc[idx],
+        'frame': blob.df['frame'].iloc[idx],
+        'area': blob.df['area'].iloc[idx],
+        'centroid': blob.df['centroid'].iloc[idx],
+        'bounds': bounds,
+    }
+    return terminal
+
+def terminal_data(experiment, bids, ends):
+    results = collections.defaultdict(list)
+
+    for bid, end in zip(bids, ends):
+        d = terminal_datum(experiment, bid, end)
+        for k, v in six.iteritems(d):
+            results[k].append(v)
+
+    results.default_factory = None
+    return results
