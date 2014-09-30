@@ -70,3 +70,17 @@ def merge_stack(images):
     for im in images[2:]:
         composite = ImageChops.darker(composite, im)
     return composite
+
+def load_image_portion(experiment, bounds, **time_frame_or_filename):
+    """
+    Load the nearest image in time from the experiment, crop, and adjust
+    """
+    if 'filename' in time_frame_or_filename:
+        filename = time_frame_or_filename['filename']
+    else:
+        filename = experiment.image_files.nearest(**time_or_frame)[0]
+
+    img, extents = crop(load(str(filename)), bounds)
+    img = adjust(img)
+
+    return img, extents

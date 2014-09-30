@@ -12,8 +12,9 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ..tools import get_contour, patch_contours, Box
+from .. import tools
 from . import pil
+from .plotting import show_image, tweak_bounds
 
 def show_collision_choices(experiment, parents, children):
 
