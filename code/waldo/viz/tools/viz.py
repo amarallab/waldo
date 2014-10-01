@@ -19,11 +19,12 @@ __all__ = [
     'get_contour',
 ]
 
-def patch_contours(contours, flip=False):
+def patch_contours(contours, flip=False, bounds=True):
     """
     Convert all the contours (Nx2 series of points) into matplotlib patches
     and return the enclosing bounding box and a list of patches.
     """
+    return_bounds = bounds
     bounds = []
     patches = []
     for contour in contours:
@@ -40,8 +41,11 @@ def patch_contours(contours, flip=False):
             patches.append(Polygon(contour, closed=True, alpha=0.3))
         bounds.append(bbox)
 
-    bounds = sum(bounds)
-    return bounds, patches
+    if return_bounds:
+        bounds = sum(bounds)
+        return bounds, patches
+    else:
+        return patches
 
 def get_image(experiment, **kwargs):
     """

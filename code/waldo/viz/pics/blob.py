@@ -15,32 +15,29 @@ import matplotlib.pyplot as plt
 
 from .. import tools
 from . import pil
-from .plotting import show_image, tweak_bounds
+from .plotting import plot_spacetime, tweak_bounds
 
-PADDING = 40
-MIN_DIM = 120
-ASPECT = 2/3
+BOUNDS = {
+    'padding': 40,
+    'min_dim': 120,
+    'aspect': 3/4,
+}
 
 def show_blob(experiment, bid):
     bids = [bid, bid]
     ends = ['first', 'last']
     data = tools.terminal_data(experiment, bids, ends)
 
-    tweaker = functools.partial(tweak_bounds,
-                    padding=PADDING, min_dim=MIN_DIM, aspect=ASPECT)
-    bounds = [tweaker(b) for b in data['bounds']]
+    tweaker = functools.partial(tweak_bounds, **BOUNDS)
+    spaces = [tweaker(b) for b in data['bounds']]
+    times = data['time']
 
-    images, extents = zip(*(
-        pil.load_image_portion(experiment, b, time=t)
-        for t, b
-        in zip(data['time'], bounds)))
-
-    _, patches = tools.patch_contours(data['shape'])
+    patches = tools.patch_contours(data['shape'], bounds=False)
 
     f, axs = plt.subplots(ncols=2)
     f.set_size_inches((14, 10))
     f.tight_layout()
-    f.subplots_adjust(top=0.91, wspace=0)
+    f.subplots_adjust(top=0.94)
 
     prefs = [
         {
@@ -53,10 +50,9 @@ def show_blob(experiment, bid):
         }
     ]
     f.suptitle('Blob ID {} (EID: {})'.format(bid, experiment.id), fontsize=20)
-    for p, ax, box, img, ext, patch, t in zip(
-            prefs, axs, bounds, images, extents, patches, data['time']):
-        ax.set_title(p['title'].format(t), fontsize=14)
-        show_image(ax, img, ext, box, cmap=plt.cm.Blues)
+    for p, ax, space, time, patch in zip(prefs, axs, spaces, times, patches):
+        ax.set_title(p['title'].format(time), fontsize=14)
+        plot_spacetime(ax, experiment, space, time, cmap=plt.cm.Blues)
 
         patch.set_facecolor(p['color'])
         patch.set_alpha(0.6)

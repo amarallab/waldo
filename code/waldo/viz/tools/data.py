@@ -21,6 +21,7 @@ __all__ = [
     'frame_dataframe',
     'fill_empty_contours',
     'terminal_data',
+    'terminal_datum',
 ]
 
 def nth(iterable, n, default=None):
@@ -66,7 +67,7 @@ def fill_empty_contours(df):
 
 def terminal_datum(experiment, bid, end):
     if end not in ['first', 'last']:
-        raise ValueError('end must be either "first" or "last"')
+        raise ValueError('end must be either "first" or "last" (was {})'.format(repr(end)))
 
     blob = experiment[bid]
     blob.df.decode_contour()

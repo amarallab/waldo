@@ -8,38 +8,27 @@ import six
 from six.moves import zip, range
 
 import math
-import functools
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 from .. import tools
 from . import pil
-from .plotting import show_image, tweak_bounds
+from .plotting import plot_spacetime, tweak_bounds
 
-PADDING = 40
-MIN_DIM = 150
-ASPECT = 1
+BOUNDS = {
+    'padding': 40,
+    'min_dim': 150,
+}
 
 def show_gap(experiment, lost_bid, found_bid):
     bids = [lost_bid, found_bid]
     ends = ['last', 'first']
     data = tools.terminal_data(experiment, bids, ends)
 
-    tweaker = functools.partial(tweak_bounds,
-                    padding=PADDING, min_dim=MIN_DIM, aspect=ASPECT)
-
-    bounds = tweaker(sum(data['bounds']))
-
-    # load all images and crop
-    images, extents = zip(*(
-        pil.load_image_portion(experiment, bounds, filename=fn)
-        for fn
-        in experiment.image_files.spanning(times=data['time'])))
-
-    # merge stack
-    composite = pil.merge_stack(images)
-    extents = extents[0] # should all be identical
+    # determine space
+    space = tweak_bounds(sum(data['bounds']), **BOUNDS)
+    time = data['time']
 
     # arrow calculations
     x, y = data['centroid'][0]
@@ -47,15 +36,14 @@ def show_gap(experiment, lost_bid, found_bid):
 
     f, ax = plt.subplots()
     f.set_size_inches((10, 10))
-    ax.set_aspect('equal')
     ax.set_title('Gap from id {} to {}, {:0.1f} px, {:0.3f} sec (EID: {})'.format(
             lost_bid, found_bid,
-            math.sqrt(dx**2 + dy**2), data['time'][1] - data['time'][0],
+            math.sqrt(dx**2 + dy**2), time[1] - time[0],
             experiment.id))
 
-    show_image(ax, composite, extents, bounds)
+    plot_spacetime(ax, experiment, space, time, cmap=plt.cm.YlGn)
 
-    _, patches = tools.patch_contours(data['shape'])
+    patches = tools.patch_contours(data['shape'], bounds=False)
     for patch, color in zip(patches, ['red', 'blue']):
         patch.set_facecolor(color)
         patch.set_alpha(0.6)

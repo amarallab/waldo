@@ -78,7 +78,7 @@ def load_image_portion(experiment, bounds, **time_frame_or_filename):
     if 'filename' in time_frame_or_filename:
         filename = time_frame_or_filename['filename']
     else:
-        filename = experiment.image_files.nearest(**time_or_frame)[0]
+        filename = experiment.image_files.nearest(**time_frame_or_filename)[0]
 
     img, extents = crop(load(str(filename)), bounds)
     img = adjust(img)
