@@ -36,6 +36,8 @@ class Taper(object):
 
         self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
         self._missing = self._load_missing()
+        self._node_start_blobs = {}
+        self._node_end_blobs = {}
 
     def _load_missing(self):
         try:
@@ -99,7 +101,6 @@ class Taper(object):
         gap_end_bids = gap_end_components & term_ids
         isolated = gap_start_bids & gap_end_bids
 
-
         # split up terminals dataframe into two smaller ones containing
         # only relevant information.
         terms['isolated'] = False
@@ -119,16 +120,17 @@ class Taper(object):
         #print(gap_start_terms.head(10))
 
         # add in the node_id values into the dataframes
-        gap_start_terms['node_id'] = np.nan
+        gap_start_terms['node_id'] = gap_start_terms.index
         for node_id in gap_start_nodes:
             comps = graph.components(node_id)
             for comp in comps:
                 if comp in gap_start_bids:
                     gap_start_terms['node_id'].loc[comp] = node_id
 
-        gap_end_terms['node_id'] = np.nan
+        gap_end_terms['node_id'] = gap_end_terms.index
         for node_id in gap_end_nodes:
-            comps = graph[node_id].get('components', [node_id])
+            comps = graph.components(node_id)
+            #comps = graph[node_id].get('components', [node_id])
             for comp in comps:
                 if comp in gap_end_bids:
                     gap_end_terms['node_id'].loc[comp] = node_id
@@ -160,6 +162,15 @@ class Taper(object):
         # clean up after using index
         gap_start_terms.reset_index(inplace=True)
         gap_end_terms.reset_index(inplace=True)
+
+        # store node - blob relations for later use.
+        for i, row in gap_start_terms.iterrows():
+            node, blob = row['node_id'], row['bid']
+            self._node_start_blobs[int(node)] = int(blob)
+
+        for i, row in gap_end_terms.iterrows():
+            node, blob = row['node_id'], row['bid']
+            self._node_end_blobs[int(node)] = int(blob)
 
         if use_missing_objects and self._missing is not None:
             m = self._missing[['bid', 'f', 't', 'x', 'y']]
@@ -486,7 +497,11 @@ class Taper(object):
 
         # if not using missing data, just add links and stop here.
         if not any_missing:
-            self._graph.add_edges_from(real_to_real, taped=True)
+            #self._graph.add_edges_from(real_to_real, taped=True)
+            blob_to_blob = [(self._node_start_blobs[n1],
+                             self._node_end_blobs[n2])
+                            for (n1, n2) in real_to_real]
+            self._graph.bridge_gaps(real_to_real, blob_to_blob)
             return real_to_real, []
 
         # if missing data is involved... more steps required
@@ -564,6 +579,9 @@ class Taper(object):
         self._missing = self._missing[missing_filter]
         print(len(self._missing), 'missing points left')
 
+        blob_to_blob = [(self._node_start_blobs[n1],
+                         self._node_end_blobs[n2])
+                        for (n1, n2) in real_to_real]
 
-        self._graph.add_edges_from(real_to_real, taped=True)
+        self._graph.bridge_gaps(real_to_real, blob_to_blob)
         return real_to_real, failed_links

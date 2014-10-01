@@ -24,7 +24,7 @@ CHORE_DIR = os.path.abspath('./../data/chore/')
 print DATA_DIR
 
 
-def get_graph(graph_pickle_name, experiment, overwrite=False):
+def get_graph(graph_pickle_name, experiment, overwrite=True):
     print graph_pickle_name
     if not os.path.exists(graph_pickle_name) or overwrite:
         import waldo.report_card as report_card
@@ -283,4 +283,4 @@ def main(ex_id = '20130318_131111'):
         for line in lines:
             f.write(line)
 
-main('20130614_120518')
+main('20130702_135704')

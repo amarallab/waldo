@@ -37,6 +37,11 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
     #frames, true_pos, false_pos, false_neg = [], [], [], []
     data = {}
     #print(base_accuracy.head())
+    ba_len1= len(base_accuracy)
+    base_accuracy.drop_duplicates(cols='frame', inplace=True)
+    ba_len2 = len(base_accuracy)
+    if ba_len1 != ba_len2:
+        print 'WARNING: base accuracy file has duplicate frames'
     ba = base_accuracy.set_index('frame')
     for frame, df in matches.groupby('frame'):
         tp_bids = list(df[df['good']]['bid'])
@@ -48,7 +53,7 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
         #print(row)
         base_tp = row['true-pos']
         base_fp = row['false-pos']
-        base_fn = row['false-neg']
+        base_fn = int(row['false-neg'])
 
         #print(len(tp_bids), len(fp_bids))
 
@@ -79,7 +84,7 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
 
         data[frame] = {'true-pos': n_tracked_bids,
                        'false-pos': n_fp,
-                       'false-neg': base_fn + n_filtered_bids}
+                       'false-neg': int(base_fn + n_filtered_bids)}
 
     accuracy = pd.DataFrame(data).T
 

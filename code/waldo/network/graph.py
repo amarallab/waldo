@@ -36,7 +36,10 @@ class Graph(nx.DiGraph):
 
         super(Graph, self).__init__(*args, **kwargs)
         self._whereis_data = {}
-        self._collisions = {}
+        self._collision_nodes = {}
+        self._collision_blobs = {}
+        self._gap_nodes = []
+        self._gap_blobs = []
 
     def copy(self):
         return type(self)(self, experiment=self.experiment)
@@ -301,7 +304,13 @@ class Graph(nx.DiGraph):
         print(nodes_found, 'nodes found')
         print(nodes_not_found, 'nodes not found')
 
-    def untangle_collision(self, collision_node, collision_result):
+    def bridge_gaps(self, node_list, blob_list):
+        self._gap_nodes.extend(node_list)
+        self._gap_blobs.extend(blob_list)
+        self.add_edges_from(node_list, taped=True)
+
+    def untangle_collision(self, collision_node, collision_result,
+                           blobs=None):
         """
         this untangles collisions by removing the collision
         nodes and merging the parent-child pairs that belong
@@ -332,10 +341,6 @@ class Graph(nx.DiGraph):
         if collision_result:
             self.remove_node(collision_node)
 
-        if 'collisions' not in self:
-            self._collisions = {}
-
-        self._collisions[collision_node] = collision_result
 
         #print(col)
         for (n1, n2) in collision_result:
@@ -349,12 +354,8 @@ class Graph(nx.DiGraph):
             if 'collision' not in self.node[n1]:
                 self.node[n1]['collisions'] = set()
             self.node[n1]['collisions'].add(collision_node)
-
-            # add merged node and link to previous parents/children
-            #self.add_node(new_node, **new_node_data)
-            #self.add_edges_from((p, new_node) for p in parents)
-            #self.add_edges_from((c, new_node) for c in children)
             self.add_edge(n1, n2)
-            # remove old nodes.
-            #self.remove_node(n1)
-            #self.remove_node(n2)
+
+        # document collision
+        self._collision_nodes[collision_node] = collision_result
+        self._collision_blobs[collision_node] = blobs
