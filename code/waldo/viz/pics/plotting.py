@@ -36,6 +36,13 @@ def show_image(axes, image, extents, limits=None, cmap=plt.cm.Greys):
     axes.set_ylim(limits.y)
 
 def plot_spacetime(axes, experiment, bounds, time, **kwargs):
+    """
+    Plot the images from *experiment* on or bracked by *time* (can be a
+    scalar or len-2 sequence) on *axes* (can be one or an iterable of axes
+    objects).
+
+    Loose keyword arguments passed to :py:func:`show_image`.
+    """
     # find and load images
     try:
         image_files = experiment.image_files.spanning(times=time)
@@ -57,7 +64,11 @@ def plot_spacetime(axes, experiment, bounds, time, **kwargs):
     extents = extents[0]
 
     # plot
-    show_image(axes, image, extents, bounds, **kwargs)
+    try:
+        for ax in axes:
+            show_image(ax, image, extents, bounds, **kwargs)
+    except TypeError:
+        show_image(axes, image, extents, bounds, **kwargs)
 
 def plot_contour(axes, experiment, bid, frame, **kwargs):
     """
