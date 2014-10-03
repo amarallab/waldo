@@ -21,12 +21,17 @@ FIELD_NAMES = {
     'un': 'Unscreened',
 }
 
+# def answer_group(answer):
+#     judgements = CuratedAnswer.objects.filter(answer=answer).order_by('collision')
+#     collision_ids = [j.collision_id for j in set(judgements)]
+#     return Collision.objects.filter(id__in=collision_ids)
+
 def index(request):
     data = defaultdict(int, {})
 
-    collisions = Collision.objects.prefetch_related('curatedanswer_set').all()
+    collisions = Collision.objects.prefetch_related('answers').all()
     for collision in collisions:
-        answers = set(ca.answer for ca in collision.curatedanswer_set.all())
+        answers = set(ca.answer for ca in collision.answers.all())
         if len(answers) > 1:
             data['xx'] += 1
         elif len(answers) < 1:
@@ -48,14 +53,14 @@ def index(request):
     return render(request, 'screencollisions/index.html', context)
 
 def next_to_screen(user):
-    #done = CuratedAnswer.objects.filter(curator=user).values_list('collision', flat=True)
-    #return Collision.objects.order_by('experiment_id', 'blob_id').exclude(id__in=done).first()
-    return Collision.objects.order_by('experiment_id', 'blob_id').filter(curatedanswer__isnull=True).first()
+    done = CuratedAnswer.objects.filter(curator=user).values_list('collision', flat=True)
+    return Collision.objects.order_by('experiment_id', 'blob_id').exclude(id__in=done).first()
+    #return Collision.objects.order_by('experiment_id', 'blob_id').filter(answers__isnull=True, user__isnot=user).first()
 
 @login_required
 def start(request):
     next_ = next_to_screen(request.user)
-    return redirect(next_ if next_ else 'sc:index')
+    return redirect(next_ if next_ else 'collisions:index')
 
 def collision(request, eid, bid):
     collision = get_object_or_404(Collision, experiment_id=eid, blob_id=bid)
@@ -79,19 +84,23 @@ def collision(request, eid, bid):
         curans.starred = request.POST.get('on', 'off') == 'on'
         curans.save()
         next_ = next_to_screen(request.user)
-        return redirect(next_ if next_ else 'sc:index')
+        return redirect(next_ if next_ else 'collisions:index')
+
+    else:
+        return redirect('collisions:index')
 
 def category(request, cat):
-    collisions = Collision.objects.prefetch_related('curatedanswer_set').all()
+    collisions = Collision.objects.prefetch_related('answers').all()
     results = []
     for collision in collisions:
-        answers = set(ca.answer for ca in collision.curatedanswer_set.all())
+        answers = set(ca.answer for ca in collision.answers.all())
         if len(answers) == 1 and cat in FIELD_NAMES and answers.pop() == cat:
             results.append(collision)
         elif len(answers) > 1 and cat == 'xx':
             results.append(collision)
         elif len(answers) < 1 and cat == 'un':
             results.append(collision)
+    #results = list(answer_group(cat))
 
     results.sort(key=lambda c: '{}_{:05}'.format(c.experiment_id, c.blob_id))
 

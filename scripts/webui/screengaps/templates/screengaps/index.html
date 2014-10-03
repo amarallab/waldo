@@ -3,20 +3,17 @@
 {% load bootstrap3 %}
 
 {% block html_title %}
-    Collision Index
+    Gap Index
 {% endblock %}
 
 {% block content %}
-    <h1>Worm Collisions</h1>
+    <h1>Tracking Gaps</h1>
 
 <script type="text/javascript">
       google.load("visualization", "1", {packages:["corechart"]});
       google.setOnLoadCallback(drawChart);
       function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-          ['Screen Results', 'Results'],
-          {{ piedata|safe }}
-        ]);
+        var data = google.visualization.arrayToDataTable({{ piejson|safe }});
 
         var options = {
           title: 'Screen Results'

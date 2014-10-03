@@ -3,13 +3,13 @@
 {% load bootstrap3 %}
 
 {% block html_title %}
-  Gap Screening - {{ eid }} - {{ lost }}&rarr;{{ found }}
+  Gap Screening - {{ gap.experiment_id }} - {{ gap.from_blob }}&rarr;{{ gap.to_blob }}
 {% endblock %}
 
 {% block content %}
   <h1>Gap Collisions</h1>
   <p>
-  Experiment: <b>{{ eid }}</b>, Possible gap connection: <b>{{ lost }} &rarr; {{ found }}</b>
+  Experiment: <b>{{ gap.experiment_id }}</b>, Possible gap connection: <b>{{ gap.from_blob }} &rarr; {{ gap.to_blob }}</b>
   </p>
 
   <img src="{% static gap.image_file.name %}" style="max-width: 100%; height: auto;">
@@ -27,14 +27,13 @@
             <div class="col-md-3">
               <button id="ansvalid" type="submit" class="btn {% if prev_ans == 'valid' %} btn-success {% else %}
                 btn-primary
-              {% endif %} btn-lg btn-block" name="answer" value="00">Valid<kbd>Y</kbd></button>
-              }
+              {% endif %} btn-lg btn-block" name="answer" value="valid">Valid<kbd>Y</kbd></button>
             </div>
             <div class="col-md-3">
-              <button id="ansinvalid" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="10">Invalid <kbd>N</kbd></button>
+              <button id="ansinvalid" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="invalid">Invalid <kbd>N</kbd></button>
             </div>
             <div class="col-md-3">
-              <button id="ansunclear" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="20">Unclear <kbd>/ or ?</kbd></button>
+              <button id="ansunclear" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="unclear">Unclear <kbd>/ or ?</kbd></button>
             </div>
           </div>
         </div>

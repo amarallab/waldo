@@ -29,13 +29,19 @@ ALLOWED_HOSTS = []
 
 # Application definition
 INSTALLED_APPS = (
+    # django core
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # third party
     'bootstrap3',
+    'geordi',
+
+    # ours
     'webui',
     'screencollisions',
     'screengaps',
@@ -49,6 +55,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'geordi.VisorMiddleware',
 )
 
 ROOT_URLCONF = 'webui.urls'

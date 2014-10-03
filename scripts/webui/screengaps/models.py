@@ -16,10 +16,10 @@ class Gap(models.Model):
         unique_together = ('experiment_id', 'from_blob', 'to_blob')
 
     def get_absolute_url(self):
-        return reverse('sg:gap', kwargs={
+        return reverse('gaps:gap', kwargs={
                 'eid': self.experiment_id,
-                'from': self.from_blob,
-                'to': self.to_blob,
+                'from_blob': self.from_blob,
+                'to_blob': self.to_blob,
             })
 
     def image_file(self):
@@ -51,9 +51,9 @@ class CuratedAnswer(models.Model):
     ANSWERS = (
         ('valid', 'Valid connection'),
         ('invalid', 'Invalid connection'),
-        ('unclear', 'Unclear'),
+        ('unclear', 'Unclear/Other'),
     )
-    gap = models.ForeignKey(Gap)
+    gap = models.ForeignKey(Gap, related_name='answers')
     answer = models.CharField(max_length=60, choices=ANSWERS)
     curator = models.ForeignKey(User, editable=False, related_name='gap_answer_user')
     starred = models.BooleanField(default=False)

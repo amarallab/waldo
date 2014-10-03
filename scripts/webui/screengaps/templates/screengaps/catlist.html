@@ -12,12 +12,12 @@
     <table class='table'>
         <thead><tr><th>Experiment ID</th><th>Lost Blob</th><th>Found Blob</th><th>Image</th></tr></thead>
         <tbody>
-            {% for c in collisions %}
+            {% for g in gaps %}
                 <tr>
-                    <td>{{ c.experiment_id }}</td>
-                    <td>{{ c.lost_blob }}</td>
-                    <td>{{ c.found_blob }}</td>
-                    <td><a href="{% url 'sg:gap' eid=c.experiment_id bid=c.blob_id %}">Show...</a></td>
+                    <td>{{ g.experiment_id }}</td>
+                    <td>{{ g.from_blob }}</td>
+                    <td>{{ g.to_blob }}</td>
+                    <td><a href="{% url 'gaps:gap' eid=g.experiment_id from_blob=g.from_blob to_blob=g.to_blob %}">Show...</a></td>
                 </tr>
             {% endfor %}
         </tbody>

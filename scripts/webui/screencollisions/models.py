@@ -15,7 +15,7 @@ class Collision(models.Model):
         unique_together = ('experiment_id', 'blob_id')
 
     def get_absolute_url(self):
-        return reverse('sc:collision', kwargs={
+        return reverse('collisions:collision', kwargs={
                 'eid': self.experiment_id,
                 'bid': self.blob_id,
             })
@@ -50,7 +50,7 @@ class CuratedAnswer(models.Model):
         ('30', '3 worms'),
         ('35', '>3 worms'),
     )
-    collision = models.ForeignKey(Collision)
+    collision = models.ForeignKey(Collision, related_name='answers')
     answer = models.CharField(max_length=60, choices=ANSWERS)
     curator = models.ForeignKey(User, editable=False, related_name='collision_answer_user')
     starred = models.BooleanField(default=False)

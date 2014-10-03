@@ -16,12 +16,12 @@ class Command(BaseCommand):
     help = 'Dump a CSV file of the collision results'
 
     def handle(self, *args, **options):
-        collisions = Gap.objects.prefetch_related('curatedanswer_set').all()
+        gaps = Gap.objects.prefetch_related('answers').all()
 
         write_result_header()
         for gap in gaps:
-            answers = set(ca.answer for ca in collision.curatedanswer_set.all())
+            answers = set(ca.answer for ca in gap.answers.all())
             if len(answers) == 1:
-                write_result_line(collision, answers.pop())
+                write_result_line(gap, answers.pop())
             elif len(answers) > 1:
-                write_result_line(collision, 'xx')
+                write_result_line(gap, 'disagreement')
