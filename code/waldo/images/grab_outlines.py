@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-
 '''
 Filename: draw_outlines_on_image.py
 Description:
 '''
+from __future__ import absolute_import, division, print_function
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'

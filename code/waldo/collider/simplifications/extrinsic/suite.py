@@ -1,5 +1,4 @@
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function
 
 from .blank_nodes import remove_blank_nodes
 from .roi import remove_nodes_outside_roi

@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function
 # This notebook is for finding the segmentation threshold that most clearly finds worms in a recording.
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
@@ -237,7 +238,7 @@ def align_outline_matricies(outline_matricies, bboxes):
     # the loop creates a primary with a bbox that encompasses all other boxes.
     for om, bb in zip(outline_matricies[1:], bboxes[1:]):
         primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
-        #print primary_bbox
+        #print(primary_bbox)
     aligned_matricies = [primary_matrix]
 
     #fig, ax = plt.subplots()

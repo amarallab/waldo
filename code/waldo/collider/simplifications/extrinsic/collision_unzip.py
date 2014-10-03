@@ -2,8 +2,7 @@
 """
 Resolving collisions using "unzip technique" pixel overlap
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 

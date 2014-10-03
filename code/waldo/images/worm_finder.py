@@ -2,7 +2,7 @@
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
 # standard imports
-from __future__ import print_function, absolute_import, unicode_literals, division
+from __future__ import absolute_import, division, print_function
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 

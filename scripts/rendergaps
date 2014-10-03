@@ -31,8 +31,8 @@ from PIL import Image, ImageOps, ImageChops
 # project specific
 import pathcustomize
 
-import wio
-from tape.viz import show_gap
+import waldo
+from waldo.viz import show_gap
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -45,7 +45,7 @@ def main():
     args = parser.parse_args()
     eid = args.experiment_id
 
-    experiment = wio.Experiment(experiment_id=eid)
+    experiment = waldo.Experiment(experiment_id=eid)
 
     for line in args.input_file:
         try:
