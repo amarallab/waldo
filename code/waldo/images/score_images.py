@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
 import scipy
 import skimage
@@ -13,7 +15,7 @@ import waldo.wio as wio
 def get_background_and_worm_pixels(background, roi_mask, threshold, impaths):
     # grab all worm shapes from all frames
     n_images = len(impaths)
-    print n_images, 'images'
+    print(n_images, 'images')
     if n_images > 10:
         n_images = 10
 
@@ -48,16 +50,16 @@ def get_background_and_worm_pixels(background, roi_mask, threshold, impaths):
 def score_images(worm_values, background_values):
 
     p5 = np.percentile(background_values, 5)
-    #print 'threshold:', p5, '(5th percentile of background)'
+    #print('threshold:', p5, '(5th percentile of background)')
 
     good_fraction = (worm_values <= p5).sum(dtype=float) / len(worm_values)
     good_fraction = round(good_fraction, ndigits=2)
 
-    #print n
-    #print under
+    #print(n)
+    #print(under)
     contrast_ratio = np.mean(background_values) / np.mean(worm_values)
     contrast_diff = np.mean(background_values) - np.mean(worm_values)
-    #print 'fraction of good worm pixels:', good_fraction
+    #print('fraction of good worm pixels:', good_fraction)
     scores = {'good_fraction': good_fraction,
               'contrast_ratio': contrast_ratio,
               'contrast_diff': contrast_diff}
@@ -75,7 +77,7 @@ def make_pixel_histogram(worm_values, background_values, n_bins = 100):
 
 
     def norm(a):
-        #print 'sum', np.sum(a, dtype=float)
+        #print('sum', np.sum(a, dtype=float))
         return a / np.sum(a, dtype=float)
 
     fig, ax = plt.subplots()
@@ -129,27 +131,27 @@ def score(ex_id):
 
     worm_i, background_i = get_background_and_worm_pixels(background, roi_mask, threshold, impaths)
     scores = score_images(worm_i, background_i)
-    #print 'worm', min(worm_i), np.mean(worm_i), max(worm_i)
-    #print 'background', min(background_i), np.mean(background_i), max(background_i)
-    #print len(worm_i), len(background_i)
+    #print('worm', min(worm_i), np.mean(worm_i), max(worm_i))
+    #print('background', min(background_i), np.mean(background_i), max(background_i))
+    #print(len(worm_i), len(background_i))
     make_pixel_histogram(worm_i, background_i)
 
     img=mpimg.imread(impaths[-1])
     time = times[-1]
-    #print threshold, type(threshold)
-    #print roi, type(roi)
+    #print(threshold, type(threshold))
+    #print(roi, type(roi))
     _, base_acc, _ = worm_finder.analyze_image(experiment, time, img, background,
                                             threshold, roi, show=False)
-    #print base_acc
+    #print(base_acc)
     false_neg = base_acc['false-neg']
     false_pos = base_acc['false-pos']
     true_pos = base_acc['true-pos']
-    accuracy = float(true_pos) / (false_pos + true_pos)
-    coverage = (float(true_pos) / (true_pos + false_neg))
+    accuracy = true_pos / (false_pos + true_pos)
+    coverage = true_pos / (true_pos + false_neg)
 
     scores.update({'accuracy': round(accuracy, ndigits=2),
                    'coverage': round(coverage, ndigits=2)})
 
 
-    print scores
+    print(scores)
     return scores

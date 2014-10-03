@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 def suspected_collisions(digraph, threshold=2):
     """ returns a list of node ids that are suspected collisions.

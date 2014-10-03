@@ -2,8 +2,7 @@
 """
 Resolving collisions using pixel overlap
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
@@ -24,9 +23,9 @@ from ..util import consolidate_node_data
 __all__ = [
     'create_collision_masks',
     'compare_masks',
-    'generalized_compare_masks',
+    #'generalized_compare_masks',
     'resolve_collisions',
-    'resolve_multicollisions',
+    #'resolve_multicollisions',
     #'untangle_collision',
 ]
 
@@ -263,3 +262,6 @@ def resolve_collisions(graph, experiment, collision_nodes):
         else:
             result_report['no_overlap'].append(node)
     return result_report
+
+for name in __all__:
+    assert name in locals(), "__all__ refers to non-existent object '{}'".format(name)
