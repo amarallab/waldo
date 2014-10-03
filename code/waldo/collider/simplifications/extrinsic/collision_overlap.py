@@ -19,15 +19,15 @@ import matplotlib.pyplot as plt
 from waldo.images.manipulations import points_to_aligned_matrix
 from .find_outlines import *
 
-from ..util import consolidate_node_data
+#from ..util import consolidate_node_data
 
 __all__ = [
     'create_collision_masks',
     'compare_masks',
-    'generalized_compare_masks',
     'resolve_collisions',
-    'resolve_multicollisions',
-    #'untangle_collision',
+    #'generalized_compare_masks', # now in multicollisions
+    #'resolve_multicollisions', # now in multicollisions
+    #'untangle_collision', # now in graph object
 ]
 
 # for 2 parents, 2 children

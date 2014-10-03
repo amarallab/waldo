@@ -287,12 +287,12 @@ class ReportCard(object):
         report_summary['lifespan'] = bin_dividers
         report_summary.set_index('lifespan', inplace=True)
         report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
-        print report_summary
+        #print report_summary
         return report_summary
 
     def save_reports(self, graph):
         experiment = self.experiment
-        report = self.report(graph)
+        report = self.report()
         experiment.prepdata.dump('report-card', report)
         starts, ends = self.determine_lost_and_found_causes(graph)
         experiment.prepdata.dump('starts', starts)
@@ -487,6 +487,71 @@ def collision_iteration2(experiment, graph):
     return graph, report_df
 
 def collision_suite(experiment, graph, verbose=True):
+
+    cr = collider.CollisionResolver(experiment, graph)
+    # bounding box method
+    print 'collisions from bbox'
+
+    # initialize records
+    resolved = set()
+    overlap_fails = set()
+    data_fails = set()
+    dont_bother = set()
+
+    #trying_new_suspects = True
+    collisions_were_resolved = True
+    while collisions_were_resolved:
+        suspects = set(collider.find_bbox_based_collisions(graph, experiment))
+        s = suspects - dont_bother
+        ty = len(s & data_fails)
+        if verbose:
+            print('\t{s} suspects. trying {ty} again'.format(s=len(s),
+                                                             ty=ty))
+
+        if not s:
+            collisions_were_resolved = False
+            break
+
+        report = cr.resolve_overlap_collisions(list(s))
+
+        newly_resolved = set(report['resolved'])
+        resolved = resolved | newly_resolved
+        collisions_were_resolved = len(newly_resolved) > 0
+
+        # keep track of all fails that had missing data that have
+        # not been resolved yet
+        data_fails = data_fails | set(report['missing_data'])
+        #data_fails = data_fails - resolved
+
+        # if overlap fails but data is missing try again later
+        # if overlap fails but data is there, dont bother
+        overlap_fails = overlap_fails | set(report['no_overlap'])
+        overlap_fails = overlap_fails - resolved
+        dont_bother = overlap_fails - data_fails
+
+    if verbose:
+        full_set = resolved | overlap_fails | data_fails | dont_bother
+        full_count = len(full_set)
+
+        n_res = len(resolved)
+        n_dat = len(data_fails)
+        no1 = len(data_fails & overlap_fails)
+        no2 = len(dont_bother)
+
+        p_res = int(100.0 * n_res/float(full_count))
+        p_dat = int(100.0 * len(data_fails)/float(full_count))
+        p_no1 = int(100.0 * no1/float(full_count))
+        p_no2 = int(100.0 * no2/float(full_count))
+
+        print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
+        print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
+        print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
+        print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
+
+    return len(resolved)
+
+
+def collision_suite_orig(experiment, graph, verbose=True):
 
     # bounding box method
     print 'collisions from bbox'
