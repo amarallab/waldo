@@ -14,6 +14,12 @@ class Collision(models.Model):
     class Meta:
         unique_together = ('experiment_id', 'blob_id')
 
+    def __unicode__(self):
+        return 'XID {}'.format(self.xid())
+
+    def xid(self):
+        return '{}-{:05}'.format(self.experiment_id, self.blob_id)
+
     def get_absolute_url(self):
         return reverse('collisions:collision', kwargs={
                 'eid': self.experiment_id,
@@ -57,3 +63,8 @@ class CuratedAnswer(models.Model):
 
     class Meta:
         unique_together = ('collision', 'curator')
+
+    def __unicode__(self):
+        return 'XID {}, {} said {}{}'.format(
+            self.collision.xid(),
+            self.curator.username, self.answer, ' !!!' if self.starred else '')

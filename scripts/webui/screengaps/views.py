@@ -29,9 +29,7 @@ def index(request):
         else:
             data[answers.pop()] += 1
 
-    print(data)
     data = [{'name': cv, 'number': data[ck], 'code': ck} for ck, cv in FIELD_NAMES.items()]
-    print(data)
     data.sort(key=lambda x: x['number'], reverse=True)
 
     piedata = [('Screen Results', 'Results')]

@@ -15,6 +15,10 @@ class Gap(models.Model):
     class Meta:
         unique_together = ('experiment_id', 'from_blob', 'to_blob')
 
+    def __unicode__(self):
+        return 'EID {}, {}->{}'.format(
+                self.experiment_id, self.from_blob, self.to_blob)
+
     def get_absolute_url(self):
         return reverse('gaps:gap', kwargs={
                 'eid': self.experiment_id,
@@ -60,3 +64,8 @@ class CuratedAnswer(models.Model):
 
     class Meta:
         unique_together = ('gap', 'curator')
+
+    def __unicode__(self):
+        return 'EID {}, {}->{}, {} said {}{}'.format(
+            self.gap.experiment_id, self.gap.from_blob, self.gap.to_blob,
+            self.curator.username, self.answer, ' !!!' if self.starred else '')
