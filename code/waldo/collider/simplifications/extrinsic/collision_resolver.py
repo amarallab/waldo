@@ -20,10 +20,17 @@ from waldo.images.manipulations import points_to_aligned_matrix
 from ..util import consolidate_node_data
 import waldo.encoding.decode_outline as de
 
+
+__all__ = [
+    'CollisionException',
+    'CollisionResolver',
+]
+
+
 class CollisionException(Exception):
     pass
 
-class Collider(object):
+class CollisionResolver(object):
     """
     Initalized with a wio.Experiment-like object and a simplified graph.
     """
@@ -32,8 +39,6 @@ class Collider(object):
         self._graph = graph
         self._mask_counts = {}
         #self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
-        #self._node_start_blobs = {}
-        #self._node_end_blobs = {}
         self.reports = {}
         self.parent_node_to_blob = {}
         self.child_node_to_blob = {}
@@ -59,26 +64,33 @@ class Collider(object):
         outline: (list of tuples)
            a list of (x,y) points
         """
-
-
-        # TODO This is wrong for finding outlines for children!
-        # fix this!
-        # TODO use this to populate the
-        # self.parent_node_to_blob = {}
-        # self.child_node_to_blob = {}
-        # dicts!
-        # this will help create an index!
-
         graph = self._graph
+        experiment = self._experiment
         nodes = [node]
-        preds = graph.predecessors(node)
-        while preds == 1:
-            current = preds[0]
-            nodes.insert(0, current)
-            preds = graph.predecessors(current)
 
-        if not first:
-            nodes = nodes[::-1]
+        # older stuff that is suspected of being wrong.
+        # preds = graph.predecessors(node)
+        # while preds == 1:
+        #     current = preds[0]
+        #     nodes.insert(0, current)
+        #     preds = graph.predecessors(current)
+
+        # if first == True, we are dealing with a child of a collision.
+        # then failure to locate an outline should search the successors.
+
+        # invert this if first == False.
+
+        if first:
+            next_node = graph.successors
+        else:
+            next_node = graph.predecessors
+
+        current = node
+        backup_nodes = next_node(current)
+        while len(backup_nodes) == 1:
+            current=backup_nodes[0]
+            nodes.append(current)
+            backup_nodes = next_node(current)
 
         node_count = len(nodes)
         while len(nodes) > 0:
@@ -88,19 +100,33 @@ class Collider(object):
                 print('Failed to find node data')
                 #print('grabbing', node, type(node))
                 raise CollisionException
-            if not first:
+
+
+            # if first ==True: sort chronologically. else sort in reverse.
+            if first:
+                df.sort(ascending=True, inplace=True)
+            else:
                 df.sort(ascending=False, inplace=True)
 
             for frame, row in df.iterrows():
                 x, y = row['contour_start']
                 l = row['contour_encode_len']
                 enc = row['contour_encoded']
+                bid = row['blob']
                 is_good = True
                 if not enc or not l:
                     is_good = False
                 if not isinstance(enc, basestring):
                     is_good = False
                 if is_good:
+                    # record which blob id the outline originated from
+                    if first:
+                        # for children, we want first outline
+                        self.child_node_to_blob[int(node)] = int(bid)
+                    else:
+                        # for parents, we want last outline
+                        self.parent_node_to_blob[int(node)] = int(bid)
+                    # return list of outline points
                     outline_points = de.decode_outline([x, y, l, enc])
                     return outline_points
         if verbose:
@@ -134,7 +160,6 @@ class Collider(object):
 
         """
         graph = self._graph
-        experiment = self._experiment
 
         p = list(set(graph.predecessors(node)))
         c = list(set(graph.successors(node)))
@@ -143,10 +168,10 @@ class Collider(object):
             print('children:{c}'.format(c=c))
             #print('beginning:end pixel overlap')
         #grab relevant outlines.
-        p0 = self.grab_outline(p[0], graph, experiment, first=False)
-        p1 = self.grab_outline(p[1], graph, experiment, first=False)
-        c0 = self.grab_outline(c[0], graph, experiment, first=True)
-        c1 = self.grab_outline(c[1], graph, experiment, first=True)
+        p0 = self.grab_outline(p[0], first=False)
+        p1 = self.grab_outline(p[1], first=False)
+        c0 = self.grab_outline(c[0], first=True)
+        c1 = self.grab_outline(c[1], first=True)
 
         # align outline masks
         outline_list = [o for o in [p0, p1, c0, c1] if o is not None]
@@ -255,6 +280,18 @@ class Collider(object):
         else:
             return []
 
+    def result_nodes_to_blobs(self, collision_result):
+
+        pnodes, cnodes = zip(*collision_result)
+        # print(type(pnodes[0]))
+        # print('parents')
+        # print(self.parent_node_to_blob)
+        # print( 'children')
+        # print(self.child_node_to_blob)
+        pblobs = [self.parent_node_to_blob.get(n, None) for n in pnodes]
+        cblobs = [self.child_node_to_blob.get(n, None) for n in cnodes]
+        return zip(pblobs, cblobs)
+
     def resolve_overlap_collisions(self, collision_nodes):
         """
 
@@ -277,8 +314,7 @@ class Collider(object):
                          'collision_lifespans_t': {}}
         for node in collision_nodes:
             try:
-                a = self.create_collision_masks(node, report=True)
-
+                a = self.create_collision_masks(node)
                 parent_masks, children_masks = a
                 collision_result = self.compare_masks(parent_masks, children_masks)
 
@@ -317,6 +353,8 @@ class Collider(object):
             if collision_result:
                 result_report['collision_lifespans_t'][node] = graph.lifespan_t(node)
                 collision_results[node] = collision_result
+                #print('result', collision_result)
+                blobs = self.result_nodes_to_blobs(collision_result)
                 graph.untangle_collision(node, collision_result, blobs=blobs)
                 result_report['resolved'].append(node)
 
