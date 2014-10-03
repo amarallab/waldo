@@ -131,6 +131,8 @@ class FingerprintStack(object):
         self.dump(frames, plus_3d, minus_3d)
         return frames, plus_3d, minus_3d
 
+#class IdTracker(object):
+
 
 def best_fit(fprint, stack, begin_frame, end_frame):
     """
@@ -208,8 +210,6 @@ def get_data(base_dir):
         test_m.append(m[sep:])
 
     return wids, reference_p, reference_m, test_p, test_m
-
-
 
 def test_distances(wids, test_stack, reference_stacks, begin_frame=None, end_frame=None):
     """
@@ -334,11 +334,13 @@ def main_window_size():
                 # plt.savefig(test_worm + '_id_test.png')
 
 
+
+
 def main_window_best_assignment():
     WINDOW_SIZE_LIST = [200, 50]
 
     loop_count = 0
-    max_loop_count = 5
+    max_loop_count = 20
 
     # load all data.
     wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
@@ -363,11 +365,14 @@ def main_window_best_assignment():
                         test_p_stack = test_p[test_num]
                         test_m_stack = test_m[test_num]
 
+                        # TODO: possibly stop iterating windows if
+                        # one of the worms has a current_frame_count much smaller than window size
                         current_frame_count = len(test_p_stack[begin_frame:end_frame])
                         if current_frame_count == 0:
                             assigned_wids[test_worm] = (None, None)
                             continue
 
+                        # plus
                         df = test_distances(wids=remain_wids,
                                             test_stack=test_p_stack, reference_stacks=current_reference_p,
                                             begin_frame=begin_frame, end_frame=end_frame)
@@ -376,7 +381,9 @@ def main_window_best_assignment():
 
                         order = np.array(df).argsort(axis=1)
                         acc_p = float((order[:, 0] == test_num).sum()) / len(order)
+                        # acc_p = fraction of time that correct worm is has closest distance
 
+                        # minus
                         df = test_distances(wids=remain_wids,
                                             test_stack=test_m_stack, reference_stacks=current_reference_m,
                                             begin_frame=begin_frame, end_frame=end_frame)
@@ -406,7 +413,8 @@ def main_window_best_assignment():
         pass
 
     results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best'))
-    results_df.to_csv('acc_window_best_assignment_results.csv')
+    results_df = results_df[['begin_frame', 'end_frame', 'window_size', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best']]
+    results_df.to_csv('acc_window_best_assignment_results.csv', index=False)
 
                 # fig, ax = plt.subplots()
                 # for l, w in zip(wids, worm_dists):
@@ -421,8 +429,88 @@ def main_window_best_assignment():
                 # #plt.show()
                 # plt.savefig(test_worm + '_id_test.png')
 
+def main_best_fit_per_window(window_size=200):
 
+    loop_count = 0
+    max_loop_count = 20
+
+    # load all data.
+    wids, reference_p, reference_m, test_p, test_m = get_data(base_dir)
+    # if len(set([len(x) for x in test_p]) | set([len(x) for x in test_m])) != 1:
+    #     print 'E: test_p and test_m have not the same item sizes'
+    #     return
+    frame_count = len(test_p[0])
+
+
+
+    try:
+        results = []
+        print reference_p[0].shape
+        for begin_frame in range(0, frame_count, window_size):
+            end_frame = begin_frame + window_size
+            assigned_wids = {}
+            # assigned_wids[13286] = 12
+            current_reference_p = reference_p[:]
+            current_reference_m = reference_m[:]
+            remain_wids = wids[:]
+            while len(assigned_wids) < len(wids):
+                for test_num, test_worm in enumerate(wids):
+                    test_p_stack = test_p[test_num]
+                    test_m_stack = test_m[test_num]
+
+                    # TODO: possibly stop iterating windows if
+                    # one of the worms has a current_frame_count much smaller than window size
+                    current_frame_count = len(test_p_stack[begin_frame:end_frame])
+                    if current_frame_count == 0:
+                        assigned_wids[test_worm] = (None, None)
+                        continue
+
+                    # plus
+                    df = test_distances(wids=remain_wids,
+                                        test_stack=test_p_stack, reference_stacks=current_reference_p,
+                                        begin_frame=begin_frame, end_frame=end_frame)
+
+                    # df.to_csv(savename_p)
+
+                    order = np.array(df).argsort(axis=1)
+                    acc_p = float((order[:, 0] == test_num).sum()) / len(order)
+                    # acc_p = fraction of time that correct worm is has closest distance
+
+                    # minus
+                    df = test_distances(wids=remain_wids,
+                                        test_stack=test_m_stack, reference_stacks=current_reference_m,
+                                        begin_frame=begin_frame, end_frame=end_frame)
+
+                    order = np.array(df).argsort(axis=1)
+                    best, _ = collections.Counter(order[:, 0]).most_common()[0]
+                    acc_m = float((order[:, 0] == test_num).sum()) / len(order)
+
+                    assigned_wids[test_worm] = (remain_wids[best], acc_m)
+                    results.append([window_size, begin_frame, end_frame, current_frame_count, test_worm, acc_p, acc_m, remain_wids[best]])
+                    print 'Window size: {size}[{begin}:{end}], {worm:>5s} assigned {assigned:>5s} (acc: {acc})'\
+                        .format(size=window_size,
+                                begin=begin_frame,
+                                end=end_frame,
+                                worm=test_worm,
+                                assigned=remain_wids[best],
+                                acc=acc_m)
+
+                    current_reference_p.pop(best)
+                    current_reference_m.pop(best)
+                    remain_wids.pop(best)
+
+            loop_count += 1
+            if loop_count >= max_loop_count:
+                raise FinishLoopException()
+    except FinishLoopException, ex:
+        pass
+
+    results_df = pd.DataFrame(results, columns=('window_size', 'begin_frame', 'end_frame', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best'))
+    results_df = results_df[['begin_frame', 'end_frame', 'window_size', 'frame_count', 'wid', 'acc_p', 'acc_m', 'best']]
+    results_df.to_csv('acc_window_best_assignment_results.csv', index=False)
+
+if __name__ == '__main__':
+    main_best_fit_per_window()
 
 # main_window_size()  # First algorithm
-
-main_window_best_assignment()
+#main_window_best_assignment()
