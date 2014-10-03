@@ -29,6 +29,7 @@ class PrepData(object):
         """
         if name.startswith('_'):
             # pretend like we don't have this (because we shouldn't)
+            # this fixes serialization problems in Python 3
             raise AttributeError()
         return self.load(name)
 

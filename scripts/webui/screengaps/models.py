@@ -39,7 +39,12 @@ class Gap(models.Model):
                 continue
 
             eid, from_blob, to_blob = rm.groups()
-            yield eid, int(bid)
+            fields = {
+                'experiment_id': eid,
+                'from_blob': int(from_blob),
+                'to_blob': int(to_blob),
+            }
+            yield fields
 
 
 class CuratedAnswer(models.Model):
