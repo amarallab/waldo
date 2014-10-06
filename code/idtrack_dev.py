@@ -131,9 +131,6 @@ class FingerprintStack(object):
         self.dump(frames, plus_3d, minus_3d)
         return frames, plus_3d, minus_3d
 
-#class IdTracker(object):
-
-
 def best_fit(fprint, stack, begin_frame, end_frame):
     """
     returns the minimum distance between one 2d fingerprint array
