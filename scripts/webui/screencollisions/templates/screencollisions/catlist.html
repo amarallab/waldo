@@ -10,13 +10,19 @@
     <h1>Worm Collision Type: {{ catname }}</h1>
 
     <table class='table'>
-        <thead><tr><th>Experiment ID</th><th>Blob ID</th><th>Image</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Experiment ID</th>
+                <th>Blob ID</th>
+                <th>Image</th>
+            </tr>
+        </thead>
         <tbody>
             {% for c in collisions %}
                 <tr>
                     <td>{{ c.experiment_id }}</td>
                     <td>{{ c.blob_id }}</td>
-                    <td><a href="{% url 'collisions:collision' eid=c.experiment_id bid=c.blob_id %}">Show...</a></td>
+                    <td><a href="{{ c.get_absolute_url }}">Show...</a></td>
                 </tr>
             {% endfor %}
         </tbody>

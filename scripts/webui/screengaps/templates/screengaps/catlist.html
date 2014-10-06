@@ -10,14 +10,23 @@
     <h1>Worm Gap Type: {{ catname }}</h1>
 
     <table class='table'>
-        <thead><tr><th>Experiment ID</th><th>Lost Blob</th><th>Found Blob</th><th>Image</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Experiment ID</th>
+                <th>Lost Blob</th>
+                <th>Found Blob</th>
+                <!--<th>Gap ID</th>-->
+                <th>Image</th>
+            </tr>
+        </thead>
         <tbody>
             {% for g in gaps %}
                 <tr>
                     <td>{{ g.experiment_id }}</td>
                     <td>{{ g.from_blob }}</td>
                     <td>{{ g.to_blob }}</td>
-                    <td><a href="{% url 'gaps:gap' eid=g.experiment_id from_blob=g.from_blob to_blob=g.to_blob %}">Show...</a></td>
+                    <!--<td>{{ g.id }}</td>-->
+                    <td><a href="{{ g.get_absolute_url }}">Show...</a></td>
                 </tr>
             {% endfor %}
         </tbody>

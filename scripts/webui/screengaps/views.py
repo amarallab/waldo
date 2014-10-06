@@ -3,7 +3,7 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Count
+from django.db.models import Count, Q, Max, Min
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -16,18 +16,30 @@ FIELD_NAMES.update({
     'unscreened': 'Unscreened',
 })
 
-def index(request):
-    data = defaultdict(int, {})
+DISAGREE_ANSWER = 'disagreement'
+UNSCREENED_ANSWER = 'unscreened'
 
-    gaps = Gap.objects.prefetch_related('answers').all()
-    for gap in gaps:
-        answers = set(ga.answer for ga in gap.answers.all())
-        if len(answers) > 1:
-            data['disagreement'] += 1
-        elif len(answers) < 1:
-            data['unscreened'] += 1
-        else:
-            data[answers.pop()] += 1
+def answer_group(model, key):
+    if key == DISAGREE_ANSWER:
+        objs = (model.objects
+                .annotate(ans_values=Count('answers__answer', distinct=True))
+                .filter(ans_values__gt=1))
+    elif key == UNSCREENED_ANSWER:
+        objs = model.objects.filter(answers__isnull=True)
+    else:
+        objs = (model.objects
+            .filter(answers__isnull=False)
+            .annotate(ans_max=Max('answers__answer'), ans_min=Min('answers__answer'))
+            .filter(ans_max=key, ans_min=key))
+        # objs = (model.objects
+        #     .filter(answers__isnull=False)
+        #     .exclude(~Q(answers__answer=key))
+        #     .distinct())
+
+    return objs
+
+def index(request):
+    data = {k: answer_group(Gap, k).count() for k in FIELD_NAMES}
 
     data = [{'name': cv, 'number': data[ck], 'code': ck} for ck, cv in FIELD_NAMES.items()]
     data.sort(key=lambda x: x['number'], reverse=True)
@@ -40,22 +52,11 @@ def index(request):
         'data': data,
         'piejson': json.dumps(piedata),
     }
-
     return render(request, 'screengaps/index.html', context)
 
 def category(request, cat):
-    gaps = Gap.objects.prefetch_related('answers').all()
-    results = []
-    for gap in gaps:
-        answers = set(ga.answer for ga in gap.answers.all())
-        if len(answers) == 1 and cat in FIELD_NAMES and answers.pop() == cat:
-            results.append(gap)
-        elif len(answers) > 1 and cat == 'disagreement':
-            results.append(gap)
-        elif len(answers) < 1 and cat == 'unscreened':
-            results.append(gap)
-
-    results.sort(key=lambda g: '{}_{:05}_{:05}'.format(g.experiment_id, g.from_blob, g.to_blob))
+    results = (answer_group(Gap, cat)
+            .order_by('experiment_id', 'from_blob', 'to_blob'))
 
     context = {
         'catname': FIELD_NAMES[cat],

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Count
+from django.db.models import Count, Max, Min
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -21,23 +21,26 @@ FIELD_NAMES = {
     'un': 'Unscreened',
 }
 
-# def answer_group(answer):
-#     judgements = CuratedAnswer.objects.filter(answer=answer).order_by('collision')
-#     collision_ids = [j.collision_id for j in set(judgements)]
-#     return Collision.objects.filter(id__in=collision_ids)
+DISAGREE_ANSWER = 'xx'
+UNSCREENED_ANSWER = 'un'
+
+def answer_group(model, key):
+    if key == DISAGREE_ANSWER:
+        objs = (model.objects
+                .annotate(ans_values=Count('answers__answer', distinct=True))
+                .filter(ans_values__gt=1))
+    elif key == UNSCREENED_ANSWER:
+        objs = model.objects.filter(answers__isnull=True)
+    else:
+        objs = (model.objects
+            .filter(answers__isnull=False)
+            .annotate(ans_max=Max('answers__answer'), ans_min=Min('answers__answer'))
+            .filter(ans_max=key, ans_min=key))
+
+    return objs
 
 def index(request):
-    data = defaultdict(int, {})
-
-    collisions = Collision.objects.prefetch_related('answers').all()
-    for collision in collisions:
-        answers = set(ca.answer for ca in collision.answers.all())
-        if len(answers) > 1:
-            data['xx'] += 1
-        elif len(answers) < 1:
-            data['un'] += 1
-        else:
-            data[answers.pop()] += 1
+    data = {k: answer_group(Collision, k).count() for k in FIELD_NAMES}
 
     data = [{'name': cv, 'number': data[ck], 'code': ck} for ck, cv in FIELD_NAMES.items()]
     data.sort(key=lambda x: x['number'], reverse=True)
@@ -90,19 +93,8 @@ def collision(request, eid, bid):
         return redirect('collisions:index')
 
 def category(request, cat):
-    collisions = Collision.objects.prefetch_related('answers').all()
-    results = []
-    for collision in collisions:
-        answers = set(ca.answer for ca in collision.answers.all())
-        if len(answers) == 1 and cat in FIELD_NAMES and answers.pop() == cat:
-            results.append(collision)
-        elif len(answers) > 1 and cat == 'xx':
-            results.append(collision)
-        elif len(answers) < 1 and cat == 'un':
-            results.append(collision)
-    #results = list(answer_group(cat))
-
-    results.sort(key=lambda c: '{}_{:05}'.format(c.experiment_id, c.blob_id))
+    results = (answer_group(Collision, cat)
+            .order_by('experiment_id', 'blob_id'))
 
     context = {
         'catname': FIELD_NAMES[cat],

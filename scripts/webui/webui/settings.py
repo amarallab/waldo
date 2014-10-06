@@ -39,7 +39,8 @@ INSTALLED_APPS = (
 
     # third party
     'bootstrap3',
-    'geordi',
+    #'geordi',
+    #'debug_toolbar.apps.DebugToolbarConfig',
 
     # ours
     'webui',
@@ -55,7 +56,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'geordi.VisorMiddleware',
+    #'geordi.VisorMiddleware',
 )
 
 ROOT_URLCONF = 'webui.urls'
