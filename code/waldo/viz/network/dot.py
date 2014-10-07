@@ -18,7 +18,7 @@ GRAPHVIZ_ATTRIBUTES = ['shape', 'label', 'style',
                        'penwidth', 'color', 'colorscheme']
 
 def render_nx_as_dot(nxgraph, output_file=None, format='png',
-                     colormap='jet_r', ref=None):
+                     colormap='jet_r', ref=None, remove_node_labels=True):
     """
 
 
@@ -43,6 +43,8 @@ def render_nx_as_dot(nxgraph, output_file=None, format='png',
             else:
                 unsafe_attributes.append(attribute)
         #print(node, safe_ones)
+        if remove_node_labels:
+            safe_ones['label'] = ''
         gvgraph.node(str(node), **safe_ones)
     print('tried to use the following non graphviz attributes:')
     print(set(unsafe_attributes))
@@ -54,7 +56,7 @@ def clear_formatting(nxgraph):
             if attr in node_data:
                 del node_data[attr]
 
-def format_graph_for_lifespan(nxgraph, focus=None, ref=False, cmap='jet'):
+def format_graph_for_lifespan(nxgraph, focus=None, ref=False, cmap='Paired'):
     cm = plt.cm.get_cmap(cmap)
     def lifespan_to_color(lifespan, scalerange=(-0.5, 4), cm=cm):
         val = (np.log10(lifespan+1e-100) - scalerange[0])/(scalerange[1] - scalerange[0])
@@ -65,6 +67,7 @@ def format_graph_for_lifespan(nxgraph, focus=None, ref=False, cmap='jet'):
         lifespan = nxgraph.lifespan_f(node)
         node_data['color'] = lifespan_to_color(lifespan)
         node_data['shape'] = 'ellipse'
+        node_data['style'] = 'filled'
 
         if node_data.get('more', False):
             node_data['label'] = '...'

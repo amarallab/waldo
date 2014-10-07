@@ -55,7 +55,7 @@ class PrepData(object):
 
         dataframe.to_csv(str(self._filepath(data_type)), **kwargs)
 
-    def good(self):
+    def good(self, frame=None):
         """ returns a list containing only good nodes.
 
         returns
@@ -63,10 +63,14 @@ class PrepData(object):
         good_list: (list)
             a list containing blob_ids
         """
-        df = self.load('matches')[['bid', 'good']]
+        if frame is None:
+            df = self.load('matches')[['bid', 'good']]
+        else:
+            df = self.load('matches')
+            df = df[df['frame'] == frame][['bid', 'good']]
         return [b for (b, v) in df.values if v]
 
-    def bad(self):
+    def bad(self, frame=None):
         """ returns a list containing only bad nodes.
 
         returns
@@ -75,7 +79,14 @@ class PrepData(object):
             a list containing blob_ids
         """
         df = self.load('matches')[['bid', 'good']]
+
+        if frame is None:
+            df = self.load('matches')[['bid', 'good']]
+        else:
+            df = self.load('matches')
+            df = df[df['frame'] == frame][['bid', 'good']]
         return [b for (b, v) in df.values if not v]
+
 
     def joins(self):
         """ returns a list specifying all blobs that should be joined
@@ -93,7 +104,7 @@ class PrepData(object):
         tuples = [(int(a), [int(i) for i in b.split('-')]) for (a,b) in tuples]
         return tuples
 
-    def outside(self):
+    def outside(self, frame=None):
         df = self.load('roi')[['bid', 'inside_roi']]
         return [b for (b, v) in df.values if not v]
 
