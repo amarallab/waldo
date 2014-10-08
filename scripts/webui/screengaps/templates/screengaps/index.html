@@ -36,7 +36,10 @@
     </tr></thead>
     <tbody>
         {% for d in data %}
-            <tr><td>{{ d.name }}</td><td>{{ d.number }}</td><td><a href="{% url 'gaps:type' d.code %}">View...</a></td></tr>
+            <tr>
+              <td>{{ d.name }}</td>
+              <td>{{ d.number }}</td>
+              <td><a href="{% url 'gaps:cat' d.code %}">View...</a></td></tr>
         {% endfor %}
     </tbody>
 </table>

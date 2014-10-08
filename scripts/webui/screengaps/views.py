@@ -1,9 +1,9 @@
+from __future__ import division
 from collections import defaultdict
 import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Count, Q, Max, Min
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -12,34 +12,14 @@ from .models import Gap, CuratedAnswer
 FIELD_NAMES = dict(CuratedAnswer.ANSWERS)
 ANSWER_CHOICES = list(FIELD_NAMES)
 FIELD_NAMES.update({
-    'disagreement': 'Disagreement',
-    'unscreened': 'Unscreened',
+    Gap.DISAGREE_ANSWER: 'Disagreement',
+    Gap.UNSCREENED_ANSWER: 'Unscreened',
 })
 
-DISAGREE_ANSWER = 'disagreement'
-UNSCREENED_ANSWER = 'unscreened'
-
-def answer_group(model, key):
-    if key == DISAGREE_ANSWER:
-        objs = (model.objects
-                .annotate(ans_values=Count('answers__answer', distinct=True))
-                .filter(ans_values__gt=1))
-    elif key == UNSCREENED_ANSWER:
-        objs = model.objects.filter(answers__isnull=True)
-    else:
-        objs = (model.objects
-            .filter(answers__isnull=False)
-            .annotate(ans_max=Max('answers__answer'), ans_min=Min('answers__answer'))
-            .filter(ans_max=key, ans_min=key))
-        # objs = (model.objects
-        #     .filter(answers__isnull=False)
-        #     .exclude(~Q(answers__answer=key))
-        #     .distinct())
-
-    return objs
+DEFAULT_ORDER = 'experiment_id', 'from_blob', 'to_blob'
 
 def index(request):
-    data = {k: answer_group(Gap, k).count() for k in FIELD_NAMES}
+    data = {k: Gap.category(k).count() for k in FIELD_NAMES}
 
     data = [{'name': cv, 'number': data[ck], 'code': ck} for ck, cv in FIELD_NAMES.items()]
     data.sort(key=lambda x: x['number'], reverse=True)
@@ -52,16 +32,23 @@ def index(request):
         'data': data,
         'piejson': json.dumps(piedata),
     }
+
+    if request.user.is_authenticated():
+        context['user_progress'] = user_progress(request.user)
+
     return render(request, 'screengaps/index.html', context)
 
 def category(request, cat):
-    results = (answer_group(Gap, cat)
-            .order_by('experiment_id', 'from_blob', 'to_blob'))
+    results = Gap.category(cat).order_by(*DEFAULT_ORDER)
 
     context = {
         'catname': FIELD_NAMES[cat],
         'gaps': results,
     }
+
+    if request.user.is_authenticated():
+        context['user_progress'] = user_progress(request.user)
+
     return render(request, 'screengaps/catlist.html', context)
 
 @login_required
@@ -70,11 +57,9 @@ def start(request):
     return redirect(next_ if next_ else 'gaps:index')
 
 def next_to_screen(user):
-    ordering = 'experiment_id', 'from_blob', 'to_blob'
-
     # see if any aren't screened at all (by any user)
     gap = (Gap.objects
-            .order_by(*ordering)
+            .order_by(*DEFAULT_ORDER)
             .filter(answers__isnull=True)
             .first())
 
@@ -84,11 +69,22 @@ def next_to_screen(user):
                 .filter(curator=user)
                 .values_list('gap', flat=True))
         gap = (Gap.objects
-                .order_by(*ordering)
+                .order_by(*DEFAULT_ORDER)
                 .exclude(id__in=done)
                 .first())
 
     return gap
+
+def user_progress(user):
+    n_done = CuratedAnswer.objects.filter(curator=user).count()
+    n_total = Gap.objects.count()
+
+    return {
+        'percent': 100 * (n_done / n_total),
+        'done': n_done,
+        'remaining': n_total - n_done,
+        'total': n_total,
+    }
 
 def gap(request, eid, from_blob, to_blob):
     gap = get_object_or_404(Gap, experiment_id=eid, from_blob=from_blob, to_blob=to_blob)
@@ -99,6 +95,9 @@ def gap(request, eid, from_blob, to_blob):
             'gap': gap,
             'request': request,
         }
+        if request.user.is_authenticated():
+            context['user_progress'] = user_progress(request.user)
+
         return render(request, 'screengaps/gap.html', context)
 
     elif request.method == 'POST' and request.user.is_authenticated():

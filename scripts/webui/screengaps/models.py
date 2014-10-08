@@ -12,6 +12,9 @@ class Gap(models.Model):
     from_blob = models.IntegerField()
     to_blob = models.IntegerField()
 
+    DISAGREE_ANSWER = 'disagreement'
+    UNSCREENED_ANSWER = 'unscreened'
+
     class Meta:
         unique_together = ('experiment_id', 'from_blob', 'to_blob')
 
@@ -33,6 +36,42 @@ class Gap(models.Model):
 
     def answer_count(self):
         return CuratedAnswer.objects.filter(object_pk=self.id).count()
+
+    def user_progress(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def category(cls, cat):
+        if cat == cls.DISAGREE_ANSWER:
+            objs = (cls.objects
+                    .annotate(ans_values=models.Count('answers__answer', distinct=True))
+                    .filter(ans_values__gt=1))
+        elif cat == cls.UNSCREENED_ANSWER:
+            objs = cls.objects.filter(answers__isnull=True)
+        else:
+            objs = (cls.objects
+                .filter(answers__isnull=False)
+                .annotate(ans_max=models.Max('answers__answer'),
+                          ans_min=models.Min('answers__answer'))
+                .filter(ans_max=cat, ans_min=cat))
+            # attempting to use Q object; doesn't quite work
+            # see http://stackoverflow.com/a/26209781/194586
+            # objs = (cls.objects
+            #     .filter(answers__isnull=False)
+            #     .exclude(~models.Q(answers__answer=cat))
+            #     .distinct())
+
+        return objs
+
+    def screen_result(self):
+        answers = set(self.answers.all())
+        n_answers = len(answers)
+        if n_answers == 1:
+            return answers.pop()
+        elif n_answers > 1:
+            return self.DISAGREE_ANSWER
+        else:
+            return self.UNSCREENED_ANSWER
 
     @staticmethod
     def find_images():
