@@ -10,8 +10,6 @@ import collections
 
 
 class IdTrackSolver(object):
-
-
     def __init__(self, wids, reference_p, reference_m):
         self.wids = wids
         self.reference_m = reference_m
@@ -23,10 +21,10 @@ class IdTrackSolver(object):
         self.track_assignment_p = None
         self.track_assignment_m = None
         self.agreement = None
+        self.f = None
         self.frame_weights = None
         self.p1 = None
         self.p2 = None
-
 
     def insert_trackframes(self, trackframes_p, trackframes_m, track_ids=None):
         self.trackframes_p = trackframes_p
@@ -54,7 +52,8 @@ class IdTrackSolver(object):
         data_m = np.zeros((track_size, frameset_size), dtype=int)
         agreement = np.zeros((track_size, frameset_size), dtype=int)
         for track_index, track_id in enumerate(self.track_ids):
-            for frame_index, (tp, tm) in enumerate(zip(self.trackframes_p[track_index], self.trackframes_m[track_index])):
+            trackframes_pm = zip(self.trackframes_p[track_index], self.trackframes_m[track_index])
+            for frame_index, (tp, tm) in enumerate(trackframes_pm):
                 p = IdTrackSolver._best_distance(tp, self.reference_p)
                 m = IdTrackSolver._best_distance(tm, self.reference_m)
                 a = -1 if p != m else p
@@ -66,20 +65,45 @@ class IdTrackSolver(object):
         self.track_assignment_m = data_m
         self.agreement = agreement
 
+    def compute_f(self):
+        f = np.zeros((len(self.track_ids), len(self.wids)))
+        for track_index, track_id in enumerate(self.track_ids):
+            for wid_index, wid in enumerate(self.wids):
+                f[track_index, wid_index] = np.sum(self.agreement[track_index, :] == wid_index)
+        self.f = f
+
+    @staticmethod
+    def compute_weight(image, stack):
+        # p: number of pixels of the blob (image)
+        # b: number of blobs of the fragment that overlap with that same pixel
+        # bb: matrix of 'b' (for each pixel)
+        p = image.sum()
+        bb = sum([image * s for s in stack])
+        pbb = p * bb
+        inv = (1 / pbb)
+        inv[np.isinf(inv)] = 0
+        return inv.sum()
+
     def add_frame_weights(self):
-        pass
+        frame_weights = np.zeros((len(self.track_ids), len(self.wids)))
+        #TODO: What?????
+        self.frame_weights = frame_weights
 
     def compute_p1(self):
         p1 = np.zeros((len(self.track_ids), len(self.wids)))
         for track_index, track_id in enumerate(self.track_ids):
-            f = np.zeros(len(self.wids))
-            for wid_index, wid in enumerate(self.wids):
-                f[wid_index] = np.power(2, len([x for x in self.agreement[track_index, :] if x == wid_index]))
-
-            sum = f.sum()
-            if sum != 0:
+            den = sum(np.power(2, self.f[track_index, :] * self.frame_weights[track_index, :]))
+            if den != 0:
                 for wid_index, wid in enumerate(self.wids):
-                    p1[track_index, wid_index] = f[wid_index] / f.sum()
+                    num = np.power(2, self.f[track_index, wid_index] * self.frame_weights[track_index, wid_index])
+                    p1[track_index, wid_index] = num / den
+
+        # TESTING: create a random matrix to test p2
+        # test_size = 3
+        # p1 = np.random.random(test_size * test_size)
+        # p1.shape = (test_size, test_size)
+        # self.wids = self.wids[0:test_size]
+        # self.track_ids = self.track_ids[0:test_size]
         self.p1 = p1
 
     def _compute_p2_components_for_track(self, in_track_index):
