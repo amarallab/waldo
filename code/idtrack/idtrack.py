@@ -65,12 +65,30 @@ class IdTrackSolver(object):
         self.track_assignment_m = data_m
         self.agreement = agreement
 
-    def compute_f(self):
-        f = np.zeros((len(self.track_ids), len(self.wids)))
-        for track_index, track_id in enumerate(self.track_ids):
-            for wid_index, wid in enumerate(self.wids):
-                f[track_index, wid_index] = np.sum(self.agreement[track_index, :] == wid_index)
-        self.f = f
+    def debug_create_test_data(self):
+        track_size=4
+        frameset_size=10
+        wids_size=3
+        self.track_ids = np.array(range(track_size)) + 1
+        self.wids = np.array(range(wids_size)) + 1
+
+        data_p = np.zeros((track_size, frameset_size), dtype=int)
+        data_m = np.zeros((track_size, frameset_size), dtype=int)
+        agreement = np.zeros((track_size, frameset_size), dtype=int)
+        for track_index, track_in in enumerate(self.track_ids):
+            for frame_index in range(frameset_size):
+                p = np.random.random_integers(0, wids_size - 1) # index, not value
+                if np.random.random() < 0.6:
+                    m = p
+                else:
+                    m = np.random.random_integers(wids_size - 1)
+                a = -1 if p != m else p
+                data_p[track_index, frame_index] = p
+                data_m[track_index, frame_index] = m
+                agreement[track_index, frame_index] = a
+        self.track_assignment_p = data_p
+        self.track_assignment_m = data_m
+        self.agreement = agreement
 
     @staticmethod
     def compute_weight(image, stack):
@@ -85,17 +103,28 @@ class IdTrackSolver(object):
         return inv.sum()
 
     def add_frame_weights(self):
-        frame_weights = np.zeros((len(self.track_ids), len(self.wids)))
+        track_size = len(self.track_ids)
+        frameset_size = len(self.trackframes_p[0])
+        frame_weights = np.zeros((track_size, frameset_size)) + 1
         #TODO: What?????
         self.frame_weights = frame_weights
+
+    def compute_f(self):
+        f = np.zeros((len(self.track_ids), len(self.wids)))
+        for track_index, track_id in enumerate(self.track_ids):
+            for wid_index, wid in enumerate(self.wids):
+                ta = self.agreement[track_index, :]
+                tw = self.frame_weights[track_index, :]
+                f[track_index, wid_index] = np.sum(tw[ta == wid_index])
+        self.f = f
 
     def compute_p1(self):
         p1 = np.zeros((len(self.track_ids), len(self.wids)))
         for track_index, track_id in enumerate(self.track_ids):
-            den = sum(np.power(2, self.f[track_index, :] * self.frame_weights[track_index, :]))
+            den = sum(np.power(2, self.f[track_index, :]))
             if den != 0:
                 for wid_index, wid in enumerate(self.wids):
-                    num = np.power(2, self.f[track_index, wid_index] * self.frame_weights[track_index, wid_index])
+                    num = np.power(2, self.f[track_index, wid_index])
                     p1[track_index, wid_index] = num / den
 
         # TESTING: create a random matrix to test p2
