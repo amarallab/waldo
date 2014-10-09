@@ -27,7 +27,7 @@ print DATA_DIR
 def get_graph(graph_pickle_name, experiment, overwrite=True):
     print graph_pickle_name
     if not os.path.exists(graph_pickle_name) or overwrite:
-        import waldo.report_card as report_card
+        import waldo.metrics.report_card as report_card
         print 'calculating graph'
         graph = experiment.graph.copy()
         graph2, report_df = report_card.collision_iteration2(experiment, graph)

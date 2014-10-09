@@ -88,8 +88,9 @@ class ReportCard(object):
             label = 'wm_{b}min'.format(b=b)
             wm[label] = worm_m
 
-        moving_nodes = list(compound_bl_filter(self.experiment,
-                                               digraph, threshold))
+        moving_nodes = list(digraph.compound_bl_filter(self.experiment,
+                                                       threshold))
+
         n1 = graph.number_of_nodes()
         n2 = digraph.number_of_nodes()
         m1 = len(moving_nodes)
@@ -304,31 +305,6 @@ class ReportCard(object):
         return report
 
 # find me a better home
-def compound_bl_filter(experiment, graph, threshold):
-    """
-    Return node IDs from *graph* and *experiment* if they moved at least
-    *threshold* standard body lengths.
-    """
-    cbounds = compound_bounding_box(experiment, graph)
-    cbounds['bl'] = ((cbounds['x_max'] - cbounds['x_min'] +
-                      cbounds['y_max'] - cbounds['y_min']) /
-                      experiment.typical_bodylength)
-    moved = cbounds[cbounds['bl'] >= threshold]
-    return moved['bid'] if 'bid' in moved.columns else moved.index
-
-def compound_bounding_box(experiment, graph):
-    """
-    Construct bounding box for all nodes (compound or otherwise) by using
-    experiment prepdata and graph node components.
-    """
-    bounds = experiment.prepdata.bounds
-    def wh(row):
-        return graph.where_is(row['bid'])
-
-    bounds['node'] = bounds.apply(wh, axis=1)
-    groups = bounds.groupby('node')
-    b = groups.agg({'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
-    return b
 
 # def create_report_card(experiment, graph):
 

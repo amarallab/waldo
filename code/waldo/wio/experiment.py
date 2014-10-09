@@ -47,6 +47,7 @@ class Experiment(multiworm.Experiment):
 
         self._prep_df = pd.merge(bounds, sizes, on='bid')
 
+    @property
     def true_num(self):
         """
         returns an estimate for the mean number of worms in
@@ -149,3 +150,17 @@ class Experiment(multiworm.Experiment):
     #     node_worm_count = collider.network_number_wizard(graph, self, False)
     #     for k, v in node_worm_count.items():
     #         self.graph.node[k]['worm_count'] = v
+
+    def export_worm_timeseries(self, save_path, graph=None):
+
+        if graph is None:
+            graph = self.graph.copy()
+
+        for i, node in enumerate(graph):
+            print(node)
+            data = graph.consolidate_node_data(experiment=self, node=node)
+            print(data)
+            if data:
+                break
+            if i > 5:
+                break

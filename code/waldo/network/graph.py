@@ -12,6 +12,7 @@ import logging
 
 # third party
 import networkx as nx
+import pandas as pd
 
 # package specific
 from waldo.conf import settings
@@ -359,3 +360,75 @@ class Graph(nx.DiGraph):
         # document collision
         self._collision_nodes[collision_node] = collision_result
         self._collision_blobs[collision_node] = blobs
+
+
+    def consolidate_node_data(self, experiment, node):
+        """
+        Returns a pandas DataFrame with all blob data for a node.
+        Accepts both compound and single nodes.
+        For compound nodes, data includes all components.
+
+        params
+        -----
+        graph: (waldo.network.Graph object)
+           a directed graph of node interactions
+        experiment: (multiworm experiment object)
+           the experiment from which data can be exctracted.
+        node: (int or tuple)
+           the id (from graph) for a node.
+
+        returns
+        -----
+        all_data: (pandas DataFrame)
+           index is 'frame'
+           columns are:
+           'area', 'centroid'
+           'contour_encode_len', 'contour_encoded', 'contour_start',
+           'midline', 'size', 'std_ortho', 'std_vector', 'time'
+        """
+        data = []
+        for subnode in self.components(node):
+            try:
+                blob = experiment[subnode]
+                df = blob.df
+            except (KeyError, multiworm.MWTDataError) as e:
+                print('{e} reading blob {i}'.format(e=e, i=subnode))
+                continue
+
+            if blob.empty:
+                #print(subnode, 'subnode of', node, 'is empty')
+                continue
+
+            df.set_index('frame', inplace=True)
+            df['blob'] = subnode
+            data.append(df)
+        if data:
+            all_data = pd.concat(data)
+            all_data.sort(inplace=True)
+            return all_data
+
+    def compound_bl_filter(self, experiment, threshold):
+        """
+        Return node IDs from *graph* and *experiment* if they moved at least
+        *threshold* standard body lengths.
+        """
+        cbounds = self._compound_bounding_box(experiment)
+        cbounds['bl'] = ((cbounds['x_max'] - cbounds['x_min'] +
+                          cbounds['y_max'] - cbounds['y_min']) /
+                          experiment.typical_bodylength)
+        moved = cbounds[cbounds['bl'] >= threshold]
+        return moved['bid'] if 'bid' in moved.columns else moved.index
+
+    def _compound_bounding_box(self, experiment):
+        """
+        Construct bounding box for all nodes (compound or otherwise) by using
+        experiment prepdata and graph node components.
+        """
+        bounds = experiment.prepdata.bounds
+        def wh(row):
+            return self.where_is(row['bid'])
+
+        bounds['node'] = bounds.apply(wh, axis=1)
+        groups = bounds.groupby('node')
+        bboxes = groups.agg({'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
+        return bboxes

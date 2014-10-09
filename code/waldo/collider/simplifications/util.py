@@ -158,4 +158,3 @@ def group_composite_nodes(experiment, graph, dataframe):
     bounds.drop('bid', axis=1, inplace=True)
     bounds.rename(columns={'composite_bid': 'bid'}, inplace=True)
     return bounds.groupby('bid')
-
