@@ -11,5 +11,5 @@ urlpatterns = patterns('',
     url(r'^start$', views.start, name='start'),
     url(r'^gap/(?P<eid>\w+)/(?P<from_blob>\w+)-(?P<to_blob>\w+)$',
         views.gap, name='gap'),
-    url(r'^category/(?P<cat>\w+)$', views.category, name='type')
+    url(r'^category/(?P<cat>\w+)$', views.category, name='cat')
 )

@@ -48,7 +48,7 @@ class Taper(object):
         return missing
 
 
-    def score(distance_gap=None, frame_gap=None, ids=None):
+    def score(self, distance_gap=None, frame_gap=None, ids=None):
         """
         Score the putative link based on either the distance and frame gap
         or a pair of IDs.

@@ -6,10 +6,26 @@ from django.conf import settings
 from ...models import Gap
 
 def write_result_header():
-    sys.stdout.write('eid,from_blob,to_blob,ans\n')
+    sys.stdout.write('eid,from_blob,to_blob,ans,n_ans\n')
 
-def write_result_line(gap, answer):
-    sys.stdout.write(','.join([str(x) for x in [gap.experiment_id, gap.from_blob, gap.to_blob, answer]]) + '\n')
+def write_result_line(gap):
+    answers = [ca.answer for ca in gap.answers.all()]
+    n_answers = len(answers)
+    if not n_answers:
+        return
+
+    answers = set(answers)
+    n_diff_ans = len(answers)
+
+    if n_diff_ans > 1:
+        answer = Gap.DISAGREE_ANSWER
+    elif n_diff_ans == 1:
+        answer = answers.pop()
+
+    sys.stdout.write(','.join(
+            [str(x) for x in [
+                    gap.experiment_id, gap.from_blob, gap.to_blob,
+                    answer, n_answers]]) + '\n')
 
 
 class Command(BaseCommand):
@@ -20,8 +36,4 @@ class Command(BaseCommand):
 
         write_result_header()
         for gap in gaps:
-            answers = set(ca.answer for ca in gap.answers.all())
-            if len(answers) == 1:
-                write_result_line(gap, answers.pop())
-            elif len(answers) > 1:
-                write_result_line(gap, 'disagreement')
+            write_result_line(gap)
