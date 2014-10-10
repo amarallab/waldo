@@ -91,12 +91,39 @@ class IdTrackSolver(object):
         self.agreement = agreement
 
     @staticmethod
-    def compute_weight(image, stack):
+    def _intersection(left, right):
+        lx, ly, lw, lh = left[0]
+        lp1 = lx, ly
+        lp2 = lx + lw - 1, ly + lh - 1
+
+        rx, ry, rw, rh = right[0]
+        rp1 = rx, ry
+        rp2 = rx + rw - 1, ry + rh - 1
+
+        fp1 = max(lp1[0], rp1[0]), max(lp1[1], rp1[1])
+        fp2 = min(lp2[0], rp2[0]), min(lp2[1], rp2[1])
+        fx, fy = fp1
+        fw, fh = fp2[0] - fp1[0] + 1, fp2[1] - fp1[1] + 1
+
+        if fw <= 0 or fh <= 0:
+            return np.zeros(shape=(0, 0))
+
+        limg = left[1][fx-lx:fx-lx+fw, fy-ly:fy-ly+fh]
+        rimg = right[1][fx-rx:fx-rx+fw, fy-ry:fy-ry+fh]
+        return limg * rimg
+
+    @staticmethod
+    def compute_weight(frame, stack_frames):
+        # frame[0]: bounding box: (x, y, w, h)
+        # frame[1]: image, array of pixels (only bit: 0 => black, 1 => worm)
+        # stack_frames: list of (bounding box, image) frames
+
         # p: number of pixels of the blob (image)
         # b: number of blobs of the fragment that overlap with that same pixel
         # bb: matrix of 'b' (for each pixel)
-        p = image.sum()
-        bb = sum([image * s for s in stack])
+        frame_bb, frame_image = frame
+        p = frame_image.sum()
+        bb = sum([IdTrackSolver._intersection(frame, current) for current in stack_frames])
         pbb = p * bb
         inv = (1 / pbb)
         inv[np.isinf(inv)] = 0
