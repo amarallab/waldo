@@ -17,7 +17,7 @@ from PIL import Image
 # import images.worm_finder as wf
 # import wio.file_manager as fm
 # import prettyplotlib as ppl
-# #import fingerprint.fingerprint as fp
+import fingerprint as fp
 
 CUTOUT_DIR = 'home/projects/worm_movement/Data/cutouts/'
 base_dir = '/home/projects/worm_movement/Data/cutouts/20130702_135704'
@@ -535,3 +535,15 @@ def get_data(base_dir, bounds):
 #
 # # main_window_size()  # First algorithm
 # #main_window_best_assignment()
+
+def main( ):
+    print CUTOUT_DIR
+    worms = glob(os.path.join(CUTOUT_DIR, 'worm_*'))
+    print worms
+    for worm in worms:
+        print worm.split('worm_')
+        worm_id = worm.split('worm_')[-1]
+        f_stack = FingerprintStack(worm_id)
+        f_stack.compute_fingerprints()
+if __name__ == '__main__':
+    main()
