@@ -11,7 +11,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 import matplotlib.path as path
 from mpltools import style
-from mpltools import layout
+from mpltools import layoutsp
 import waldo.metrics.step_simulation as ssim
 
 style.use('ggplot')
