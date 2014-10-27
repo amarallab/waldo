@@ -77,7 +77,7 @@ def grab_blob_data(experiment, time):
 
     params
     -------
-    experiment: (experiment object from multiworm)
+    experiment: (experiment object from wio)
         cooresponds to a specific ex_id
     time: (float)
         the closest time in seconds for which we would like to retrieve data
@@ -747,8 +747,8 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     background = mim.create_backround(impaths)
 
     # initialize experiment
-    path = os.path.join(MWT_DIR, ex_id)
-    experiment = wio.Experiment(path)
+    #path = os.path.join(MWT_DIR, ex_id)
+    experiment = wio.Experiment(experiment_id=ex_id)
 
     full_experiment_check = []
     accuracy = []
@@ -771,7 +771,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     missing_worms = reformat_missing(missing_worms)
 
     # save datafiles
-    prep_data = experiment.prepata
+    prep_data = experiment.prepdata
     prep_data.dump(data_type='matches', dataframe=bid_matching,
                    index=False)
     prep_data.dump(data_type='accuracy', dataframe=base_accuracy,

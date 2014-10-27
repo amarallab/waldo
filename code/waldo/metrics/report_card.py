@@ -159,6 +159,10 @@ class ReportCard(object):
         terms['n-blobs'] = 1
         terms['id_change_found'] = False
         terms['id_change_lost'] = False
+        terms['join_found'] = False
+        terms['join_lost'] = False
+        terms['split_found'] = False
+        terms['split_lost'] = False
         terms['lifespan_t'] = -1
         # loop through graph and assign all blob ids to cooresponding nodes.
         # also include if nodes have parents or children
@@ -176,6 +180,13 @@ class ReportCard(object):
                 terms['node_id'].loc[list(known_comps)] = node_id
                 terms['id_change_found'].loc[list(known_comps)] = has_pred
                 terms['id_change_lost'].loc[list(known_comps)] = has_suc
+
+                terms['split_found'].loc[list(known_comps)] = len(predecessors) == 1
+                terms['split_lost'].loc[list(known_comps)] = len(successors) > 1
+
+                terms['join_found'].loc[list(known_comps)] = len(predecessors) > 1
+                terms['join_lost'].loc[list(known_comps)] = len(successors) == 1
+
                 terms['lifespan_t'].loc[list(known_comps)] = graph.lifespan_t(node_id)
         node_set = set(graph.nodes(data=False))
         print len(term_ids), 'blobs have terminal data'
@@ -187,13 +198,21 @@ class ReportCard(object):
         # split dataframe into seperate dfs concerned with starts and ends
         # standardize collumn names such that both have the same columns
 
-        start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found', 'lifespan_t']]
+        start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found',
+                             'split_found', 'join_found', 'lifespan_t']]
         start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y', 'f0':'f',
+                                    'split_found': 'split',
+                                    'join_found': 'join',
                                     'id_change_found': 'id_change'},
                            inplace=True)
 
-        end_terms = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost', 'lifespan_t']]
+
+        end_terms  = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost',
+                             'split_lost', 'join_lost', 'lifespan_t']]
+
         end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y', 'fN':'f',
+                                  'split_lost': 'split',
+                                  'join_lost': 'join',
                                   'id_change_lost': 'id_change'},
                          inplace=True)
 
@@ -255,7 +274,8 @@ class ReportCard(object):
 
         def determine_reason(df):
             df['reason'] = 'unknown'
-            reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+            #reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+            reasons = ['unknown', 'on_edge', 'split', 'join', 'outside-roi', 'timing']
             for reason in reasons[1:]:
                 df['reason'][df[reason]] = reason
 
@@ -267,10 +287,12 @@ class ReportCard(object):
         return start_terms, end_terms
 
     def summarize_loss_report(self, df):
+        df_orig = df
         df = df.copy()
         df['lifespan_t'] = df['lifespan_t'] / 60.0
         bin_dividers = [1, 5, 10, 20, 61]
-        reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+        #reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+        reasons = ['unknown', 'on_edge', 'split', 'join', 'outside-roi', 'timing']
         #stuff = pd.DataFrame(columns=reasons, index=bin_dividers)
         data = []
         for bd in bin_dividers:
@@ -284,11 +306,18 @@ class ReportCard(object):
 
             data.append(counts)
 
+
+        counts = {}
+        for reason in reasons:
+            counts[reason] = len(df_orig[df_orig['reason'] == reason])
+        data.append(counts)
+
         report_summary = pd.DataFrame(data)
-        report_summary['lifespan'] = bin_dividers
+        report_summary['lifespan'] = bin_dividers + ['total']
         report_summary.set_index('lifespan', inplace=True)
-        report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
-        #print report_summary
+        #report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
+        report_summary = report_summary[['unknown', 'split', 'join', 'timing', 'on_edge', 'outside-roi']]
+        print report_summary
         return report_summary
 
     def save_reports(self, graph):
@@ -708,6 +737,27 @@ def collision_suite_heltena(experiment, graph, verbose=True):
     # n_time = collider.resolve_collisions(graph, experiment, suspects)
     # n += n_time
     return len(resolved)
+
+def calculate_duration_data_from_graph(experiment, graph, node_ids=[]):
+    if not node_ids:
+        node_ids = graph.nodes(data=False)
+
+    frame_times = experiment.frame_times
+    step_data, durations = [], []
+    for node in node_ids:
+        node_data = graph.node[node]
+        bf, df = node_data['born_f'], node_data['died_f']
+        t0 = frame_times[bf - 1]
+        tN = frame_times[df - 1]
+        step_data.append({'bid':node, 't0':t0, 'tN':tN, 'lifespan':tN-t0})
+
+    steps = pd.DataFrame(step_data)
+    steps.set_index('bid', inplace=True)
+    steps = steps / 60.0   # convert to minutes.
+    steps.sort('t0', inplace=True)
+    steps = steps[['t0', 'tN', 'lifespan']]
+    durations = np.array(steps['lifespan'])
+    return steps, durations
 
 def gap_dev(ex_id):
     # simplify

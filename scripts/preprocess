@@ -118,12 +118,12 @@ if __name__ == '__main__':
 
         elif cmd  == 'finish':
             i_eids = reduce_unecessary_work(eids, overwrite, 'images')
-            for ex_id in i_eids:
-                images.summarize(ex_id) #csvs from images
-
             p_eids = reduce_unecessary_work(eids, overwrite, 'prepare')
+
             for ex_id in p_eids:
                 images.summarize(ex_id) #csvs from blob data
+            for ex_id in i_eids:
+                images.summarize(ex_id) #csvs from images
 
         elif cmd  == 'score':
             for ex_id in eids:

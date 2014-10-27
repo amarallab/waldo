@@ -6,12 +6,17 @@ from waldo import report_card
 
 def create_reports():
     ex_ids = [
-        '20130318_131111',
+        #'20141017_134720',
+         '20141017_134724',
+        #'20130318_131111',
         #'20130614_120518',
         #'20130702_135704',
     ]
 
-    for ex_id in ex_ids:
+    ex_ids = ['20141017_113435', '20141017_113439', '20141017_123722']
+
+    for ex_id in ex_ids[-1:]:
+        print ' ******* starting {eid}  *******'.format(eid= ex_id)
         experiment = wio.Experiment(experiment_id=ex_id)
         graph = experiment.graph.copy()
 

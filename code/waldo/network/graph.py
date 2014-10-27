@@ -352,7 +352,12 @@ class Graph(nx.DiGraph):
 
             # combine data
             #new_node, new_node_data = self.condense_nodes(n1, n2)
-            if 'collision' not in self.node[n1]:
+            try:
+                n1_data = self.node[n1]
+            except KeyError:
+                print('Warning: {n} not found in graph'.format(n=n1))
+                continue
+            if 'collision' not in n1_data:
                 self.node[n1]['collisions'] = set()
             self.node[n1]['collisions'].add(collision_node)
             self.add_edge(n1, n2)
@@ -431,4 +436,7 @@ class Graph(nx.DiGraph):
         bounds['node'] = bounds.apply(wh, axis=1)
         groups = bounds.groupby('node')
         bboxes = groups.agg({'x_min': min, 'x_max': max, 'y_min': min, 'y_max': max})
-        return bboxes
+        bbox_nodes = set(bboxes.index)
+        graph_nodes = set(self.nodes(data=False))
+        actual_bbox_nodes = list(bbox_nodes & graph_nodes)
+        return bboxes.loc[actual_bbox_nodes]

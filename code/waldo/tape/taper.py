@@ -343,7 +343,8 @@ class Taper(object):
         """
         gaps = gaps_df.copy()
         link_list = []
-
+        gaps = gaps[gaps['df'] < df]
+        gaps = gaps[gaps['dist'] < dist]
         gaps['short_score'] = gaps['df'] * gaps['dist']
         gaps.sort('short_score', inplace=True, ascending=False)
         for i, row in gaps.iterrows():
@@ -421,6 +422,8 @@ class Taper(object):
 
         gaps = gaps_df.copy()
         link_list = []
+        if gaps is None or len(gaps) == 0:
+            return [], gaps
 
         gaps.sort('score', inplace=True, ascending=False)
         above_threshold = True
@@ -538,7 +541,6 @@ class Taper(object):
                     return None, hist
                 if len(hist) > 500:
                     real_end = True
-
 
         used_missing = []
         failed_links = []

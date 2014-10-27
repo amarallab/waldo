@@ -92,6 +92,12 @@ class CollisionResolver(object):
             nodes.append(current)
             backup_nodes = next_node(current)
 
+            #
+            if len(nodes) > 100:
+                print('Warning: find outline following trail of more than 100 nodes')
+                print('start node: {n}'.format(n=node))
+                break
+
         node_count = len(nodes)
         while len(nodes) > 0:
             node = nodes.pop(0)
@@ -128,12 +134,11 @@ class CollisionResolver(object):
                         self.parent_node_to_blob[int(node)] = int(bid)
                     # return list of outline points
                     outline_points = de.decode_outline([x, y, l, enc])
-                    return outline_points
+                    return frame, outline_points
         if verbose:
             print('I: Failed to find outline in %d predeccessors' % node_count)
             print('I: grabbing', node, type(node))
-        return None
-
+        return None, None
 
     def create_collision_masks(self, node, verbose=False):
         """
@@ -168,10 +173,10 @@ class CollisionResolver(object):
             print('children:{c}'.format(c=c))
             #print('beginning:end pixel overlap')
         #grab relevant outlines.
-        p0 = self.grab_outline(p[0], first=False)
-        p1 = self.grab_outline(p[1], first=False)
-        c0 = self.grab_outline(c[0], first=True)
-        c1 = self.grab_outline(c[1], first=True)
+        f, p0 = self.grab_outline(p[0], first=False)
+        f, p1 = self.grab_outline(p[1], first=False)
+        f, c0 = self.grab_outline(c[0], first=True)
+        f, c1 = self.grab_outline(c[1], first=True)
 
         # align outline masks
         outline_list = [o for o in [p0, p1, c0, c1] if o is not None]
