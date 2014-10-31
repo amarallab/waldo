@@ -6,6 +6,8 @@ from PyQt4 import QtGui
 from experimentlist import ExperimentListPage
 from cachethresholddata import CacheThresholdDataPage
 from score import ScorePage
+from param import ParamPage
+from refactoringdata import RefactoringDataPage
 
 
 class WaldoApp(QtGui.QWizard):
@@ -18,10 +20,14 @@ class WaldoApp(QtGui.QWizard):
         self.experimentListPage = ExperimentListPage(self.data)
         self.cacheThresholdDataPage = CacheThresholdDataPage(self.data)
         self.scorePage = ScorePage(self.data)
+        self.paramPage = ParamPage(self.data)
+        self.refactoringData = RefactoringDataPage(self.data)
 
         self.addPage(self.experimentListPage)
         self.addPage(self.cacheThresholdDataPage)
         self.addPage(self.scorePage)
+        self.addPage(self.paramPage)
+        self.addPage(self.refactoringData)
 
     def closeEvent(self, ev):
         self.data.save()
