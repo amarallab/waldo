@@ -61,8 +61,8 @@ class ScorePage(QtGui.QWizardPage):
         self.scoreFinished = False
         self.completeChanged.emit()
 
-        self.task = tasking.CommandTask()
-        self.task.start(silly_test.silly_function, self.madeProgress, self.finished)
+        self.task = tasking.CommandTask(self.madeProgress, self.finished)
+        self.task.start(silly_test.silly_function, elapse=1)
 
     def cancelButton_clicked(self):
         if self.task is not None:

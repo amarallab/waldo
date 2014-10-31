@@ -38,6 +38,9 @@ class ExperimentListPage(QtGui.QWizardPage):
 
         self.update_experiment_list()
 
+    def initializePage(self):
+        self.experimentListPage.update_experiment_list()
+
     def change_folder_clicked(self):
         result = str(QtGui.QFileDialog.getExistingDirectory(directory=self.data.waldo_folder))
         if len(result) > 0:

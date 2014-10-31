@@ -23,8 +23,6 @@ class WaldoApp(QtGui.QWizard):
         self.addPage(self.cacheThresholdDataPage)
         self.addPage(self.scorePage)
 
-        self.experimentListPage.update_experiment_list()
-
     def closeEvent(self, ev):
         self.data.save()
 
