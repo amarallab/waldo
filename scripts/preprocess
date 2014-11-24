@@ -9,10 +9,11 @@ Usage:
 Commands:
   cache            precalculate image threshold values to speed up marking
   mark             manually annotate threshold and ROI images using GUI
+  score            scores recording based on image quality
   prepare          convert text data into CSVs
   images           use annotated images to calculate
   finish           runs both 'prepare' and 'images'
-  score            scores recording based on image quality
+
 
 Arguments:
    id              can be either dataset names or experiment ids
