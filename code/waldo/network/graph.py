@@ -417,12 +417,58 @@ class Graph(nx.DiGraph):
         Return node IDs from *graph* and *experiment* if they moved at least
         *threshold* standard body lengths.
         """
+        cbounds = self.node_movement(experiment)
+        moved = cbounds[cbounds['bl'] >= threshold]
+        return moved['bid'] if 'bid' in moved.columns else moved.index
+
+    def node_movement(self, experiment):
         cbounds = self._compound_bounding_box(experiment)
         cbounds['bl'] = ((cbounds['x_max'] - cbounds['x_min'] +
                           cbounds['y_max'] - cbounds['y_min']) /
                           experiment.typical_bodylength)
-        moved = cbounds[cbounds['bl'] >= threshold]
-        return moved['bid'] if 'bid' in moved.columns else moved.index
+        return cbounds
+
+    def node_summary(self, experiment, node_ids=[]):
+        """
+        returns a dataframe with lots of data for every node specified in node_ids.
+
+        dataframe columns are:
+        'bl', 'components', 'f0', 'fN', 't0', 'tN',
+        'x_max', 'x_min', 'y_max', y_min'
+
+        params
+        -----
+        experiment: (wio.experiment object)
+        node_ids: (list)
+
+        """
+        if not node_ids:
+            node_ids = self.nodes(data=False)
+
+        frame_times = experiment.frame_times
+        node_movement = self.node_movement(experiment)
+        node_movement.sort(inplace=True)
+        node_summaries = []
+        for node in node_ids:
+            node_data = self.node[node]
+            bf, df = node_data['born_f'], node_data['died_f']
+            t0 = frame_times[bf - 1]
+            tN = frame_times[df - 1]
+            comps = list(node_data.get('components', [node]))
+            comp_string = '-'.join([str(c) for c in comps])
+            n_summary = {'bid':node, 'f0':bf, 'fN':df, 't0':t0, 'tN':tN, 'components':comp_string}
+            if node in node_movement.index:
+                n_move = node_movement.loc[node]
+                for i, v in zip(n_move.index, n_move):
+                    n_summary[str(i)] = v
+            else:
+                for i in ['x_max', 'x_min', 'y_max', 'y_min', 'bl']:
+                    n_summary[i] = 0
+            node_summaries.append(n_summary)
+        node_info = pd.DataFrame(node_summaries)
+        node_info.set_index('bid', inplace=True)
+        node_info.sort(inplace=True)
+        return node_info
 
     def _compound_bounding_box(self, experiment):
         """

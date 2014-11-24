@@ -322,6 +322,8 @@ class ReportCard(object):
 
     def save_reports(self, graph):
         experiment = self.experiment
+        node_info = graph.node_summary(experiment)
+        experiment.prepdata.dump('node-summary', node_info)
         report = self.report()
         experiment.prepdata.dump('report-card', report)
         starts, ends = self.determine_lost_and_found_causes(graph)
@@ -332,53 +334,6 @@ class ReportCard(object):
         experiment.prepdata.dump('start_report', start_report)
         experiment.prepdata.dump('end_report', end_report)
         return report
-
-# find me a better home
-
-# def create_report_card(experiment, graph):
-
-#     report_card = ReportCard(experiment)
-#     report_card.add_step(graph, 'raw')
-
-#     ############### Remove Known Junk
-
-#     collider.remove_nodes_outside_roi(graph, experiment)
-#     report_card.add_step(graph, 'roi')
-
-#     collider.remove_blank_nodes(graph, experiment)
-#     report_card.add_step(graph, 'blank')
-
-#     ############### Simplify
-#     collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
-#     #collider.assimilate(graph, max_threshold=10)
-#     collider.remove_single_descendents(graph)
-#     collider.remove_fission_fusion(graph)
-#     collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-#     collider.remove_offshoots(graph, threshold=20)
-#     collider.remove_single_descendents(graph)
-#     report_card.add_step(graph, 'simplify')
-
-#     ############### Cut Worms
-#     candidates = collider.find_potential_cut_worms(graph, experiment,
-#                                                    max_first_last_distance=40, max_sibling_distance=50, debug=False)
-#     for candidate in candidates:
-#         graph.condense_nodes(candidate[0], *candidate[1:])
-#     report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
-
-#     ############### Collisions
-#     n = collision_suite(experiment, graph)
-#     report_card.add_step(graph, 'collisions ({n})'.format(n=n))
-
-#     ############### Gaps
-
-#     taper = tp.Taper(experiment=experiment, graph=graph)
-#     start, end = taper.find_start_and_end_nodes()
-#     gaps = taper.score_potential_gaps(start, end)
-#     taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-#     report_card.add_step(graph, 'gaps')
-
-#     report_df = report_card.report(show=True)
-#     return graph, report_df
 
 def collision_iteration2(experiment, graph):
     ex_id = experiment.id

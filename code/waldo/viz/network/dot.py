@@ -15,7 +15,7 @@ import networkx as nx
 import graphviz
 
 GRAPHVIZ_ATTRIBUTES = ['shape', 'label', 'style',
-                       'penwidth', 'color', 'colorscheme']
+                       'penwidth', 'color', 'fillcolor', 'colorscheme']
 
 def render_nx_as_dot(nxgraph, output_file=None, format='png',
                      colormap='jet_r', ref=None, remove_node_labels=True):
@@ -65,7 +65,8 @@ def format_graph_for_lifespan(nxgraph, focus=None, ref=False, cmap='Paired'):
 
     for node, node_data in nxgraph.nodes_iter(data=True):
         lifespan = nxgraph.lifespan_f(node)
-        node_data['color'] = lifespan_to_color(lifespan)
+        #node_data['color'] = lifespan_to_color(lifespan)
+        node_data['fillcolor'] = lifespan_to_color(lifespan)
         node_data['shape'] = 'ellipse'
         node_data['style'] = 'filled'
 

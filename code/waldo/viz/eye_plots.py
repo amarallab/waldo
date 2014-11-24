@@ -107,9 +107,7 @@ def add_simulation_lines(ax, dfs, n=1, ymax=None, labels=['simulated begining tr
 #         ylim = n_steps + 1
 #     ax.set_ylim([0, ylim])
 
-
-
-def eye_plot(ax, df, color=None, label='', ymax=None, short_lim=5, front_back_margin=10):
+def eye_plot(ax, df, color=None, label='', ymax=None, short_lim=5, front_back_margin=10, long_lim=40):
     def plot_patches(ax, df, ymax=ymax, dividers=[], color=color, label=label):
         step_df = df
         n_steps = len(step_df)
@@ -149,6 +147,11 @@ def eye_plot(ax, df, color=None, label='', ymax=None, short_lim=5, front_back_ma
 
     ##### code starts here #####
 
+    def return_remaining(full_df, sub_df):
+
+        sub_ids = set(sub_df.index)
+        remaining_ids = set(full_df.index) - sub_ids
+        return full_df.loc[list(remaining_ids)]
 
     a = df.sort('lifespan', ascending=False)
     a['mid'] = (a['tN'] + a['t0'])/2
@@ -158,35 +161,29 @@ def eye_plot(ax, df, color=None, label='', ymax=None, short_lim=5, front_back_ma
     front_lim = front_back_margin
     back_lim = round(max(df['tN'])) - front_back_margin
 
-    all_ids = set(a.index)
+    #all_ids = set(a.index)
+
+    # longest = a[(a['lifespan'] > long_lim)]
+    # a = return_remaining(a, sub_df=longest) #, all_ids=all_ids)
+    # longest.sort('mid', inplace=True, ascending=False)
+    # print len(longest), 'longest'
+    back = a[(a['tN'] >= back_lim) & (a['lifespan'] > 0)]
+    a = return_remaining(a, sub_df=back) #, all_ids)
+    back.sort('t0', inplace=True, ascending=False)
 
     front = a[(a['t0'] <= front_lim) & (a['lifespan'] > 0)]
-    front_ids = set(front.index)
-    remaining_ids = all_ids - front_ids
-    a = a.loc[list(remaining_ids)]
-    #a = a[a['t0'] > front_lim]
+    a = return_remaining(a, sub_df=front) #, all_ids=all_ids)
     front.sort('tN', inplace=True, ascending=False)
-
-
-    back = a[(a['tN'] >= back_lim) & (a['lifespan'] > 0)]
-    back_ids = set(back.index)
-    # back_ids = set
-    remaining_ids = remaining_ids - back_ids
-    a = a.loc[list(remaining_ids)]
-
-    #a = a[a['tN'] < back_lim]
-    back.sort('t0', inplace=True, ascending=False)
 
     mid = a
     mid.sort('mid', inplace=True, ascending=False)
 
-
     steps = [front, mid, back]
-    #steps = [longest, front, mid, back, shortest]
+    #steps = [longest, front, mid, back]
     a = pd.concat(steps)
     div = make_dividers(steps)
+    print div, 'dividers'
     plot_patches(ax,a, ymax=ymax, dividers=div, color=color, label=label)
-    #return div
 
     legend_props = {'loc':'upper right'}
     if len(div) > 2:

@@ -31,7 +31,10 @@ def get_graph(graph_pickle_name, experiment, overwrite=True):
         print 'calculating graph'
         graph = experiment.graph.copy()
         graph2, report_df = report_card.collision_iteration2(experiment, graph)
-        pickle.dump(graph2, open(graph_pickle_name, 'w'))
+        try:
+            pickle.dump(graph2, open(graph_pickle_name, 'w'))
+        except Exception as e:
+            print 'pickle failed', e
     else:
         print 'loading graph.pickle.'
         graph2 = pickle.load(open(graph_pickle_name, 'r'))
@@ -283,4 +286,6 @@ def main(ex_id = '20130318_131111'):
         for line in lines:
             f.write(line)
 
-main('20130702_135704')
+ex_ids = ['20141017_113435', '20141017_113439', '20141017_123722']
+#main('20130702_135704')
+main('20141017_113435')

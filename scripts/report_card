@@ -6,17 +6,36 @@ from waldo import report_card
 
 def create_reports():
     ex_ids = [
-        #'20141017_134720',
-         '20141017_134724',
-        #'20130318_131111',
-        #'20130614_120518',
-        #'20130702_135704',
+        '20141017_134720',
+        '20141017_134724',
+        '20130318_131111',
+        '20130614_120518',
+        '20130702_135704',
     ]
 
-    ex_ids = ['20141017_113435', '20141017_113439', '20141017_123722']
+    # ex_ids = [ #'20141017_113435', '20141017_113439', '20141017_123722']
+    #     '20141017_123725',
+    #     '20141017_134720',
+    #     '20141017_134724',
+    #     '20141017_150959',
+    #     '20141017_151002']
+    # Note: 20141017_113439 causes an error
+    # AssertionError: Edge from 101723 to 101723 is acausal, going back in time 150 frames
 
-    for ex_id in ex_ids[-1:]:
+    # A6 plates. randomly chosen
+    # 20130323_105825 20130413_111950 20130323_143707 20130323_105759 20130323_132240
+    ex_ids = ['20130323_105825',
+              #'20130413_111950',
+              '20130323_143707',
+              '20130323_105759',
+              '20130323_132240']
+
+
+
+    for ex_id in ex_ids[:]:
         print ' ******* starting {eid}  *******'.format(eid= ex_id)
+        ppath = '/home/visitors/peterwinter/codes/waldo/data/prep/{eid}'.format(eid=ex_id)
+        wio.file_manager.ensure_dir_exists(ppath)
         experiment = wio.Experiment(experiment_id=ex_id)
         graph = experiment.graph.copy()
 

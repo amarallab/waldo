@@ -1,67 +1,67 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import random
 
+def naive_simulation(experiment, verbose=False):
+    losses = experiment.prepdata.load('end_report')
+    gains = experiment.prepdata.load('start_report')
+    accuracy = experiment.prepdata.load('accuracy')
 
-# def naive_simulation(experiment, verbose=False):
-#     losses = experiment.prepdata.load('end_report')
-#     gains = experiment.prepdata.load('start_report')
-#     accuracy = experiment.prepdata.load('accuracy')
+    worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
+    crawl_off_total = (losses['on_edge'] + losses['outside-roi']).sum()
+    crawl_on_total = (gains['on_edge'] + gains['outside-roi']).sum()
 
-#     worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
-#     crawl_off_total = (losses['on_edge'] + losses['outside-roi']).sum()
-#     crawl_on_total = (gains['on_edge'] + gains['outside-roi']).sum()
+    if verbose:
+        print 'loading data for', experiment.id
+        print worm_count, 'worms'
+        print crawl_off_total, 'crawl off'
+        print crawl_on_total, 'crawl on'
 
-#     if verbose:
-#         print 'loading data for', experiment.id
-#         print worm_count, 'worms'
-#         print crawl_off_total, 'crawl off'
-#         print crawl_on_total, 'crawl on'
+    N = int(worm_count)
+    t_steps = 60
+    on_rate = crawl_on_total / t_steps
+    off_rate = crawl_off_total / t_steps
 
-#     N = int(worm_count)
-#     t_steps = 60
-#     on_rate = crawl_on_total / t_steps
-#     off_rate = crawl_off_total / t_steps
+    start_record = {}
+    end_record = {}
+    id_counter = N
 
-#     start_record = {}
-#     end_record = {}
-#     id_counter = N
-
-#     # initialize pool and start record
-#     pool = range(N)
-#     for i in pool:
-#         start_record[i] = 0
+    # initialize pool and start record
+    pool = range(N)
+    for i in pool:
+        start_record[i] = 0
 
 
-#     off_events = ['off' for i in range(off_rate)]
-#     on_events = ['on' for i in range(on_rate)]
-#     events = off_events + on_events
+    off_events = ['off' for i in range(off_rate)]
+    on_events = ['on' for i in range(on_rate)]
+    events = off_events + on_events
 
-#     # start simulation
-#     for t in range(t_steps):
-#         random.shuffle(events)
-#         for e in events:
-#             random.shuffle(pool)
-#             if e == 'off':
-#                 o = pool.pop()
-#                 #print 'removing', o, 'at', t
-#                 end_record[o] = t
-#             if e == 'on':
-#                 #print 'adding', id_counter, 'at', t
-#                 pool.append(id_counter)
-#                 start_record[id_counter] = t
-#                 id_counter += 1
+    # start simulation
+    for t in range(t_steps):
+        random.shuffle(events)
+        for e in events:
+            random.shuffle(pool)
+            if e == 'off':
+                o = pool.pop()
+                #print 'removing', o, 'at', t
+                end_record[o] = t
+            if e == 'on':
+                #print 'adding', id_counter, 'at', t
+                pool.append(id_counter)
+                start_record[id_counter] = t
+                id_counter += 1
 
-#     # get
-#     for i in pool:
-#         end_record[i] = t_steps
-#     s = pd.DataFrame(start_record, index=['t0'])
-#     e = pd.DataFrame(end_record, index=['tN'])
-#     print id_counter - 1, 'total worm tracks'
-#     #print s
-#     df = pd.concat([s, e]).T
-#     df['lifespan'] = df['tN'] - df['t0']
-#     return df
+    # get
+    for i in pool:
+        end_record[i] = t_steps
+    s = pd.DataFrame(start_record, index=['t0'])
+    e = pd.DataFrame(end_record, index=['tN'])
+    print id_counter - 1, 'total worm tracks'
+    #print s
+    df = pd.concat([s, e]).T
+    df['lifespan'] = df['tN'] - df['t0']
+    return df
 
 class IdealPlateSimulation(object):
 
@@ -135,6 +135,7 @@ class IdealPlateSimulation(object):
         return N0
 
     def run_simulation(self, t0=0, tN=3600):
+        times, counts = [], []
         for time, events in self.event_log.iteritems():
             if len(events) > 1:
                 random.shuffle(events)
@@ -143,7 +144,12 @@ class IdealPlateSimulation(object):
                     self.on_event(time)
                 if event == 'off':
                     self.off_event(time)
+            times.append(time)
+            counts.append(len(self.pool))
         self.end_simulation(time=tN)
+        tc = zip(times, counts)
+        times, counts = zip(*sorted(tc))
+        return times, counts
 
     def return_steps(self):
         s = pd.DataFrame(self.start_record, index=['t0'])
@@ -153,23 +159,36 @@ class IdealPlateSimulation(object):
         df['lifespan'] = df['tN'] - df['t0']
         return df
 
+def plot_simulation_comparison(times, counts, experiment):
+    #losses = experiment.prepdata.load('end_report')
+    #gains = experiment.prepdata.load('start_report')
+    accuracy = experiment.prepdata.load('accuracy')
+    accuracy.set_index('time', inplace=True)
+    wc = accuracy['true-pos'] + accuracy['false-neg']
 
+    fig, ax = plt.subplots()
+    ax.plot(wc.index, wc, label='data')
+    ax.plot(times, counts, label='sim')
+    ax.legend()
+    plt.show()
 
 def best_simulation(experiment, verbose=False, N0=None):
 
     ips = IdealPlateSimulation(experiment)
     ips.make_event_log()
     N0 = ips.estimate_N0()
-
+    print N0, 'initial estimate for worms'
     still_running = True
     while still_running:
         try:
             ips.initialize_pool(N0=N0)
-            ips.run_simulation(tN=3600)
+            times, counts = ips.run_simulation(tN=3600)
             still_running = False
         except IndexError as e:
-            print e
+            #print e
             N0 += 1
+            print 'increasing estimate to', N0
+    #plot_simulation_comparison(times, counts, experiment)
     return ips.return_steps() / 60
 
 def run_ideal_step_simulation(experiment, verbose=False):

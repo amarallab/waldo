@@ -55,15 +55,15 @@ def frame_parser(blob_lines, frame):
 
     # blindly consume as many lines as needed
     try:
-        for dummy in range(frame_offset):
-            line = six.next(blob_lines)
+	for dummy in range(frame_offset):
+	    line = six.next(blob_lines)
     except multiworm.core.MWTDataError:
-        pass
+	pass
 
     # parse the line and return
     blob = blob_reader.parse([line])
     if blob['frame'][0] != frame:
-        raise multiworm.core.MWTDataError("Blob line offset failure")
+	raise multiworm.core.MWTDataError("Blob line offset failure")
     return blob
 
 
@@ -78,17 +78,17 @@ def grab_blob_data(experiment, time):
     params
     -------
     experiment: (experiment object from wio)
-        cooresponds to a specific ex_id
+	cooresponds to a specific ex_id
     time: (float)
-        the closest time in seconds for which we would like to retrieve data
+	the closest time in seconds for which we would like to retrieve data
 
     returns
     -------
     frame: (int)
-        the frame number that most closely matches the given time.
+	the frame number that most closely matches the given time.
     blob_data: (list of tuples)
-        the list contains the (blob_id [str], centroid [xy tuple], outlines [list of points])
-        for all blobs tracked during that particular frame.
+	the list contains the (blob_id [str], centroid [xy tuple], outlines [list of points])
+	for all blobs tracked during that particular frame.
     """
 
     # get the objects from MWT blobs files.
@@ -99,19 +99,19 @@ def grab_blob_data(experiment, time):
     blob_data = []
     bad_blobs = []
     for bid in bids:
-        try:
-            blob = experiment.parse_blob(bid, parser)
-            if blob['contour_encode_len'][0]:
-                outline = blob_reader.decode_outline(
-                    blob['contour_start'][0],
-                    blob['contour_encode_len'][0],
-                    blob['contour_encoded'][0],
-                )
-                blob_data.append((bid, blob['centroid'][0], outline))
-        except ValueError:
-            bad_blobs.append(bid)
+	try:
+	    blob = experiment.parse_blob(bid, parser)
+	    if blob['contour_encode_len'][0]:
+		outline = blob_reader.decode_outline(
+		    blob['contour_start'][0],
+		    blob['contour_encode_len'][0],
+		    blob['contour_encoded'][0],
+		)
+		blob_data.append((bid, blob['centroid'][0], outline))
+	except ValueError:
+	    bad_blobs.append(bid)
     if bad_blobs:
-        print('Warning: {n} blobs failed to load data'.format(n=len(bad_blobs)))
+	print('Warning: {n} blobs failed to load data'.format(n=len(bad_blobs)))
     return frame, blob_data
 
 def reformat_missing(df):
@@ -129,16 +129,16 @@ def reformat_missing(df):
     params
     -----
     df: (pandas DataFrame)
-        a dataframe containing:
-        'f' - (int) frame number
-        't' - (float) time
-        'x', 'y' - centroid coordinates
-        'xmin', 'ymin', 'xmax', 'ymax' -- bounding box coordinates.
+	a dataframe containing:
+	'f' - (int) frame number
+	't' - (float) time
+	'x', 'y' - centroid coordinates
+	'xmin', 'ymin', 'xmax', 'ymax' -- bounding box coordinates.
 
     returns
     -----
     df: (pandas DataFrame)
-        the reformatted dataframe
+	the reformatted dataframe
 
     """
     # Reformat names of objects
@@ -153,31 +153,31 @@ def reformat_missing(df):
 
     # find any potential matches
     for i, f in enumerate(frames[:-1]):
-        current_df = df[df['f'] == f]
-        next_df = df[df['f'] == frames[i+1]]
-        matches = {}
-        for c_id, c in current_df.iterrows():
+	current_df = df[df['f'] == f]
+	next_df = df[df['f'] == frames[i+1]]
+	matches = {}
+	for c_id, c in current_df.iterrows():
 
-            bbox = c['xmin'], c['ymin'], c['xmax'], c['ymax']
-            x, y = c['x'], c['y']
+	    bbox = c['xmin'], c['ymin'], c['xmax'], c['ymax']
+	    x, y = c['x'], c['y']
 
-            for n_id, n in next_df.iterrows():
-                bbox2 = n['xmin'], n['ymin'], n['xmax'], n['ymax']
-                nx, ny = n['x'], n['y']
-                if mim.do_boxes_overlap(bbox, bbox2):
-                    match = matches.get(c_id, None)
-                    # save this match if no other match already found.
-                    if not match:
-                        matches[c_id] = n_id
+	    for n_id, n in next_df.iterrows():
+		bbox2 = n['xmin'], n['ymin'], n['xmax'], n['ymax']
+		nx, ny = n['x'], n['y']
+		if mim.do_boxes_overlap(bbox, bbox2):
+		    match = matches.get(c_id, None)
+		    # save this match if no other match already found.
+		    if not match:
+			matches[c_id] = n_id
 
-                    # save closer match if other match found.
-                    else:
-                        m = df.loc[match]
-                        mx, my = m['x'] ,m['y']
-                        nd = np.sqrt((x-nx)**2 + (y-ny)**2)
-                        md = np.sqrt((x-mx)**2 + (y-my)**2)
-                        if nd < md:
-                            matches[c_id] = n_id
+		    # save closer match if other match found.
+		    else:
+			m = df.loc[match]
+			mx, my = m['x'] ,m['y']
+			nd = np.sqrt((x-nx)**2 + (y-ny)**2)
+			md = np.sqrt((x-mx)**2 + (y-my)**2)
+			if nd < md:
+			    matches[c_id] = n_id
 
     print('persisting image objects:')
     print(matches)
@@ -186,10 +186,10 @@ def reformat_missing(df):
     df['next'] = next_list
 
     return df[['f', 't', 'x', 'y',
-               'xmin', 'ymin', 'xmax', 'ymax', 'next']]
+	       'xmin', 'ymin', 'xmax', 'ymax', 'next']]
 
 def match_objects(bids, blob_centroids, blob_outlines, image_objects,
-                  roi=None, maxdist=20, verbose=False):
+		  roi=None, maxdist=20, verbose=False):
     """
 
     """
@@ -207,13 +207,13 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
 
     #print(img_outside_roi)
     if roi != None:
-        dx = img_centroids[:, 0] - roi['x']
-        dy = img_centroids[:, 1] - roi['y']
-        img_roi_check = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
+	dx = img_centroids[:, 0] - roi['x']
+	dy = img_centroids[:, 1] - roi['y']
+	img_roi_check = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
 
-        for l, in_roi in zip(img_labels, img_roi_check):
-            if not in_roi:
-                outside_objects.append(l)
+	for l, in_roi in zip(img_labels, img_roi_check):
+	    if not in_roi:
+		outside_objects.append(l)
 
     #blob_centroids = np.array(blob_centroids)
     matches, false_pos = [], []
@@ -222,154 +222,154 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
     lines = [] # for graphing
     blobs_by_object = {}
     for l in img_labels:
-        blobs_by_object[l] = []
+	blobs_by_object[l] = []
 
     #loop through MWT's blobs.
     for bid, cent, outline in zip(bids, blob_centroids, blob_outlines):
-        # skip if no outline. can't match against image objects.
-        if not len(outline):
-            continue
+	# skip if no outline. can't match against image objects.
+	if not len(outline):
+	    continue
 
-        # dont bother matching blob if outside roi
-        if roi != None:
-            dx, dy = (cent[0] - roi['x']), (cent[1] - roi['y'])
-            inside_roi = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
-            if not inside_roi:
-                bid_outside_roi.append(bid)
-                continue
+	# dont bother matching blob if outside roi
+	if roi != None:
+	    dx, dy = (cent[0] - roi['x']), (cent[1] - roi['y'])
+	    inside_roi = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
+	    if not inside_roi:
+		bid_outside_roi.append(bid)
+		continue
 
 
-        is_matched_to_object = False
-        x, y = zip(*outline)
-        blob_bbox = (min(x), min(y), max(x), max(y))
+	is_matched_to_object = False
+	x, y = zip(*outline)
+	blob_bbox = (min(x), min(y), max(x), max(y))
 
-        # calculate distances to all image object centroids.
-        dx = img_centroids[:, 0] - cent[0]
-        dy = img_centroids[:, 1] - cent[1]
-        dists = np.sqrt(dx** 2 + dy** 2)
+	# calculate distances to all image object centroids.
+	dx = img_centroids[:, 0] - cent[0]
+	dy = img_centroids[:, 1] - cent[1]
+	dists = np.sqrt(dx** 2 + dy** 2)
 
-        # initialize dummy variables and loop over image objects.
-        closest_dist = 10 *  maxdist
-        closest_obj = -1
+	# initialize dummy variables and loop over image objects.
+	closest_dist = 10 *  maxdist
+	closest_obj = -1
 
-        # loop through all image objects
-        for im_obj, d, in_roi in zip(image_objects, dists,
-                                     img_roi_check):
+	# loop through all image objects
+	for im_obj, d, in_roi in zip(image_objects, dists,
+				     img_roi_check):
 
-            # test ifsufficiently close and inside roi.
-            if d < maxdist and d < closest_dist and in_roi:
-                # now check if bounding boxes overlap.
-                # if boxes overlap, store match.
-                img_bbox = im_obj.bbox
+	    # test ifsufficiently close and inside roi.
+	    if d < maxdist and d < closest_dist and in_roi:
+		# now check if bounding boxes overlap.
+		# if boxes overlap, store match.
+		img_bbox = im_obj.bbox
 
-                if mim.do_boxes_overlap(img_bbox, blob_bbox):
-                    closest_obj = im_obj
-                    closest_cent = im_obj.centroid
-                    closest_dist = d
+		if mim.do_boxes_overlap(img_bbox, blob_bbox):
+		    closest_obj = im_obj
+		    closest_cent = im_obj.centroid
+		    closest_dist = d
 
-        if closest_obj != -1:
-            # for match bid outline must have more overlapping than
-            # overreaching pixels.
-            # ie. object must be mostly on top of the image_object
-            outline_mat = mim.outline_to_outline_matrix(outline,
-                                                    bbox=blob_bbox)
-            obj_bbox, obj_img = closest_obj.bbox, closest_obj.image
-            coord_match = mim.coordiate_match_offset_arrays(blob_bbox,
-                                                        outline_mat,
-                                                        obj_bbox,
-                                                        obj_img)
-            outline_arr, img_arr, bbox = coord_match
-            img_arr = img_arr * 2
-            overlay = img_arr + outline_arr
-            # keep just to look every once in a while.
-            if False:
-                fig, ax = plt.subplots(1,3)
-                ax[0].imshow(outline_arr)
-                ax[1].imshow(img_arr)
-                ax[2].imshow(overlay)
-                plt.show()
+	if closest_obj != -1:
+	    # for match bid outline must have more overlapping than
+	    # overreaching pixels.
+	    # ie. object must be mostly on top of the image_object
+	    outline_mat = mim.outline_to_outline_matrix(outline,
+						    bbox=blob_bbox)
+	    obj_bbox, obj_img = closest_obj.bbox, closest_obj.image
+	    coord_match = mim.coordiate_match_offset_arrays(blob_bbox,
+							outline_mat,
+							obj_bbox,
+							obj_img)
+	    outline_arr, img_arr, bbox = coord_match
+	    img_arr = img_arr * 2
+	    overlay = img_arr + outline_arr
+	    # keep just to look every once in a while.
+	    if False:
+		fig, ax = plt.subplots(1,3)
+		ax[0].imshow(outline_arr)
+		ax[1].imshow(img_arr)
+		ax[2].imshow(overlay)
+		plt.show()
 
-            # calculate pixel matches.
-            overlaps = (overlay == 3).sum()
-            #underlaps = (overlay == 2).sum()
-            overreaches = (overlay == 1).sum()
+	    # calculate pixel matches.
+	    overlaps = (overlay == 3).sum()
+	    #underlaps = (overlay == 2).sum()
+	    overreaches = (overlay == 1).sum()
 
-            # if the objects are mostly on top of one another,
-            #count as validated match.
-            if overlaps > overreaches:
-                # this blob is officially validated.
-                is_matched_to_object = True
-                matches.append(bid)
+	    # if the objects are mostly on top of one another,
+	    #count as validated match.
+	    if overlaps > overreaches:
+		# this blob is officially validated.
+		is_matched_to_object = True
+		matches.append(bid)
 
-                # save for false neg and joins calculations
-                blobs_by_object[closest_obj.label].append(bid)
+		# save for false neg and joins calculations
+		blobs_by_object[closest_obj.label].append(bid)
 
-                # save a connecting line for visual validation.
-                xs = [cent[0], closest_cent[0]]
-                ys = [cent[1], closest_cent[1]]
-                lines.append((xs, ys))
+		# save a connecting line for visual validation.
+		xs = [cent[0], closest_cent[0]]
+		ys = [cent[1], closest_cent[1]]
+		lines.append((xs, ys))
 
-        if not is_matched_to_object:
-            # this is officially a false positive.
-            # no object in image analysis corresponed to it.
-            false_pos.append(bid)
-            # remove this check when I'm sure it is not happening
-            if roi != None:
-                dx, dy = (cent[0] - roi['x']), (cent[1] - roi['y'])
-                inside_roi = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
-                if not inside_roi:
-                    print ('Warning! obj outside roi counted as FP')
+	if not is_matched_to_object:
+	    # this is officially a false positive.
+	    # no object in image analysis corresponed to it.
+	    false_pos.append(bid)
+	    # remove this check when I'm sure it is not happening
+	    if roi != None:
+		dx, dy = (cent[0] - roi['x']), (cent[1] - roi['y'])
+		inside_roi = (np.sqrt(dx** 2 + dy** 2) <= roi['r'])
+		if not inside_roi:
+		    print ('Warning! obj outside roi counted as FP')
 
     # store locations of missing data
     # loop through all image objects
     missing_data = []
     for im_obj, in_roi in zip(image_objects, img_roi_check):
 
-        matching_blobs = blobs_by_object.get(im_obj.label, [])
-        #print(im_obj.label, matching_blobs, in_roi)
-        # test if inside roi and has not blob matches.
-        if in_roi and not matching_blobs:
+	matching_blobs = blobs_by_object.get(im_obj.label, [])
+	#print(im_obj.label, matching_blobs, in_roi)
+	# test if inside roi and has not blob matches.
+	if in_roi and not matching_blobs:
 
-            x, y = im_obj.centroid
-            xmin, ymin, xmax, ymax = im_obj.bbox
-            m = {'x': x, 'y':y,
-                 'xmin':xmin, 'ymin':ymin,
-                 'xmax':xmax, 'ymax':ymax}
-            #print(m)
-            missing_data.append(m)
+	    x, y = im_obj.centroid
+	    xmin, ymin, xmax, ymax = im_obj.bbox
+	    m = {'x': x, 'y':y,
+		 'xmin':xmin, 'ymin':ymin,
+		 'xmax':xmax, 'ymax':ymax}
+	    #print(m)
+	    missing_data.append(m)
     missing_objects = pd.DataFrame(missing_data)
     blobs_to_join = []              # reformat joins
     false_neg_count = 0                   # initialize missed count
 
     for label, in_roi in zip(img_labels, img_roi_check):
-        matched_ids = blobs_by_object[label]
-        if len(matched_ids) > 1:
-            blobs_to_join.append(matched_ids)
-        if len(matched_ids) == 0 and in_roi:
-            false_neg_count += 1
+	matched_ids = blobs_by_object[label]
+	if len(matched_ids) > 1:
+	    blobs_to_join.append(matched_ids)
+	if len(matched_ids) == 0 and in_roi:
+	    false_neg_count += 1
 
     if verbose:
-        print(len(blob_centroids), 'blobs tracked by MWT')
-        print(len(false_pos), 'blobs without matches')
-        print(len(matches), 'blobs matched to image objects')
-        print(len(bid_outside_roi), 'bid outsid roi')
-        print(img_outside_roi, 'img outsid roi')
+	print(len(blob_centroids), 'blobs tracked by MWT')
+	print(len(false_pos), 'blobs without matches')
+	print(len(matches), 'blobs matched to image objects')
+	print(len(bid_outside_roi), 'bid outsid roi')
+	print(img_outside_roi, 'img outsid roi')
 
     more = {'blobs_by_object': blobs_by_object,
-            'false-neg': false_neg_count,
-            'false-pos': len(false_pos),
-            'true-pos': len(matches),
-            'lines': lines,
-            'roi':roi,
-            'bid-outside':bid_outside_roi,
-            'img-outside':img_outside_roi,
-            'outside_objects':outside_objects,
-            'missing_df': missing_objects}
+	    'false-neg': false_neg_count,
+	    'false-pos': len(false_pos),
+	    'true-pos': len(matches),
+	    'lines': lines,
+	    'roi':roi,
+	    'bid-outside':bid_outside_roi,
+	    'img-outside':img_outside_roi,
+	    'outside_objects':outside_objects,
+	    'missing_df': missing_objects}
 
     return matches, false_pos, blobs_to_join, more
 
 def analyze_image(experiment, time, img, background, threshold,
-                  roi=None, show=True):
+		  roi=None, show=True):
     """
     analyze a single image and return results.
     """
@@ -381,66 +381,66 @@ def analyze_image(experiment, time, img, background, threshold,
     #print(frame)
     bids, blob_centroids, outlines = zip(*blob_data)
     match = match_objects(bids, blob_centroids, outlines,
-                          image_objects, roi=roi)
+			  image_objects, roi=roi)
     matches, false_pos, blobs_to_join, more = match
 
     ##### for plotting
 
     # show how well blobs are matched at this threshold.
     if show:
-        f, ax = plt.subplots()
-        ax.imshow(img.T, cmap=plt.cm.Greys_r)
-        ax.contour(mask.T, [0.5], linewidths=1.2, colors='b')
-        for outline in outlines:
-            ax.plot(*outline.T, color='red')
+	f, ax = plt.subplots()
+	ax.imshow(img.T, cmap=plt.cm.Greys_r)
+	ax.contour(mask.T, [0.5], linewidths=1.2, colors='b')
+	for outline in outlines:
+	    ax.plot(*outline.T, color='red')
 
-        lines = more['lines']
-        #print(len(lines), 'lines')
-        for line in lines:
-            x, y = line
-            ax.plot(x, y, '.-', color='green', lw=2)
+	lines = more['lines']
+	#print(len(lines), 'lines')
+	for line in lines:
+	    x, y = line
+	    ax.plot(x, y, '.-', color='green', lw=2)
 
-        if roi != None:
-            # draw full circle region of interest
-            roi_t = np.linspace(0, 2* np.pi, 500)
-            roi_x = roi['r'] * np.cos(roi_t) + roi['x']
-            roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
-            ax.plot(roi_x, roi_y)
-            # resize figure
-            ymax, xmax = img.T.shape
-            ax.set_xlim([0, xmax])
-            ax.set_ylim([0, ymax])
-        return f, ax
+	if roi != None:
+	    # draw full circle region of interest
+	    roi_t = np.linspace(0, 2* np.pi, 500)
+	    roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+	    roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
+	    ax.plot(roi_x, roi_y)
+	    # resize figure
+	    ymax, xmax = img.T.shape
+	    ax.set_xlim([0, xmax])
+	    ax.set_ylim([0, ymax])
+	return f, ax
 
 
     #### for acuracy calculations
 
     base_accuracy = {'frame':frame, 'time':time,
-                     'false-neg':more['false-neg'],
-                     'false-pos':more['false-pos'],
-                     'true-pos':more['true-pos']}
+		     'false-neg':more['false-neg'],
+		     'false-pos':more['false-pos'],
+		     'true-pos':more['true-pos']}
 
     #### for matching blobs to img objects
 
     # consolidate history of matching objects.
     outside = []
     if roi != None:
-        outside = more['bid-outside']
+	outside = more['bid-outside']
 
     cols = ['frame', 'bid', 'good', 'roi']
     matching_history = [(frame, bid,
-                         bid in matches,
-                         bid not in outside)
-                        for bid in bids]
+			 bid in matches,
+			 bid not in outside)
+			for bid in bids]
     bid_matching = pd.DataFrame(matching_history,
-                                columns=cols)
+				columns=cols)
     bid_matching['join'] = ''
     for bs in blobs_to_join:
-        join_key = '-'.join([str(i) for i in bs])
-        #print(bs, join_key)
-        for b in bs:
-            #print(bid_matching['bid'] == b)
-            bid_matching['join'][bid_matching['bid'] == b] = join_key
+	join_key = '-'.join([str(i) for i in bs])
+	#print(bs, join_key)
+	for b in bs:
+	    #print(bid_matching['bid'] == b)
+	    bid_matching['join'][bid_matching['bid'] == b] = join_key
 
     assert more['true-pos'] == len(matches)
 
@@ -454,13 +454,13 @@ def analyze_image(experiment, time, img, background, threshold,
 def draw_colors_on_image(ex_id, time, ax=None, colors=None):
 
     if colors is None:
-        c = {'missed_color': 'b',
-             'tp_color':'green',
-             'fp_color': 'red',
-             'roi_color': 'yellow',
-             'roi_line_color': 'blue'}
+	c = {'missed_color': 'b',
+	     'tp_color':'green',
+	     'fp_color': 'red',
+	     'roi_color': 'yellow',
+	     'roi_line_color': 'blue'}
     else:
-        c = colors
+	c = colors
     # grab images and times.
     times, impaths = grab_images.grab_images_in_time_range(ex_id, start_time=0)
     times = [float(t) for t in times]
@@ -468,9 +468,9 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
 
     closest_time, closest_image = 1000000.0, None
     for i, (t, impath) in enumerate(zip(times, impaths)):
-        if fabs(t - time) < fabs(closest_time - time):
-            closest_time = t
-            closest_image = impath
+	if fabs(t - time) < fabs(closest_time - time):
+	    closest_time = t
+	    closest_image = impath
 
     print('looking for {t}'.format(t=time))
     print('closest image is at time {t}'.format(t=closest_time))
@@ -504,7 +504,7 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
     image_objects = regionprops(labels)
 
     match = match_objects(bids, blob_centroids, outlines,
-                          image_objects, roi=roi)
+			  image_objects, roi=roi)
     matches, false_pos, blobs_to_join, more = match
     blobs_by_obj = more['blobs_by_object']
     objects_outside = more['outside_objects']
@@ -512,64 +512,64 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
 
     show_by_default = False
     if ax is None:
-        show_by_default = True
-        f, ax = plt.subplots()
+	show_by_default = True
+	f, ax = plt.subplots()
     ax.imshow(img.T, cmap=plt.cm.Greys_r)
     print(len(bids), 'bids found')
     ax.xaxis.set_ticks([])
     ax.yaxis.set_ticks([])
     object_baseline = np.zeros(img.shape)
     for o in image_objects:
-        if o.label not in blobs_by_obj:
-            continue
-        if o.label in objects_outside:
-            continue
-        if len(blobs_by_obj.get(o.label, [])):
-            continue
-        xmin, ymin, xmax, ymax = o.bbox
-        object_baseline[xmin: xmax, ymin: ymax] = o.image
+	if o.label not in blobs_by_obj:
+	    continue
+	if o.label in objects_outside:
+	    continue
+	if len(blobs_by_obj.get(o.label, [])):
+	    continue
+	xmin, ymin, xmax, ymax = o.bbox
+	object_baseline[xmin: xmax, ymin: ymax] = o.imag
     ax.contour(object_baseline.T, [0.5], linewidths=1.2,
-               colors=c['missed_color'])
+	       colors=c['missed_color'])
 
     for bid, outline in zip(bids, outlines):
-        color = 'blue'
-        if bid in good:
-            color = c['tp_color']
-        if bid in bad:
-            color = c['fp_color']
-        if bid in outside:
-            color = c['roi_color']
+	color = 'blue'
+	if bid in good:
+	    color = c['tp_color']
+	if bid in bad:
+	    color = c['fp_color']
+	if bid in outside:
+	    color = c['roi_color']
 
-        if not len(outline):
-            continue
-        x, y = zip(*outline)
-        ax.fill(x, y, color=color, alpha=0.5)
+	if not len(outline):
+	    continue
+	x, y = zip(*outline)
+	ax.fill(x, y, color=color, alpha=0.5)
 
     if roi != None:
-        # draw full circle region of interest
-        roi_t = np.linspace(0, 2* np.pi, 500)
-        roi_x = roi['r'] * np.cos(roi_t) + roi['x']
-        roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
-        ax.plot(roi_x, roi_y, color=c['roi_line_color'])
-        # resize figure
-        ymax, xmax = img.T.shape
-        ax.set_xlim([0, xmax])
-        ax.set_ylim([0, ymax])
+	# draw full circle region of interest
+	roi_t = np.linspace(0, 2* np.pi, 500)
+	roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+	roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
+	ax.plot(roi_x, roi_y, color=c['roi_line_color'])
+	# resize figure
+	ymax, xmax = img.T.shape
+	ax.set_xlim([0, xmax])
+	ax.set_ylim([0, ymax])
     print('done')
     if show_by_default:
-        plt.show()
+	plt.show()
 
 
 def draw_colors_on_image_T(ex_id, time, ax=None, colors=None):
 
     if colors is None:
-        c = {'missed_color': 'b',
-             'tp_color':'green',
-             'fp_color': 'red',
-             'roi_color': 'yellow',
-             'roi_line_color': 'blue'}
+	c = {'missed_color': 'b',
+	     'tp_color':'green',
+	     'fp_color': 'red',
+	     'roi_color': 'yellow',
+	     'roi_line_color': 'blue'}
     else:
-        c = colors
+	c = colors
     # grab images and times.
     times, impaths = grab_images.grab_images_in_time_range(ex_id, start_time=0)
     times = [float(t) for t in times]
@@ -577,9 +577,9 @@ def draw_colors_on_image_T(ex_id, time, ax=None, colors=None):
 
     closest_time, closest_image = 1000000.0, None
     for i, (t, impath) in enumerate(zip(times, impaths)):
-        if fabs(t - time) < fabs(closest_time - time):
-            closest_time = t
-            closest_image = impath
+	if fabs(t - time) < fabs(closest_time - time):
+	    closest_time = t
+	    closest_image = impath
 
     print('looking for {t}'.format(t=time))
     print('closest image is at time {t}'.format(t=closest_time))
@@ -618,7 +618,7 @@ def draw_colors_on_image_T(ex_id, time, ax=None, colors=None):
     image_objects = regionprops(labels)
 
     match = match_objects(bids, blob_centroids, outlines,
-                          image_objects, roi=roi)
+			  image_objects, roi=roi)
     matches, false_pos, blobs_to_join, more = match
     blobs_by_obj = more['blobs_by_object']
     objects_outside = more['outside_objects']
@@ -626,8 +626,8 @@ def draw_colors_on_image_T(ex_id, time, ax=None, colors=None):
 
     show_by_default = False
     if ax is None:
-        show_by_default = True
-        f, ax = plt.subplots()
+	show_by_default = True
+	f, ax = plt.subplots()
 
     ax.imshow(img, cmap=plt.cm.Greys_r)
     print(len(bids), 'bids found')
@@ -635,48 +635,104 @@ def draw_colors_on_image_T(ex_id, time, ax=None, colors=None):
     ax.yaxis.set_ticks([])
     object_baseline = np.zeros(img.shape)
     for o in image_objects:
-        if o.label not in blobs_by_obj:
-            continue
-        if o.label in objects_outside:
-            continue
-        if len(blobs_by_obj.get(o.label, [])):
-            continue
-        xmin, ymin, xmax, ymax = o.bbox
-        object_baseline[xmin: xmax, ymin: ymax] = o.image
+	if o.label not in blobs_by_obj:
+	    continue
+	if o.label in objects_outside:
+	    continue
+	if len(blobs_by_obj.get(o.label, [])):
+	    continue
+	xmin, ymin, xmax, ymax = o.bbox
+	object_baseline[xmin: xmax, ymin: ymax] = o.image
     ax.contour(object_baseline, [0.5], linewidths=1.2,
-               colors=c['missed_color'])
+	       colors=c['missed_color'])
 
     for bid, outline in zip(bids, outlines):
-        color = 'blue'
-        if bid in good:
-            color = c['tp_color']
-        elif bid in bad:
-            color = c['fp_color']
-        elif bid in outside:
-            color = c['roi_color']
+	color = 'blue'
+	if bid in good:
+	    color = c['tp_color']
+	elif bid in bad:
+	    color = c['fp_color']
+	elif bid in outside:
+	    color = c['roi_color']
 
-        if not len(outline):
-            continue
-        x, y = zip(*outline)
-        ax.fill(y, x, color=color, alpha=0.5)
+	if not len(outline):
+	    continue
+	x, y = zip(*outline)
+	ax.fill(y, x, color=color, alpha=0.5)
 
     if roi != None:
-        # draw full circle region of interest
-        roi_t = np.linspace(0, 2* np.pi, 500)
-        roi_x = roi['r'] * np.cos(roi_t) + roi['x']
-        roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
-        ax.plot(roi_y, roi_x, color=c['roi_line_color'])
-        # resize figure
-        ymax, xmax = img.shape
-        print()
-        print()
-        print(ymax/xmax, 'ymax/xmax')
-        print (xmax/ymax, 'xmax/ymax')
-        ax.set_xlim([0, xmax])
-        ax.set_ylim([0, ymax])
+	# draw full circle region of interest
+	roi_t = np.linspace(0, 2* np.pi, 500)
+	roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+	roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
+	ax.plot(roi_y, roi_x, color=c['roi_line_color'])
+	# resize figure
+	ymax, xmax = img.shape
+	print()
+	print()
+	print(ymax/xmax, 'ymax/xmax')
+	print (xmax/ymax, 'xmax/ymax')
+	ax.set_xlim([0, xmax])
+	ax.set_ylim([0, ymax])
     print('done')
     if show_by_default:
-        plt.show()
+	plt.show()
+
+def draw_minimal_colors_on_image_T(ex_id, time, color=None, ax=None):
+    # grab images and times.
+    times, impaths = grab_images.grab_images_in_time_range(ex_id, start_time=0)
+    times = [float(t) for t in times]
+    times, impaths = zip(*sorted(zip(times, impaths)))
+
+    closest_time, closest_image = 1000000.0, None
+    for i, (t, impath) in enumerate(zip(times, impaths)):
+	if fabs(t - time) < fabs(closest_time - time):
+	    closest_time = t
+	    closest_image = impath
+
+    print('looking for {t}'.format(t=time))
+    print('closest image is at time {t}'.format(t=closest_time))
+    print(closest_image)
+
+    # initialize experiment
+    #experiment = wio.Experiment(experiment_id=ex_id)
+
+    time = closest_time
+    img = mpimg.imread(closest_image)
+    h, w = img.shape
+    #print(img.shape, h/w, w/h)
+    pf = fm.ImageMarkings(ex_id=ex_id)
+    roi = pf.roi()
+
+    show_by_default = False
+    if ax is None:
+	show_by_default = True
+	f, ax = plt.subplots()
+
+    if color is None:
+	color = ax._get_lines.color_cycle.next()
+
+    ax.imshow(img, cmap=plt.cm.Greys_r)
+    ax.xaxis.set_ticks([])
+    ax.yaxis.set_ticks([])
+
+    if roi != None:
+	# draw full circle region of interest
+	roi_t = np.linspace(0, 2* np.pi, 500)
+	roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+	roi_y = roi['r'] * np.sin(roi_t)+ roi['y']
+	ax.plot(roi_y, roi_x, color=color)
+	# resize figure
+	ymax, xmax = img.shape
+	print()
+	print()
+	print(ymax/xmax, 'ymax/xmax')
+	print (xmax/ymax, 'xmax/ymax')
+	ax.set_xlim([0, xmax])
+	ax.set_ylim([0, ymax])
+    print('done')
+    if show_by_default:
+	plt.show()
 
 
 def show_matched_image(ex_id, threshold, time, roi=None):
@@ -687,10 +743,10 @@ def show_matched_image(ex_id, threshold, time, roi=None):
     params
     -------
     ex_id: (str)
-        the experiment id
+	the experiment id
     threshold: (float)
-        a threshold value for image processing. if None,
-        will automatically check for cached value.
+	a threshold value for image processing. if None,
+	will automatically check for cached value.
     roi: (dict)
        contains x, y, and r coordinates for a roi. if None,
        no region of interest will be considered during matching,
@@ -704,9 +760,9 @@ def show_matched_image(ex_id, threshold, time, roi=None):
 
     closest_time, closest_image = 1000000.0, None
     for i, (t, impath) in enumerate(zip(times, impaths)):
-        if fabs(t - time) < fabs(closest_time - time):
-            closest_time = t
-            closest_image = impath
+	if fabs(t - time) < fabs(closest_time - time):
+	    closest_time = t
+	    closest_image = impath
 
 
     print('looking for {t}'.format(t=time))
@@ -722,8 +778,8 @@ def show_matched_image(ex_id, threshold, time, roi=None):
     time = closest_time
     img = mpimg.imread(closest_image)
     bid_matching, base_acc = analyze_image(experiment, time, img,
-                                           background, threshold,
-                                           roi=roi, show=True)
+					   background, threshold,
+					   roi=roi, show=True)
     return bid_matching, base_acc
 
 def analyze_ex_id_images(ex_id, threshold, roi=None):
@@ -733,9 +789,9 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     params
     -------
     ex_id: (str)
-        experiment id
+	experiment id
     threshold: (float)
-        threshold to use when analyzing images.
+	threshold to use when analyzing images.
     """
     print('analzying images')
     # grab images and times.
@@ -754,16 +810,16 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     accuracy = []
     full_missing = []
     for i, (time, impath) in enumerate(zip(times, impaths)):
-        # get the objects from the image
-        #print(impath)
-        img = mpimg.imread(impath)
-        bid_matching, base_acc, miss = analyze_image(experiment, time, img,
-                                               background, threshold,
-                                               roi=roi, show=False)
-        #print(base_acc)
-        full_experiment_check.append(bid_matching)
-        accuracy.append(base_acc)
-        full_missing.append(miss)
+	# get the objects from the image
+	#print(impath)
+	img = mpimg.imread(impath)
+	bid_matching, base_acc, miss = analyze_image(experiment, time, img,
+					       background, threshold,
+					       roi=roi, show=False)
+	#print(base_acc)
+	full_experiment_check.append(bid_matching)
+	accuracy.append(base_acc)
+	full_missing.append(miss)
 
     bid_matching = pd.concat(full_experiment_check)
     base_accuracy = pd.DataFrame(accuracy)
@@ -773,11 +829,11 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     # save datafiles
     prep_data = experiment.prepdata
     prep_data.dump(data_type='matches', dataframe=bid_matching,
-                   index=False)
+		   index=False)
     prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
-                   index=False)
+		   index=False)
     prep_data.dump(data_type='missing', dataframe=missing_worms,
-                   index=True)
+		   index=True)
 
 def summarize(ex_id, overwrite=True):
     """ short script to load threshold, roi and run
