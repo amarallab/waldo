@@ -17,6 +17,7 @@ from statsmodels.distributions.empirical_distribution import ECDF
 # package specific
 from waldo.conf import settings
 from waldo.wio import Experiment
+from waldo import viz
 from waldo import collider
 import waldo.tape.taper as tp
 import waldo.wio.file_manager as fm
@@ -335,6 +336,143 @@ class ReportCard(object):
         experiment.prepdata.dump('end_report', end_report)
         return report
 
+class SubgraphRecorder(object):
+
+    def __init__(self, nodes):
+        self.nodes = nodes
+        self.subgraphs = []
+
+    def save_subgraph(self, graph):
+        new_subgraph = self.extract_subgraph(graph)
+        self.subgraphs.append(new_subgraph)
+
+    def extract_subgraph(self, graph):
+        """
+        """
+        def relevant_subgraph(digraph, nodes):
+            subgraph = digraph.copy()
+            unwanted_nodes = [n for n in subgraph.nodes(data=False) if n not in nodes]
+            subgraph.remove_nodes_from(unwanted_nodes)
+            return subgraph
+        check_set = set(self.nodes)
+        graph_nodes = set(graph.nodes(data=False))
+        check_set = check_set & graph_nodes
+        all_relevant_nodes = set([])
+        #print check_set
+        #print len(check_set)
+        while len(check_set):
+            current_node = check_set.pop()
+            subgraph = viz.subgraph.nearby(digraph=graph, target=current_node, max_distance=10000)
+            #print subgraph
+            subgraph_nodes = set(subgraph.nodes(data=False))
+            check_set = check_set - subgraph_nodes
+            all_relevant_nodes = all_relevant_nodes | subgraph_nodes
+        print len(all_relevant_nodes), 'nodes in subgraph'
+        return relevant_subgraph(digraph=graph, nodes=list(all_relevant_nodes))
+
+def iter_graph_simplification(experiment, graph, taper, report_card, gap_validation=None, validate_steps=True, subgraph_recorder=None):
+
+    if validate_steps:
+        graph.validate()
+    ############### Cut Worms
+    # candidates = collider.find_potential_cut_worms(graph, experiment,
+    #                                                max_first_last_distance=40, max_sibling_distance=50, debug=False)
+    # for candidate in candidates:
+    #     graph.condense_nodes(candidate[0], *candidate[1:])
+    # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
+
+    ############### Collisions
+    #graph_orig = graph.copy()
+    n = collision_suite(experiment, graph)
+    if validate_steps:
+        graph.validate()
+    if subgraph_recorder is not None:
+        subgraph_recorder.save_subgraph(graph)
+    report_card.add_step(graph, 'collisions ({n})'.format(n=n))
+
+    #n = collision_suite_heltena(experiment, graph_orig)
+    #graph_orig.validate()
+    #report_card.add_step(graph, 'collisions (heltena) ({n})'.format(n=n))
+
+    ############### Simplify
+    L.warn('Collapse Group')
+    collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
+    graph.validate()
+    if validate_steps:
+        graph.validate()
+    if subgraph_recorder is not None:
+        subgraph_recorder.save_subgraph(graph)
+    #collider.assimilate(graph, max_threshold=10)
+
+    L.warn('Remove Single Descendents')
+    collider.remove_single_descendents(graph)
+
+    if validate_steps:
+        graph.validate()
+    if subgraph_recorder is not None:
+        subgraph_recorder.save_subgraph(graph)
+    L.warn('Remove Fission-Fusion')
+    collider.remove_fission_fusion(graph)
+    if validate_steps:
+        graph.validate()
+    if subgraph_recorder is not None:
+        subgraph_recorder.save_subgraph(graph)
+
+    L.warn('Remove Fission-Fusion (relative)')
+    collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
+    if validate_steps:
+        graph.validate()
+    if subgraph_recorder is not None:
+        subgraph_recorder.save_subgraph(graph)
+
+    L.warn('Remove Offshoots')
+    collider.remove_offshoots(graph, threshold=20)
+    if validate_steps:
+        graph.validate()
+    if subgraph_recorder is not None:
+        subgraph_recorder.save_subgraph(graph)
+
+    L.warn('Remove Single Descendents')
+    collider.remove_single_descendents(graph)
+    if validate_steps:
+        graph.validate()
+    if subgraph_recorder is not None:
+        subgraph_recorder.save_subgraph(graph)
+    report_card.add_step(graph, 'simplify')
+
+    ############### Gaps
+    L.warn('Patch Gaps')
+    gap_start, gap_end = taper.find_start_and_end_nodes(use_missing_objects=True)
+    gaps = taper.score_potential_gaps(gap_start, gap_end)
+    if gap_validation is not None:
+        gap_validation.append(gaps[['blob1', 'blob2']])
+    ll1, gaps = taper.short_tape(gaps, add_edges=True)
+    ll2, gaps = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+    ll3, gaps = taper.short_tape(gaps, add_edges=True)
+    print len(ll1), 'short gaps'
+    print len(ll2), 'standard gaps'
+    print len(ll3), 'long gaps'
+    link_total = len(ll1) + len(ll2) + len(ll3)
+    graph.validate()
+    report_card.add_step(graph, 'gaps w/missing ({n})'.format(n=link_total))
+
+    gap_start, gap_end = taper.find_start_and_end_nodes(use_missing_objects=False)
+    gaps = taper.score_potential_gaps(gap_start, gap_end)
+    if gap_validation is not None:
+        gap_validation.append(gaps[['blob1', 'blob2']])
+    ll1, gaps = taper.short_tape(gaps, add_edges=True)
+    ll2, gaps = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+    ll3, gaps = taper.short_tape(gaps, add_edges=True)
+    print len(ll1), 'short gaps'
+    print len(ll2), 'standard gaps'
+    print len(ll3), 'long gaps'
+    link_total = len(ll1) + len(ll2) + len(ll3)
+    if validate_steps:
+        graph.validate()
+    report_card.add_step(graph, 'gaps ({n})'.format(n=link_total))
+
+
+
 def collision_iteration2(experiment, graph):
     ex_id = experiment.id
     report_card = ReportCard(experiment)
@@ -354,91 +492,19 @@ def collision_iteration2(experiment, graph):
 
     report_card.add_step(graph, 'iter 0')
     for i in range(6):
-
+        iter_graph_simplification(experiment, graph, taper, report_card, gap_validation,
+                                  validate_steps=True)
         L.warn('Iteration {}'.format(i + 1))
-        graph.validate()
-        ############### Cut Worms
-        # candidates = collider.find_potential_cut_worms(graph, experiment,
-        #                                                max_first_last_distance=40, max_sibling_distance=50, debug=False)
-        # for candidate in candidates:
-        #     graph.condense_nodes(candidate[0], *candidate[1:])
-        # report_card.add_step(graph, 'cut_worms ({n})'.format(n=len(candidates)))
-
-        ############### Collisions
-        #graph_orig = graph.copy()
-        n = collision_suite(experiment, graph)
-        graph.validate()
-        report_card.add_step(graph, 'collisions ({n})'.format(n=n))
-
-        #n = collision_suite_heltena(experiment, graph_orig)
-        #graph_orig.validate()
-        #report_card.add_step(graph, 'collisions (heltena) ({n})'.format(n=n))
-
-        ############### Simplify
-        L.warn('Collapse Group')
-        collider.collapse_group_of_nodes(graph, max_duration=5)  # 5 seconds
-        graph.validate()
-        #collider.assimilate(graph, max_threshold=10)
-
-        L.warn('Remove Single Descendents')
-        collider.remove_single_descendents(graph)
-        graph.validate()
-
-        L.warn('Remove Fission-Fusion')
-        collider.remove_fission_fusion(graph)
-        graph.validate()
-
-        L.warn('Remove Fission-Fusion (relative)')
-        collider.remove_fission_fusion_rel(graph, split_rel_time=0.5)
-        graph.validate()
-
-        L.warn('Remove Offshoots')
-        collider.remove_offshoots(graph, threshold=20)
-        graph.validate()
-
-        L.warn('Remove Single Descendents')
-        collider.remove_single_descendents(graph)
-        graph.validate()
-
-        report_card.add_step(graph, 'simplify')
-
-        ############### Gaps
-        L.warn('Patch Gaps')
-        gap_start, gap_end = taper.find_start_and_end_nodes(use_missing_objects=True)
-        gaps = taper.score_potential_gaps(gap_start, gap_end)
-        gap_validation.append(gaps[['blob1', 'blob2']])
-        ll1, gaps = taper.short_tape(gaps, add_edges=True)
-        ll2, gaps = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-        ll3, gaps = taper.short_tape(gaps, add_edges=True)
-        print len(ll1), 'short gaps'
-        print len(ll2), 'standard gaps'
-        print len(ll3), 'long gaps'
-        link_total = len(ll1) + len(ll2) + len(ll3)
-        graph.validate()
-        report_card.add_step(graph, 'gaps w/missing ({n})'.format(n=link_total))
-
-        gap_start, gap_end = taper.find_start_and_end_nodes(use_missing_objects=False)
-        gaps = taper.score_potential_gaps(gap_start, gap_end)
-        gap_validation.append(gaps[['blob1', 'blob2']])
-        ll1, gaps = taper.short_tape(gaps, add_edges=True)
-        ll2, gaps = taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-        ll3, gaps = taper.short_tape(gaps, add_edges=True)
-        print len(ll1), 'short gaps'
-        print len(ll2), 'standard gaps'
-        print len(ll3), 'long gaps'
-        link_total = len(ll1) + len(ll2) + len(ll3)
-        graph.validate()
-        report_card.add_step(graph, 'gaps ({n})'.format(n=link_total))
 
         if (last_graph is not None and
-                set(last_graph.nodes()) == set(graph.nodes()) and
-                set(last_graph.edges()) == set(graph.edges())
-                ):
+           set(last_graph.nodes()) == set(graph.nodes()) and
+           set(last_graph.edges()) == set(graph.edges())):
             L.warn('No change since last iteration, halting')
             break
 
         last_graph = graph.copy()
         report_card.add_step(graph, 'iter {i}'.format(i=i+1))
+
     #for saving all potential gap bids:
     #gaps = pd.concat(gap_validation)
     #gaps.to_csv('{eid}-gaps.csv'.format(eid=ex_id), index=False, header=False)
@@ -498,10 +564,13 @@ def collision_suite(experiment, graph, verbose=True):
         no1 = len(data_fails & overlap_fails)
         no2 = len(dont_bother)
 
-        p_res = int(100.0 * n_res/float(full_count))
-        p_dat = int(100.0 * len(data_fails)/float(full_count))
-        p_no1 = int(100.0 * no1/float(full_count))
-        p_no2 = int(100.0 * no2/float(full_count))
+        if float(full_count):
+            p_res = int(100.0 * n_res/float(full_count))
+            p_dat = int(100.0 * len(data_fails)/float(full_count))
+            p_no1 = int(100.0 * no1/float(full_count))
+            p_no2 = int(100.0 * no2/float(full_count))
+        else:
+            p_res = p_dat = p_no1 = p_no2 = 0.0
 
         print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
         print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)

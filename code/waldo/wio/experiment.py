@@ -28,11 +28,14 @@ class Experiment(multiworm.Experiment):
     Augment multiworm's Experiment with the auxillary PrepData class
     available as the ``prepdata`` attribute.
     """
+    SUPERCLASS_PROGRESS_SCALE = 0.8
+
     def __init__(self, *args, **kwargs):
         if 'data_root' not in kwargs:
             kwargs['data_root'] = settings.MWT_DATA_ROOT
         super(Experiment, self).__init__(*args, **kwargs)
         self.prepdata = fm.PrepData(self.id)
+        self._wprogress(0.9)
 
         # NOTE: this needs to be done in two steps for some reason
         graph = Graph(self.graph, experiment=self)
@@ -40,6 +43,7 @@ class Experiment(multiworm.Experiment):
 
         self._prep_df = None
         self._typical_bodylength = None
+        self._wprogress(1)
 
     def _pull_prepdata(self):
         bounds = self.prepdata.load('bounds')
@@ -164,3 +168,10 @@ class Experiment(multiworm.Experiment):
                 break
             if i > 5:
                 break
+
+    def _wprogress(self, p):
+        if self._pcb:
+            self._pcb(p)
+
+    def _progress(self, p):
+        self._wprogress(p * Experiment.SUPERCLASS_PROGRESS_SCALE)

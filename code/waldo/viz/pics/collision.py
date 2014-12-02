@@ -2,8 +2,7 @@
 """
 Show a union of two blobs
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function
 import six
 from six.moves import zip, range
 
@@ -70,7 +69,7 @@ def show_collision(experiment, graph, target, direction='backwards'):
         axs = reversed(axs)
 
     for ax, t, fr, coll, bids in zip(axs, times, frames, collections, bid_groups):
-        plot_spacetime(ax, experiment, space, t)
+        plot_spacetime(ax, experiment, space, time=t)
         ax.add_collection(coll)
         ax.set_title('Blob(s): {}, Frame {}'.format(
                 ', '.join(str(b) for b in bids), fr),
