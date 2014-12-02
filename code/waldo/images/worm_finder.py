@@ -95,9 +95,6 @@ def grab_blob_data(experiment, time):
     blob_data = []
     bad_blobs = []
 
-
-
-
     for bid in bids:
         try:
             blob = experiment._parse_blob(bid, parser)
