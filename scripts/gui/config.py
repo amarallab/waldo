@@ -24,6 +24,11 @@ class ConfigurationData(object):
         except (ValueError, IOError) as e:
             self._data = {}
 
+        self.experiment_id = None
+        self.circle_pos = (0, 0)
+        self.circle_radius = 1
+        self.threshold = 0.005
+
     @property
     def waldo_folder(self):
         if 'waldo_folder' in self._data:
