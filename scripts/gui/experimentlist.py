@@ -34,7 +34,7 @@ class ExperimentListPage(QtGui.QWizardPage):
 
         self.experiment_folder_label = experiment_folder_label
         self.experiment_list = experiment_list_widget
-        self.experiment_list.currentRowChanged.connect(self.completeChanged)
+        self.experiment_list.currentRowChanged.connect(self.experiment_list_currentRowChanged)
 
         self.update_experiment_list()
 
@@ -66,6 +66,10 @@ class ExperimentListPage(QtGui.QWizardPage):
             for dir in dirs:
                 self.experiment_list.addItem(dir)
             break
+
+    def experiment_list_currentRowChanged(self):
+        self.data.experiment_id = str(self.experiment_list.currentItem().text())
+        self.completeChanged.emit()
 
     def isComplete(self):
         return 0 <= self.experiment_list.currentRow() < self.experiment_list.count()

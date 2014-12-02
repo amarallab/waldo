@@ -89,7 +89,9 @@ class ScorePage(QtGui.QWizardPage):
         self.result_label = result_label
 
     def initializePage(self):
-        self.result_label.setText("")
+        self.result_label.setText(self.data.experiment_id)
+        print "Threshold: ", self.data.threshold
+        print "Circle: ", self.data.circle_pos, self.data.circle_radius
 
     def start_button_clicked(self):
         dlg = ScoreRunningDialog(self)
