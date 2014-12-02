@@ -2,8 +2,7 @@
 """
 MWT collision visualization (for screening)
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function
 import six
 from six.moves import zip, range
 
@@ -41,7 +40,7 @@ def show_gap(experiment, lost_bid, found_bid):
             math.sqrt(dx**2 + dy**2), time[1] - time[0],
             experiment.id))
 
-    plot_spacetime(ax, experiment, space, time, cmap=plt.cm.YlGn)
+    plot_spacetime(ax, experiment, space, time=time, cmap=plt.cm.YlGn)
 
     patches = tools.patch_contours(data['shape'], bounds=False)
     for patch, color in zip(patches, ['red', 'blue']):

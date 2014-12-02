@@ -3,8 +3,7 @@
 Taper visualizations: what's going on in the "candidate cone" with 10
 possible candidates popping up?
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function
 import six
 from six.moves import (zip, filter, map, reduce, input, range)
 

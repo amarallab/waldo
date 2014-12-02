@@ -2,8 +2,7 @@
 """
 Just show a single blob, where it starts and stops (for screening)
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function
 import six
 from six.moves import zip, range
 
@@ -52,7 +51,7 @@ def show_blob(experiment, bid):
     f.suptitle('Blob ID {} (EID: {})'.format(bid, experiment.id), fontsize=20)
     for p, ax, space, time, patch in zip(prefs, axs, spaces, times, patches):
         ax.set_title(p['title'].format(time), fontsize=14)
-        plot_spacetime(ax, experiment, space, time, cmap=plt.cm.Blues)
+        plot_spacetime(ax, experiment, space, time=time, cmap=plt.cm.Blues)
 
         patch.set_facecolor(p['color'])
         patch.set_alpha(0.6)

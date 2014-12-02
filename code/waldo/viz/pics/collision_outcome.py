@@ -17,7 +17,7 @@ import matplotlib.gridspec as gridspec
 
 from .. import tools
 from . import pil
-from .plotting import plot_spacetime, tweak_bounds
+from .plotting import plot_spacetime, plot_spacetime_rainbow, tweak_bounds
 
 BOUNDS = {
     'padding': 40,
@@ -75,7 +75,7 @@ def show_collision_choices(experiment, graph, target):
     blobs = [parents, children]
     for ax, time, frame, patches, cmap, bids in zip(
             axs, times, frames, (ppatches, cpatches), cmaps, blobs):
-        plot_spacetime(ax, experiment, bounds, time)
+        plot_spacetime(ax, experiment, bounds, time=time)
 
         for patch, cidx in zip(patches, np.linspace(0.2, 0.8, len(patches))):
             patch.set_facecolor(cmap(cidx))
@@ -86,7 +86,7 @@ def show_collision_choices(experiment, graph, target):
 
     # stack up the collision images
     stack_axs = itertools.chain((ax_during,), ax_options)
-    plot_spacetime(stack_axs, experiment, bounds, [parent_time, children_time])
+    plot_spacetime_rainbow(stack_axs, experiment, bounds, time=[parent_time, children_time])
     ax_during.set_title('Frames {} to {}'.format(parent_frame, children_frame))
 
     #### WIP ####################################################

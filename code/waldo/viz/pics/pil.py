@@ -1,9 +1,18 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 from six.moves import range
 
+import collections
+
+import numpy as np
+import matplotlib.colors as colors
 from PIL import Image, ImageOps, ImageChops
 
 from ..tools import Box
+
+__all__ = [
+    'merge_stack',
+    'rainbow_merge',
+]
 
 def pillowed(img_file):
     """
@@ -69,6 +78,92 @@ def merge_stack(images):
     composite = ImageChops.darker(images[0], images[1])
     for im in images[2:]:
         composite = ImageChops.darker(composite, im)
+    return composite
+
+def red_on_black(im, invert=True):
+    """
+    Convert the greyscale *im* into an RGB image where bright = red,
+    dark = black (only the red channel is used, flipped if *invert* is
+    ``False``)
+    """
+    assert im.mode == 'L'
+    if invert:
+        im = ImageOps.invert(im)
+    fill = Image.new('L', im.size, 0)
+    im = Image.merge('RGB', (im, fill, fill))
+    return im
+
+def red_on_white(im):
+    """
+    Convert the greyscale *im* into an RGB image where bright = white,
+    dark = red.
+    """
+    assert im.mode == 'L'
+    fill = Image.new('L', im.size, 255)
+    im = Image.merge('RGB', (fill, im, im))
+    return im
+
+def rotate_hue(im, x):
+    """
+    Adjust the hue of *im* by *x*, where *x* is a value between 0.0 to 1.0
+    """
+    assert im.mode == 'RGB'
+    ima = np.asarray(im) / 255
+
+    ima_hsv = colors.rgb_to_hsv(ima)
+    ima_hsv[...,0] = (ima_hsv[...,0] + x) % 1
+    ima = colors.hsv_to_rgb(ima_hsv)
+
+    ima *= 255
+    ima = ima.astype(np.uint8)
+
+    im = Image.fromarray(ima)
+    return im
+
+def rainbow_merge(images, hue_range=(2/3, 0)):
+    '''
+    Merges a series of *images* using ***unicorns***.
+
+    Parameters
+    ----------
+    images : sequence of :py:class:`PIL.Image.Image`
+        Image stack
+
+    Keyword Arguments
+    -----------------
+    hue_range : 2-ple of hue range. Default of (2/3, 0) goes from blue to red.
+
+    Returns
+    -------
+    :py:class:`PIL.Image.Image`
+        Merged image
+    '''
+    # Guards
+    if not images:
+        raise ValueError('No images provided')
+    elif not isinstance(images, collections.Sequence):
+        raise TypeError('Must be a sequence')
+
+    n_images = len(images)
+    if n_images == 1:
+        # make an identical start and end
+        images = [images[0]] * 2
+        n_images = 2
+
+    def hue_adj(i):
+        return hue_range[0] + (hue_range[1] - hue_range[0]) * (i / n_images)
+
+    # stack up, keeping darkest pixels
+    images = iter(images)
+    composite = None
+    for i, image in enumerate(images):
+        image = red_on_white(image)
+        image = rotate_hue(image, hue_adj(i))
+        if composite is None:
+            composite = image
+            continue
+        composite = ImageChops.darker(composite, image)
+
     return composite
 
 def load_image_portion(experiment, bounds, **time_frame_or_filename):
