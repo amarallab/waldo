@@ -9,6 +9,7 @@ venv*/
 
 # emacs cruft
 *~
+*#
 
 # aspell cruft
 *.bak
@@ -42,6 +43,7 @@ build/
 *.tmp
 *.gv
 *.pkl
+*.eps
 db.sqlite3
 
 # Directory

@@ -472,8 +472,7 @@ def iter_graph_simplification(experiment, graph, taper, report_card, gap_validat
     report_card.add_step(graph, 'gaps ({n})'.format(n=link_total))
 
 
-
-def collision_iteration2(experiment, graph):
+def iterative_solver(experiment, graph):
     ex_id = experiment.id
     report_card = ReportCard(experiment)
     report_card.add_step(graph, 'raw')
