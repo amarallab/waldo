@@ -13,19 +13,24 @@ import waldo.collider
 import multiworm
 import waldo.metrics.report_card as report_card
 
-DATA_DIR = settings.LOGISTICS['filesystem_data']
-CHORE_DIR = os.path.abspath('./../data/chore/')
-print DATA_DIR
 
 class OutputWriter(object):
 
-    def __init__(self, ex_id, graph=None):
+    def __init__(self, ex_id, graph=None, data_dir=None, output_dir=None):
         """ """
+        if data_dir is None:
+            data_dir = str(settings.MWT_DATA_ROOT)
+        if output_dir is None:
+            #TODO: once output dir is defined in settings, change this to point at that instead of hard coding it.
+            output_dir = os.path.abspath('./../data/chore/')
+
         #print '--------------------------', ex_id, '--------------------------'
+        print(output_dir, ex_id)
+        print(data_dir, ex_id)
         self.ex_id = ex_id
-        self.chore_dir = os.path.join(CHORE_DIR, ex_id)
-        self.data_dir  = os.path.join(DATA_DIR, ex_id)
-        self.experiment = Experiment(experiment_id=ex_id, data_root=DATA_DIR)
+        self.output_dir = os.path.join(output_dir, ex_id)
+        self.data_dir  = os.path.join(data_dir, ex_id)
+        self.experiment = Experiment(experiment_id=ex_id, data_root=data_dir)
 
         if graph is None:
             graph_orig = self.experiment.graph.copy()
@@ -44,7 +49,7 @@ class OutputWriter(object):
         blob_basename = '{eid}/{bn}'.format(eid=ex_id, bn=basename)
 
         # make this run as last step before saving
-        wio.file_manager.ensure_dir_exists(self.chore_dir)
+        wio.file_manager.ensure_dir_exists(self.output_dir)
         file_management = self._write_blob_files(blob_basename, summary_df)
 
         #lost_and_found = json.load(open('lost_and_found.json', 'r'))
@@ -52,7 +57,7 @@ class OutputWriter(object):
         print 'recreating summary file'
         summary_lines = self._recreate_summary_file(summary_df, lost_and_found, file_management)
         # def _recreate_summary_file(self, summary_df, lost_and_found, file_management, basename='chore'):
-        sum_name = os.path.join(self.chore_dir, '{bn}.summary'.format(bn=basename))
+        sum_name = os.path.join(self.output_dir, '{bn}.summary'.format(bn=basename))
         self._write_summary_lines(sum_name, summary_lines)
 
     def _write_summary_lines(self, sum_name, lines):
@@ -81,7 +86,7 @@ class OutputWriter(object):
 
         file_management = {}
         #print basename
-        file_path = os.path.join(CHORE_DIR, basename)
+        file_path = os.path.join(self.output_dir, basename)
         #print file_path
 
         mashup_history = []
@@ -96,7 +101,7 @@ class OutputWriter(object):
             died_f = node_data['died_f']
             if died_f not in file_management:
                 file_management[died_f] = []
-            location = '{f}.{pos}'.format(f=i, pos=0)
+            location = '{f}.{pos}'.format(f=file_counter, pos=0)
             file_management[died_f].extend([[node, location]])
             components = node_data.get('components', [])
 
