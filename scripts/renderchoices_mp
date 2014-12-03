@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+"""
+renderchoices_mp
+
+Creates images for screening from a two-column CSV of collision choices
+
+Example:
+    ./renderchoices_mp 20130702_135652 choices.csv
+
+Running the script in it's own empty folder is advisable as it will generate
+a few thousand images.
+
+    mkdir ../data/testset1
+    cd ../data/testset1
+    ../../scripts/renderchoices_mp 20130702_135652 ../mypath/choices.csv
+"""
+from __future__ import absolute_import, division, print_function
+from six.moves import range
+
+# standard library
+import sys
+import argparse
+import multiprocessing as mp
+#import signal
+import functools
+
+# third party
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.collections import PatchCollection
+from PIL import Image, ImageOps, ImageChops
+
+# project specific
+import pathcustomize
+
+import waldo
+from waldo.viz import show_collision_choices
+
+# class TaskGin(object):
+#     def __init__(self, n_processes):
+#         pass
+
+def worker(ftask, taskq):
+    while True:
+        try:
+            args = taskq.get()
+            if args is None:
+                taskq.task_done()
+                break
+            ftask(*args)
+            taskq.task_done()
+        except (KeyboardInterrupt, SystemExit):
+            return
+
+def make_figure(experiment, graph, node):
+    try:
+        f, ax = show_collision_choices(experiment, graph, node)
+    except ValueError:
+        print('Failed to run task with args: {}'.format(args))
+        return
+
+    fn = '{}_{:05}.png'.format(experiment.id, node)
+    f.savefig(fn)
+    print('Saved collision centered on {}'.format(node))
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    cpus = mp.cpu_count()
+
+    parser.add_argument('experiment_id',
+        help="Experiment ID to use.")
+    parser.add_argument('input_file', type=argparse.FileType('r'),
+        help="File with blob IDs to render. Accepts stdin as -")
+    parser.add_argument('-p', '--processes', type=int, default=2*cpus,
+        help="Number of processes to launch, defaults to twice the number "
+             "of CPUs ({}). I wouldn't go higher than that, cut the number to "
+             "maybe half your CPU count ({}) if you want to work on the same "
+             "machine without it eating all your RAM and CPU.".format(
+                2* cpus, cpus//2))
+
+    args = parser.parse_args()
+    eid = args.experiment_id
+
+    print('Loading experiment')
+    experiment = waldo.Experiment(experiment_id=eid)
+    print(args.input_file.name)
+
+    n_workers = args.processes
+    taskq = mp.JoinableQueue(args.processes)
+
+    print('Creating workers')
+    ftask = functools.partial(make_figure, experiment, experiment.graph)
+    workers = [mp.Process(
+            name='Painter-{}'.format(n),
+            target=worker,
+            args=(ftask, taskq)) for n in range(n_workers)]
+
+    print('GO!')
+    for w in workers:
+        w.start()
+
+    try:
+        for line in args.input_file:
+            try:
+                target_node = int(line.strip())
+            except ValueError:
+                continue
+
+            if not target_node:
+                continue
+
+            taskq.put((target_node,))
+    except KeyboardInterrupt:
+        print("Ctrl-C: Killing workers...")
+        for w in workers:
+            w.terminate()
+    else:
+        print('Waiting for workers to finish...')
+        for n in range(n_workers):
+            taskq.put(None)
+        taskq.join()
+
+if __name__ == '__main__':
+    sys.exit(main())
