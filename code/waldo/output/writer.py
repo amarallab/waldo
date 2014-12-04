@@ -25,8 +25,8 @@ class OutputWriter(object):
             output_dir = os.path.abspath('./../data/chore/')
 
         #print '--------------------------', ex_id, '--------------------------'
-        print(output_dir, ex_id)
-        print(data_dir, ex_id)
+        # print(output_dir, ex_id)
+        # print(data_dir, ex_id)
         self.ex_id = ex_id
         self.output_dir = os.path.join(output_dir, ex_id)
         self.data_dir  = os.path.join(data_dir, ex_id)
@@ -43,14 +43,16 @@ class OutputWriter(object):
         """
 
         ex_id = self.ex_id
+        print('loading summary data')
         basename, summary_df = self._load_summary()
         lost_and_found = self._create_lost_and_found()
         #json.dump(lost_and_found, open('lost_and_found.json', 'w'))
-        blob_basename = '{eid}/{bn}'.format(eid=ex_id, bn=basename)
+        #blob_basename = '{bn}'.format(bn=basename)
 
         # make this run as last step before saving
         wio.file_manager.ensure_dir_exists(self.output_dir)
-        file_management = self._write_blob_files(blob_basename, summary_df)
+        print('writing blobs files')
+        file_management = self._write_blob_files(basename, summary_df)
 
         #lost_and_found = json.load(open('lost_and_found.json', 'r'))
         #file_management = json.load(open('file_m.json', 'r'))
@@ -99,11 +101,8 @@ class OutputWriter(object):
             # start storing blob index into file_manager dict.
             node_data = graph.node[node]
             died_f = node_data['died_f']
-            if died_f not in file_management:
-                file_management[died_f] = []
-            location = '{f}.{pos}'.format(f=file_counter, pos=0)
-            file_management[died_f].extend([[node, location]])
             components = node_data.get('components', [])
+
 
             if not components:
                 components = [node]
@@ -181,6 +180,13 @@ class OutputWriter(object):
                 cl = compiled_lines.fillna(method='ffill')
                 compiled_lines = cl.reset_index()
                 #print compiled_lines.head()
+
+            # Now that actual lines of data found for blob
+            # Store the data and
+            if died_f not in file_management:
+                file_management[died_f] = []
+            location = '{f}.{pos}'.format(f=file_counter, pos=0)
+            file_management[died_f].extend([[node, location]])
             file_number = self.format_number_string(file_counter)
             node_file = '{p}_{n}k.blobs'.format(p=file_path,
                                                 n=file_number)
@@ -202,10 +208,8 @@ class OutputWriter(object):
 
     def _load_summary(self):
         ex_dir = str(self.experiment.directory)
-        print ex_dir
-        print(type(ex_dir))
         search_path = os.path.join(ex_dir, '*.summary')
-        print 'summary:', glob.glob(search_path)
+        # print 'summary:', glob.glob(search_path)
         # TODO
         summary_path = glob.glob(search_path)[0]
         basename = os.path.basename(summary_path).split('.summary')[0]
@@ -260,12 +264,31 @@ class OutputWriter(object):
         #summary_df['location'] = ''
         lf_lines = {}
         fm_lines = {}
+        blobs_in_files = []
+        for fl in file_management.values():
+            if len(fl) > 1:
+                bs, fs = zip(*fl)
+                blobs_in_files.extend(bs)
+            else:
+                bs, fs = fl[0]
+                blobs_in_files.append(bs)
 
         for frame, lf in lost_and_found.iteritems():
+            line_contains_info = False
             lf_line = ' %%'
             for a, b in lf:
-                lf_line = lf_line + ' {a} {b}'.format(a=int(a), b=int(b))
-            lf_lines[int(frame)] = lf_line
+                if a not in blobs_in_files: # remove references to blobs that are not actually saved
+                    a = 0
+                if b not in blobs_in_files:
+                    b = 0
+                if a == 0 and b == 0:
+                    continue
+                else:
+                    lf_line = lf_line + ' {a} {b}'.format(a=int(a), b=int(b))
+                    line_contains_info = True
+
+            if line_contains_info: # only save this line if it contains data
+                lf_lines[int(frame)] = lf_line
             #print frame, lf_line
 
         for frame, fm in file_management.iteritems():
