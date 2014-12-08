@@ -95,11 +95,17 @@ class ThresholdCachePage(QtGui.QWizardPage):
 
         self.histogram_figure = plt.figure()
         self.histogram_canvas = FigureCanvas(self.histogram_figure)
+        self.histogram_canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.histogram_canvas.setMinimumSize(50, 50)
+        self.histogram_toolbar = NavigationToolbar(self.histogram_canvas, self)
+        self.histogram_toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         self.image_figure = plt.figure()
         self.image_canvas = FigureCanvas(self.image_figure)
-        self.toolbar = NavigationToolbar(self.histogram_canvas, self)
-        self.toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.image_canvas.setMinimumSize(50, 50)
+        self.image_canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.image_toolbar = NavigationToolbar(self.image_canvas, self)
+        self.image_toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         gs = grd.GridSpec(2, 1)
         self.ax_objects = self.histogram_figure.add_subplot(gs[0, 0])
@@ -107,14 +113,11 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.ax_image = self.image_figure.add_subplot(111)
 
         # First row
-        first_row_layout = QtGui.QHBoxLayout()
-        first_row_layout.addWidget(self.histogram_canvas)
-        first_row_layout.addWidget(self.image_canvas)
-
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(label)
-        layout.addLayout(first_row_layout)
-        layout.addWidget(self.toolbar)
+        layout = QtGui.QGridLayout()
+        layout.addWidget(self.histogram_canvas, 0, 0, 1, 1)
+        layout.addWidget(self.image_canvas, 0, 1, 1, 1)
+        layout.addWidget(self.histogram_toolbar, 1, 0, 1, 1)
+        layout.addWidget(self.image_toolbar, 1, 1, 1, 1)
         self.setLayout(layout)
 
         self.label = label

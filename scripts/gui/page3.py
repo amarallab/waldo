@@ -19,10 +19,10 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
         self.setTitle("Threshold Cache")
         self.setSubTitle("The next page will load the threshold cache data. It could be take a few minutes.")
 
-        self.skipCheckbox = QtGui.QCheckBox("Skip step")
-        self.skipCheckbox.setVisible(False)
+        self.recalculateDataCheckbox = QtGui.QCheckBox("Recalculate data.")
+        self.recalculateDataCheckbox.setVisible(False)
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(self.skipCheckbox)
+        layout.addWidget(self.recalculateDataCheckbox)
         self.setLayout(layout)
 
     def initializePage(self):
@@ -36,12 +36,12 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
                 pass
 
         if 'threshold' in data and 'r' in data and 'x' in data and 'y' in data:
-            self.skipCheckbox.setVisible(True)
+            self.recalculateDataCheckbox.setVisible(True)
         else:
-            self.skipCheckbox.setVisible(False)
+            self.recalculateDataCheckbox.setVisible(False)
 
     def nextId(self):
-        if self.skipCheckbox.isChecked():
-            return pages.PREVIOUS_SCORING
-        else:
+        if not self.recalculateDataCheckbox.isVisible() or self.recalculateDataCheckbox.isChecked():
             return pages.THRESHOLD_CACHE
+        else:
+            return pages.PREVIOUS_SCORING
