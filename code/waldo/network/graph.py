@@ -134,6 +134,9 @@ class Graph(nx.DiGraph):
             # combine set/mapping data
             nd['components'].update(
                     other_data.pop('components', set([other_node])))
+            if 'born_f' in other_data:
+                print('error', other_data.keys())
+                print(node, other_nodes)
             for k, v in six.iteritems(other_data):
                 if k in nd:
                     # works for dicts and sets.
@@ -141,6 +144,7 @@ class Graph(nx.DiGraph):
                         nd[k].update(v)
                     except TypeError:
                         pass
+
                 else:
                     nd[k] = v
 
