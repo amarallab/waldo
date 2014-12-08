@@ -33,8 +33,6 @@ from multiworm.readers import blob as blob_reader
 from . import manipulations as mim
 from . import grab_images
 
-MWT_DIR = os.path.abspath(settings.LOGISTICS['filesystem_data'])
-
 # Derived from http://stackoverflow.com/a/2566508/194586
 # However, I claim these as below the threshold of originality
 def find_nearest_index(seq, value):
@@ -477,7 +475,7 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
     print(closest_image)
 
     # initialize experiment
-    path = os.path.join(MWT_DIR, ex_id)
+    path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
     experiment = wio.Experiment(path)
 
     time = closest_time
@@ -586,7 +584,7 @@ def draw_colors_on_image_T(ex_id, time, ax=None, colors=None):
     print(closest_image)
 
     # initialize experiment
-    path = os.path.join(MWT_DIR, ex_id)
+    path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
     experiment = wio.Experiment(path)
 
     time = closest_time
@@ -772,7 +770,7 @@ def show_matched_image(ex_id, threshold, time, roi=None):
     background = mim.create_backround(impaths)
 
     # initialize experiment
-    path = os.path.join(MWT_DIR, ex_id)
+    path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
     experiment = multiworm.Experiment(path)
 
     time = closest_time
@@ -803,7 +801,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     background = mim.create_backround(impaths)
 
     # initialize experiment
-    #path = os.path.join(MWT_DIR, ex_id)
+    #path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
     experiment = wio.Experiment(experiment_id=ex_id)
 
     full_experiment_check = []

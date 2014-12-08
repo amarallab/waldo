@@ -141,7 +141,7 @@ def worm_cutouts(ex_id, savedir, threshold=None, roi=None):
     full_index = []
 
     # for blob matching
-    path = os.path.join(MWT_DIR, ex_id)
+    path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
     experiment = multiworm.Experiment(path)
 
     print(len(impaths), 'images')

@@ -46,9 +46,9 @@ from waldo import prepare
 from waldo.wio import file_manager as fm
 from waldo.wio.id_handeling import parse_ids
 
-PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
-IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
-CACHE_DIR = os.path.join(PREP_DIR, 'cache')
+# PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
+# IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
+# CACHE_DIR = os.path.join(PREP_DIR, 'cache')
 
 def cache_image_data(eids, threshold_file, overwrite=True):
     fm.ensure_dir_exists(CACHE_DIR)
@@ -63,11 +63,11 @@ def cache_image_data(eids, threshold_file, overwrite=True):
         already_done = set(eids) & set(cached_eids)
         print '{ad} already done'.format(ad=len(already_done))
         eids = list(eids_todo)
-    ip = images.InteractivePlot(eids, threshold_file, CACHE_DIR)
+    ip = images.InteractivePlot(eids)
     ip.precalculate_threshold_data()
 
 def mark_images_interactivly(eids, threshold_file, overwrite=True):
-    fm.ensure_dir_exists(IMAGE_MARK_DIR)
+    fm.ensure_dir_exists(settings.PROJECT_DATA_ROOT)
     if not eids:
         return
     if not overwrite:
@@ -76,7 +76,7 @@ def mark_images_interactivly(eids, threshold_file, overwrite=True):
         already_done = set(eids) & set(thresholds.keys())
         print '{ad} already done'.format(ad=len(already_done))
         eids = list(eids_todo)
-    ip = images.InteractivePlot(eids, threshold_file, CACHE_DIR)
+    ip = images.InteractivePlot(eids)
     ip.run_plot()
 
 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
                                                         cmd=cmd,
                                                         n=len(eids))
         filename = 'threshold-{ds}.json'.format(ds=dset)
-        threshold_file = os.path.join(IMAGE_MARK_DIR, filename)
+        threshold_file = os.path.join(settings.PROJECT_DATA_ROOT, filename)
         if cmd == 'cache':
             cache_image_data(eids, threshold_file=threshold_file,
                              overwrite=overwrite)

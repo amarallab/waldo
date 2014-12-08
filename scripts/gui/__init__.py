@@ -1,37 +1,22 @@
 __author__ = 'heltena'
 
-from config import ConfigurationData
 from PyQt4 import QtGui
-
-from experimentlist import ExperimentListPage
-from cachethresholddata import CacheThresholdDataPage
-from score import ScorePage
-from param import ParamPage
-from refactoringdata import RefactoringDataPage
-
+from page1 import WelcomePage
+import pages
 
 class WaldoApp(QtGui.QWizard):
     def __init__(self, parent=None):
         super(WaldoApp, self).__init__(parent)
 
-        # Data
-        self.data = ConfigurationData()
+        self.setPage(pages.WELCOME, WelcomePage())
 
-        self.experimentListPage = ExperimentListPage(self.data)
-        self.cacheThresholdDataPage = CacheThresholdDataPage(self.data)
-        self.scorePage = ScorePage(self.data)
-        self.paramPage = ParamPage(self.data)
-        self.refactoringData = RefactoringDataPage(self.data)
-
-        self.addPage(self.experimentListPage)
-        self.addPage(self.cacheThresholdDataPage)
-        self.addPage(self.scorePage)
-        self.addPage(self.paramPage)
-        self.addPage(self.refactoringData)
+        self.setField("ex_id", 0)
+        self.setField("threshold", 0)
+        self.setField("roi_x", 0)
+        self.setField("roi_y", 0)
+        self.setField("roi_r", 0)
 
     def closeEvent(self, ev):
-        self.data.save()
-
         mb = QtGui.QMessageBox()
         mb.setText("Are you sure you want to close?")
         mb.setStandardButtons(QtGui.QMessageBox.Close | QtGui.QMessageBox.Cancel)
