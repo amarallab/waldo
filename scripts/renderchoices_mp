@@ -21,6 +21,7 @@ from six.moves import range
 import sys
 import argparse
 import multiprocessing as mp
+import queue
 #import signal
 import functools
 
@@ -38,10 +39,6 @@ import pathcustomize
 import waldo
 from waldo.viz import show_collision_choices
 
-# class TaskGin(object):
-#     def __init__(self, n_processes):
-#         pass
-
 def worker(ftask, taskq):
     while True:
         try:
@@ -57,12 +54,13 @@ def worker(ftask, taskq):
 def make_figure(experiment, graph, node):
     try:
         f, ax = show_collision_choices(experiment, graph, node)
-    except ValueError:
+    except:
         print('Failed to run task with args: {}'.format(args))
         return
 
     fn = '{}_{:05}.png'.format(experiment.id, node)
     f.savefig(fn)
+    plt.close(f)
     print('Saved collision centered on {}'.format(node))
 
 def main():
