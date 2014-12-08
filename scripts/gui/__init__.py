@@ -2,19 +2,34 @@ __author__ = 'heltena'
 
 from PyQt4 import QtGui
 from page1 import WelcomePage
+from page2 import SelectExperimentPage
+from page3 import PreviousThresholdCachePage
+from page4 import ThresholdCachePage
+from page5 import PreviousScoringPage
+from page6 import ScoringPage
+from page7 import FinalPage
+
 import pages
+
+class WaldoAppData:
+    def __init__(self):
+        self.ex_id = ""
+        self.threshold = 0
+        self.roi_center = (0, 0)
+        self.roi_radius = 0
 
 class WaldoApp(QtGui.QWizard):
     def __init__(self, parent=None):
         super(WaldoApp, self).__init__(parent)
 
-        self.setPage(pages.WELCOME, WelcomePage())
-
-        self.setField("ex_id", 0)
-        self.setField("threshold", 0)
-        self.setField("roi_x", 0)
-        self.setField("roi_y", 0)
-        self.setField("roi_r", 0)
+        self.data = WaldoAppData()
+        self.setPage(pages.WELCOME, WelcomePage(self.data))
+        self.setPage(pages.SELECT_EXPERIMENT, SelectExperimentPage(self.data))
+        self.setPage(pages.PREVIOUS_THRESHOLD_CACHE, PreviousThresholdCachePage(self.data))
+        self.setPage(pages.THRESHOLD_CACHE, ThresholdCachePage(self.data))
+        self.setPage(pages.PREVIOUS_SCORING, PreviousScoringPage(self.data))
+        self.setPage(pages.SCORING, ScoringPage(self.data))
+        self.setPage(pages.FINAL, FinalPage(self.data))
 
     def closeEvent(self, ev):
         mb = QtGui.QMessageBox()

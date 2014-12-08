@@ -102,6 +102,15 @@ TAPE_MAX_SPEED_SMOOTHING_RANGE = (1, 100)
 MWT_DATA_ROOT = '/home/projects/worm_movement/Data/MWT_RawData/'
 PROJECT_DATA_ROOT = '/Users/heltena/Desktop/waldo/waldo_data'
 
+# SCORE RANGES
+#----------------
+
+SCORE_CONTRAST_RADIO_RANGE = (1.0, 2.0)
+SCORE_CONTRAST_DIFF_RANGE = (-0.1, 0.1)
+SCORE_GOOD_FRACTION_RANGE = (0.5, 1.0)
+SCORE_ACCURACY_RANGE = (0.5, 1.0)
+SCORE_COVERAGE_RANGE = (0.5, 1.0)
+
 
 def _config_filename():
     try:
