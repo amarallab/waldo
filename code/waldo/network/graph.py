@@ -92,10 +92,14 @@ class Graph(nx.DiGraph):
         #         raise ValueError('Non-concurrnet')
 
 
-        # was an important precaution... bug probably fixed.
-        #if node in other_nodes:
-        #    other_nodes = list(other_nodes)
-        #    other_nodes.pop(other_nodes.index(node))
+        # not sure which function is trying to merge a node with itself...
+        # but it needs to be stopped. until then catch it here.
+        if node in other_nodes:
+           other_nodes = list(other_nodes)
+           other_nodes.pop(other_nodes.index(node))
+
+        if not other_nodes:
+            return
 
         #####
         if settings.DEBUG:
@@ -134,9 +138,6 @@ class Graph(nx.DiGraph):
             # combine set/mapping data
             nd['components'].update(
                     other_data.pop('components', set([other_node])))
-            if 'born_f' in other_data:
-                print('error', other_data.keys())
-                print(node, other_nodes)
             for k, v in six.iteritems(other_data):
                 if k in nd:
                     # works for dicts and sets.
