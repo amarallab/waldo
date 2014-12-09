@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block html_title %}
+  Gap Screening - {{ gap.experiment_id }} - {{ gap.from_blob }}&rarr;{{ gap.to_blob }}
+{% endblock %}
+
+{% block content %}
+  <h1>Gap Collisions</h1>
+  <p>
+  Experiment: <b>{{ gap.experiment_id }}</b>, Possible gap connection: <b>{{ gap.from_blob }} &rarr; {{ gap.to_blob }}</b>
+  </p>
+
+  <img src="{% static gap.image_file.name %}" style="max-width: 100%; height: auto;">
+
+  {% if user.is_authenticated %}
+    <form role="form" action="" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+      <div class="checkbox"><label><input id="flag" type="checkbox" name="starred"> {% bootstrap_icon "star" %} Star/Flag as particularly curious <kbd>X</kbd></label></div>
+      </div>
+      <div class="form-group">
+        <div class="well" style="width: 800px;">
+          <label><p>Is the lost worm (red outline) the same as the found worm (blue outline)?</p><p>Click the button or use the keyboard to answer.</p></label>
+          <div class="row" style="margin-bottom: 15px;">
+            <div class="col-md-3">
+              <button id="ansvalid" type="submit" class="btn {% if prev_ans == 'valid' %} btn-success {% else %}
+                btn-primary
+              {% endif %} btn-lg btn-block" name="answer" value="valid">Valid<kbd>Y</kbd></button>
+            </div>
+            <div class="col-md-3">
+              <button id="ansinvalid" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="invalid">Invalid <kbd>N</kbd></button>
+            </div>
+            <div class="col-md-3">
+              <button id="ansunclear" type="submit" class="btn btn-primary btn-lg btn-block" name="answer" value="unclear">Unclear <kbd>/ or ?</kbd></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+    <script type="text/javascript">
+      // http://www.asquare.net/javascript/tests/KeyCode.html
+      $(document).on("keyup", function (e) {
+        switch (e.which) {
+          case 89:  // yY
+            $("#ansvalid").click();
+            break;
+
+          case 78:  // nN
+            $("#ansinvalid").click();
+            break;
+
+          case 191:  // /?
+            $("#ansunclear").click();
+            break;
+
+          case 88:  // xX
+            $('#flag').click();
+            break;
+        }
+      });
+    </script>
+    <p>TIPS</p>
+    <ul>
+      <li>Use the keyboard and hit the key shown (e.g. <kbd>1</kbd>)</li>
+      <li>Hit back or Backspace to correct a mistake</li>
+    </ul>
+  {% else %}
+    <p><a href="{% url 'login' %}?next={{ request.get_full_path }}">Log in</a> to screen worms.</p>
+  {% endif %}
+
+{% endblock %}
