@@ -19,11 +19,10 @@ from six.moves import range
 
 # standard library
 import sys
+import os
 import argparse
-import multiprocessing as mp
-import queue
-#import signal
 import functools
+import multiprocessing as mp
 
 # third party
 import numpy as np
@@ -39,29 +38,31 @@ import pathcustomize
 import waldo
 from waldo.viz import show_collision_choices
 
-def worker(ftask, taskq):
-    while True:
-        try:
-            args = taskq.get()
-            if args is None:
-                taskq.task_done()
-                break
-            ftask(*args)
-            taskq.task_done()
-        except (KeyboardInterrupt, SystemExit):
-            return
+import taskgin
 
 def make_figure(experiment, graph, node):
-    try:
-        f, ax = show_collision_choices(experiment, graph, node)
-    except:
-        print('Failed to run task with args: {}'.format(args))
-        return
+    f, ax, ident = show_collision_choices(experiment, graph, node, ident=True)
 
     fn = '{}_{:05}.png'.format(experiment.id, node)
     f.savefig(fn)
     plt.close(f)
-    print('Saved collision centered on {}'.format(node))
+    return ident
+
+def record_metadata(outstream, errstream, eid, result):
+    if isinstance(result[2], Exception):
+        emsg = '<Error> : args {}, kwargs {} -> {}'.format(
+                result[0], result[1], repr(result[2]))
+        errstream.write(emsg + '\n')
+        print(emsg, file=sys.stderr)
+        return
+
+    target = result[1]['node']
+    matched = result[2]['left']
+    pcA, pcB = matched
+
+    outstream.write('{},{},{},{},{},{}\n'.format(
+        eid, target, pcA[0], pcB[0], pcA[1], pcB[1]))
+    print('Created figure for cnode {}.'.format(target))
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -82,44 +83,37 @@ def main():
     args = parser.parse_args()
     eid = args.experiment_id
 
-    print('Loading experiment')
     experiment = waldo.Experiment(experiment_id=eid)
-    print(args.input_file.name)
 
-    n_workers = args.processes
-    taskq = mp.JoinableQueue(args.processes)
-
-    print('Creating workers')
     ftask = functools.partial(make_figure, experiment, experiment.graph)
-    workers = [mp.Process(
-            name='Painter-{}'.format(n),
-            target=worker,
-            args=(ftask, taskq)) for n in range(n_workers)]
 
-    print('GO!')
-    for w in workers:
-        w.start()
+    fd = os.open("index-{}.csv".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+    f = os.fdopen(fd, 'w')
+    fd_err = os.open("errors-{}.log".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+    f_err = os.fdopen(fd_err, 'w')
 
-    try:
-        for line in args.input_file:
-            try:
-                target_node = int(line.strip())
-            except ValueError:
-                continue
+    f.write('eid,target,pA,pB,cA,cB\n')
 
-            if not target_node:
-                continue
+    frecord = functools.partial(record_metadata, f, f_err, eid)
 
-            taskq.put((target_node,))
-    except KeyboardInterrupt:
-        print("Ctrl-C: Killing workers...")
-        for w in workers:
-            w.terminate()
-    else:
-        print('Waiting for workers to finish...')
-        for n in range(n_workers):
-            taskq.put(None)
-        taskq.join()
+    gin = taskgin.TaskGin(ftask, frecord, n_workers=args.processes)
+    gin.start()
+
+    for line in args.input_file:
+        try:
+            target_node = int(line.strip())
+        except ValueError:
+            continue
+
+        if not target_node:
+            continue
+
+        gin.do_task(node=target_node)
+
+    gin.wait()
+
+    f.close()
+    f_err.close()
 
 if __name__ == '__main__':
     sys.exit(main())

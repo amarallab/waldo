@@ -9,20 +9,23 @@ class TaskGin(object):
         Task Gin.
 
         1. Initialize the object with a callable (*ftask*) that does
-           something.
+           something you want.
         2. Start the workers (``.start()``).
-        3. Call ``.do_task()`` as you would **ftask**.
-        4. ``.wait()`` until all tasks have been run.
+        3. Call ``.do_task()`` as you would *ftask*. It will block if the
+           queue is full.
+        4. ``.wait()`` until all tasks finish running.
 
         Parameters
         ----------
         ftask : callable
-            Called
+            Your task to run in parallel.
 
         Keyword Arguments
         -----------------
         faccount : callable
-            Called with the result of each call to *ftask*. If None, not used.
+            Called with the args, kwargs, and result of each call to *ftask*
+            in a 3-ple. Should be much quicker than the task call. If
+            ``None``, the return value is just ignored.
         n_workers : int
             Number of processes to use for task running. Defaults to the
             number of CPUs.
@@ -31,7 +34,6 @@ class TaskGin(object):
         self.n_workers = n_workers or mp.cpu_count()
 
         self.taskq = mp.JoinableQueue(self.n_workers + 2)
-        self.resultq = mp.Queue()
 
         self.workers = [mp.Process(
                 name='Worker-{}'.format(n),
@@ -40,39 +42,46 @@ class TaskGin(object):
             ) for n in range(self.n_workers)]
 
         if faccount:
+            self.done = threading.Event()
             self.faccount = faccount
             self.accountant = threading.Thread(
                 name='Accountant',
                 target=self._accountant,
             )
+            self.resultq = mp.Queue()
         else:
             self.accountant = None
 
     def _worker(self):
         while True:
             try:
-                args, kwargs = self.taskq.get()
-                if args is None:
+                task = self.taskq.get()
+                if task is None:
                     self.taskq.task_done()
-                    break
+                    return
+                args, kwargs = task
 
                 try:
                     result = self.ftask(*args, **kwargs)
                 except Exception as e:
-                    result = 'args: {}, kwargs: {} -> {}'.format(args, kwargs, repr(e))
+                    result = e
+
+                if self.resultq:
+                    self.resultq.put((args, kwargs, result))
 
                 self.taskq.task_done()
-                self.resultq.put(result)
             except (KeyboardInterrupt, SystemExit):
                 return
 
     def _accountant(self):
-        while True:
-            try:
-
-                self.resultq.get(block=block)
-            except (KeyboardInterrupt, SystemExit):
-                return
+        try:
+            while not self.done.is_set():
+                try:
+                    self.faccount(self.resultq.get(True, 0.100))
+                except queue.Empty:
+                    pass
+        except (KeyboardInterrupt, SystemExit):
+            return
 
     def start(self):
         for w in self.workers:
@@ -81,30 +90,27 @@ class TaskGin(object):
             self.accountant.start()
 
     def do_task(self, *args, **kwargs):
-        self.taskq.put((args, kwargs))
+        try:
+            self.taskq.put((args, kwargs))
+        except (KeyboardInterrupt, SystemExit):
+            self.done.set()
+            raise
 
     def wait(self):
         """
-        Signal all workers to shut down then wait for outstanding jobs to
-        finish.
+        Wait for outstanding jobs to finish.
         """
         for n in range(self.n_workers):
-            self.taskq.put((None, None))
+            try:
+                self.taskq.put(None)
+            except (KeyboardInterrupt, SystemExit):
+                self.done.set()
+                raise
         self.taskq.join()
-        if self.accountant:
-            self.accountant.join()
 
-    def stop(self):
-        """
-        Dump all existing tasks in the queue, signal workers to shut down,
-        then wait for outstanding jobs to finish.
-        """
-        try:
-            while True:
-                self.taskq.get(False)
-        except queue.Empty:
-            pass
-        self.wait()
+        if self.accountant:
+            self.done.set()
+            self.accountant.join()
 
 if __name__ == '__main__':
     # demo/test
@@ -112,37 +118,29 @@ if __name__ == '__main__':
     import time
     import random
 
-    tasks = [random.random()/3 + 1 for n in range(30)]
+    tasks = [random.random()*10 + 1 for n in range(100)]
     print(tasks)
 
     def job(x):
         time.sleep(x)
-        if x > 1.2:
+        if x > 10:
             raise ValueError('test')
         return -x
 
-    gin = TaskGin(job)
+    results = []
+    def account(x):
+        results.append(x)
+        print(x)
+
+    gin = TaskGin(job, account)
 
     gin.start()
 
-    results = []
-
     for task in tasks:
         print('loading task {}'.format(task))
-        while True:
-            try:
-                gin.do_task(task)
-                break
-            except queue.Full:
-                results.append(gin.get_result(block=True))
+        gin.do_task(x=task)
 
     gin.wait()
-
-    while True:
-        try:
-            results.append(gin.get_result())
-        except queue.Empty:
-            break
 
     print(results)
 

@@ -24,9 +24,15 @@ BOUNDS = {
     'min_dim': 120,
 }
 
-def show_collision_choices(experiment, graph, target):
-    parents = graph.predecessors(target)
-    children = graph.successors(target)
+def show_collision_choices(experiment, graph, target, ident=False):
+    """
+    Make a figure showing the collision centered on *target*. Returns a
+    figure & axis pair.
+
+    If *ident* is true, return data about the pairings.
+    """
+    parents = sorted(graph.predecessors(target))
+    children = sorted(graph.successors(target))
 
     def term_data(bids, end):
         return tools.terminal_data(experiment, bids, itertools.repeat(end))
@@ -92,11 +98,14 @@ def show_collision_choices(experiment, graph, target):
         )
     ax_during.set_title('Frames {} to {}'.format(parent_frame, children_frame))
 
-    #### WIP ####################################################
-    # show options
     # define pairs
     pair_groups = [[(0, 0), (1, 1)],
                    [(0, 1), (1, 0)]]
+
+    if ident:
+        ident_data = {}
+        for side, pairs in zip(['left', 'right'], pair_groups):
+            ident_data[side] = [(parents[x], children[y]) for x, y in pairs]
 
     # draw matching contours for each pair
     for ax, pairs in zip(ax_options, pair_groups):
@@ -107,7 +116,7 @@ def show_collision_choices(experiment, graph, target):
             for patch in patch_pair:
                 patch.set_fill(False)
                 patch.set_edgecolor(color)
-                patch.set_alpha(1)
+                patch.set_alpha(0.85)
                 patch.set_linewidth(2)
                 ax.add_patch(patch)
 
@@ -120,4 +129,7 @@ def show_collision_choices(experiment, graph, target):
     # draw arrows for each pair
     #### WIP ####################################################
 
-    return f, axs
+    if ident:
+        return f, axs, ident_data
+    else:
+        return f, axs
