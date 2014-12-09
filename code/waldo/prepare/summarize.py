@@ -15,8 +15,6 @@ from . import primary
 
 __all__ = ['summarize']
 
-DATA_DIR = settings.LOGISTICS['filesystem_data']
-
 def summarize(ex_id, verbose=False):
     """
     intermediate summary data.
@@ -27,7 +25,7 @@ def summarize(ex_id, verbose=False):
         talk = lambda *a, **k: None
 
     # load experiment
-    experiment = wio.Experiment(fullpath=os.path.join(DATA_DIR, ex_id))
+    experiment = wio.Experiment(fullpath=os.path.join(settings.MWT_DATA_ROOT, ex_id))
     talk('Loaded experiment ID: {}'.format(experiment.id))
 
     # process the basic blob data

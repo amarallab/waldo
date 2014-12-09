@@ -24,10 +24,9 @@ import numpy as np
 from waldo.conf import settings
 from .grab_outlines import find_frame_for_time
 
-# Globals
-DATA_DIR = settings.LOGISTICS['filesystem_data']
-
-def get_base_image_path(ex_id, data_dir=DATA_DIR):
+def get_base_image_path(ex_id, data_dir=None):
+    if data_dir is None:
+        data_dir = settings.MWT_DATA_ROOT #settings.LOGISTICS['filesystem_data']
     search_path = data_dir + ex_id + '/*.png'
     images = glob.glob(search_path)
     if not images:
@@ -39,7 +38,7 @@ def get_base_image_path(ex_id, data_dir=DATA_DIR):
             basename = i
     return basename
 
-def create_image_directory(ex_id, data_dir=DATA_DIR):
+def create_image_directory(ex_id, data_dir=None):
     """
     returns a dictionary containing all the times at which images were taken and the paths to those images.
 
@@ -47,7 +46,9 @@ def create_image_directory(ex_id, data_dir=DATA_DIR):
     :param data_dir: the directory in which all MWT data is stored.
     :return: a dictionary with times (keys) and the path to the image taken at that time (value)
     """
-    search_path = data_dir + ex_id + '/*.png'
+    if data_dir is None:
+        data_dir = settings.MWT_DATA_ROOT #settings.LOGISTICS['filesystem_data']
+    search_path = os.path.join(data_dir, ex_id, '*.png')
     images = glob.glob(search_path)
     if not images:
         print('something may be wrong with search path. no images found:', search_path)
@@ -117,7 +118,8 @@ if __name__ == '__main__':
     image_times = create_image_directory(ex_id=ex_id)
     closest_image_time, closest_image = get_closest_image(target_time=500, image_dict=image_times)
     frame, timepoint = find_frame_for_time(ex_id=ex_id, time=closest_image_time)
-    temp_filename = '{dr}{ex_id}/frame{frame}_blobs.tmp'.format(frame=frame, dr=DATA_DIR, ex_id=ex_id)
+    data_dir = settings.LOGISTICS['filesystem_data']
+    temp_filename = '{dr}{ex_id}/frame{frame}_blobs.tmp'.format(frame=frame, dr=data_dir, ex_id=ex_id)
     with open(temp_filename, 'r') as f:
         for line in f:
             print(line)

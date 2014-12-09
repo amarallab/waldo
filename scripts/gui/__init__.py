@@ -1,37 +1,37 @@
 __author__ = 'heltena'
 
-from config import ConfigurationData
 from PyQt4 import QtGui
+from page1 import WelcomePage
+from page2 import SelectExperimentPage
+from page3 import PreviousThresholdCachePage
+from page4 import ThresholdCachePage
+from page5 import PreviousScoringPage
+from page6 import ScoringPage
+from page7 import FinalPage
 
-from experimentlist import ExperimentListPage
-from cachethresholddata import CacheThresholdDataPage
-from score import ScorePage
-from param import ParamPage
-from refactoringdata import RefactoringDataPage
+import pages
 
+class WaldoAppData:
+    def __init__(self):
+        self.ex_id = ""
+        self.threshold = 0
+        self.roi_center = (0, 0)
+        self.roi_radius = 0
 
 class WaldoApp(QtGui.QWizard):
     def __init__(self, parent=None):
         super(WaldoApp, self).__init__(parent)
 
-        # Data
-        self.data = ConfigurationData()
-
-        self.experimentListPage = ExperimentListPage(self.data)
-        self.cacheThresholdDataPage = CacheThresholdDataPage(self.data)
-        self.scorePage = ScorePage(self.data)
-        self.paramPage = ParamPage(self.data)
-        self.refactoringData = RefactoringDataPage(self.data)
-
-        self.addPage(self.experimentListPage)
-        self.addPage(self.cacheThresholdDataPage)
-        self.addPage(self.scorePage)
-        self.addPage(self.paramPage)
-        self.addPage(self.refactoringData)
+        self.data = WaldoAppData()
+        self.setPage(pages.WELCOME, WelcomePage(self.data))
+        self.setPage(pages.SELECT_EXPERIMENT, SelectExperimentPage(self.data))
+        self.setPage(pages.PREVIOUS_THRESHOLD_CACHE, PreviousThresholdCachePage(self.data))
+        self.setPage(pages.THRESHOLD_CACHE, ThresholdCachePage(self.data))
+        self.setPage(pages.PREVIOUS_SCORING, PreviousScoringPage(self.data))
+        self.setPage(pages.SCORING, ScoringPage(self.data))
+        self.setPage(pages.FINAL, FinalPage(self.data))
 
     def closeEvent(self, ev):
-        self.data.save()
-
         mb = QtGui.QMessageBox()
         mb.setText("Are you sure you want to close?")
         mb.setStandardButtons(QtGui.QMessageBox.Close | QtGui.QMessageBox.Cancel)
