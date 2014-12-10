@@ -7,7 +7,9 @@ from page3 import PreviousThresholdCachePage
 from page4 import ThresholdCachePage
 from page5 import PreviousScoringPage
 from page6 import ScoringPage
-from page7 import FinalPage
+from page7 import PreviousWaldoProcessPage
+from page8 import WaldoProcessPage
+from page9 import FinalPage
 
 import pages
 
@@ -29,6 +31,8 @@ class WaldoApp(QtGui.QWizard):
         self.setPage(pages.THRESHOLD_CACHE, ThresholdCachePage(self.data))
         self.setPage(pages.PREVIOUS_SCORING, PreviousScoringPage(self.data))
         self.setPage(pages.SCORING, ScoringPage(self.data))
+        self.setPage(pages.PREVIOUS_WALDO_PROCESS, PreviousWaldoProcessPage(self.data))
+        self.setPage(pages.WALDO_PROCESS, WaldoProcessPage(self.data))
         self.setPage(pages.FINAL, FinalPage(self.data))
 
     def closeEvent(self, ev):

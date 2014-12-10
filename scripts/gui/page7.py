@@ -7,13 +7,13 @@ from PyQt4.QtCore import Qt
 from waldo.conf import settings
 
 
-class FinalPage(QtGui.QWizardPage):
+class PreviousWaldoProcessPage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):
-        super(FinalPage, self).__init__(parent)
+        super(PreviousWaldoProcessPage, self).__init__(parent)
 
         self.data = data
-        self.setTitle("Final Page")
-        self.setSubTitle("TO-DO.")
+        self.setTitle("Waldo Process")
+        self.setSubTitle("The next page will start running the waldo process. It could be take a few minutes.")
 
         layout = QtGui.QVBoxLayout()
         self.setLayout(layout)
