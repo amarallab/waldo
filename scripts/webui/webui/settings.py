@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'webui',
     'screencollisions',
     'screengaps',
+    'screenoutcomes',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -84,19 +85,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 STATIC_URL = '/static/'
 
-COLLISION_IMAGES = (pathlib.Path(BASE_DIR) /
+SCREEN_BASE = (pathlib.Path(BASE_DIR) /
         '..' / # waldo/scripts/
         '..' / # waldo/
-        'data' / 'screen' / 'collisions')
+        'data' / 'screen')
 
-GAP_IMAGES = (pathlib.Path(BASE_DIR) /
-        '..' / # waldo/scripts/
-        '..' / # waldo/
-        'data' / 'screen' / 'gaps')
+COLLISION_IMAGES = SCREEN_BASE / 'collisions'
+GAP_IMAGES = SCREEN_BASE / 'gaps'
+OUTCOME_IMAGES = SCREEN_BASE / 'outcomes'
 
 STATICFILES_DIRS = (
     str(COLLISION_IMAGES),
     str(GAP_IMAGES),
+    str(OUTCOME_IMAGES),
 )
 
 

@@ -106,13 +106,13 @@ class CuratedAnswer(models.Model):
         ('swap', 'Swapped (AB/BA)'),
         ('unclear', 'Unclear/Other'),
     )
-    outcomes = models.ForeignKey(Outcome, related_name='answers')
+    outcome = models.ForeignKey(Outcome, related_name='answers')
     answer = models.CharField(max_length=60, choices=ANSWERS)
-    curator = models.ForeignKey(User, editable=False, related_name='gap_answer_user')
+    curator = models.ForeignKey(User, editable=False, related_name='outcome_answer_user')
     starred = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('gap', 'curator')
+        unique_together = ('outcome', 'curator')
 
     def __unicode__(self):
         return 'EID {}, {}->{}, {} said {}{}'.format(

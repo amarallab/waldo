@@ -3,13 +3,14 @@ from collections import defaultdict
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from ...models import Gap
+from ...models import Outcome
 
 def write_result_header():
-    sys.stdout.write('eid,from_blob,to_blob,ans,n_ans\n')
+    sys.stdout.write('eid,target,pA,pB,cA,cB,ans,n_ans\n')
 
-def write_result_line(gap):
-    answers = [ca.answer for ca in gap.answers.all()]
+def write_result_line(outcome):
+    raise NotImplementedError('TODO. IS ALL WRONG.')
+    answers = [ca.answer for ca in outcome.answers.all()]
     n_answers = len(answers)
     if not n_answers:
         return
@@ -18,7 +19,7 @@ def write_result_line(gap):
     n_diff_ans = len(answers)
 
     if n_diff_ans > 1:
-        answer = Gap.DISAGREE_ANSWER
+        answer = Outcome.DISAGREE_ANSWER
     elif n_diff_ans == 1:
         answer = answers.pop()
 
@@ -32,8 +33,8 @@ class Command(BaseCommand):
     help = 'Dump a CSV file of the collision results'
 
     def handle(self, *args, **options):
-        gaps = Gap.objects.prefetch_related('answers').all()
+        outcomes = Outcome.objects.prefetch_related('answers').all()
 
         write_result_header()
-        for gap in gaps:
-            write_result_line(gap)
+        for outcome in outcomes:
+            write_result_line(outcome)
