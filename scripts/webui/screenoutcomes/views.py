@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import chain
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,16 +9,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import Outcome, CuratedAnswer
 
-FIELD_NAMES = CuratedAnswer.ANSWERS.copy()
-FIELD_NAMES['xx'] = Outcome.DISAGREE_ANSWER
-FIELD_NAMES['un'] = Outcome.UNSCREENED_ANSWER
+FIELD_NAMES = {k: v for k, v in chain(
+    CuratedAnswer.ANSWERS,
+    (Outcome.DISAGREE_ANSWER,),
+    (Outcome.UNSCREENED_ANSWER,),)
+}
 
 def answer_group(model, key):
-    if key == FIELD_NAMES['xx']:
+    if key == model.DISAGREE_ANSWER[0]:
         objs = (model.objects
                 .annotate(ans_values=Count('answers__answer', distinct=True))
                 .filter(ans_values__gt=1))
-    elif key == FIELD_NAMES['un']:
+    elif key == model.UNSCREENED_ANSWER[0]:
         objs = model.objects.filter(answers__isnull=True)
     else:
         objs = (model.objects
@@ -51,9 +54,30 @@ def next_to_screen(user):
     #return (Outcome.objects.order_by('experiment_id', 'collision_id').filter(answers__isnull=True, user__isnot=user).first())
     # each user answers all, random order (avoid fatigue/runs)
     return (Outcome.objects
-        .filter(answers__isnull=True, user__isnot=user)
+        .filter(answers__isnull=True, curator__isnot=user)
         .order_by('?')
         .first())
+
+DEFAULT_ORDER = 'experiment_id', 'collision_id'
+
+def next_to_screen(user, order=('?',)):
+    # see if any aren't screened at all (by any user)
+    obj = (Outcome.objects
+            .order_by(*order)
+            .filter(answers__isnull=True)
+            .first())
+
+    if obj is None:
+        # if everything's done once, check what the user has left to do
+        done = (CuratedAnswer.objects
+                .filter(curator=user)
+                .values_list('gap', flat=True))
+        obj = (Outcome.objects
+                .order_by(*order)
+                .exclude(id__in=done)
+                .first())
+
+    return obj
 
 @login_required
 def start(request):
@@ -71,7 +95,7 @@ def outcome(request, eid, bid):
             'image_file': outcome.image_file(),
             'outcome': outcome,
         }
-        return render(request, 'screenoutcome/outcome.html', context)
+        return render(request, 'screenoutcomes/outcome.html', context)
 
     elif request.method == 'POST' and request.user.is_authenticated():
         curans = CuratedAnswer.objects.get_or_create(

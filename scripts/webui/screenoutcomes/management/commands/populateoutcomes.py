@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 Outcome.objects.get(**fields)
                 already_loaded += 1
             except Outcome.DoesNotExist:
-                to_add.append(Outcome(**Outcome))
+                to_add.append(Outcome(**fields))
                 added += 1
         Outcome.objects.bulk_create(to_add)
 

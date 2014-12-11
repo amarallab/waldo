@@ -14,21 +14,20 @@ class Outcome(models.Model):
     child_a = models.IntegerField()
     child_b = models.IntegerField()
 
-    DISAGREE_ANSWER = 'disagreement'
-    UNSCREENED_ANSWER = 'unscreened'
+    DISAGREE_ANSWER = ('disagreement', 'Disagreement')
+    UNSCREENED_ANSWER = ('unscreened', 'Unscreened')
 
     class Meta:
         unique_together = ('experiment_id', 'collision_id')
 
     def __unicode__(self):
-        return 'EID {}, {}->{}'.format(
-                self.experiment_id, self.from_blob, self.to_blob)
+        return 'XID {}-{}'.format(
+                self.experiment_id, self.collision_id)
 
     def get_absolute_url(self):
         return reverse('outcomes:outcome', kwargs={
                 'eid': self.experiment_id,
-                'from_blob': self.from_blob,
-                'to_blob': self.to_blob,
+                'bid': self.collision_id,
             })
 
     def image_file(self):
@@ -38,19 +37,18 @@ class Outcome(models.Model):
     # object
     @staticmethod
     def _image_file(eid, target):
-        return (settings.OUTCOME_IMAGES /
-                '{}_{:05}.png'.format(eid, target))
+        return (settings.OUTCOME_IMAGES / 'outcome_{}_{:05}.png'.format(eid, target))
 
     def answer_count(self):
         return CuratedAnswer.objects.filter(object_pk=self.id).count()
 
     @classmethod
     def category(cls, cat):
-        if cat == cls.DISAGREE_ANSWER:
+        if cat == cls.DISAGREE_ANSWER[0]:
             objs = (cls.objects
                     .annotate(ans_values=models.Count('answers__answer', distinct=True))
                     .filter(ans_values__gt=1))
-        elif cat == cls.UNSCREENED_ANSWER:
+        elif cat == cls.UNSCREENED_ANSWER[0]:
             objs = cls.objects.filter(answers__isnull=True)
         else:
             objs = (cls.objects
@@ -73,19 +71,21 @@ class Outcome(models.Model):
         if n_answers == 1:
             return answers.pop()
         elif n_answers > 1:
-            return self.DISAGREE_ANSWER
+            return self.DISAGREE_ANSWER[0]
         else:
-            return self.UNSCREENED_ANSWER
+            return self.UNSCREENED_ANSWER[0]
 
-    @staticmethod
-    def fill():
+    @classmethod
+    def fill(cls):
         index = settings.OUTCOME_IMAGES / 'index.csv'
-        with open(index, 'r') as f:
+        with index.open() as f:
             next(f) # skip header
             for entry in f:
-                eid, target, pA, pB, cA, cB = entry.split(',')
+                data = iter(entry.split(','))
+                eid = next(data)
+                target, pA, pB, cA, cB = [int(x) for x in data]
 
-                if not self._image_file(eid, target).exists():
+                if not cls._image_file(eid, target).exists():
                     print('Could not find matching file for EID: {}, '
                           'target: {}'.format(eid, target))
                     continue
@@ -115,6 +115,6 @@ class CuratedAnswer(models.Model):
         unique_together = ('outcome', 'curator')
 
     def __unicode__(self):
-        return 'EID {}, {}->{}, {} said {}{}'.format(
-            self.gap.experiment_id, self.gap.from_blob, self.gap.to_blob,
+        return 'XID {}-{}, {} said {}{}'.format(
+            self.gap.experiment_id, self.gap.collision_id,
             self.curator.username, self.answer, ' !!!' if self.starred else '')

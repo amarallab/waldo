@@ -3,30 +3,26 @@
 {% load bootstrap3 %}
 
 {% block html_title %}
-    Gap Type: {{ catname }}
+    Outcome Type: {{ catname }}
 {% endblock %}
 
 {% block content %}
-    <h1>Worm Gap Type: {{ catname }}</h1>
+    <h1>Outcome Type: {{ catname }}</h1>
 
     <table class='table'>
         <thead>
             <tr>
                 <th>Experiment ID</th>
-                <th>Lost Blob</th>
-                <th>Found Blob</th>
-                <!--<th>Gap ID</th>-->
+                <th>Collision ID</th>
                 <th>Image</th>
             </tr>
         </thead>
         <tbody>
-            {% for g in gaps %}
+            {% for o in outcomes %}
                 <tr>
-                    <td>{{ g.experiment_id }}</td>
-                    <td>{{ g.from_blob }}</td>
-                    <td>{{ g.to_blob }}</td>
-                    <!--<td>{{ g.id }}</td>-->
-                    <td><a href="{{ g.get_absolute_url }}">Show...</a></td>
+                    <td>{{ o.experiment_id }}</td>
+                    <td>{{ o.collision_id }}</td>
+                    <td><a href="{{ o.get_absolute_url }}">Show...</a></td>
                 </tr>
             {% endfor %}
         </tbody>

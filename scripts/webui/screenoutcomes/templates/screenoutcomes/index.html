@@ -3,11 +3,11 @@
 {% load bootstrap3 %}
 
 {% block html_title %}
-    Gap Index
+    Collision Outcomes
 {% endblock %}
 
 {% block content %}
-    <h1>Tracking Gaps</h1>
+    <h1>Collision Outcomes</h1>
 
 <script type="text/javascript">
       google.load("visualization", "1", {packages:["corechart"]});
@@ -39,7 +39,7 @@
             <tr>
               <td>{{ d.name }}</td>
               <td>{{ d.number }}</td>
-              <td><a href="{% url 'gaps:cat' d.code %}">View...</a></td></tr>
+              <td><a href="{% url 'outcomes:cat' d.code %}">View...</a></td></tr>
         {% endfor %}
     </tbody>
 </table>

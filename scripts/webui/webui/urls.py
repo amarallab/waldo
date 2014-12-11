@@ -11,6 +11,7 @@ urlpatterns = patterns('',
 
     url(r'^collisions/', include('screencollisions.urls', namespace='collisions')),
     url(r'^gaps/', include('screengaps.urls', namespace='gaps')),
+    url(r'^outcomes/', include('screenoutcomes.urls', namespace='outcomes')),
     url(r'^$', RedirectView.as_view(pattern_name='collisions:index', permanent=False), name='home'),
 
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', name="login"),

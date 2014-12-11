@@ -43,7 +43,7 @@ import taskgin
 def make_figure(experiment, graph, node):
     f, ax, ident = show_collision_choices(experiment, graph, node, ident=True)
 
-    fn = '{}_{:05}.png'.format(experiment.id, node)
+    fn = 'outcome_{}_{:05}.png'.format(experiment.id, node)
     f.savefig(fn)
     plt.close(f)
     return ident
