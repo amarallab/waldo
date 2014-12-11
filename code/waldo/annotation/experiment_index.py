@@ -33,10 +33,10 @@ import pandas as pd
 # package specific
 from waldo.conf import settings
 
-INDEX_DIR = settings.LOGISTICS['annotation']
-
-def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
+def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=None):
     ''' returns a pandas dataframe with all the annotated indicies '''
+    if index_tsv_directory is None:
+        index_tsv_directory = settings.LOGISTICS['annotation']
     search = os.path.join('{d}'.format(d=index_tsv_directory.rstrip('/')),'*.tsv')
     data = [pd.read_csv(f, sep='\t', index_col=0) for f in glob.iglob(search)]
     full_index = pd.concat(data)
@@ -54,11 +54,14 @@ def Experiment_Attribute_Index2(dataset=None, index_tsv_directory=INDEX_DIR):
 # global default value
 class Experiment_Attribute_Index(object):
 
-    def __init__(self, index_tsv_directory=INDEX_DIR):
+    def __init__(self, index_tsv_directory=None):
         """ initialize an Experiment_Attribute_Index object.
 
         :param index_tsv_directory: the directory that contains the index spreadsheet data in tsv files.
         """
+        if index_tsv_directory is None:
+            index_tsv_directory = settings.PROJECT_DATA_ROOT #settings.LOGISTICS['annotation']
+
         # make sure there is a backslash at the end of the directory name
         self.dir = '{dir}/'.format(dir=index_tsv_directory.rstrip('/'))
         #ensure_dir_exists(self.dir)

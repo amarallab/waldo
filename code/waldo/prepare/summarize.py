@@ -16,8 +16,6 @@ from . import primary
 
 __all__ = ['summarize']
 
-DATA_DIR = settings.LOGISTICS['filesystem_data']
-
 CALLBACK_LOAD_FRAC = 0.02
 CALLBACK_PRIMARY_FRAC = 0.90
 CALLBACK_SECONDARY_FRAC = 0.08
@@ -43,7 +41,7 @@ def summarize(ex_id, verbose=False, callback=None):
         cb_load = cb_pri = cb_sec = None
 
     # load experiment
-    experiment = wio.Experiment(fullpath=os.path.join(DATA_DIR, ex_id), callback=cb_load)
+    experiment = wio.Experiment(fullpath=os.path.join(settings.MWT_DATA_ROOT, ex_id))
     talk('Loaded experiment ID: {}'.format(experiment.id))
 
     # process the basic blob data

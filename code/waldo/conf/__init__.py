@@ -7,9 +7,9 @@ envvar must be importable.
 
     os.environ.setdefault('WALDO_SETTINGS', 'my_config')
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
-import six
-from six.moves import (zip, filter, map, reduce, input, range)
-
-from .settings import settings
+# from __future__ import (
+#         absolute_import, division, print_function, unicode_literals)
+# import six
+# from six.moves import (zip, filter, map, reduce, input, range)
+#
+# from .settings import settings

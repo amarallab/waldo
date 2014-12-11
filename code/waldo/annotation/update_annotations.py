@@ -31,12 +31,12 @@ SCALEING_SHEET = settings.SPREADSHEET['scaling-factors']
 ROW_ID = settings.SPREADSHEET['row-id']
 HEADERS = settings.SPREADSHEET['columns']
 
-DEFAULT_DATA_DIR = settings.LOGISTICS['filesystem_data']
-DEFAULT_LOGISTICS_DIR = settings.LOGISTICS['inventory']
-DEFAULT_SAVE_DIR = settings.LOGISTICS['annotation']
-SOURCE_INVENTORY = settings.LOGISTICS['filesystem_inventory']
+# DEFAULT_DATA_DIR = settings.LOGISTICS['filesystem_data']
+# DEFAULT_LOGISTICS_DIR = settings.LOGISTICS['inventory']
+# DEFAULT_SAVE_DIR = settings.LOGISTICS['annotation']
+# SOURCE_INVENTORY = settings.LOGISTICS['filesystem_inventory']
 
-def inventory_data_directories(base_data_dir=DEFAULT_DATA_DIR):
+def inventory_data_directories(base_data_dir=None):
     """
     returns a dict with all year-months (ex. '2013-05') in which data was collected.
     each year-month is a key
@@ -45,6 +45,8 @@ def inventory_data_directories(base_data_dir=DEFAULT_DATA_DIR):
     :param base_data_dir: the directory that should be inventoried
     :return: dictionary of year-months containing dictionaries of ex_ids
     """
+    if base_data_dir is None:
+        base_data_dir = settings.LOGISTICS['filesystem_data']
     files_and_dirs = glob.glob(base_data_dir+ '*')
     dirs_by_yearmonth = {}
     for entry in files_and_dirs:
@@ -59,9 +61,13 @@ def inventory_data_directories(base_data_dir=DEFAULT_DATA_DIR):
                 dirs_by_yearmonth[yearmonth][ex_id] = entry
     return dirs_by_yearmonth
 
-def update_inventory(finventory=SOURCE_INVENTORY, local_inventory=DEFAULT_LOGISTICS_DIR):
+def update_inventory(finventory=None, local_inventory=None):
     #print finventory
     #print local_inventory
+    if finventory is None:
+        finventory = settings.LOGISTICS['filesystem_inventory']
+    if local_inventory is None:
+        local_inventory = settings.LOGISTICS['inventory']
     cmd = 'rsync -a {fi}/* {li}'.format(fi=finventory.rstrip('/'),
                                       li=local_inventory.rstrip('/'))
     print cmd
@@ -96,13 +102,15 @@ def update_annotation_worksheet(data_ex_ids, annotated_ex_ids, ex_ids_to_add, ex
         updated_sheet.append(annotated_ex_ids[ex_id])
     return updated_sheet
 
-def get_source_computers(inventory_path=DEFAULT_LOGISTICS_DIR):
+def get_source_computers(inventory_path=None):
     """
     Reads inventory files and returns a dictionary of ex_ids as keys and the source as values.
 
     :param inventory_path: path to the inventory files used to keep track of source computers. This is usually stored
      in settings.py.
     """
+    if inventory_path is None:
+        inventory_path = settings.LOGISTICS['inventory']
     source_computers = {}
     for ci in glob.glob(inventory_path + 'camera*'):
         camera = ci.split('-')[-1].rstrip('.txt')
@@ -113,7 +121,7 @@ def get_source_computers(inventory_path=DEFAULT_LOGISTICS_DIR):
     return source_computers
 
 def update_main(update_list=[], update_all=False, overwrite=False,
-                remove_missing=False, save_dir=DEFAULT_SAVE_DIR):
+                remove_missing=False, save_dir=None):
     """
     A two step process that (1) writes all currently annotated data (in google-docs) to json files and (2) Updates
     google-docs to contain entries for all raw data files.
@@ -123,6 +131,10 @@ def update_main(update_list=[], update_all=False, overwrite=False,
     :param overwrite: if any miss-match occurs between annotation and raw data, start spreadsheet over from scratch.
     :param remove_missing: remove rows from the google-docs if they are not present in local raw data
     """
+
+    if save_dir is None:
+        save_dir = settings.LOGISTICS['annotation']
+
     # step1: initiate connection to google-docs and download/write all annotations
     si = Spreadsheet_Interface(email=USER, password=PASSWORD, row_id=ROW_ID)
     ensure_dir_exists(save_dir)
@@ -192,12 +204,6 @@ def get_attributes_for_dir(ex_dir, sources, scaling_factors):
             'num-blobs-files': str(len(glob.glob(ex_dir + '/*.blobs'))),
             'num-images': str(len(glob.glob(ex_dir + '/*.png'))),
             'source-camera': source,
-
-
-
-
-
-
             'pixels-per-mm': scaling_factor}
 
 

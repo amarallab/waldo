@@ -18,7 +18,9 @@ class PrepData(object):
     """
     Convienent interface to save and load "prep data" data frames.
     """
-    def __init__(self, ex_id, prepdir=settings.LOGISTICS['prep']):
+    def __init__(self, ex_id, prepdir=None):
+        if prepdir is None:
+            prepdir = settings.PROJECT_DATA_ROOT
         self.eid = ex_id
         self.directory = pathlib.Path(prepdir) / ex_id
 

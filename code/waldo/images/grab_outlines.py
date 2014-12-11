@@ -28,7 +28,7 @@ from waldo.encoding.decode_outline import decode_outline
 #from database.mongo_retrieve import mongo_query, pull_data_type_for_blob
 
 # Globals
-DATA_DIR = settings.LOGISTICS['filesystem_data']
+# DATA_DIR = settings.LOGISTICS['filesystem_data']
 
 '''
 def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, **kwargs):
@@ -76,7 +76,7 @@ def db_check(ex_id, pictime=500):
         print(i)
 '''
 
-def find_outlines_for_timepoint(ex_id, frame, data_dir=DATA_DIR, overwrite_temp=False):
+def find_outlines_for_timepoint(ex_id, frame, data_dir=None, overwrite_temp=False):
     """
     returns a list of outlines (where each outline is a list of (x,y) tuples).
 
@@ -87,6 +87,8 @@ def find_outlines_for_timepoint(ex_id, frame, data_dir=DATA_DIR, overwrite_temp=
     :param frame: the frame for which you would like the outlines (int or numerical string)
     :param data_dir: the directory in which all MWT data is stored.
     """
+    if data_dir is None:
+        data_dir = settings.LOGISTICS['filesystem_data']
     # specify the name of the temporary file, and use grep to write to it.
     temp_filename = '{dr}{ex_id}/frame{frame}_blobs.tmp'.format(frame=frame, dr=data_dir, ex_id=ex_id)
     print(temp_filename)
@@ -112,12 +114,14 @@ def parse_temp_file_into_outlines(temp_filename):
     return outlines
 
 
-def create_good_outline_file(ex_id, frame, size_threshold=300, data_dir=DATA_DIR, overwrite_temp=False):
+def create_good_outline_file(ex_id, frame, size_threshold=300, data_dir=None, overwrite_temp=False):
 
     # test function. keep seperate for easy swapping out.
     def test_sizes(sizes, size_threshold=size_threshold):
         return np.median(sizes) >= size_threshold
 
+    if data_dir is None:
+        data_dir = settings.LOGISTICS['filesystem_data']
     frame = str(frame).strip()
     # make sure the specified directory ends in '/'
     if '/' != data_dir[-1]:
@@ -164,7 +168,7 @@ def create_good_outline_file(ex_id, frame, size_threshold=300, data_dir=DATA_DIR
     return parse_temp_file_into_outlines(temp_filename)
 
 
-def find_frame_for_time(ex_id, time, data_dir=DATA_DIR):
+def find_frame_for_time(ex_id, time, data_dir=None):
     """
     returns the frame and time that is closest to the time specified.
 
@@ -172,6 +176,8 @@ def find_frame_for_time(ex_id, time, data_dir=DATA_DIR):
     :param time: time in seconds
     :param data_dir: directory in
     """
+    if data_dir is None:
+        data_dir = settings.LOGISTICS['filesystem_data']
     summary_file = glob.glob('{dr}{ex_id}/*.summary'.format(dr=data_dir, ex_id=ex_id))[0]
     closest_frame, closest_time = 0, 0
     with open(summary_file, 'r') as f:

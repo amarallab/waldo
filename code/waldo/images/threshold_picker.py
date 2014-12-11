@@ -24,13 +24,6 @@ from waldo.wio.file_manager import ensure_dir_exists
 
 from .grab_images import grab_images_in_time_range
 
-MWT_DIR = settings.LOGISTICS['filesystem_data']
-DATA_DIR = settings.LOGISTICS['filesystem_data']
-PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
-CACHE_DIR = os.path.join(PREP_DIR, 'cache')
-IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
-ensure_dir_exists(PREP_DIR)
-
 def perp(v):
     # adapted from http://stackoverflow.com/a/3252222/194586
     p = np.empty_like(v)
@@ -82,19 +75,14 @@ INCR_Y = 1
 INCR_RADIUS = 1
 
 class InteractivePlot:
-    def __init__(self, ids, annotation_filename, cache_dir=CACHE_DIR,
-                 initial_threshold=0.0005):
+    def __init__(self, ids, initial_threshold=0.0005):
         self.ids = ids
         self.current_index = 0
         self.current_id = None
-        self.annotation_filename = annotation_filename
-        self.cache_dir = cache_dir
-        #print('cache:', cache_dir)
         self.current_threshold = initial_threshold
         self.thresholds = []
 
-        self.data = None
-        self.load_data()
+        self.data = {}
 
         self.fig = plt.figure()
         self.fig.canvas.mpl_connect('button_press_event', self.on_button_pressed)
@@ -154,12 +142,14 @@ class InteractivePlot:
 
         self.background = InteractivePlot.create_background(impaths)
 
-        if self.current_id in self.data:
-            d = self.data[self.current_id]
-            self.current_threshold = d['threshold']
-            self.circle_pos = (d['y'], d['x']) #note xy are purposely switched
-            self.circle_radius = d['r']
-        else:
+        try:
+            filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "thresholddata.json")
+            with open(filename, "rt") as f:
+                data = json.loads(f.read())
+            self.current_threshold = data['threshold']
+            self.circle_pos = (data['y'], data['x']) #note xy are purposely switched
+            self.circle_radius = data['r']
+        except IOError as ex:
             self.circle_pos = (0, 0)
             self.circle_radius = max(self.background.shape)/2
 
@@ -178,14 +168,6 @@ class InteractivePlot:
 
         self.show_threshold()
 
-    def load_data(self):
-        try:
-            with open(self.annotation_filename, "rt") as f:
-                self.data = json.loads(f.read())
-        except IOError as ex:
-            self.data = {}
-            print("E: {} ({})".format(os.strerror(ex.errno), self.annotation_filename))
-
     def save_data(self):
         # note: the image is usually transposed. we didn't here,
         # so x and y are flipped during saving process.
@@ -193,8 +175,13 @@ class InteractivePlot:
                                       'x': self.circle_pos[1],
                                       'y': self.circle_pos[0],
                                       'r': self.circle_radius}
-        with open(self.annotation_filename, "wt") as f:
-            f.write(json.dumps(self.data, indent=4))
+        for k, v in self.data.items():
+            filename = os.path.join(settings.PROJECT_DATA_ROOT, k)
+            ensure_dir_exists(filename)
+            filename = os.path.join(filename, "thresholddata.json")
+            with open(filename, "wt") as f:
+                f.write(json.dumps(v, indent=4))
+        self.data = {}
 
     @staticmethod
     def create_background(impaths):
@@ -258,8 +245,7 @@ class InteractivePlot:
             a list of threshold values to calculate. should be sorted from least to greatest.
         """
         cache_thresholds = {}
-        filename = os.path.join(self.cache_dir,
-                                "cache-{cid}.json".format(cid=self.current_id))
+        filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "threshold-cache.json")
         try:
             with open(filename, "r") as f:
                 x = json.load(f)
@@ -442,18 +428,14 @@ class InteractivePlot:
             for t in thresholds:
                 valid, N, m, s = self.data_from_threshold(t)
                 result[t] = {"valid": valid, "N": N, "m": m, "s": s}
-            filename = os.path.join(self.cache_dir, "cache-%s.json" % id)
+            filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "threshold-cache.json")
             with open(filename, "w") as f:
                 json.dump(result, f)
 
 if __name__ == '__main__':
-    try:
-        os.makedirs(IMAGE_MARK_DIR)
-    except:
-        pass
+    DATA_DIR = settings.MWT_DATA_ROOT
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
-    picker_data_file = os.path.join(IMAGE_MARK_DIR_DIR, "threshold_picker_data.json")
-    ip = InteractivePlot(dirs, picker_data_file, 0.0005)
+    ip = InteractivePlot(dirs, 0.0005)
     ip.run_plot()
     #ip.precalculate_threshold_data()
 

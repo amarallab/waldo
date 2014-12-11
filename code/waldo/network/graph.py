@@ -92,10 +92,14 @@ class Graph(nx.DiGraph):
         #         raise ValueError('Non-concurrnet')
 
 
-        # was an important precaution... bug probably fixed.
-        #if node in other_nodes:
-        #    other_nodes = list(other_nodes)
-        #    other_nodes.pop(other_nodes.index(node))
+        # not sure which function is trying to merge a node with itself...
+        # but it needs to be stopped. until then catch it here.
+        if node in other_nodes:
+           other_nodes = list(other_nodes)
+           other_nodes.pop(other_nodes.index(node))
+
+        if not other_nodes:
+            return
 
         #####
         if settings.DEBUG:
@@ -141,6 +145,7 @@ class Graph(nx.DiGraph):
                         nd[k].update(v)
                     except TypeError:
                         pass
+
                 else:
                     nd[k] = v
 

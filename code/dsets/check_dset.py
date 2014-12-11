@@ -36,7 +36,9 @@ def count_file_types(basedir):
         counts[filetype] += 1
     return counts
 
-def merge_experiment_index_with_file_counts(dataset, data_dir=settings.LOGISTICS['data']):
+def merge_experiment_index_with_file_counts(dataset, data_dir=None):
+    if data_dir is None:
+        data_dir = settings.LOGISTICS['data']
     data_dir = os.path.abspath(data_dir)
     ei = Experiment_Attribute_Index2(dataset=dataset)
 
@@ -78,7 +80,9 @@ def show_counts_by_label(results, final_filetype, verbose=True):
         print summary
     return summary
 
-def file_counts_dataframe(dataset, data_dir=settings.LOGISTICS['data']):
+def file_counts_dataframe(dataset, data_dir=None):
+    if data_dir is None:
+        data_dir = settings.LOGISTICS['data']
     data_dir = os.path.abspath(data_dir)
     print data_dir
     ei = Experiment_Attribute_Index2(dataset=dataset)
