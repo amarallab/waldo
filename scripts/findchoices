@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+from __future__ import print_function, absolute_import, division
+import six
+from six.moves import (zip, filter, map, reduce, input, range)
+
+import sys
+import argparse
+
+import pathcustomize
+import waldo
+
+STDOUT_SENTINEL = '///stdout'
+AUTONAME_SENTINEL = '///autoname'
+
+def dragnet():
+    '''
+    Captures everything...but most are garbage
+    '''
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('experiment_id',
+        help="Experiment ID to use.")
+    parser.add_argument('-o', '--outfile', type=str, nargs='?',
+        default=STDOUT_SENTINEL, const=AUTONAME_SENTINEL,
+        help="File to write obvious collision nodes (in-deg 2, out-deg 2) "
+             "to render. If not provided, writes to stdout")
+
+    args = parser.parse_args()
+    eid = args.experiment_id
+
+    if args.outfile == AUTONAME_SENTINEL:
+        args.outfile = 'choices_{}.csv'.format(eid)
+    elif args.outfile == STDOUT_SENTINEL:
+        args.outfile = None
+
+    experiment = waldo.Experiment(experiment_id=eid)
+    graph = experiment.graph.copy()
+
+    waldo.collider.remove_nodes_outside_roi(graph, experiment)
+    waldo.collider.remove_blank_nodes(graph, experiment)
+
+    targets = (n
+        for n
+        in graph
+        if graph.in_degree(n) == 2 and graph.out_degree(n) == 2)
+
+    if args.outfile:
+        with open(args.outfile, 'w') as f:
+            for node in targets:
+                f.write('{}\n'.format(node))
+    else:
+        for node in targets:
+            print(node)
+
+def screened():
+    '''
+    Grabs the 2 worm screened collisions from the output file.
+    '''
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('input_file', type=argparse.FileType('r'),
+        help="File with blob IDs to render. Accepts stdin as -")
+
+    args = parser.parse_args()
+    ex_id = '20130702_135704'
+    # skip header row
+    next(args.input_file)
+    for line in args.input_file:
+        line = [p.strip() for p in line.split(',')]
+        if line[0] != ex_id or line[2] != '20':
+            continue
+        print(line[1])
+
+if __name__ == '__main__':
+    sys.exit(screened())

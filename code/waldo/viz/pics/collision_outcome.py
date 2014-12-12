@@ -17,16 +17,22 @@ import matplotlib.gridspec as gridspec
 
 from .. import tools
 from . import pil
-from .plotting import plot_spacetime, plot_spacetime_rainbow, tweak_bounds
+from . import plotting as wplt
 
 BOUNDS = {
-    'padding': 40,
+    'padding': 20,
     'min_dim': 120,
 }
 
-def show_collision_choices(experiment, graph, target):
-    parents = graph.predecessors(target)
-    children = graph.successors(target)
+def show_collision_choices(experiment, graph, target, ident=False):
+    """
+    Make a figure showing the collision centered on *target*. Returns a
+    figure & axis pair.
+
+    If *ident* is true, return data about the pairings.
+    """
+    parents = sorted(graph.predecessors(target))
+    children = sorted(graph.successors(target))
 
     def term_data(bids, end):
         return tools.terminal_data(experiment, bids, itertools.repeat(end))
@@ -34,7 +40,7 @@ def show_collision_choices(experiment, graph, target):
     cdata = term_data(children, 'first')
 
     boxes = itertools.chain(pdata['bounds'], cdata['bounds'])
-    bounds = tweak_bounds(sum(boxes), **BOUNDS)
+    bounds = wplt.tweak_bounds(sum(boxes), **BOUNDS)
 
     # should be the same times
     def the_one(l):
@@ -75,7 +81,7 @@ def show_collision_choices(experiment, graph, target):
     blobs = [parents, children]
     for ax, time, frame, patches, cmap, bids in zip(
             axs, times, frames, (ppatches, cpatches), cmaps, blobs):
-        plot_spacetime(ax, experiment, bounds, time=time)
+        wplt.plot_spacetime(ax, experiment, bounds, time=time)
 
         for patch, cidx in zip(patches, np.linspace(0.2, 0.8, len(patches))):
             patch.set_facecolor(cmap(cidx))
@@ -86,32 +92,44 @@ def show_collision_choices(experiment, graph, target):
 
     # stack up the collision images
     stack_axs = itertools.chain((ax_during,), ax_options)
-    plot_spacetime_rainbow(stack_axs, experiment, bounds, time=[parent_time, children_time])
+    wplt.plot_spacetime_rainbow(stack_axs, experiment, bounds,
+            inverted=True,
+            time=[parent_time, children_time],
+        )
     ax_during.set_title('Frames {} to {}'.format(parent_frame, children_frame))
 
-    #### WIP ####################################################
-    # show options
     # define pairs
     pair_groups = [[(0, 0), (1, 1)],
                    [(0, 1), (1, 0)]]
 
+    if ident:
+        ident_data = {}
+        for side, pairs in zip(['left', 'right'], pair_groups):
+            ident_data[side] = [(parents[x], children[y]) for x, y in pairs]
+
     # draw matching contours for each pair
-    #for ax, pairs in zip(ax_options, pair_groups):
-    ax = ax_options[0]
+    for ax, pairs in zip(ax_options, pair_groups):
+        ppatches2 = tools.patch_contours(pdata['shape'], bounds=False)
+        cpatches2 = tools.patch_contours(cdata['shape'], bounds=False)
+        for (pp, cp), color in zip(pairs, ['lime', 'magenta']):
+            patch_pair = [ppatches2[pp], cpatches2[cp]]
+            for patch in patch_pair:
+                patch.set_fill(False)
+                patch.set_edgecolor(color)
+                patch.set_alpha(0.85)
+                patch.set_linewidth(2)
+                ax.add_patch(patch)
 
-    ppatches2 = tools.patch_contours(pdata['shape'], bounds=False)
-    cpatches2 = tools.patch_contours(cdata['shape'], bounds=False)
-    patch_pair = [ppatches2[0], cpatches2[0]]
-    for patch in patch_pair:
-        ax.add_patch(patch)
-
-    # zoom in a little
-    b = tools.Box(x=ax.get_xlim(), y=ax.get_ylim())
-    b.grow(-30)
-    ax.set_xlim(b.x)
-    ax.set_ylim(b.y)
+        # zoom in a little
+        b = tools.Box(x=ax.get_xlim(), y=ax.get_ylim())
+        b.grow(-BOUNDS['padding'] + 10) # reduce padding to something else
+        ax.set_xlim(b.x)
+        ax.set_ylim(b.y)
 
     # draw arrows for each pair
     #### WIP ####################################################
 
-    return f, axs
+    if ident:
+        return f, axs, ident_data
+    else:
+        return f, axs

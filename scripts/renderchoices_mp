@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+"""
+renderchoices_mp
+
+Creates images for screening from a two-column CSV of collision choices
+
+Example:
+    ./renderchoices_mp 20130702_135652 choices.csv
+
+Running the script in it's own empty folder is advisable as it will generate
+a few thousand images.
+
+    mkdir ../data/testset1
+    cd ../data/testset1
+    ../../scripts/renderchoices_mp 20130702_135652 ../mypath/choices.csv
+"""
+from __future__ import absolute_import, division, print_function
+from six.moves import range
+
+# standard library
+import sys
+import os
+import argparse
+import functools
+import multiprocessing as mp
+
+# third party
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.collections import PatchCollection
+from PIL import Image, ImageOps, ImageChops
+
+# project specific
+import pathcustomize
+
+import waldo
+from waldo.viz import show_collision_choices
+
+import taskgin
+
+def make_figure(experiment, graph, node):
+    f, ax, ident = show_collision_choices(experiment, graph, node, ident=True)
+
+    fn = 'outcome_{}_{:05}.png'.format(experiment.id, node)
+    f.savefig(fn)
+    plt.close(f)
+    return ident
+
+def record_metadata(outstream, errstream, eid, result):
+    if isinstance(result[2], Exception):
+        emsg = '<Error> : args {}, kwargs {} -> {}'.format(
+                result[0], result[1], repr(result[2]))
+        errstream.write(emsg + '\n')
+        print(emsg, file=sys.stderr)
+        return
+
+    target = result[1]['node']
+    matched = result[2]['left']
+    pcA, pcB = matched
+
+    outstream.write('{},{},{},{},{},{}\n'.format(
+        eid, target, pcA[0], pcB[0], pcA[1], pcB[1]))
+    print('Created figure for cnode {}.'.format(target))
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    cpus = mp.cpu_count()
+
+    parser.add_argument('experiment_id',
+        help="Experiment ID to use.")
+    parser.add_argument('input_file', type=argparse.FileType('r'),
+        help="File with blob IDs to render. Accepts stdin as -")
+    parser.add_argument('-p', '--processes', type=int, default=2*cpus,
+        help="Number of processes to launch, defaults to twice the number "
+             "of CPUs ({}). I wouldn't go higher than that, cut the number to "
+             "maybe half your CPU count ({}) if you want to work on the same "
+             "machine without it eating all your RAM and CPU.".format(
+                2* cpus, cpus//2))
+
+    args = parser.parse_args()
+    eid = args.experiment_id
+
+    experiment = waldo.Experiment(experiment_id=eid)
+
+    ftask = functools.partial(make_figure, experiment, experiment.graph)
+
+    fd = os.open("index-{}.csv".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+    f = os.fdopen(fd, 'w')
+    fd_err = os.open("errors-{}.log".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+    f_err = os.fdopen(fd_err, 'w')
+
+    f.write('eid,target,pA,pB,cA,cB\n')
+
+    frecord = functools.partial(record_metadata, f, f_err, eid)
+
+    gin = taskgin.TaskGin(ftask, frecord, n_workers=args.processes)
+    gin.start()
+
+    for line in args.input_file:
+        try:
+            target_node = int(line.strip())
+        except ValueError:
+            continue
+
+        if not target_node:
+            continue
+
+        gin.do_task(node=target_node)
+
+    gin.wait()
+
+    f.close()
+    f_err.close()
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -130,7 +130,7 @@ def plot_spacetime_rainbow(axes, experiment, bounds, **kwargs):
     temporal_kwas = split_keys(kwargs, ['time', 'frame'])
     if not temporal_kwas:
         raise ValueError("'time' or 'frame' must be provided")
-    rainbow_kwas = split_keys(kwargs, ['hue_range'])
+    rainbow_kwas = split_keys(kwargs, ['hue_range', 'inverted'])
 
     if not isinstance(bounds, pil.Box):
         bounds = pil.Box(bounds)

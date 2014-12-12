@@ -25,6 +25,9 @@
             {% ifappexists screengaps %}
               <li><a href="{% url 'gaps:index' %}">Gaps</a></li>
             {% endifappexists %}
+            {% ifappexists screenoutcomes %}
+              <li><a href="{% url 'outcomes:index' %}">Outcomes</a></li>
+            {% endifappexists %}
           </ul>
           <ul class='nav navbar-nav navbar-right'>
             {% if user.is_authenticated %}

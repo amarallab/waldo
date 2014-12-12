@@ -1,4 +1,4 @@
-from __future__ import print_function, absolute_import, unicode_literals, division
+from __future__ import print_function, absolute_import, division
 """
 Generate summary data directly from the raw experiment. All should happen
 at once to avoid having to re-parse or otherwise hold massive amounts of
@@ -97,7 +97,7 @@ class TerminalsBuilder(DataFrameBuilder):
             })
 
 
-def summarize(experiment):
+def summarize(experiment, callback=None):
     """
     Given an experiment, generate 3 data frames returned as values in a
     dictionary.
@@ -107,15 +107,24 @@ def summarize(experiment):
         as the time in seconds and frames.
     3. Sizes: median sizes of the area and midline provided by the raw
         blob data.
+
+    The callback (if not ``None``) is called with fractional progression (0
+    to 1)
     """
     builders = [BoundsBuilder(), TerminalsBuilder(), SizeBuilder()]
 
-    for bid, blob in experiment.blobs():
+    for i, (bid, blob) in enumerate(experiment.blobs()):
         try:
             for builder in builders:
                 builder.append(bid, blob)
         except KeyError:
             # zero frame blobs
             pass
+
+        if callback:
+            callback(i / len(experiment))
+
+    if callback:
+        callback(1)
 
     return {builder.data_type: builder.render() for builder in builders}

@@ -105,7 +105,8 @@ def red_on_white(im):
 
 def rotate_hue(im, x):
     """
-    Adjust the hue of *im* by *x*, where *x* is a value between 0.0 to 1.0
+    Adjust the hue of *im* by *x*, where *x* is a value between 0.0 to 1.0.
+    Full red to full green is 1/3, red to blue is 2/3.
     """
     assert im.mode == 'RGB'
     ima = np.asarray(im) / 255
@@ -120,7 +121,7 @@ def rotate_hue(im, x):
     im = Image.fromarray(ima)
     return im
 
-def rainbow_merge(images, hue_range=(2/3, 0)):
+def rainbow_merge(images, hue_range=(2/3, 0), inverted=False):
     '''
     Merges a series of *images* using ***unicorns***.
 
@@ -131,7 +132,10 @@ def rainbow_merge(images, hue_range=(2/3, 0)):
 
     Keyword Arguments
     -----------------
-    hue_range : 2-ple of hue range. Default of (2/3, 0) goes from blue to red.
+    hue_range : sequence (length 2)
+        2-ple of hue range. Default of (2/3, 0) goes from blue to red.
+    inverted : boolean
+        Show empty background as dark?
 
     Returns
     -------
@@ -143,6 +147,13 @@ def rainbow_merge(images, hue_range=(2/3, 0)):
         raise ValueError('No images provided')
     elif not isinstance(images, collections.Sequence):
         raise TypeError('Must be a sequence')
+
+    if inverted:
+        mixer = ImageChops.lighter
+        colorer = red_on_black
+    else:
+        mixer = ImageChops.darker
+        colorer = red_on_white
 
     n_images = len(images)
     if n_images == 1:
@@ -157,12 +168,12 @@ def rainbow_merge(images, hue_range=(2/3, 0)):
     images = iter(images)
     composite = None
     for i, image in enumerate(images):
-        image = red_on_white(image)
+        image = colorer(image)
         image = rotate_hue(image, hue_adj(i))
         if composite is None:
             composite = image
             continue
-        composite = ImageChops.darker(composite, image)
+        composite = mixer(composite, image)
 
     return composite
 
