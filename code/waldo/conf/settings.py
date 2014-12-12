@@ -3,6 +3,28 @@ from __future__ import absolute_import
 import os
 import json
 
+
+def _config_homedir():
+    try:
+        from win32com.shell import shellcon, shell
+        homedir = shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0)
+    except ImportError: # quick semi-nasty fallback for non-windows/win32com case
+        homedir = os.path.expanduser("~")
+    return homedir
+
+def _config_filename():
+    homedir = _config_homedir()
+    return os.path.join(homedir, "waldo_config.ini")
+
+def _default_MWT_Data_folder():
+    homedir = _config_homedir()
+    return os.path.join(homedir, "waldo", "MWT_Data")
+
+def _default_Project_folder():
+    homedir = _config_homedir()
+    return os.path.join(homedir, "waldo", "waldo_data")
+
+
 # COLLIDER
 #----------
 
@@ -99,8 +121,11 @@ TAPE_MAX_SPEED_SMOOTHING_RANGE = (1, 100)
 
 # THINGS
 #--------
-MWT_DATA_ROOT = '/home/projects/worm_movement/Data/MWT_RawData/'
-PROJECT_DATA_ROOT = '/Users/heltena/Desktop/waldo/waldo_data'
+MWT_DATA_ROOT = _default_MWT_Data_folder()
+PROJECT_DATA_ROOT = _default_Project_folder()
+
+print "HELIO:", MWT_DATA_ROOT
+print "HELIO:", PROJECT_DATA_ROOT
 
 # SCORE RANGES
 #----------------
@@ -110,15 +135,6 @@ SCORE_CONTRAST_DIFF_RANGE = (-0.1, 0.1)
 SCORE_GOOD_FRACTION_RANGE = (0.5, 1.0)
 SCORE_ACCURACY_RANGE = (0.5, 1.0)
 SCORE_COVERAGE_RANGE = (0.5, 1.0)
-
-
-def _config_filename():
-    try:
-        from win32com.shell import shellcon, shell
-        homedir = shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0)
-    except ImportError: # quick semi-nasty fallback for non-windows/win32com case
-        homedir = os.path.expanduser("~")
-        return os.path.join(homedir, "waldo_config.ini")
 
 def load():
     global COLLIDER_SUITE_OFFSHOOT
