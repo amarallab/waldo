@@ -121,53 +121,62 @@ def _config_filename():
         return os.path.join(homedir, "waldo_config.ini")
 
 def load():
+    global COLLIDER_SUITE_OFFSHOOT
+    global COLLIDER_SUITE_SPLIT_ABS
+    global COLLIDER_SUITE_SPLIT_REL
+    global COLLIDER_SUITE_ASSIMILATE_SIZE
+
+    global DEBUG
+
+    global TAPE_REL_MOVE_THRESHOLD
+    global TAPE_MIN_TRACE_FAIL
+    global TAPE_MIN_TRACE_WARN
+    global TAPE_TRACE_LIMIT_NUM
+    global TAPE_FRAME_SEARCH_LIMIT
+    global TAPE_KDE_SAMPLES
+    global TAPE_MAX_SPEED_MULTIPLIER
+    global TAPE_SHAKYCAM_ALLOWANCE
+    global TAPE_MAX_SPEED_SMOOTHING
+
+    global MWT_DATA_ROOT
+    global PROJECT_DATA_ROOT
+
     try:
-        global COLLIDER_SUITE_OFFSHOOT
-        global COLLIDER_SUITE_SPLIT_ABS
-        global COLLIDER_SUITE_SPLIT_REL
-        global COLLIDER_SUITE_ASSIMILATE_SIZE
-
-        global DEBUG
-
-        global TAPE_REL_MOVE_THRESHOLD
-        global TAPE_MIN_TRACE_FAIL
-        global TAPE_MIN_TRACE_WARN
-        global TAPE_TRACE_LIMIT_NUM
-        global TAPE_FRAME_SEARCH_LIMIT
-        global TAPE_KDE_SAMPLES
-        global TAPE_MAX_SPEED_MULTIPLIER
-        global TAPE_SHAKYCAM_ALLOWANCE
-        global TAPE_MAX_SPEED_SMOOTHING
-
-        global MWT_DATA_ROOT
-        global PROJECT_DATA_ROOT
-
         with open(_config_filename(), "rt") as f:
             data = json.load(f)
+        create_file = False
+    except IOError as e:
+        print "Warning: file '{file} doesn't exist. Trying to create...".format(file=_config_filename())
+        data = {}
+        create_file = True
+    except ValueError as e:
+        print "Warning: JSON data malformed. Loading the default data..."
+        data = {}
+        create_file = False
 
-        COLLIDER_SUITE_OFFSHOOT = data.get('COLLIDER_SUITE_OFFSHOOT', COLLIDER_SUITE_OFFSHOOT)
-        COLLIDER_SUITE_SPLIT_ABS = data.get('COLLIDER_SUITE_SPLIT_ABS', COLLIDER_SUITE_SPLIT_ABS)
-        COLLIDER_SUITE_SPLIT_REL = data.get('COLLIDER_SUITE_SPLIT_REL', COLLIDER_SUITE_SPLIT_REL)
-        COLLIDER_SUITE_ASSIMILATE_SIZE = data.get('COLLIDER_SUITE_ASSIMILATE_SIZE', COLLIDER_SUITE_ASSIMILATE_SIZE)
+    COLLIDER_SUITE_OFFSHOOT = data.get('COLLIDER_SUITE_OFFSHOOT', COLLIDER_SUITE_OFFSHOOT)
+    COLLIDER_SUITE_SPLIT_ABS = data.get('COLLIDER_SUITE_SPLIT_ABS', COLLIDER_SUITE_SPLIT_ABS)
+    COLLIDER_SUITE_SPLIT_REL = data.get('COLLIDER_SUITE_SPLIT_REL', COLLIDER_SUITE_SPLIT_REL)
+    COLLIDER_SUITE_ASSIMILATE_SIZE = data.get('COLLIDER_SUITE_ASSIMILATE_SIZE', COLLIDER_SUITE_ASSIMILATE_SIZE)
 
-        DEBUG = data.get('DEBUG', DEBUG)
+    DEBUG = data.get('DEBUG', DEBUG)
 
-        TAPE_REL_MOVE_THRESHOLD = data.get('TAPE_REL_MOVE_THRESHOLD', TAPE_REL_MOVE_THRESHOLD)
-        TAPE_MIN_TRACE_FAIL = data.get('TAPE_MIN_TRACE_FAIL', TAPE_MIN_TRACE_FAIL)
-        TAPE_MIN_TRACE_WARN = data.get('TAPE_MIN_TRACE_WARN', TAPE_MIN_TRACE_WARN)
-        TAPE_TRACE_LIMIT_NUM = data.get('TAPE_TRACE_LIMIT_NUM', TAPE_TRACE_LIMIT_NUM)
-        TAPE_FRAME_SEARCH_LIMIT = data.get('TAPE_FRAME_SEARCH_LIMIT', TAPE_FRAME_SEARCH_LIMIT)
-        TAPE_KDE_SAMPLES = data.get('TAPE_KDE_SAMPLES', TAPE_KDE_SAMPLES)
-        TAPE_MAX_SPEED_MULTIPLIER = data.get('TAPE_MAX_SPEED_MULTIPLIER', TAPE_MAX_SPEED_MULTIPLIER)
-        TAPE_SHAKYCAM_ALLOWANCE = data.get('TAPE_SHAKYCAM_ALLOWANCE', TAPE_SHAKYCAM_ALLOWANCE)
-        TAPE_MAX_SPEED_SMOOTHING = data.get('TAPE_MAX_SPEED_SMOOTHING', TAPE_MAX_SPEED_SMOOTHING)
+    TAPE_REL_MOVE_THRESHOLD = data.get('TAPE_REL_MOVE_THRESHOLD', TAPE_REL_MOVE_THRESHOLD)
+    TAPE_MIN_TRACE_FAIL = data.get('TAPE_MIN_TRACE_FAIL', TAPE_MIN_TRACE_FAIL)
+    TAPE_MIN_TRACE_WARN = data.get('TAPE_MIN_TRACE_WARN', TAPE_MIN_TRACE_WARN)
+    TAPE_TRACE_LIMIT_NUM = data.get('TAPE_TRACE_LIMIT_NUM', TAPE_TRACE_LIMIT_NUM)
+    TAPE_FRAME_SEARCH_LIMIT = data.get('TAPE_FRAME_SEARCH_LIMIT', TAPE_FRAME_SEARCH_LIMIT)
+    TAPE_KDE_SAMPLES = data.get('TAPE_KDE_SAMPLES', TAPE_KDE_SAMPLES)
+    TAPE_MAX_SPEED_MULTIPLIER = data.get('TAPE_MAX_SPEED_MULTIPLIER', TAPE_MAX_SPEED_MULTIPLIER)
+    TAPE_SHAKYCAM_ALLOWANCE = data.get('TAPE_SHAKYCAM_ALLOWANCE', TAPE_SHAKYCAM_ALLOWANCE)
+    TAPE_MAX_SPEED_SMOOTHING = data.get('TAPE_MAX_SPEED_SMOOTHING', TAPE_MAX_SPEED_SMOOTHING)
 
-        MWT_DATA_ROOT = data.get('MWT_DATA_ROOT', MWT_DATA_ROOT)
-        PROJECT_DATA_ROOT = data.get('PROJECT_DATA_ROOT', PROJECT_DATA_ROOT)
-        return True
-    except Exception as e:
-        print "E: Cannot load data.", e.message
-        return False
+    MWT_DATA_ROOT = data.get('MWT_DATA_ROOT', MWT_DATA_ROOT)
+    PROJECT_DATA_ROOT = data.get('PROJECT_DATA_ROOT', PROJECT_DATA_ROOT)
+
+    if create_file:
+        save()
+
 
 def save():
     try:
@@ -196,13 +205,11 @@ def save():
             json.dump(data, f, indent=4, sort_keys=True)
         return True
     except Exception, e:
-        print "E: Cannot save data.", e.message
+        print "Error: Cannot save data.", e.message
         return False
 
 
 load()
-
-
 
 
 
