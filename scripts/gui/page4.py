@@ -319,7 +319,7 @@ class ThresholdCachePage(QtGui.QWizardPage):
             if self.line_objects is not None and len(self.line_objects) > 0:
                 self.line_objects[0].remove()
             if self.line_area is not None and len(self.line_area) > 0:
-                self.line_area[0].remove()
+            self.line_area[0].remove()
             self.line_objects = self.ax_objects.plot((self.data.threshold, self.data.threshold), (-10000, 10000), '--', color='red')
             self.line_area = self.ax_area.plot((self.data.threshold, self.data.threshold), (-1000000, 1000000), '--', color='red')
 
