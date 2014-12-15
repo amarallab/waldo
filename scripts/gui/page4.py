@@ -162,11 +162,11 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.data.threshold = data.get('threshold', 0.0005)
 
         times, impaths = grab_images_in_time_range(self.data.ex_id, 0)
-        if len(times) > 0:
+        if times is not None and len(times) > 0:
             times = [float(t) for t in times]
             times, impaths = zip(*sorted(zip(times, impaths)))
 
-        if len(impaths) == 0:
+        if impaths is None or len(impaths) == 0:
             self.background = None
             self.mid_image = None
         else:
@@ -213,6 +213,8 @@ class ThresholdCachePage(QtGui.QWizardPage):
             self.ax_objects.clear()
             self.ax_area.clear()
             self.ax_image.clear()
+            self.line_objects = None
+            self.line_area = None
             return
 
         x, ns, means, stds = zip(*self.thresholds)
@@ -314,8 +316,10 @@ class ThresholdCachePage(QtGui.QWizardPage):
         if self.data.threshold != ev.xdata:
             self.data.threshold = ev.xdata
 
-            self.line_objects[0].remove()
-            self.line_area[0].remove()
+            if self.line_objects is not None and len(self.line_objects) > 0:
+                self.line_objects[0].remove()
+            if self.line_area is not None and len(self.line_area) > 0:
+                self.line_area[0].remove()
             self.line_objects = self.ax_objects.plot((self.data.threshold, self.data.threshold), (-10000, 10000), '--', color='red')
             self.line_area = self.ax_area.plot((self.data.threshold, self.data.threshold), (-1000000, 1000000), '--', color='red')
 

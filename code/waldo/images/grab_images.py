@@ -106,6 +106,8 @@ def get_closest_image(target_time, image_dict):
 
 def grab_images_in_time_range(ex_id, start_time, end_time=3600.0):
     time_to_image = create_image_directory(ex_id)
+    if time_to_image is None:
+        return None, None
     image_times, image_paths = [], []
     for im_time, im_path in time_to_image.iteritems():
         if start_time <= float(im_time) <= end_time:
