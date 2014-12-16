@@ -1,8 +1,6 @@
-from __future__ import absolute_import
-
+from __future__ import absolute_import, division, print_function
 import os
 import json
-
 
 def _config_homedir():
     try:
@@ -24,10 +22,8 @@ def _default_Project_folder():
     homedir = _config_homedir()
     return os.path.join(homedir, "waldo", "waldo_data")
 
-
 # COLLIDER
 #----------
-
 # Blobs with fewer frames than this are rolled up into their parent
 COLLIDER_SUITE_OFFSHOOT = 20
 COLLIDER_SUITE_OFFSHOOT_RANGE = (0, 100)   # Range used in the GUI edit
@@ -48,12 +44,10 @@ COLLIDER_SUITE_ASSIMILATE_SIZE_RANGE = (0, 10)   # Range used in the GUI edit
 
 # DEBUG
 #-------
-
 DEBUG = False
 
 # LOGGING
 #---------
-
 LOG_CONFIGURATION = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -80,7 +74,6 @@ LOG_CONFIGURATION = {
 
 # TAPE
 #------
-
 # How the Taper defines a "good blob"
 TAPE_REL_MOVE_THRESHOLD = 0.5
 TAPE_REL_MOVE_THRESHOLD_RANGE = (0, 1, 2)
@@ -124,12 +117,8 @@ TAPE_MAX_SPEED_SMOOTHING_RANGE = (1, 100)
 MWT_DATA_ROOT = _default_MWT_Data_folder()
 PROJECT_DATA_ROOT = _default_Project_folder()
 
-print "HELIO:", MWT_DATA_ROOT
-print "HELIO:", PROJECT_DATA_ROOT
-
 # SCORE RANGES
 #----------------
-
 SCORE_CONTRAST_RADIO_RANGE = (1.0, 2.0)
 SCORE_CONTRAST_DIFF_RANGE = (-0.1, 0.1)
 SCORE_GOOD_FRACTION_RANGE = (0.5, 1.0)
@@ -162,11 +151,11 @@ def load():
             data = json.load(f)
         create_file = False
     except IOError as e:
-        print "Warning: file '{file} doesn't exist. Trying to create...".format(file=_config_filename())
+        print("Warning: file '{file} doesn't exist. Trying to create...".format(file=_config_filename()))
         data = {}
         create_file = True
     except ValueError as e:
-        print "Warning: JSON data malformed. Loading the default data..."
+        print("Warning: JSON data malformed. Loading the default data...")
         data = {}
         create_file = False
 
@@ -192,7 +181,6 @@ def load():
 
     if create_file:
         save()
-
 
 def save():
     try:
@@ -221,20 +209,10 @@ def save():
             json.dump(data, f, indent=4, sort_keys=True)
         return True
     except Exception, e:
-        print "Error: Cannot save data.", e.message
+        print("Error: Cannot save data.", e.message)
         return False
 
-
 load()
-
-
-
-
-
-
-
-
-
 
 # # -*- coding: utf-8 -*-
 # """
