@@ -21,7 +21,7 @@ class Outcome(models.Model):
         unique_together = ('experiment_id', 'collision_id')
 
     def __unicode__(self):
-        return 'XID {}-{}'.format(
+        return 'XID {}-{:05}'.format(
                 self.experiment_id, self.collision_id)
 
     def get_absolute_url(self):
@@ -105,6 +105,7 @@ class CuratedAnswer(models.Model):
         ('match', 'Matched (AA/BB)'),
         ('swap', 'Swapped (AB/BA)'),
         ('unclear', 'Unclear/Other'),
+        ('badsegment', 'Bad Segmentation'),
     )
     outcome = models.ForeignKey(Outcome, related_name='answers')
     answer = models.CharField(max_length=60, choices=ANSWERS)
@@ -115,6 +116,6 @@ class CuratedAnswer(models.Model):
         unique_together = ('outcome', 'curator')
 
     def __unicode__(self):
-        return 'XID {}-{}, {} said {}{}'.format(
-            self.gap.experiment_id, self.gap.collision_id,
-            self.curator.username, self.answer, ' !!!' if self.starred else '')
+        return '{}, {} said {}{}'.format(
+            self.outcome, self.curator.username, self.answer,
+            ' !!!' if self.starred else '')
