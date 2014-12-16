@@ -53,9 +53,9 @@ class Scorer(object):
 
         n_good_ids = len(good_ids)
         if n_good_ids == 0:
-            raise InsufficentData("No good traces identified.")
+            raise InsufficientData("No good traces identified.")
         elif n_good_ids <= settings.TAPE_MIN_TRACE_FAIL:
-            raise InsufficentData(
+            raise InsufficientData(
                     "Only {} good trace(s) identified, we don't want to "
                     "generalize that to create scores.")
         elif n_good_ids <= settings.TAPE_MIN_TRACE_WARN:

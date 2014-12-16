@@ -370,6 +370,198 @@ class SubgraphRecorder(object):
         print len(all_relevant_nodes), 'nodes in subgraph'
         return relevant_subgraph(digraph=graph, nodes=list(all_relevant_nodes))
 
+class WaldoSovler(object):
+    def __init__(self, experiment, graph):
+        self.graph = graph
+        self.experiment = experiment
+        self.ex_id = experiment.id
+        self.report_card = ReportCard(experiment)
+        self.taper = tp.Taper(experiment=experiment, graph=graph)
+        self.report_card.add_step(graph, 'raw')
+
+    def run(self):
+        """ runs full solver code
+        """
+        self.initial_clean()
+        self.solve()
+        return self.report()
+
+    def initial_clean(self):
+        """ removes blobs that are outside of the region of interest
+        """
+        graph = self.graph
+        experiment = self.experiment
+        collider.remove_nodes_outside_roi(graph, experiment)
+        self.report_card.add_step(graph, 'roi')
+        collider.remove_blank_nodes(graph, experiment)
+        self.report_card.add_step(graph, 'blank')
+
+    def prune(self, threshold=20):
+        """ removes leaf nodes that last less than a certain number of frames
+
+        params
+        -----
+        threshold: (int)
+            leaf nodes that last less than threshold frames are removed from graph
+        """
+        L.warn('Remove Offshoots')
+        collider.remove_offshoots(self.graph, threshold=threshold)
+
+    def condense(self, max_duration=5, split_rel_time=0.5):
+        """ condenses motifs that involve false splits and single straight lines.
+
+        params
+        -----
+        max_duration: (int)
+        split_rel_time: (float)
+        """
+        L.warn('Collapse Group')
+        collider.collapse_group_of_nodes(self.graph, max_duration=max_duration)
+        L.warn('Remove Fission-Fusion')
+        collider.remove_fission_fusion(self.graph)
+        L.warn('Remove Fission-Fusion (relative)')
+        collider.remove_fission_fusion_rel(self.graph, split_rel_time=split_rel_time)
+        L.warn('Remove Single Descendents')
+        collider.remove_single_descendents(self.graph)
+
+    def connect_leaves(self, gap_validation=None):
+        """ draws arcs between unconected leaf nodes
+        """
+        L.warn('Patch Gaps')
+        gap_start, gap_end = self.taper.find_start_and_end_nodes(use_missing_objects=True)
+        gaps = self.taper.score_potential_gaps(gap_start, gap_end)
+        if gap_validation is not None:
+            gap_validation.append(gaps[['blob1', 'blob2']])
+
+        # Score is based on (delta t) * (delta dist)
+        ll1, gaps = self.taper.short_tape(gaps, add_edges=True)
+        # Score is based on probability that a blob would move a certain distance (from other worms on plate)
+        #ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+        link_total = len(ll1) #+ len(ll2) + len(ll3)
+        self.report_card.add_step(self.graph, 'gaps ({n})'.format(n=link_total))
+
+    def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None):
+        """ iterativly loop through (1) untangleing collisions (2) pruning (3) condensing and (4) connecting leaves
+        """
+        last_graph = None
+        #gap_validation = []
+        # graph = self.graph
+
+        def boiler_plate(validate_steps, subgraph_recorder):
+            if validate_steps:
+                self.graph.validate()
+            #L.warn('Iteration {}'.format(i + 1))
+            if subgraph_recorder is not None:
+                subgraph_recorder.save_subgraph(self.graph)
+
+        self.report_card.add_step(self.graph, 'iter 0')
+        for i in range(6):
+
+            # untangle collisions
+            n = self.collision_suite(self.experiment, self.graph)
+            self.report_card.add_step(self.graph, 'collisions untangled ({n})'.format(n=n))
+            boiler_plate(validate_steps, subgraph_recorder)
+
+            # prune leaves
+            self.prune()
+            self.report_card.add_step(self.graph, 'leaves pruned')
+            boiler_plate(validate_steps, subgraph_recorder)
+            # condense
+            self.condense()
+            boiler_plate(validate_steps, subgraph_recorder)
+
+            # connect leaves
+            self.connect_leaves()
+            boiler_plate(validate_steps, subgraph_recorder)
+
+            # iteration boiler plate
+            if (last_graph is not None and
+               set(last_graph.nodes()) == set(self.graph.nodes()) and
+               set(last_graph.edges()) == set(self.graph.edges())):
+                L.warn('No change since last iteration, halting')
+                break
+            last_graph = self.graph.copy()
+            self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
+        return self.graph
+
+        def report(self):
+            """ returns the latest graph object as well as a dataframe with a
+            report
+            """
+            report_df = self.report_card.report(show=True)
+            report_df = self.report_card.save_reports(self.graph)
+            return self.graph, report_df
+
+    def untangle_collsions(self, verbose=True):
+        """ attempt to find and untangle collisions in the graph
+        """
+        graph = self.graph
+        experiment = self.experiment
+        cr = collider.CollisionResolver(experiment, graph)
+        # bounding box method
+        print 'collisions from bbox'
+
+        # initialize records
+        resolved = set()
+        overlap_fails = set()
+        data_fails = set()
+        dont_bother = set()
+
+        #trying_new_suspects = True
+        collisions_were_resolved = True
+        while collisions_were_resolved:
+            suspects = set(collider.find_bbox_based_collisions(graph, experiment))
+            s = suspects - dont_bother
+            ty = len(s & data_fails)
+            if verbose:
+                print('\t{s} suspects. trying {ty} again'.format(s=len(s),
+                                                                 ty=ty))
+
+            if not s:
+                collisions_were_resolved = False
+                break
+
+            report = cr.resolve_overlap_collisions(list(s))
+
+            newly_resolved = set(report['resolved'])
+            resolved = resolved | newly_resolved
+            collisions_were_resolved = len(newly_resolved) > 0
+
+            # keep track of all fails that had missing data that have
+            # not been resolved yet
+            data_fails = data_fails | set(report['missing_data'])
+            #data_fails = data_fails - resolved
+
+            # if overlap fails but data is missing try again later
+            # if overlap fails but data is there, dont bother
+            overlap_fails = overlap_fails | set(report['no_overlap'])
+            overlap_fails = overlap_fails - resolved
+            dont_bother = overlap_fails - data_fails
+
+        if verbose:
+            full_set = resolved | overlap_fails | data_fails | dont_bother
+            full_count = len(full_set)
+
+            n_res = len(resolved)
+            n_dat = len(data_fails)
+            no1 = len(data_fails & overlap_fails)
+            no2 = len(dont_bother)
+
+            if float(full_count):
+                p_res = int(100.0 * n_res/float(full_count))
+                p_dat = int(100.0 * len(data_fails)/float(full_count))
+                p_no1 = int(100.0 * no1/float(full_count))
+                p_no2 = int(100.0 * no2/float(full_count))
+            else:
+                p_res = p_dat = p_no1 = p_no2 = 0.0
+
+            print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
+            print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
+            print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
+            print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
+
+        return len(resolved)
+
 def iter_graph_simplification(experiment, graph, taper, report_card, gap_validation=None, validate_steps=True, subgraph_recorder=None):
 
     if validate_steps:
@@ -471,12 +663,11 @@ def iter_graph_simplification(experiment, graph, taper, report_card, gap_validat
         graph.validate()
     report_card.add_step(graph, 'gaps ({n})'.format(n=link_total))
 
-
 def iterative_solver(experiment, graph):
     ex_id = experiment.id
     report_card = ReportCard(experiment)
     report_card.add_step(graph, 'raw')
-    taper = tp.Taper(experiment=experiment, graph=graph)
+    taper =  tp.Taper(experiment=experiment, graph=graph)
     ############### Remove Known Junk
 
     collider.remove_nodes_outside_roi(graph, experiment)
@@ -579,96 +770,96 @@ def collision_suite(experiment, graph, verbose=True):
     return len(resolved)
 
 
-# def collision_suite_orig(experiment, graph, verbose=True):
+def collision_suite_orig(experiment, graph, verbose=True):
 
-#     # bounding box method
-#     print 'collisions from bbox'
+    # bounding box method
+    print 'collisions from bbox'
 
-#     # initialize records
-#     resolved = set()
-#     overlap_fails = set()
-#     data_fails = set()
-#     dont_bother = set()
+    # initialize records
+    resolved = set()
+    overlap_fails = set()
+    data_fails = set()
+    dont_bother = set()
 
-#     #trying_new_suspects = True
-#     collisions_were_resolved = True
-#     while collisions_were_resolved:
-#         suspects = set(collider.find_bbox_based_collisions(graph, experiment))
-#         s = suspects - dont_bother
-#         ty = len(s & data_fails)
-#         if verbose:
-#             print('\t{s} suspects. trying {ty} again'.format(s=len(s),
-#                                                              ty=ty))
+    #trying_new_suspects = True
+    collisions_were_resolved = True
+    while collisions_were_resolved:
+        suspects = set(collider.find_bbox_based_collisions(graph, experiment))
+        s = suspects - dont_bother
+        ty = len(s & data_fails)
+        if verbose:
+            print('\t{s} suspects. trying {ty} again'.format(s=len(s),
+                                                             ty=ty))
 
-#         if not s:
-#             collisions_were_resolved = False
-#             break
+        if not s:
+            collisions_were_resolved = False
+            break
 
-#         report = collider.resolve_collisions(graph, experiment,
-#                                              list(s))
+        report = collider.resolve_collisions(graph, experiment,
+                                             list(s))
 
-#         newly_resolved = set(report['resolved'])
-#         resolved = resolved | newly_resolved
-#         collisions_were_resolved = len(newly_resolved) > 0
+        newly_resolved = set(report['resolved'])
+        resolved = resolved | newly_resolved
+        collisions_were_resolved = len(newly_resolved) > 0
 
-#         # keep track of all fails that had missing data that have
-#         # not been resolved yet
-#         data_fails = data_fails | set(report['missing_data'])
-#         #data_fails = data_fails - resolved
+        # keep track of all fails that had missing data that have
+        # not been resolved yet
+        data_fails = data_fails | set(report['missing_data'])
+        #data_fails = data_fails - resolved
 
-#         # if overlap fails but data is missing try again later
-#         # if overlap fails but data is there, dont bother
-#         overlap_fails = overlap_fails | set(report['no_overlap'])
-#         overlap_fails = overlap_fails - resolved
-#         dont_bother = overlap_fails - data_fails
+        # if overlap fails but data is missing try again later
+        # if overlap fails but data is there, dont bother
+        overlap_fails = overlap_fails | set(report['no_overlap'])
+        overlap_fails = overlap_fails - resolved
+        dont_bother = overlap_fails - data_fails
 
-#     if verbose:
-#         full_set = resolved | overlap_fails | data_fails | dont_bother
-#         full_count = len(full_set)
+    if verbose:
+        full_set = resolved | overlap_fails | data_fails | dont_bother
+        full_count = len(full_set)
 
-#         n_res = len(resolved)
-#         n_dat = len(data_fails)
-#         no1 = len(data_fails & overlap_fails)
-#         no2 = len(dont_bother)
+        n_res = len(resolved)
+        n_dat = len(data_fails)
+        no1 = len(data_fails & overlap_fails)
+        no2 = len(dont_bother)
 
-#         p_res = int(100.0 * n_res/float(full_count))
-#         p_dat = int(100.0 * len(data_fails)/float(full_count))
-#         p_no1 = int(100.0 * no1/float(full_count))
-#         p_no2 = int(100.0 * no2/float(full_count))
+        p_res = int(100.0 * n_res/float(full_count))
+        p_dat = int(100.0 * len(data_fails)/float(full_count))
+        p_no1 = int(100.0 * no1/float(full_count))
+        p_no2 = int(100.0 * no2/float(full_count))
 
-#         print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
-#         print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
-#         print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
-#         print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
-
-
-#         #print '\ttrying to unzip collisions'
-#         #collision_nodes = list(dont_bother)
-#         #print(collision_nodes)
-#         #collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
-#         #                         verbose=False, yield_bevahior=False)
-
-#     #print 'collisions from time'
-#     # new_suspects = set(collider.find_area_based_collisions(graph, experiment))
-#     # suspects = list(new_suspects - tried_suspects)
-#     # tried_suspects = new_suspects | tried_suspects
-#     # n_area = collider.resolve_collisions(graph, experiment, suspects)
-#     # n += n_area
-
-#     # print(int(float(n) * 100. / float(len(tried_suspects))),
-#     #       'percent of found collisions resolved')
+        print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
+        print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
+        print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
+        print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
 
 
-#     # print n_area, 'collisions from area', len(new_suspects)
-#     # print(int(float(n) * 100. / float(len(tried_suspects))),
-#     #       'percent of found collisions resolved')
+        #print '\ttrying to unzip collisions'
+        #collision_nodes = list(dont_bother)
+        #print(collision_nodes)
+        #collider.unzip_resolve_collisions(graph, experiment, collision_nodes,
+        #                         verbose=False, yield_bevahior=False)
 
-#     # New_suspects = set(collider.find_time_based_collisions(graph, 10, 2))
-#     # suspects = list(new_suspects - tried_suspects)
-#     # tried_suspects = new_suspects | tried_suspects
-#     # n_time = collider.resolve_collisions(graph, experiment, suspects)
-#     # n += n_time
-#     return len(resolved)
+    #print 'collisions from time'
+    # new_suspects = set(collider.find_area_based_collisions(graph, experiment))
+    # suspects = list(new_suspects - tried_suspects)
+    # tried_suspects = new_suspects | tried_suspects
+    # n_area = collider.resolve_collisions(graph, experiment, suspects)
+    # n += n_area
+
+    # print(int(float(n) * 100. / float(len(tried_suspects))),
+    #       'percent of found collisions resolved')
+
+
+    # print n_area, 'collisions from area', len(new_suspects)
+    # print(int(float(n) * 100. / float(len(tried_suspects))),
+    #       'percent of found collisions resolved')
+
+    # New_suspects = set(collider.find_time_based_collisions(graph, 10, 2))
+    # suspects = list(new_suspects - tried_suspects)
+    # tried_suspects = new_suspects | tried_suspects
+    # n_time = collider.resolve_collisions(graph, experiment, suspects)
+    # n += n_time
+    return len(resolved)
 
 def collision_suite_heltena(experiment, graph, verbose=True):
 
