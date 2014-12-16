@@ -780,7 +780,7 @@ def show_matched_image(ex_id, threshold, time, roi=None):
                                            roi=roi, show=True)
     return bid_matching, base_acc
 
-def analyze_ex_id_images(ex_id, threshold, roi=None):
+def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
     """
     analyze all images for a given ex_id and saves the results to h5 files.
 
@@ -791,6 +791,21 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     threshold: (float)
         threshold to use when analyzing images.
     """
+
+    if callback:
+        CALLBACK_LOAD_FRAC = 0.08
+        CALLBACK_LOOP_FRAC = 0.84
+        CALLBACK_SAVE_FRAC = 0.08
+        def cb_load(p):
+            callback(CALLBACK_LOAD_FRAC * p)
+        def cb_loop(p):
+            callback(CALLBACK_LOAD_FRAC + CALLBACK_LOOP_FRAC * p)
+        def cb_save(p):
+            callback(CALLBACK_LOAD_FRAC + CALLBACK_LOOP_FRAC +
+                    CALLBACK_SAVE_FRAC * p)
+    else:
+        cb_load = cb_pri = cb_sec = None
+
     print('analzying images')
     # grab images and times.
     times, impaths = grab_images.grab_images_in_time_range(ex_id, start_time=0)
@@ -803,6 +818,9 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     # initialize experiment
     #path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
     experiment = wio.Experiment(experiment_id=ex_id)
+
+    if callback:
+        cb_load(1)
 
     full_experiment_check = []
     accuracy = []
@@ -819,6 +837,9 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
         accuracy.append(base_acc)
         full_missing.append(miss)
 
+        if callback:
+            cb_loop(float(i) / len(times))
+
     bid_matching = pd.concat(full_experiment_check)
     base_accuracy = pd.DataFrame(accuracy)
     missing_worms = pd.concat(full_missing)
@@ -828,16 +849,20 @@ def analyze_ex_id_images(ex_id, threshold, roi=None):
     prep_data = experiment.prepdata
     prep_data.dump(data_type='matches', dataframe=bid_matching,
                    index=False)
+    cb_save(0.33)
     prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
                    index=False)
+    cb_save(0.66)
     prep_data.dump(data_type='missing', dataframe=missing_worms,
                    index=True)
+    cb_save(1)
 
-def summarize(ex_id, overwrite=True):
+def summarize(ex_id, overwrite=True, callback=None):
     """ short script to load threshold, roi and run
     analyze_ex_id_images.
     """
+
     pfile = fm.ImageMarkings(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()
-    return analyze_ex_id_images(ex_id, threshold, roi)
+    return analyze_ex_id_images(ex_id, threshold, roi, callback=callback)

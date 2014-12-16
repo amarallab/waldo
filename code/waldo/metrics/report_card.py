@@ -370,7 +370,7 @@ class SubgraphRecorder(object):
         print len(all_relevant_nodes), 'nodes in subgraph'
         return relevant_subgraph(digraph=graph, nodes=list(all_relevant_nodes))
 
-class WaldoSovler(object):
+class WaldoSolver(object):
     def __init__(self, experiment, graph):
         self.graph = graph
         self.experiment = experiment
@@ -458,7 +458,7 @@ class WaldoSovler(object):
         for i in range(6):
 
             # untangle collisions
-            n = self.collision_suite(self.experiment, self.graph)
+            n = self.untangle_collsions()
             self.report_card.add_step(self.graph, 'collisions untangled ({n})'.format(n=n))
             boiler_plate(validate_steps, subgraph_recorder)
 
@@ -484,13 +484,13 @@ class WaldoSovler(object):
             self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
         return self.graph
 
-        def report(self):
-            """ returns the latest graph object as well as a dataframe with a
-            report
-            """
-            report_df = self.report_card.report(show=True)
-            report_df = self.report_card.save_reports(self.graph)
-            return self.graph, report_df
+    def report(self):
+        """ returns the latest graph object as well as a dataframe with a
+        report
+        """
+        report_df = self.report_card.report(show=True)
+        report_df = self.report_card.save_reports(self.graph)
+        return self.graph, report_df
 
     def untangle_collsions(self, verbose=True):
         """ attempt to find and untangle collisions in the graph
@@ -663,18 +663,42 @@ def iter_graph_simplification(experiment, graph, taper, report_card, gap_validat
         graph.validate()
     report_card.add_step(graph, 'gaps ({n})'.format(n=link_total))
 
-def iterative_solver(experiment, graph):
+def iterative_solver(experiment, graph, callback=None):
+    if callback:
+        CALLBACK_LOAD_FRAC = 0.08
+        CALLBACK_LOOP_FRAC = 0.84
+        CALLBACK_SAVE_FRAC = 0.08
+        def cb_load(p):
+            callback(CALLBACK_LOAD_FRAC * p)
+        def cb_loop(p):
+            callback(CALLBACK_LOAD_FRAC + CALLBACK_LOOP_FRAC * p)
+        def cb_save(p):
+            callback(CALLBACK_LOAD_FRAC + CALLBACK_LOOP_FRAC +
+                    CALLBACK_SAVE_FRAC * p)
+    else:
+        cb_load = cb_pri = cb_sec = None
+
     ex_id = experiment.id
     report_card = ReportCard(experiment)
+
+    if callback:
+        cb_load(0.33)
+
     report_card.add_step(graph, 'raw')
     taper =  tp.Taper(experiment=experiment, graph=graph)
     ############### Remove Known Junk
+
+    if callback:
+        cb_load(0.66)
 
     collider.remove_nodes_outside_roi(graph, experiment)
     report_card.add_step(graph, 'roi')
 
     collider.remove_blank_nodes(graph, experiment)
     report_card.add_step(graph, 'blank')
+
+    if callback:
+        cb_load(1.0)
 
     ############### Simplify
     last_graph = None
@@ -694,12 +718,16 @@ def iterative_solver(experiment, graph):
 
         last_graph = graph.copy()
         report_card.add_step(graph, 'iter {i}'.format(i=i+1))
+        cb_loop(float(i)/6)
 
+    cb_save(0)
     #for saving all potential gap bids:
     #gaps = pd.concat(gap_validation)
     #gaps.to_csv('{eid}-gaps.csv'.format(eid=ex_id), index=False, header=False)
     report_df = report_card.report(show=True)
+    cb_save(0.5)
     report_df = report_card.save_reports(graph)
+    cb_save(1)
     return graph, report_df
 
 def collision_suite(experiment, graph, verbose=True):

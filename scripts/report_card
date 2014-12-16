@@ -2,7 +2,7 @@
 import pathcustomize
 
 from waldo import wio
-from waldo import report_card
+from waldo.metrics import report_card
 
 def create_reports():
     ex_ids = [

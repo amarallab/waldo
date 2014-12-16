@@ -55,6 +55,7 @@ class CacheThresholdLoadingDialog(QtGui.QDialog):
 
     def cancel_run_button_clicked(self):
         self.cancel_run_button.setEnabled(False)
+        self.cancel_run_button.setText("Canceling")
         if self.task is not None:
             self.task.requestCancel()
         return False
