@@ -17,7 +17,7 @@ from statsmodels.distributions.empirical_distribution import ECDF
 # package specific
 from waldo.conf import settings
 from waldo.wio import Experiment
-from waldo import viz
+#from waldo import viz
 from waldo import collider
 import waldo.tape.taper as tp
 import waldo.wio.file_manager as fm

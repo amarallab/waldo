@@ -1,5 +1,3 @@
-from scripts.gui import tasking
-
 __author__ = 'heltena'
 
 import os
@@ -8,6 +6,7 @@ from PyQt4 import QtGui
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
+from gui import tasking
 import numpy as np
 from scipy import ndimage
 import json
@@ -132,12 +131,15 @@ class ScoringPage(QtGui.QWizardPage):
 
     def scoring(self, callback):
         self.result = {}
-        self.result = images.score(self.data.ex_id)
+        try:
+            self.result = images.score(self.data.ex_id)
+        except:
+            self.result = {}
         callback(0, 1)
 
     def _resultToString(self, value, range):
         if value is None:
-            return "<b style='color: red'>None</b>", False
+            return "<b style='color: red'>Fail</b>", False
         if range[0] <= value < range[1]:
             return "<b style='color: green'>%f</b> (%f - %f)" % (value, range[0], range[1]), True
         else:
