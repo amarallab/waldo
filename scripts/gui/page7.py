@@ -13,7 +13,7 @@ class PreviousWaldoProcessPage(QtGui.QWizardPage):
 
         self.data = data
         self.setTitle("Waldo Process")
-        self.setSubTitle("The next page will start running the waldo process. It could be take a few minutes.")
+        self.setSubTitle("The next page will start running the waldo process. It could take a few minutes.")
 
         layout = QtGui.QVBoxLayout()
         self.setLayout(layout)
