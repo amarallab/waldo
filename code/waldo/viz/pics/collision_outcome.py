@@ -111,13 +111,14 @@ def show_collision_choices(experiment, graph, target, ident=False):
     for ax, pairs in zip(ax_options, pair_groups):
         ppatches2 = tools.patch_contours(pdata['shape'], bounds=False)
         cpatches2 = tools.patch_contours(cdata['shape'], bounds=False)
-        for (pp, cp), color in zip(pairs, ['lime', 'magenta']):
+        for (pp, cp), color, hatch in zip(pairs, ['lime', 'magenta'], ['\\'*2, r'/'*2]):
             patch_pair = [ppatches2[pp], cpatches2[cp]]
             for patch in patch_pair:
                 patch.set_fill(False)
                 patch.set_edgecolor(color)
                 patch.set_alpha(0.85)
                 patch.set_linewidth(2)
+                patch.set_hatch(hatch)
                 ax.add_patch(patch)
 
         # zoom in a little

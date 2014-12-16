@@ -148,6 +148,11 @@ def plot_spacetime_rainbow(axes, experiment, bounds, **kwargs):
 
     # flatten time
     if len(images) > 1:
+        # strange hues come out if there aren't many (2-3) images to stack
+        if len(images) < 4:
+            images = list(images)
+            images.append(images[-1])
+            images.insert(0, images[0])
         image = pil.rainbow_merge(images, **rainbow_kwas)
         assert all(sum(extents) == e for e in extents)
     else:
