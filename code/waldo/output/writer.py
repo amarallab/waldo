@@ -21,15 +21,14 @@ class OutputWriter(object):
         if data_dir is None:
             data_dir = str(settings.MWT_DATA_ROOT)
         if output_dir is None:
-            #TODO: once output dir is defined in settings, change this to point at that instead of hard coding it.
-            output_dir = os.path.abspath('./../data/chore/')
+            output_dir = str(settings.PROJECT_DATA_ROOT)
 
         #print '--------------------------', ex_id, '--------------------------'
         # print(output_dir, ex_id)
         # print(data_dir, ex_id)
         self.ex_id = ex_id
-        self.output_dir = os.path.join(output_dir, ex_id)
-        self.data_dir  = os.path.join(data_dir, ex_id)
+        self.output_dir = os.path.join(output_dir, ex_id, 'blob_files')
+        self.data_dir  = os.path.join(data_dir, ex_id, 'waldo')
         self.experiment = Experiment(experiment_id=ex_id, data_root=data_dir)
 
         if graph is None:

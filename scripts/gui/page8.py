@@ -13,6 +13,7 @@ from waldo.output.writer import OutputWriter
 
 import tasking
 
+from time import time
 
 class WaldoProcessDialog(QtGui.QDialog):
     def __init__(self, ex_id, func, finish_func, parent=None):
@@ -96,15 +97,15 @@ class WaldoProcessPage(QtGui.QWizardPage):
         STEPS = 5.0
         ex_id = self.data.ex_id
         callback(0, 0.0 / STEPS)
-        prepare_summarize(ex_id)
+        #prepare_summarize(ex_id)
         callback(0, 1.0 / STEPS)
-        images_summarize(ex_id)
+        #images_summarize(ex_id)
         callback(0, 2.0 / STEPS)
         experiment = Experiment(experiment_id=ex_id)
         callback(0, 3.0 / STEPS)
-        graph, report_df = iterative_solver(experiment, experiment.graph.copy())
+        #graph, report_df = iterative_solver(experiment, experiment.graph.copy())
         callback(0, 4.0 / STEPS)
-        out_writer = OutputWriter(ex_id, graph=graph)
+        out_writer = OutputWriter(ex_id, graph=experiment.graph)
         out_writer.export()
         callback(0, 5.0 / STEPS)
 

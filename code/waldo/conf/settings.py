@@ -124,9 +124,6 @@ TAPE_MAX_SPEED_SMOOTHING_RANGE = (1, 100)
 MWT_DATA_ROOT = _default_MWT_Data_folder()
 PROJECT_DATA_ROOT = _default_Project_folder()
 
-print "HELIO:", MWT_DATA_ROOT
-print "HELIO:", PROJECT_DATA_ROOT
-
 # SCORE RANGES
 #----------------
 

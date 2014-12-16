@@ -17,7 +17,7 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
 
         self.data = data
         self.setTitle("Threshold Cache")
-        self.setSubTitle("The next page will load the threshold cache data. It could be take a few minutes.")
+        self.setSubTitle("The next page will load the threshold cache data. It could take a few minutes.")
 
         self.recalculateDataCheckbox = QtGui.QCheckBox("Recalculate data.")
         self.recalculateDataCheckbox.setVisible(False)

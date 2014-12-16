@@ -22,7 +22,7 @@ class PrepData(object):
         if prepdir is None:
             prepdir = settings.PROJECT_DATA_ROOT
         self.eid = ex_id
-        self.directory = pathlib.Path(prepdir) / ex_id
+        self.directory = pathlib.Path(prepdir) / ex_id / 'waldo'
 
     def __getattr__(self, name):
         """
