@@ -23,6 +23,7 @@ import os
 import argparse
 import functools
 import multiprocessing as mp
+import pathlib # py3.4+ stdlib
 
 # third party
 import numpy as np
@@ -50,7 +51,7 @@ def make_figure(experiment, graph, node):
 
 def record_metadata(outstream, errstream, eid, result):
     if isinstance(result[2], Exception):
-        emsg = '<Error> : args {}, kwargs {} -> {}'.format(
+        emsg = u'<Error> : args {}, kwargs {} -> {}'.format(
                 result[0], result[1], repr(result[2]))
         errstream.write(emsg + '\n')
         print(emsg, file=sys.stderr)
@@ -60,7 +61,7 @@ def record_metadata(outstream, errstream, eid, result):
     matched = result[2]['left']
     pcA, pcB = matched
 
-    outstream.write('{},{},{},{},{},{}\n'.format(
+    outstream.write(u'{},{},{},{},{},{}\n'.format(
         eid, target, pcA[0], pcB[0], pcA[1], pcB[1]))
     print('Created figure for cnode {}.'.format(target))
 
@@ -87,33 +88,39 @@ def main():
 
     ftask = functools.partial(make_figure, experiment, experiment.graph)
 
-    fd = os.open("index-{}.csv".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
-    f = os.fdopen(fd, 'w')
-    fd_err = os.open("errors-{}.log".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
-    f_err = os.fdopen(fd_err, 'w')
+    # kludge to guarantee we're not overwriting a file
+    #fd = os.open("index-{}.csv".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+    #f = os.fdopen(fd, 'w')
+    #fd_err = os.open("errors-{}.log".format(eid), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+    #f_err = os.fdopen(fd_err, 'w')
 
-    f.write('eid,target,pA,pB,cA,cB\n')
+    outf = pathlib.Path("index-{}.csv".format(eid))
+    logf = pathlib.Path("errors-{}.log".format(eid))
 
-    frecord = functools.partial(record_metadata, f, f_err, eid)
+    if outf.exists():
+        print('Output index already exists ({}). Aborting.'.format(outf), file=sys.stderr)
+        sys.exit(1)
 
-    gin = taskgin.TaskGin(ftask, frecord, n_workers=args.processes)
-    gin.start()
+    with outf.open('w') as f, logf.open('a') as f_err:
+        f.write(u'eid,target,pA,pB,cA,cB\n')
 
-    for line in args.input_file:
-        try:
-            target_node = int(line.strip())
-        except ValueError:
-            continue
+        frecord = functools.partial(record_metadata, f, f_err, eid)
 
-        if not target_node:
-            continue
+        gin = taskgin.TaskGin(ftask, frecord, n_workers=args.processes)
+        gin.start()
 
-        gin.do_task(node=target_node)
+        for line in args.input_file:
+            try:
+                target_node = int(line.strip())
+            except ValueError:
+                continue
 
-    gin.wait()
+            if not target_node:
+                continue
 
-    f.close()
-    f_err.close()
+            gin.do_task(node=target_node)
+
+        gin.wait()
 
 if __name__ == '__main__':
     sys.exit(main())
