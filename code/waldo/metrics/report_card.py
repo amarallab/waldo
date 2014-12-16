@@ -379,22 +379,36 @@ class WaldoSolver(object):
         self.taper = tp.Taper(experiment=experiment, graph=graph)
         self.report_card.add_step(graph, 'raw')
 
-    def run(self):
+    def run(self, callback=None):
         """ runs full solver code
         """
-        self.initial_clean()
-        self.solve()
-        return self.report()
+        if callback:
+            self.initial_clean(callback=lambda x: callback(x * 0.2))
+            self.solve(callback=lambda x: callback(0.2 + x * 0.6))
+            return self.report(callback=lambda x: callback(0.8 + x * 0.2))
+        else:
+            self.initial_clean()
+            self.solve()
+            return self.report()
 
-    def initial_clean(self):
+
+    def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest
         """
         graph = self.graph
         experiment = self.experiment
         collider.remove_nodes_outside_roi(graph, experiment)
+        if callback:
+            callback(0.25)
         self.report_card.add_step(graph, 'roi')
+        if callback:
+            callback(0.5)
         collider.remove_blank_nodes(graph, experiment)
+        if callback:
+            callback(0.75)
         self.report_card.add_step(graph, 'blank')
+        if callback:
+            callback(1)
 
     def prune(self, threshold=20):
         """ removes leaf nodes that last less than a certain number of frames
@@ -440,7 +454,7 @@ class WaldoSolver(object):
         link_total = len(ll1) #+ len(ll2) + len(ll3)
         self.report_card.add_step(self.graph, 'gaps ({n})'.format(n=link_total))
 
-    def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None):
+    def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None, callback=None):
         """ iterativly loop through (1) untangleing collisions (2) pruning (3) condensing and (4) connecting leaves
         """
         last_graph = None
@@ -454,25 +468,36 @@ class WaldoSolver(object):
             if subgraph_recorder is not None:
                 subgraph_recorder.save_subgraph(self.graph)
 
+        if callback:
+            def cb_iterate(i, x):
+                callback(i/6.0 + x/6.0)
+        else:
+            def cb_iterate(i, x):
+                pass
+
         self.report_card.add_step(self.graph, 'iter 0')
         for i in range(6):
-
             # untangle collisions
             n = self.untangle_collsions()
             self.report_card.add_step(self.graph, 'collisions untangled ({n})'.format(n=n))
             boiler_plate(validate_steps, subgraph_recorder)
+            cb_iterate(i, 1/6.)
 
             # prune leaves
             self.prune()
             self.report_card.add_step(self.graph, 'leaves pruned')
             boiler_plate(validate_steps, subgraph_recorder)
+            cb_iterate(i, 2/6.)
+
             # condense
             self.condense()
             boiler_plate(validate_steps, subgraph_recorder)
+            cb_iterate(i, 3/6.)
 
             # connect leaves
             self.connect_leaves()
             boiler_plate(validate_steps, subgraph_recorder)
+            cb_iterate(i, 4/6.)
 
             # iteration boiler plate
             if (last_graph is not None and
@@ -482,14 +507,23 @@ class WaldoSolver(object):
                 break
             last_graph = self.graph.copy()
             self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
+            cb_iterate(i, 5/6.)
+
+        if callback:
+            callback(1)
+
         return self.graph
 
-    def report(self):
+    def report(self, callback=None):
         """ returns the latest graph object as well as a dataframe with a
         report
         """
         report_df = self.report_card.report(show=True)
+        if callback:
+            callback(0.5)
         report_df = self.report_card.save_reports(self.graph)
+        if callback:
+            callback(1)
         return self.graph, report_df
 
     def untangle_collsions(self, verbose=True):

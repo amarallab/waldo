@@ -7,7 +7,7 @@ from PyQt4.QtCore import Qt
 from waldo.conf import settings
 from waldo.prepare import summarize as prepare_summarize
 from waldo.images import summarize as images_summarize
-from waldo.metrics.report_card import iterative_solver, WaldoSolver
+from waldo.metrics.report_card import WaldoSolver
 from waldo.wio import Experiment
 from waldo.output.writer import OutputWriter
 
@@ -123,7 +123,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 
-        #images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK)
+        # images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK)
         PROCESS_IMAGES_CALLBACK(1)
         callback(0, 2.0 / STEPS)
 
@@ -132,9 +132,8 @@ class WaldoProcessPage(QtGui.QWizardPage):
         callback(0, 3.0 / STEPS)
 
         graph = experiment.graph.copy()
-        #graph, report_df = iterative_solver(experiment, graph, callback=CORRECT_ERROR_CALLBACK)
-        solver = WaldoSolver(experiment, graph) #, callback=CORRECT_ERROR_CALLBACK)
-        graph, report_df = solver.run()
+        solver = WaldoSolver(experiment, graph)
+        graph, report_df = solver.run(callback=CORRECT_ERROR_CALLBACK)
         CORRECT_ERROR_CALLBACK(1)
         callback(0, 4.0 / STEPS)
 
