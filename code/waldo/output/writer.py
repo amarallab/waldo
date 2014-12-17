@@ -13,6 +13,7 @@ import waldo.collider
 import multiworm
 import waldo.metrics.report_card as report_card
 
+import time
 
 class OutputWriter(object):
 
@@ -36,7 +37,7 @@ class OutputWriter(object):
             graph, _ = report_card.iterative_solver(self.experiment, graph_orig)
         self.graph = graph
 
-    def export(self):
+    def export(self, callback1=None, callback2=None):
         """
 
         """
@@ -51,12 +52,12 @@ class OutputWriter(object):
         # make this run as last step before saving
         wio.file_manager.ensure_dir_exists(self.output_dir)
         print('writing blobs files')
-        file_management = self._write_blob_files(basename, summary_df)
+        file_management = self._write_blob_files(basename, summary_df, callback=callback1)
 
         #lost_and_found = json.load(open('lost_and_found.json', 'r'))
         #file_management = json.load(open('file_m.json', 'r'))
         print 'recreating summary file'
-        summary_lines = self._recreate_summary_file(summary_df, lost_and_found, file_management)
+        summary_lines = self._recreate_summary_file(summary_df, lost_and_found, file_management, callback=callback2)
         # def _recreate_summary_file(self, summary_df, lost_and_found, file_management, basename='chore'):
         sum_name = os.path.join(self.output_dir, '{bn}.summary'.format(bn=basename))
         self._write_summary_lines(sum_name, summary_lines)
@@ -78,7 +79,7 @@ class OutputWriter(object):
                 s = '0' + s
         return s
 
-    def _write_blob_files(self,  basename='chore', summary_df=None):
+    def _write_blob_files(self,  basename='chore', summary_df=None, callback=None):
         experiment = self.experiment
         graph = self.graph
         #all_frames = [int(f) for f in summary_df.index]
@@ -92,11 +93,14 @@ class OutputWriter(object):
 
         mashup_history = []
         file_counter = 0 # increments every time file is sucessfully written
-        for node in self.graph:
+        node_length = len(self.graph)
+        for current_node_index, node in enumerate(self.graph):
             # get save file name in order.
             #print node
             #print node_file
 
+            if callback:
+                callback(current_node_index / float(node_length))
             # start storing blob index into file_manager dict.
             node_data = graph.node[node]
             died_f = node_data['died_f']
@@ -202,6 +206,8 @@ class OutputWriter(object):
         all_mashups = pd.concat(mashup_history)
         all_mashups.sort('frame', inplace=True)
         all_mashups.to_csv('mashup_record.csv', index=False)
+        if callback:
+            callback(1.0)
         print file_management
         return file_management
 
@@ -256,7 +262,7 @@ class OutputWriter(object):
             lost_and_found[born_f].extend(p_data)
         return lost_and_found
 
-    def _recreate_summary_file(self, summary_df, lost_and_found, file_management):
+    def _recreate_summary_file(self, summary_df, lost_and_found, file_management, callback=None):
         """ writes a summary file based on the data collected
         """
         #summary_df['lost_found'] = ''
@@ -264,7 +270,26 @@ class OutputWriter(object):
         lf_lines = {}
         fm_lines = {}
         blobs_in_files = []
-        for fl in file_management.values():
+
+        if callback:
+            STEP1_FRAC = 0.25
+            STEP2_FRAC = 0.5
+            STEP3_FRAC = 0.25
+
+            def cb_step1(p):
+                callback(STEP1_FRAC * p)
+            def cb_step2(p):
+                callback(STEP1_FRAC + STEP2_FRAC * p)
+            def cb_step3(p):
+                callback(STEP1_FRAC + STEP2_FRAC + STEP3_FRAC * p)
+        else:
+            def cb_step1(p):
+                pass
+            cb_step2 = cb_step3 = cb_step1
+
+        count = len(file_management.values())
+        for current, fl in enumerate(file_management.values()):
+            cb_step1(current/float(count))
             if len(fl) > 1:
                 bs, fs = zip(*fl)
                 blobs_in_files.extend(bs)
@@ -272,7 +297,12 @@ class OutputWriter(object):
                 bs, fs = fl[0]
                 blobs_in_files.append(bs)
 
+        count = len(lost_and_found.items())
+        current = 0
         for frame, lf in lost_and_found.iteritems():
+            cb_step2(current/float(count))
+            current += 1
+
             line_contains_info = False
             lf_line = ' %%'
             for a, b in lf:
@@ -297,8 +327,13 @@ class OutputWriter(object):
             #print frame, fm_line
             fm_lines[int(frame)] = fm_line
 
+        count = summary_df[0].count()
+        current = 0
         lines = []
         for i, row in summary_df.iterrows():
+            cb_step3(current/float(count))
+            current += 1
+
             line = ' '.join(['{i}'.format(i=i) for i in row])
             frame = int(row[0])
             #print frame

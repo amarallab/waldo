@@ -119,11 +119,11 @@ class WaldoProcessPage(QtGui.QWizardPage):
         ex_id = self.data.ex_id
         callback(0, 0.0 / STEPS)
 
-        #prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
+        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 
-        # images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK)
+        images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK)
         PROCESS_IMAGES_CALLBACK(1)
         callback(0, 2.0 / STEPS)
 
@@ -138,7 +138,9 @@ class WaldoProcessPage(QtGui.QWizardPage):
         callback(0, 4.0 / STEPS)
 
         out_writer = OutputWriter(ex_id, graph=graph)
-        out_writer.export()
+        out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
+        WRITE_OUTPUT_CALLBACK(1)
+        GENERATE_REPORT_CALLBACK(1)
         callback(0, 5.0 / STEPS)
 
     def finished(self):

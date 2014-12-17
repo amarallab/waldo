@@ -143,7 +143,8 @@ class InteractivePlot:
         self.background = InteractivePlot.create_background(impaths)
 
         try:
-            filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "thresholddata.json")
+            filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "waldo",
+                                    "{ex_id}-thresholddata.json".format(ex_id=sef.current_id))
             with open(filename, "rt") as f:
                 data = json.loads(f.read())
             self.current_threshold = data['threshold']
@@ -178,7 +179,7 @@ class InteractivePlot:
         for k, v in self.data.items():
             filename = os.path.join(settings.PROJECT_DATA_ROOT, k)
             ensure_dir_exists(filename)
-            filename = os.path.join(filename, "thresholddata.json")
+            filename = os.path.join(filename, "thresholddata.json")  # DEPRECATED
             with open(filename, "wt") as f:
                 f.write(json.dumps(v, indent=4))
         self.data = {}

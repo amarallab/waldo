@@ -28,7 +28,8 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
     def initializePage(self):
         data = {}
         if self.data.ex_id is not None:
-            self.annotation_filename = os.path.join(settings.PROJECT_DATA_ROOT, self.data.ex_id, 'thresholddata.json')
+            self.annotation_filename = os.path.join(settings.PROJECT_DATA_ROOT, self.data.ex_id, "waldo",
+                                                    "{ex_id}-thresholddata.json".format(ex_id=self.data.ex_id))
             try:
                 with open(self.annotation_filename, "rt") as f:
                     data = json.loads(f.read())

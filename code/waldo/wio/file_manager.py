@@ -64,7 +64,7 @@ class ImageMarkings(object):
         self.path = settings.PROJECT_DATA_ROOT
         self.ex_id = ex_id
 
-        self.file = os.path.join(self.path, ex_id, 'thresholddata.json')
+        self.file = os.path.join(self.path, ex_id, "waldo", "{ex_id}-thresholddata.json".format(ex_id=ex_id))
         try:
             d = json.load(open(self.file, 'r'))
         except:
