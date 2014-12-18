@@ -22,7 +22,8 @@ from .grab_images import grab_images_in_time_range
 from .manipulations import create_backround, create_binary_mask
 
 from waldo.wio.experiment import Experiment
-import waldo.wio.file_manager as fm
+from waldo.wio import file_manager as fm
+from waldo.wio import paths
 from .worm_finder import grab_blob_data, match_objects
 
 # for IdTracker VALIDATION
@@ -35,7 +36,7 @@ def cutouts_for_worms(ex_id, savedir, worm_component_dict):
         w_dir = '{p}/{eid}/worm_{w}'.format(p=savedir, eid=ex_id,
                                             w=worm)
         w_dir = os.path.abspath(w_dir)
-        fm.ensure_dir_exists(w_dir)
+        paths.mkdirp(w_dir)
         worm_dirs[worm] = w_dir
         for blob in worm_component_dict[worm]:
             worms_by_blob[blob] = worm
@@ -171,7 +172,7 @@ def worm_cutouts(ex_id, savedir, threshold=None, roi=None):
         #print(img_index.head(10))
 
         f_dir = os.path.join(savedir, str(frame))
-        fm.ensure_dir_exists(f_dir)
+        paths.mkdirp(f_dir)
         for l, m, im in zip(labels, masks, imgs):
             bid_matches = more['blobs_by_object'][l]
             if not bid_matches:
