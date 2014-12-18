@@ -22,9 +22,8 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 # package specific
-from waldo.conf import settings
-
 from waldo import wio
+from waldo.wio import paths
 from waldo.wio import file_manager as fm
 
 from waldo.extern import multiworm
@@ -475,8 +474,7 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
     print(closest_image)
 
     # initialize experiment
-    path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
-    experiment = wio.Experiment(path)
+    experiment = wio.Experiment(experiment_id=ex_id)
 
     time = closest_time
     img = mpimg.imread(closest_image)
@@ -584,8 +582,7 @@ def draw_colors_on_image_T(ex_id, time, ax=None, colors=None):
     print(closest_image)
 
     # initialize experiment
-    path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
-    experiment = wio.Experiment(path)
+    experiment = wio.Experiment(experiment_id=ex_id)
 
     time = closest_time
     img = mpimg.imread(closest_image)
@@ -770,7 +767,7 @@ def show_matched_image(ex_id, threshold, time, roi=None):
     background = mim.create_backround(impaths)
 
     # initialize experiment
-    path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
+    path = paths.experiment(ex_id)
     experiment = multiworm.Experiment(path)
 
     time = closest_time
@@ -816,7 +813,6 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
     background = mim.create_backround(impaths)
 
     # initialize experiment
-    #path = os.path.join(settings.MWT_DATA_ROOT, ex_id)
     experiment = wio.Experiment(experiment_id=ex_id)
 
     if callback:

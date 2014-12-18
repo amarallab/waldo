@@ -1,36 +1,36 @@
 #!/usr/bin/env python
-import os
-import sys
-import itertools
-import glob
+from __future__ import absolute_import
+import pathlib
+
 import pandas as pd
 import numpy as np
 
 from waldo.conf import settings
-from waldo.wio import Experiment
-import waldo.wio as wio
+from waldo import wio
+from waldo.wio import paths
 import waldo.collider
 import multiworm
 import waldo.metrics.report_card as report_card
 
-import time
 
 class OutputWriter(object):
+    """
 
+    """
     def __init__(self, ex_id, graph=None, data_dir=None, output_dir=None):
-        """ """
-        if data_dir is None:
-            data_dir = str(settings.MWT_DATA_ROOT)
-        if output_dir is None:
-            output_dir = str(settings.PROJECT_DATA_ROOT)
-
-        #print '--------------------------', ex_id, '--------------------------'
-        # print(output_dir, ex_id)
-        # print(data_dir, ex_id)
         self.ex_id = ex_id
-        self.output_dir = os.path.join(output_dir, ex_id, 'blob_files')
-        self.data_dir  = os.path.join(data_dir, ex_id, 'waldo')
-        self.experiment = Experiment(experiment_id=ex_id, data_root=data_dir)
+
+        if data_dir is None:
+            self.data_dir = paths.experiment(ex_id, root=data_root)
+        else:
+            self.data_dir = pathlib.Path(data_dir)
+
+        if output_dir is None:
+            self.output_dir = paths.output(ex_id)
+        else:
+            self.output_dir = pathlib.Path(output_dir)
+
+        self.experiment = wio.Experiment(fullpath=data_dir)
 
         if graph is None:
             graph_orig = self.experiment.graph.copy()
@@ -50,7 +50,7 @@ class OutputWriter(object):
         #blob_basename = '{bn}'.format(bn=basename)
 
         # make this run as last step before saving
-        wio.file_manager.ensure_dir_exists(self.output_dir)
+        paths.mkdirp(self.output_dir)
         print('writing blobs files')
         file_management = self._write_blob_files(basename, summary_df, callback=callback1)
 
@@ -59,7 +59,7 @@ class OutputWriter(object):
         print 'recreating summary file'
         summary_lines = self._recreate_summary_file(summary_df, lost_and_found, file_management, callback=callback2)
         # def _recreate_summary_file(self, summary_df, lost_and_found, file_management, basename='chore'):
-        sum_name = os.path.join(self.output_dir, '{bn}.summary'.format(bn=basename))
+        sum_name = self.output_dir / self.experiment.summary_file.name
         self._write_summary_lines(sum_name, summary_lines)
 
     def _write_summary_lines(self, sum_name, lines):
@@ -87,9 +87,6 @@ class OutputWriter(object):
         sdf = summary_df.set_index(0)
 
         file_management = {}
-        #print basename
-        file_path = os.path.join(self.output_dir, basename)
-        #print file_path
 
         mashup_history = []
         file_counter = 0 # increments every time file is sucessfully written
@@ -191,8 +188,8 @@ class OutputWriter(object):
             location = '{f}.{pos}'.format(f=file_counter, pos=0)
             file_management[died_f].extend([[node, location]])
             file_number = self.format_number_string(file_counter)
-            node_file = '{p}_{n}k.blobs'.format(p=file_path,
-                                                n=file_number)
+            node_file = self.output_dir / '{p}_{n:05}k.blobs'.format(
+                    p=self.experiment.basename, n=file_number)
             with open(node_file, 'w') as f:
                 f.write('% {n}\n'.format(n=node))
 
@@ -212,14 +209,9 @@ class OutputWriter(object):
         return file_management
 
     def _load_summary(self):
-        ex_dir = str(self.experiment.directory)
-        search_path = os.path.join(ex_dir, '*.summary')
-        # print 'summary:', glob.glob(search_path)
-        # TODO
-        summary_path = glob.glob(search_path)[0]
-        basename = os.path.basename(summary_path).split('.summary')[0]
+        basename = self.experiment.basename
         print basename
-        with open(summary_path, 'r') as f:
+        with self.experiment.summary_file.open() as f:
             lines = f.readlines()
 
         cleaned_lines = []
