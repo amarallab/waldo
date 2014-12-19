@@ -178,7 +178,7 @@ class InteractivePlot:
             datafile = paths.threshold_data(ex_id)
             paths.mkdirp(filename.parent)
             with datafile.open("wt") as f:
-                json.dump(ex_data, f, indent=4))
+                json.dump(ex_data, f, indent=4)
 
         self.data = {}
 

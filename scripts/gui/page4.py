@@ -21,7 +21,7 @@ from skimage import morphology
 from skimage.measure import regionprops
 
 from waldo.images.grab_images import grab_images_in_time_range
-from waldo.conf import settings
+from waldo.wio import paths
 
 class CacheThresholdLoadingDialog(QtGui.QDialog):
     def __init__(self, ex_id, func, finish_func, parent=None):
@@ -149,8 +149,7 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.current_threshold = 0.0005
         data = {}
         if self.data.ex_id is not None:
-            self.annotation_filename = os.path.join(settings.PROJECT_DATA_ROOT, self.data.ex_id, "waldo",
-                                                    "{ex_id}-thresholddata.json".format(ex_id=self.data.ex_id))
+            self.annotation_filename = paths.threshold_data(self.data.ex_id)
             try:
                 with open(self.annotation_filename, "rt") as f:
                     data = json.loads(f.read())

@@ -4,7 +4,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
-from waldo.conf import settings
+from waldo.conf import settings, guisettings
 
 
 class WelcomePage(QtGui.QWizardPage):
@@ -97,18 +97,22 @@ class ConfigDialog(QtGui.QDialog):
         layout = QtGui.QGridLayout()
 
         # Collider Suite
-        self.colliderSuiteAssimilateSize = self.createQLineEditIntValidator(str(settings.COLLIDER_SUITE_ASSIMILATE_SIZE),
-                                                                            settings.COLLIDER_SUITE_ASSIMILATE_SIZE_RANGE,
-                                                                            self.ToolTips.colliderSuiteAssimilateSize)
-        self.colliderSuiteOffshoot = self.createQLineEditIntValidator(str(settings.COLLIDER_SUITE_OFFSHOOT),
-                                                                      settings.COLLIDER_SUITE_OFFSHOOT_RANGE,
-                                                                      self.ToolTips.colliderSuiteOffshoot)
-        self.colliderSuiteSplitAbs = self.createQLineEditIntValidator(str(settings.COLLIDER_SUITE_SPLIT_ABS),
-                                                                      settings.COLLIDER_SUITE_SPLIT_ABS_RANGE,
-                                                                      self.ToolTips.colliderSuiteSplitAbs)
-        self.colliderSuiteSplitRel = self.createQLineEditDoubleValidator(str(settings.COLLIDER_SUITE_SPLIT_REL),
-                                                                         settings.COLLIDER_SUITE_SPLIT_REL_RANGE,
-                                                                         self.ToolTips.colliderSuiteSplitRel)
+        self.colliderSuiteAssimilateSize = self.createQLineEditIntValidator(
+                str(settings.COLLIDER_SUITE_ASSIMILATE_SIZE),
+                guisettings.COLLIDER_SUITE_ASSIMILATE_SIZE_RANGE,
+                self.ToolTips.colliderSuiteAssimilateSize)
+        self.colliderSuiteOffshoot = self.createQLineEditIntValidator(
+                str(settings.COLLIDER_SUITE_OFFSHOOT),
+                guisettings.COLLIDER_SUITE_OFFSHOOT_RANGE,
+                self.ToolTips.colliderSuiteOffshoot)
+        self.colliderSuiteSplitAbs = self.createQLineEditIntValidator(
+                str(settings.COLLIDER_SUITE_SPLIT_ABS),
+                guisettings.COLLIDER_SUITE_SPLIT_ABS_RANGE,
+                self.ToolTips.colliderSuiteSplitAbs)
+        self.colliderSuiteSplitRel = self.createQLineEditDoubleValidator(
+                str(settings.COLLIDER_SUITE_SPLIT_REL),
+                guisettings.COLLIDER_SUITE_SPLIT_REL_RANGE,
+                self.ToolTips.colliderSuiteSplitRel)
 
         col = 0
         layout.addWidget(QtGui.QLabel("<b>Collider suite</b>"), col, 0, 1, 2)
@@ -130,33 +134,42 @@ class ConfigDialog(QtGui.QDialog):
         layout.addWidget(self.colliderSuiteSplitRel, col, 1, 1, 1)
 
         # Tape
-        self.tapeFrameSearchLimit = self.createQLineEditIntValidator(str(settings.TAPE_FRAME_SEARCH_LIMIT),
-                                                                     settings.TAPE_FRAME_SEARCH_LIMIT_RANGE,
-                                                                     self.ToolTips.tapeFrameSearchLimit)
-        self.tapeKdeSamples = self.createQLineEditIntValidator(str(settings.TAPE_KDE_SAMPLES),
-                                                               settings.TAPE_KDE_SAMPLES_RANGE,
-                                                               self.ToolTips.tapeKdeSamples)
-        self.tapeMaxSpeedMultiplier = self.createQLineEditDoubleValidator(str(settings.TAPE_MAX_SPEED_MULTIPLIER),
-                                                                          settings.TAPE_MAX_SPEED_MULTIPLIER_RANGE,
-                                                                          self.ToolTips.tapeMaxSpeedMultiplier)
-        self.tapeMaxSpeedSmoothing = self.createQLineEditIntValidator(str(settings.TAPE_MAX_SPEED_SMOOTHING),
-                                                                      settings.TAPE_MAX_SPEED_SMOOTHING_RANGE,
-                                                                      self.ToolTips.tapeMaxSpeedSmoothing)
-        self.tapeMinTraceFail = self.createQLineEditIntValidator(str(settings.TAPE_MIN_TRACE_FAIL),
-                                                                 settings.TAPE_MIN_TRACE_FAIL_RANGE,
-                                                                 self.ToolTips.tapeMinTraceFail)
-        self.tapeMinTraceWarn = self.createQLineEditIntValidator(str(settings.TAPE_MIN_TRACE_WARN),
-                                                                 settings.TAPE_MIN_TRACE_WARN_RANGE,
-                                                                 self.ToolTips.tapeMinTraceWarn)
-        self.tapeRelMoveThreshold = self.createQLineEditDoubleValidator(str(settings.TAPE_REL_MOVE_THRESHOLD),
-                                                                        settings.TAPE_REL_MOVE_THRESHOLD_RANGE,
-                                                                        self.ToolTips.tapeRelMoveThreshold)
-        self.tapeShakycamAllowance = self.createQLineEditIntValidator(str(settings.TAPE_SHAKYCAM_ALLOWANCE),
-                                                                      settings.TAPE_SHAKYCAM_ALLOWANCE_RANGE,
-                                                                      self.ToolTips.tapeShakycamAllowance)
-        self.tapeTraceLimitNum = self.createQLineEditIntValidator(str(settings.TAPE_TRACE_LIMIT_NUM),
-                                                                  settings.TAPE_TRACE_LIMIT_NUM_RANGE,
-                                                                  self.ToolTips.tapeTraceLimitNum)
+        self.tapeFrameSearchLimit = self.createQLineEditIntValidator(
+                str(settings.TAPE_FRAME_SEARCH_LIMIT),
+                guisettings.TAPE_FRAME_SEARCH_LIMIT_RANGE,
+                self.ToolTips.tapeFrameSearchLimit)
+        self.tapeKdeSamples = self.createQLineEditIntValidator(
+                str(settings.TAPE_KDE_SAMPLES),
+                guisettings.TAPE_KDE_SAMPLES_RANGE,
+                self.ToolTips.tapeKdeSamples)
+        self.tapeMaxSpeedMultiplier = self.createQLineEditDoubleValidator(
+                str(settings.TAPE_MAX_SPEED_MULTIPLIER),
+                guisettings.TAPE_MAX_SPEED_MULTIPLIER_RANGE,
+                self.ToolTips.tapeMaxSpeedMultiplier)
+        self.tapeMaxSpeedSmoothing = self.createQLineEditIntValidator(
+                str(settings.TAPE_MAX_SPEED_SMOOTHING),
+                guisettings.TAPE_MAX_SPEED_SMOOTHING_RANGE,
+                self.ToolTips.tapeMaxSpeedSmoothing)
+        self.tapeMinTraceFail = self.createQLineEditIntValidator(
+                str(settings.TAPE_MIN_TRACE_FAIL),
+                guisettings.TAPE_MIN_TRACE_FAIL_RANGE,
+                self.ToolTips.tapeMinTraceFail)
+        self.tapeMinTraceWarn = self.createQLineEditIntValidator(
+                str(settings.TAPE_MIN_TRACE_WARN),
+                guisettings.TAPE_MIN_TRACE_WARN_RANGE,
+                self.ToolTips.tapeMinTraceWarn)
+        self.tapeRelMoveThreshold = self.createQLineEditDoubleValidator(
+                str(settings.TAPE_REL_MOVE_THRESHOLD),
+                guisettings.TAPE_REL_MOVE_THRESHOLD_RANGE,
+                self.ToolTips.tapeRelMoveThreshold)
+        self.tapeShakycamAllowance = self.createQLineEditIntValidator(
+                str(settings.TAPE_SHAKYCAM_ALLOWANCE),
+                guisettings.TAPE_SHAKYCAM_ALLOWANCE_RANGE,
+                self.ToolTips.tapeShakycamAllowance)
+        self.tapeTraceLimitNum = self.createQLineEditIntValidator(
+                str(settings.TAPE_TRACE_LIMIT_NUM),
+                guisettings.TAPE_TRACE_LIMIT_NUM_RANGE,
+                self.ToolTips.tapeTraceLimitNum)
 
         col = 0
         layout.addWidget(QtGui.QLabel("<b>Tape</b>"), col, 2, 1, 2)
