@@ -1,11 +1,29 @@
-from __future__ import absolute_import
-
+from __future__ import absolute_import, division, print_function
 import os
 import json
 
+def _config_homedir():
+    try:
+        from win32com.shell import shellcon, shell
+        homedir = shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0)
+    except ImportError: # quick semi-nasty fallback for non-windows/win32com case
+        homedir = os.path.expanduser("~")
+    return homedir
+
+def _config_filename():
+    homedir = _config_homedir()
+    return os.path.join(homedir, "waldo_config.ini")
+
+def _default_MWT_Data_folder():
+    homedir = _config_homedir()
+    return os.path.join(homedir, "waldo", "MWT_Data")
+
+def _default_Project_folder():
+    homedir = _config_homedir()
+    return os.path.join(homedir, "waldo", "waldo_data")
+
 # COLLIDER
 #----------
-
 # Blobs with fewer frames than this are rolled up into their parent
 COLLIDER_SUITE_OFFSHOOT = 20
 COLLIDER_SUITE_OFFSHOOT_RANGE = (0, 100)   # Range used in the GUI edit
@@ -26,12 +44,10 @@ COLLIDER_SUITE_ASSIMILATE_SIZE_RANGE = (0, 10)   # Range used in the GUI edit
 
 # DEBUG
 #-------
-
 DEBUG = False
 
 # LOGGING
 #---------
-
 LOG_CONFIGURATION = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -58,7 +74,6 @@ LOG_CONFIGURATION = {
 
 # TAPE
 #------
-
 # How the Taper defines a "good blob"
 TAPE_REL_MOVE_THRESHOLD = 0.5
 TAPE_REL_MOVE_THRESHOLD_RANGE = (0, 1, 2)
@@ -99,77 +114,73 @@ TAPE_MAX_SPEED_SMOOTHING_RANGE = (1, 100)
 
 # THINGS
 #--------
-MWT_DATA_ROOT = '/home/projects/worm_movement/Data/MWT_RawData/'
-PROJECT_DATA_ROOT = '/home/visitors/peterwinter/codes/waldo/data/prep'
-# MWT_DATA_ROOT = '/home/projects/worm_movement/Data/MWT_RawData/'
-# PROJECT_DATA_ROOT = '/Users/heltena/Desktop/waldo/waldo_data'
+MWT_DATA_ROOT = _default_MWT_Data_folder()
+PROJECT_DATA_ROOT = _default_Project_folder()
 
 # SCORE RANGES
 #----------------
-
 SCORE_CONTRAST_RADIO_RANGE = (1.0, 2.0)
 SCORE_CONTRAST_DIFF_RANGE = (-0.1, 0.1)
 SCORE_GOOD_FRACTION_RANGE = (0.5, 1.0)
 SCORE_ACCURACY_RANGE = (0.5, 1.0)
 SCORE_COVERAGE_RANGE = (0.5, 1.0)
 
-
-def _config_filename():
-    try:
-        from win32com.shell import shellcon, shell
-        homedir = shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0)
-    except ImportError: # quick semi-nasty fallback for non-windows/win32com case
-        homedir = os.path.expanduser("~")
-        return os.path.join(homedir, "waldo_config.ini")
-
 def load():
+    global COLLIDER_SUITE_OFFSHOOT
+    global COLLIDER_SUITE_SPLIT_ABS
+    global COLLIDER_SUITE_SPLIT_REL
+    global COLLIDER_SUITE_ASSIMILATE_SIZE
+
+    global DEBUG
+
+    global TAPE_REL_MOVE_THRESHOLD
+    global TAPE_MIN_TRACE_FAIL
+    global TAPE_MIN_TRACE_WARN
+    global TAPE_TRACE_LIMIT_NUM
+    global TAPE_FRAME_SEARCH_LIMIT
+    global TAPE_KDE_SAMPLES
+    global TAPE_MAX_SPEED_MULTIPLIER
+    global TAPE_SHAKYCAM_ALLOWANCE
+    global TAPE_MAX_SPEED_SMOOTHING
+
+    global MWT_DATA_ROOT
+    global PROJECT_DATA_ROOT
+
     try:
-        global COLLIDER_SUITE_OFFSHOOT
-        global COLLIDER_SUITE_SPLIT_ABS
-        global COLLIDER_SUITE_SPLIT_REL
-        global COLLIDER_SUITE_ASSIMILATE_SIZE
-
-        global DEBUG
-
-        global TAPE_REL_MOVE_THRESHOLD
-        global TAPE_MIN_TRACE_FAIL
-        global TAPE_MIN_TRACE_WARN
-        global TAPE_TRACE_LIMIT_NUM
-        global TAPE_FRAME_SEARCH_LIMIT
-        global TAPE_KDE_SAMPLES
-        global TAPE_MAX_SPEED_MULTIPLIER
-        global TAPE_SHAKYCAM_ALLOWANCE
-        global TAPE_MAX_SPEED_SMOOTHING
-
-        global MWT_DATA_ROOT
-        global PROJECT_DATA_ROOT
-
         with open(_config_filename(), "rt") as f:
             data = json.load(f)
+        create_file = False
+    except IOError as e:
+        print("Warning: file '{file} doesn't exist. Trying to create...".format(file=_config_filename()))
+        data = {}
+        create_file = True
+    except ValueError as e:
+        print("Warning: JSON data malformed. Loading the default data...")
+        data = {}
+        create_file = False
 
-        COLLIDER_SUITE_OFFSHOOT = data.get('COLLIDER_SUITE_OFFSHOOT', COLLIDER_SUITE_OFFSHOOT)
-        COLLIDER_SUITE_SPLIT_ABS = data.get('COLLIDER_SUITE_SPLIT_ABS', COLLIDER_SUITE_SPLIT_ABS)
-        COLLIDER_SUITE_SPLIT_REL = data.get('COLLIDER_SUITE_SPLIT_REL', COLLIDER_SUITE_SPLIT_REL)
-        COLLIDER_SUITE_ASSIMILATE_SIZE = data.get('COLLIDER_SUITE_ASSIMILATE_SIZE', COLLIDER_SUITE_ASSIMILATE_SIZE)
+    COLLIDER_SUITE_OFFSHOOT = data.get('COLLIDER_SUITE_OFFSHOOT', COLLIDER_SUITE_OFFSHOOT)
+    COLLIDER_SUITE_SPLIT_ABS = data.get('COLLIDER_SUITE_SPLIT_ABS', COLLIDER_SUITE_SPLIT_ABS)
+    COLLIDER_SUITE_SPLIT_REL = data.get('COLLIDER_SUITE_SPLIT_REL', COLLIDER_SUITE_SPLIT_REL)
+    COLLIDER_SUITE_ASSIMILATE_SIZE = data.get('COLLIDER_SUITE_ASSIMILATE_SIZE', COLLIDER_SUITE_ASSIMILATE_SIZE)
 
-        DEBUG = data.get('DEBUG', DEBUG)
+    DEBUG = data.get('DEBUG', DEBUG)
 
-        TAPE_REL_MOVE_THRESHOLD = data.get('TAPE_REL_MOVE_THRESHOLD', TAPE_REL_MOVE_THRESHOLD)
-        TAPE_MIN_TRACE_FAIL = data.get('TAPE_MIN_TRACE_FAIL', TAPE_MIN_TRACE_FAIL)
-        TAPE_MIN_TRACE_WARN = data.get('TAPE_MIN_TRACE_WARN', TAPE_MIN_TRACE_WARN)
-        TAPE_TRACE_LIMIT_NUM = data.get('TAPE_TRACE_LIMIT_NUM', TAPE_TRACE_LIMIT_NUM)
-        TAPE_FRAME_SEARCH_LIMIT = data.get('TAPE_FRAME_SEARCH_LIMIT', TAPE_FRAME_SEARCH_LIMIT)
-        TAPE_KDE_SAMPLES = data.get('TAPE_KDE_SAMPLES', TAPE_KDE_SAMPLES)
-        TAPE_MAX_SPEED_MULTIPLIER = data.get('TAPE_MAX_SPEED_MULTIPLIER', TAPE_MAX_SPEED_MULTIPLIER)
-        TAPE_SHAKYCAM_ALLOWANCE = data.get('TAPE_SHAKYCAM_ALLOWANCE', TAPE_SHAKYCAM_ALLOWANCE)
-        TAPE_MAX_SPEED_SMOOTHING = data.get('TAPE_MAX_SPEED_SMOOTHING', TAPE_MAX_SPEED_SMOOTHING)
+    TAPE_REL_MOVE_THRESHOLD = data.get('TAPE_REL_MOVE_THRESHOLD', TAPE_REL_MOVE_THRESHOLD)
+    TAPE_MIN_TRACE_FAIL = data.get('TAPE_MIN_TRACE_FAIL', TAPE_MIN_TRACE_FAIL)
+    TAPE_MIN_TRACE_WARN = data.get('TAPE_MIN_TRACE_WARN', TAPE_MIN_TRACE_WARN)
+    TAPE_TRACE_LIMIT_NUM = data.get('TAPE_TRACE_LIMIT_NUM', TAPE_TRACE_LIMIT_NUM)
+    TAPE_FRAME_SEARCH_LIMIT = data.get('TAPE_FRAME_SEARCH_LIMIT', TAPE_FRAME_SEARCH_LIMIT)
+    TAPE_KDE_SAMPLES = data.get('TAPE_KDE_SAMPLES', TAPE_KDE_SAMPLES)
+    TAPE_MAX_SPEED_MULTIPLIER = data.get('TAPE_MAX_SPEED_MULTIPLIER', TAPE_MAX_SPEED_MULTIPLIER)
+    TAPE_SHAKYCAM_ALLOWANCE = data.get('TAPE_SHAKYCAM_ALLOWANCE', TAPE_SHAKYCAM_ALLOWANCE)
+    TAPE_MAX_SPEED_SMOOTHING = data.get('TAPE_MAX_SPEED_SMOOTHING', TAPE_MAX_SPEED_SMOOTHING)
 
-        MWT_DATA_ROOT = data.get('MWT_DATA_ROOT', MWT_DATA_ROOT)
-        PROJECT_DATA_ROOT = data.get('PROJECT_DATA_ROOT', PROJECT_DATA_ROOT)
-        return True
-    except Exception as e:
-        print "E: Cannot load data.", e.message
-        return False
+    MWT_DATA_ROOT = data.get('MWT_DATA_ROOT', MWT_DATA_ROOT)
+    PROJECT_DATA_ROOT = data.get('PROJECT_DATA_ROOT', PROJECT_DATA_ROOT)
+
+    if create_file:
+        save()
 
 def save():
     try:
@@ -198,22 +209,10 @@ def save():
             json.dump(data, f, indent=4, sort_keys=True)
         return True
     except Exception, e:
-        print "E: Cannot save data.", e.message
+        print("Error: Cannot save data.", e.message)
         return False
 
-
 load()
-save()
-
-
-
-
-
-
-
-
-
-
 
 # # -*- coding: utf-8 -*-
 # """
