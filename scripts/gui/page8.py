@@ -30,6 +30,12 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 from mpltools import style
 
+import matplotlib.image as mpimg
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from skimage import morphology
+from skimage.measure import regionprops
+
 
 style.use('ggplot')
 
@@ -114,9 +120,29 @@ class WaldoProcessPage(QtGui.QWizardPage):
         self.data = data
         self.waldoProcessCompleted = False
         self.setTitle("Waldo Process")
-        self.setSubTitle("TO-DO.")
+
+        self.tab = QtGui.QTabWidget()
+        self.plot_titles = ['Figure 1', 'Figure 2', 'Figure 3']
+        self.plots = []
+        for title in self.plot_titles:
+            figure = plt.figure()
+            canvas = FigureCanvas(figure)
+            canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+            canvas.setMinimumSize(50, 50)
+            toolbar = NavigationToolbar(canvas, self)
+            toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+            widget = QtGui.QWidget()
+            layout = QtGui.QVBoxLayout()
+            layout.addWidget(canvas)
+            layout.addWidget(toolbar)
+            widget.setLayout(layout)
+
+            self.tab.addTab(widget, title)
+            self.plots.append(figure)
 
         layout = QtGui.QVBoxLayout()
+        layout.addWidget(self.tab)
         self.setLayout(layout)
 
     def initializePage(self):
@@ -134,99 +160,87 @@ class WaldoProcessPage(QtGui.QWizardPage):
         WRITE_OUTPUT_CALLBACK = lambda x: callback(5, x)
         GENERATE_REPORT_CALLBACK = lambda x: callback(6, x)
 
-        # STEPS = 5.0
-        # ex_id = self.data.ex_id
-        # callback(0, 0.0 / STEPS)
-        #
-        # prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
-        # PROCESS_BLOBS_CALLBACK(1)
-        # callback(0, 1.0 / STEPS)
-        #
-        # images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK)
-        # PROCESS_IMAGES_CALLBACK(1)
-        # callback(0, 2.0 / STEPS)
-        #
-        # experiment = Experiment(experiment_id=ex_id)
-        # LOAD_EXPERIMENT_CALLBACK(1)
-        # callback(0, 3.0 / STEPS)
-        #
-        # graph = experiment.graph.copy()
-        # solver = WaldoSolver(experiment, graph)
-        # graph, report_df = solver.run(callback=CORRECT_ERROR_CALLBACK)
-        # CORRECT_ERROR_CALLBACK(1)
-        # callback(0, 4.0 / STEPS)
-        #
-        # out_writer = OutputWriter(ex_id, graph=graph)
-        # out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
-        # WRITE_OUTPUT_CALLBACK(1)
-        # GENERATE_REPORT_CALLBACK(1)
-        # callback(0, 5.0 / STEPS)
+        STEPS = 5.0
+        ex_id = self.data.ex_id
+        callback(0, 0.0 / STEPS)
+
+        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
+        PROCESS_BLOBS_CALLBACK(1)
+        callback(0, 1.0 / STEPS)
+
+        images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK)
+        PROCESS_IMAGES_CALLBACK(1)
+        callback(0, 2.0 / STEPS)
+
+        experiment = Experiment(experiment_id=ex_id)
+        LOAD_EXPERIMENT_CALLBACK(1)
+        callback(0, 3.0 / STEPS)
+
+        graph = experiment.graph.copy()
+        solver = WaldoSolver(experiment, graph)
+        graph, report_df = solver.run(callback=CORRECT_ERROR_CALLBACK)
+        CORRECT_ERROR_CALLBACK(1)
+        callback(0, 4.0 / STEPS)
+
+        out_writer = OutputWriter(ex_id, graph=graph)
+        out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
+        WRITE_OUTPUT_CALLBACK(1)
+        GENERATE_REPORT_CALLBACK(1)
+        callback(0, 5.0 / STEPS)
 
     def finished(self):
         self.waldoProcessCompleted = True
-        make_fig1(self.data.ex_id, save_fig=False)
+        self.make_figures(self.data.ex_id)
         self.completeChanged.emit()
 
     def isComplete(self):
         return self.waldoProcessCompleted
 
+    # MAKE FIG
 
-# Make Fig
+    def calculate_stats_for_moves(self, min_moves, prep_data):
+        move = prep_data.load('moved')
 
+        base_accuracy = prep_data.load('accuracy', index_col=False)
+        print base_accuracy.head()
+        print base_accuracy.columns
+        matches = prep_data.load('matches')
+        counts, tps, fps, fns = [], [], [], []
+        for mm in min_moves:
+            print mm
+            moved = move[move['bl_moved'] >= mm]
+            bids = list(moved['bid'])
+            filtered_accuracy = ea.recalculate_accuracy(matches, base_accuracy, bids=bids)
+            #filtered_accuracy = filtered_accuracy[np.isfinite(filtered_accuracy['true-pos'])]
+            counts.append(len(bids))
+            tp = filtered_accuracy['true-pos'].mean()
+            #print 'tp', tp
+            fp = filtered_accuracy['false-pos'].mean()
+            #print 'fp', fp
+            fn = filtered_accuracy['false-neg'].mean()
 
-def calculate_stats_for_moves(min_moves, prep_data):
-    move = prep_data.load('moved')
+            tps.append(tp)
+            fps.append(fp)
+            fns.append(fn)
 
-    base_accuracy = prep_data.load('accuracy', index_col=False)
-    print base_accuracy.head()
-    print base_accuracy.columns
-    matches = prep_data.load('matches')
-    counts, tps, fps, fns = [], [], [], []
-    for mm in min_moves:
-        print mm
-        moved = move[move['bl_moved'] >= mm]
-        bids = list(moved['bid'])
-        filtered_accuracy = ea.recalculate_accuracy(matches, base_accuracy, bids=bids)
-        #filtered_accuracy = filtered_accuracy[np.isfinite(filtered_accuracy['true-pos'])]
-        counts.append(len(bids))
-        tp = filtered_accuracy['true-pos'].mean()
-        #print 'tp', tp
-        fp = filtered_accuracy['false-pos'].mean()
-        #print 'fp', fp
-        fn = filtered_accuracy['false-neg'].mean()
+        tps = np.array(tps)
+        fps = np.array(fps)
+        fns = np.array(fns)
+        totals = fns + tps
+        tps_p = tps / totals * 100
+        fps_p = fps / totals * 100
+        fns_p = fns / totals * 100
 
-        tps.append(tp)
-        fps.append(fp)
-        fns.append(fn)
+        print('true counts=', np.mean(totals))
 
-    tps = np.array(tps)
-    fps = np.array(fps)
-    fns = np.array(fns)
-    totals = fns + tps
-    tps_p = tps / totals * 100
-    fps_p = fps / totals * 100
-    fns_p = fns / totals * 100
+        data = pd.DataFrame([tps_p, fns_p, fps_p], index=['TP', 'FN', 'FP']).T
+        counts = pd.DataFrame(counts, columns=['counts'])
+        return data, counts
 
-    print('true counts=', np.mean(totals))
-
-    data = pd.DataFrame([tps_p, fns_p, fps_p], index=['TP', 'FN', 'FP']).T
-    counts = pd.DataFrame(counts, columns=['counts'])
-    return data, counts
-
-
-def make_axes_square(ax):
-    x0,x1 = ax.get_xlim()
-    y0,y1 = ax.get_ylim()
-    ax.set_aspect((x1-x0)/(y1-y0))
-
-
-def step_facets(df, df2, t1=5, t2=20):
-
-    def new_plot(ax, df, label, nth_color=0, xmax=60):
+    def _new_plot(self, ax, df, label, nth_color=0, xmax=60):
         step_df = df
         n_steps = len(step_df)
         steps = []
-
 
         xs = list(step_df['t0'])
         widths = list(step_df['lifespan'])
@@ -244,114 +258,98 @@ def step_facets(df, df2, t1=5, t2=20):
 
         ax.plot([0], color=color, label=label, alpha=0.5)
         ax.set_xlim([0, xmax])
-        #ax.set_ylim([0, ymax])
 
-    xmax = max([max(df['tN']), max(df['tN'])])
+    def steps_from_node_report(self, experiment, min_bl=1):
+        node_report = experiment.prepdata.load('node-summary')
+        print node_report.head()
+        steps = node_report[['bl', 't0', 'tN', 'bid']]
+        steps.set_index('bid', inplace=True)
 
-    #fig = plt.Figure(figsize=(1, 1))
+        steps['t0'] = steps['t0'] / 60.0
+        steps['tN'] = steps['tN'] / 60.0
+        steps['lifespan'] = steps['tN'] - steps['t0']
+        steps['mid'] = (steps['tN']  + steps['t0']) / 2.0
+        return steps[steps['bl'] >= 1]
 
-    gs = gridspec.GridSpec(3, 2)
-    gs.update(wspace=0.01, hspace=0.05) #, bottom=0.1, top=0.7)
+    def make_figures(self, ex_id, step_min_move = 1):
+        experiment = wio.Experiment(experiment_id=ex_id)
+        graph = experiment.graph.copy()
 
-    ax_l0 = plt.subplot(gs[0,0])
-    ax_l1 = plt.subplot(gs[0,1], sharey=ax_l0)
-    ax_m0 = plt.subplot(gs[1,0])
-    ax_m1 = plt.subplot(gs[1,1], sharey=ax_m0)
-    ax_s0 = plt.subplot(gs[2,0])
-    ax_s1 = plt.subplot(gs[2,1], sharey=ax_s0)
+        moving_nodes =  [int(i) for i in graph.compound_bl_filter(experiment, threshold=step_min_move)]
+        steps, durations = report_card.calculate_duration_data_from_graph(experiment, graph, moving_nodes)
 
-    left = [ax_l0, ax_m0, ax_s0]
-    right = [ax_l1, ax_m1, ax_s1]
-    top = [ax_l0, ax_l1]
-    mid = [ax_m0, ax_m1]
-    bottom = [ax_s0, ax_s1]
-    ylabels = ['> {t2} min'.format(t2=t2), '{t1} to {t2} min'.format(t1=t1, t2=t2), '< {t1} min'.format(t1=t1)]
+        final_steps = self.steps_from_node_report(experiment)
+        accuracy = experiment.prepdata.load('accuracy')
+        worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
+        print 'worm count:', worm_count
 
+        ### AX 0
+        # print 'starting ax 0'
+        # color_cycle = ax._get_lines.color_cycle
+        # for i in range(5):
+        #     c = color_cycle.next()
+        # wf.draw_minimal_colors_on_image_T(ex_id, time=30*30, ax=ax, color=c)
+        self.step_facets(steps, final_steps)
 
-    short1 = df[df['lifespan'] < t1]
-    short2 = df2[df2['lifespan'] < t1]
-    mid1 = df[(df['lifespan'] < t2) & (df['lifespan'] >= t1)]
-    mid2 = df2[(df2['lifespan'] < t2) & (df2['lifespan'] >= t1)]
-    long1 = df[df['lifespan'] >= t2]
-    long2 = df2[df2['lifespan'] >= t2]
+    def step_facets(self, df, df2, t1=5, t2=20):
+        xmax = max([max(df['tN']), max(df['tN'])])
 
-    short_max = max([len(short1), len(short2)])
-    mid_max = max([len(mid1), len(mid2)])
-    long_max = max([len(long1), len(long2)])
-    print 'short', short_max
-    print 'long', long_max
-    print 'mid', mid_max
-    print long1.head(20)
+        gs = gridspec.GridSpec(3, 2)
+        gs.update(wspace=0.01, hspace=0.05) #, bottom=0.1, top=0.7)
 
-    new_plot(ax_s0, short1, 'raw', xmax=xmax)
-    new_plot(ax_m0, mid1, 'raw', xmax=xmax)
-    new_plot(ax_l0, long1, 'raw', xmax=xmax)
+        ax_l0 = self.plots[0].add_subplot(gs[0,0])
+        ax_l1 = self.plots[0].add_subplot(gs[0,1], sharey=ax_l0)
+        ax_m0 = self.plots[0].add_subplot(gs[1,0])
+        ax_m1 = self.plots[0].add_subplot(gs[1,1], sharey=ax_m0)
+        ax_s0 = self.plots[0].add_subplot(gs[2,0])
+        ax_s1 = self.plots[0].add_subplot(gs[2,1], sharey=ax_s0)
 
-    new_plot(ax_s1, short2, 'final', nth_color=1, xmax=xmax)
-    new_plot(ax_m1, mid2, 'final', nth_color=1, xmax=xmax)
-    new_plot(ax_l1, long2, 'final', nth_color=1, xmax=xmax)
+        left = [ax_l0, ax_m0, ax_s0]
+        right = [ax_l1, ax_m1, ax_s1]
+        top = [ax_l0, ax_l1]
+        mid = [ax_m0, ax_m1]
+        bottom = [ax_s0, ax_s1]
+        ylabels = ['> {t2} min'.format(t2=t2), '{t1} to {t2} min'.format(t1=t1, t2=t2), '< {t1} min'.format(t1=t1)]
 
-    for ax in right:
-        ax.axes.yaxis.tick_right()
+        short1 = df[df['lifespan'] < t1]
+        short2 = df2[df2['lifespan'] < t1]
+        mid1 = df[(df['lifespan'] < t2) & (df['lifespan'] >= t1)]
+        mid2 = df2[(df2['lifespan'] < t2) & (df2['lifespan'] >= t1)]
+        long1 = df[df['lifespan'] >= t2]
+        long2 = df2[df2['lifespan'] >= t2]
 
-    for ax, t in zip(top, ['raw', 'final']):
-        #ax.axes.xaxis.tick_top()
-        ax.get_xaxis().set_ticklabels([])
-        ax.set_ylim([0, long_max])
+        short_max = max([len(short1), len(short2)])
+        mid_max = max([len(mid1), len(mid2)])
+        long_max = max([len(long1), len(long2)])
+        print 'short', short_max
+        print 'long', long_max
+        print 'mid', mid_max
+        print long1.head(20)
 
-    for ax in mid:
-        ax.get_xaxis().set_ticklabels([])
-        ax.set_ylim([0, mid_max])
+        self._new_plot(ax_s0, short1, 'raw', xmax=xmax)
+        self._new_plot(ax_m0, mid1, 'raw', xmax=xmax)
+        self._new_plot(ax_l0, long1, 'raw', xmax=xmax)
 
-    for ax in bottom:
-        ax.set_xlabel('t (min)')
-        ax.set_ylim([0, short_max])
+        self._new_plot(ax_s1, short2, 'final', nth_color=1, xmax=xmax)
+        self._new_plot(ax_m1, mid2, 'final', nth_color=1, xmax=xmax)
+        self._new_plot(ax_l1, long2, 'final', nth_color=1, xmax=xmax)
 
-    for ax, t in zip(left, ylabels):
-        ax.set_ylabel(t)
+        for ax in right:
+            ax.axes.yaxis.tick_right()
 
-    ax_s0.get_xaxis().set_ticklabels([0, 10, 20, 30, 40, 50])
+        for ax, t in zip(top, ['raw', 'final']):
+            ax.get_xaxis().set_ticklabels([])
+            ax.set_ylim([0, long_max])
 
-def steps_from_node_report(experiment, min_bl=1):
-    node_report = experiment.prepdata.load('node-summary')
-    print node_report.head()
-    steps = node_report[['bl', 't0', 'tN', 'bid']]
-    steps.set_index('bid', inplace=True)
+        for ax in mid:
+            ax.get_xaxis().set_ticklabels([])
+            ax.set_ylim([0, mid_max])
 
-    steps['t0'] = steps['t0'] / 60.0
-    steps['tN'] = steps['tN'] / 60.0
-    steps['lifespan'] = steps['tN'] - steps['t0']
-    steps['mid'] = (steps['tN']  + steps['t0']) / 2.0
-    return steps[steps['bl'] >= 1]
+        for ax in bottom:
+            ax.set_xlabel('t (min)')
+            ax.set_ylim([0, short_max])
 
-def make_fig1(ex_id, step_min_move = 1, save_fig=False):
+        for ax, t in zip(left, ylabels):
+            ax.set_ylabel(t)
 
-    experiment = wio.Experiment(experiment_id=ex_id)
-    #prep_data = experiment.prepdata
-    graph = experiment.graph.copy()
-
-    moving_nodes =  [int(i) for i in graph.compound_bl_filter(experiment, threshold=step_min_move)]
-    steps, durations = report_card.calculate_duration_data_from_graph(experiment, graph, moving_nodes)
-
-    final_steps = steps_from_node_report(experiment)
-    accuracy = experiment.prepdata.load('accuracy')
-    worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
-    print 'worm count:', worm_count
-
-    fig, ax = plt.subplots()
-    ### AX 0
-    # print 'starting ax 0'
-    color_cycle = ax._get_lines.color_cycle
-    for i in range(5):
-        c = color_cycle.next()
-    wf.draw_minimal_colors_on_image_T(ex_id, time=30*30, ax=ax, color=c)
-
-    if save_fig:
-        plt.savefig('fig1_{eid}_plate.png'.format(eid=ex_id), format='png')
-    fig, ax = plt.subplots()
-    step_facets(steps, final_steps)
-    if save_fig:
-        plt.savefig('fig1_{eid}_tracks.png'.format(eid=ex_id), format='png')
-
-    if not save_fig:
-        plt.show()
+        ax_s0.get_xaxis().set_ticklabels([0, 10, 20, 30, 40, 50])
