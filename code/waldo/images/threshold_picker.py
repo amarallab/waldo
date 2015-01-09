@@ -4,7 +4,6 @@ from __future__ import absolute_import, division, print_function
 
 # standard library
 import sys
-import os
 import json
 
 # third party
@@ -19,8 +18,7 @@ from skimage import morphology
 from skimage.measure import regionprops
 
 # project specific
-from waldo.conf import settings
-from waldo.wio.file_manager import ensure_dir_exists
+from waldo.wio import paths
 
 from .grab_images import grab_images_in_time_range
 
@@ -143,9 +141,8 @@ class InteractivePlot:
         self.background = InteractivePlot.create_background(impaths)
 
         try:
-            filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "waldo",
-                                    "{ex_id}-thresholddata.json".format(ex_id=sef.current_id))
-            with open(filename, "rt") as f:
+            filename = paths.threshold_data(self.current_id)
+            with filename.open("rt") as f:
                 data = json.loads(f.read())
             self.current_threshold = data['threshold']
             self.circle_pos = (data['y'], data['x']) #note xy are purposely switched
@@ -176,12 +173,13 @@ class InteractivePlot:
                                       'x': self.circle_pos[1],
                                       'y': self.circle_pos[0],
                                       'r': self.circle_radius}
-        for k, v in self.data.items():
-            filename = os.path.join(settings.PROJECT_DATA_ROOT, k)
-            ensure_dir_exists(filename)
-            filename = os.path.join(filename, "thresholddata.json")  # DEPRECATED
-            with open(filename, "wt") as f:
-                f.write(json.dumps(v, indent=4))
+
+        for ex_id, ex_data in self.data.items():
+            datafile = paths.threshold_data(ex_id)
+            paths.mkdirp(filename.parent)
+            with datafile.open("wt") as f:
+                json.dump(ex_data, f, indent=4)
+
         self.data = {}
 
     @staticmethod
@@ -246,9 +244,9 @@ class InteractivePlot:
             a list of threshold values to calculate. should be sorted from least to greatest.
         """
         cache_thresholds = {}
-        filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "threshold-cache.json")
+        filename = paths.threshold_cache(self.current_id)
         try:
-            with open(filename, "r") as f:
+            with filename.open() as f:
                 x = json.load(f)
             for k, v in x.iteritems():
                 cache_thresholds[float(k)] = v
@@ -423,17 +421,21 @@ class InteractivePlot:
 
     def precalculate_threshold_data(self):
         thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
-        for id in self.ids:
-            self.current_id = id
+        for id_ in self.ids:
+            self.current_id = id_
             result = {}
             for t in thresholds:
                 valid, N, m, s = self.data_from_threshold(t)
                 result[t] = {"valid": valid, "N": N, "m": m, "s": s}
-            filename = os.path.join(settings.PROJECT_DATA_ROOT, self.current_id, "threshold-cache.json")
-            with open(filename, "w") as f:
+
+            filename = paths.threshold_cache(self.current_id)
+            with filename.open("w") as f:
                 json.dump(result, f)
 
 if __name__ == '__main__':
+    import os
+    from waldo.conf import settings
+
     DATA_DIR = settings.MWT_DATA_ROOT
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
     ip = InteractivePlot(dirs, 0.0005)

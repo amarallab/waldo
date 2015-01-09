@@ -14,7 +14,7 @@ __status__ = 'prototype'
 import sys
 import os
 import math
-import glob
+import pathlib
 
 # third party
 import numpy as np
@@ -22,15 +22,26 @@ import numpy as np
 
 # package imports
 from waldo.conf import settings
+from waldo.wio import paths
 from .grab_outlines import find_frame_for_time
 
-def get_base_image_path(ex_id, data_dir=None):
+def _datadir(ex_id, data_dir):
     if data_dir is None:
-        data_dir = settings.MWT_DATA_ROOT #settings.LOGISTICS['filesystem_data']
-    search_path = data_dir + ex_id + '/*.png'
-    images = glob.glob(search_path)
+        data_dir = paths.experiment(ex_id)
+    else:
+        data_dir = pathlib.Path(data_dir)
+    return data_dir
+
+def get_images(ex_id, data_dir=None):
+    data_dir = _datadir(ex_id, data_dir)
+    images = data_dir.glob('*.png')
+    return images
+
+def get_base_image_path(ex_id, data_dir=None):
+    images = get_images(ex_id, data_dir)
     if not images:
-        print('something may be wrong with search path. no images found:', search_path)
+        print('something may be wrong with search path. no images found: ',
+              str(_datadir(ex_id, data_dir)))
         return None
     basename = ['z' for _ in range(1000)]
     for i in images:
@@ -46,12 +57,10 @@ def create_image_directory(ex_id, data_dir=None):
     :param data_dir: the directory in which all MWT data is stored.
     :return: a dictionary with times (keys) and the path to the image taken at that time (value)
     """
-    if data_dir is None:
-        data_dir = settings.MWT_DATA_ROOT #settings.LOGISTICS['filesystem_data']
-    search_path = os.path.join(data_dir, ex_id, '*.png')
-    images = glob.glob(search_path)
+    images = get_images(ex_id, data_dir)
     if not images:
-        print('something may be wrong with search path. no images found:', search_path)
+        print('something may be wrong with search path. no images found: ',
+              str(_datadir(ex_id, data_dir)))
         return None
     basename = ['z' for _ in range(1000)]
     for i in images:

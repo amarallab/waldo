@@ -21,7 +21,7 @@ from skimage import morphology
 from skimage.measure import regionprops
 
 from waldo.images.grab_images import grab_images_in_time_range
-from waldo.conf import settings
+from waldo.conf import guisettings
 from waldo import images
 
 class ScoringDialog(QtGui.QDialog):
@@ -138,8 +138,10 @@ class ScoringPage(QtGui.QWizardPage):
             self.result = {}
         callback(0, 1)
 
-    def _resultToString(self, value, range):
-        if value is None:
+    def _resultToString(
+            self, value, range):
+        if
+        value is None:
             return "<b style='color: red'>Fail</b>", False
         if range[0] <= value < range[1]:
             return "<b style='color: green'>%f</b> (%f - %f)" % (value, range[0], range[1]), True
@@ -149,23 +151,33 @@ class ScoringPage(QtGui.QWizardPage):
     def finished(self):
         valid = True
 
-        text, completed = self._resultToString(self.result.get('contrast_ratio', None), settings.SCORE_CONTRAST_RADIO_RANGE)
+        text, completed = self._resultToString(
+                self.result.get('contrast_ratio', None),
+                guisettings.SCORE_CONTRAST_RADIO_RANGE)
         self.contrastRatioResult.setText(text)
         valid = valid and completed
 
-        text, completed = self._resultToString(self.result.get('contrast_diff', None), settings.SCORE_CONTRAST_DIFF_RANGE)
+        text, completed = self._resultToString(
+                self.result.get('contrast_diff', None),
+                guisettings.SCORE_CONTRAST_DIFF_RANGE)
         self.contrastDiffResult.setText(text)
         valid = valid and completed
 
-        text, completed = self._resultToString(self.result.get('good_fraction', None), settings.SCORE_GOOD_FRACTION_RANGE)
+        text, completed = self._resultToString(
+                self.result.get('good_fraction', None),
+                guisettings.SCORE_GOOD_FRACTION_RANGE)
         self.goodFractionResult.setText(text)
         valid = valid and completed
 
-        text, completed = self._resultToString(self.result.get('accuracy', None), settings.SCORE_ACCURACY_RANGE)
+        text, completed = self._resultToString(
+                self.result.get('accuracy', None),
+                guisettings.SCORE_ACCURACY_RANGE)
         self.accuracyResult.setText(text)
         valid = valid and completed
 
-        text, completed = self._resultToString(self.result.get('coverage', None), settings.SCORE_COVERAGE_RANGE)
+        text, completed = self._resultToString(
+                self.result.get('coverage', None),
+                guisettings.SCORE_COVERAGE_RANGE)
         self.coverageResult.setText(text)
         valid = valid and completed
 

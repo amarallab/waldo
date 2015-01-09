@@ -8,7 +8,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
-from waldo.conf import settings
+from waldo.wio import paths
 
 
 class PreviousThresholdCachePage(QtGui.QWizardPage):
@@ -28,8 +28,7 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
     def initializePage(self):
         data = {}
         if self.data.ex_id is not None:
-            self.annotation_filename = os.path.join(settings.PROJECT_DATA_ROOT, self.data.ex_id, "waldo",
-                                                    "{ex_id}-thresholddata.json".format(ex_id=self.data.ex_id))
+            self.annotation_filename = paths.threshold_data(self.data.ex_id)
             try:
                 with open(self.annotation_filename, "rt") as f:
                     data = json.loads(f.read())

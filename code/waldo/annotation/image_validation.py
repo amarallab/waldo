@@ -18,9 +18,7 @@ import os
 import pandas as pd
 
 # package specific
-from waldo.conf import settings
-
-#VALIDATION_DIR = os.path.abspath(LOGISTICS['validation'])
+from waldo.wio import paths
 
 class Validator(object):
     """ Class that is used to track data to validate the
@@ -28,17 +26,15 @@ class Validator(object):
 
 
     """
-
-    def __init__(self, ex_id, directory=None):
+    def __init__(self, ex_id):
         """ ex_id """
-        if directory is None:
-            directory = os.path.abspath(settings.LOGISTICS['matches'])
-        filename = os.path.join(directory, '{eid}.csv'.format(eid=ex_id))
-        input_err_msg = '{eid} does not have validation file at: \
-                         {p}'.format(eid=ex_id, p=filename)
+        filename = paths.matches(ex_id)
 
-        assert os.path.isfile(filename), input_err_msg
-        self.df = pd.read_csv(filename, index_col=0)
+        input_err_msg = '{eid} does not have validation file at: \
+                         {p}'.format(eid=ex_id, p=str(filename))
+        assert filename.is_file(), input_err_msg
+
+        self.df = pd.read_csv(str(filename), index_col=0)
         self.df.fillna('', inplace=True)
         self.frames = sorted(list(set(self.df['frame'])))
 

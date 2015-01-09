@@ -64,7 +64,6 @@ class Experiment_Attribute_Index(object):
 
         # make sure there is a backslash at the end of the directory name
         self.dir = '{dir}/'.format(dir=index_tsv_directory.rstrip('/'))
-        #ensure_dir_exists(self.dir)
         self.files = glob.glob(self.dir + '*.tsv')
         self.attribute_index = {}
         self.ex_ids = []

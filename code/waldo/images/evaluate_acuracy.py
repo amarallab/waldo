@@ -6,18 +6,16 @@ Filename: evaluate_acuracy.py
 Description: holds many low-level scripts for finding, sorting, and saving files
 in a rigid directory structure.
 '''
+# standard library
 
+# third party
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import prettyplotlib as ppl
-#import string
 
-# import sys
-#from os.path import join, abspath
-#from settings.local import LOGISTICS
+# projects specific
 import waldo.wio as wio
-
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'

@@ -6,23 +6,23 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 # standard library
-import pathlib # std in py3.4+
 
 # third party
 import pandas as pd
 
 # project specific
-from waldo.conf import settings
+from . import paths
 
 class PrepData(object):
     """
     Convienent interface to save and load "prep data" data frames.
     """
-    def __init__(self, ex_id, prepdir=None):
-        if prepdir is None:
-            prepdir = settings.PROJECT_DATA_ROOT
+    def __init__(self, ex_id, prep_root=None):
         self.eid = ex_id
-        self.directory = pathlib.Path(prepdir) / ex_id / 'waldo'
+        if prep_root:
+            self.directory = pathlib.Path(prep_root)
+        else:
+            self.directory = paths.prepdata(ex_id)
 
     def __getattr__(self, name):
         """

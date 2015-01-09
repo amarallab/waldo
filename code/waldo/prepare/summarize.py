@@ -3,7 +3,6 @@ import six
 from six.moves import (zip, filter, map, reduce, input, range)
 
 # standard library
-import os
 import functools
 
 # third party
@@ -41,7 +40,7 @@ def summarize(ex_id, verbose=False, callback=None):
         cb_load = cb_pri = cb_sec = None
 
     # load experiment
-    experiment = wio.Experiment(fullpath=os.path.join(settings.MWT_DATA_ROOT, ex_id))
+    experiment = wio.Experiment(experiment_id=ex_id, callback=cb_load)
     talk('Loaded experiment ID: {}'.format(experiment.id))
 
     # process the basic blob data
