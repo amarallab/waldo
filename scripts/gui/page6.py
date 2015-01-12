@@ -138,10 +138,8 @@ class ScoringPage(QtGui.QWizardPage):
             self.result = {}
         callback(0, 1)
 
-    def _resultToString(
-            self, value, range):
-        if
-        value is None:
+    def _resultToString(self, value, range):
+        if value is None:
             return "<b style='color: red'>Fail</b>", False
         if range[0] <= value < range[1]:
             return "<b style='color: green'>%f</b> (%f - %f)" % (value, range[0], range[1]), True
