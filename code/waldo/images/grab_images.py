@@ -32,23 +32,6 @@ def _datadir(ex_id, data_dir):
         data_dir = pathlib.Path(data_dir)
     return data_dir
 
-def get_images(ex_id, data_dir=None):
-    data_dir = _datadir(ex_id, data_dir)
-    images = data_dir.glob('*.png')
-    return images
-
-def get_base_image_path(ex_id, data_dir=None):
-    images = get_images(ex_id, data_dir)
-    if not images:
-        print('something may be wrong with search path. no images found: ',
-              str(_datadir(ex_id, data_dir)))
-        return None
-    basename = ['z' for _ in range(1000)]
-    for i in images:
-        if len(i) < len(basename):
-            basename = i
-    return basename
-
 def create_image_directory(ex_id, data_dir=None):
     """
     returns a dictionary containing all the times at which images were taken and the paths to those images.
@@ -103,26 +86,6 @@ def crop_image_around_worm(image_file, xy_shift, xy_size, margin=0):
     #box = (y0 - margin, x0 - margin, y1 + margin, x1 + margin)
     region = im.crop((y0 - margin, x0 - margin, y1 + margin, x1 + margin))
     return np.asarray(region)
-
-def get_closest_image(target_time, image_dict):
-    closest_image_time = 0
-    closest_image = ''
-    for t in image_dict:
-        if math.fabs(float(t) - target_time) < math.fabs(closest_image_time - target_time):
-            closest_image_time = float(t)
-            closest_image = image_dict[t]
-    return closest_image_time, closest_image
-
-def grab_images_in_time_range(ex_id, start_time, end_time=3600.0):
-    time_to_image = create_image_directory(ex_id)
-    if time_to_image is None:
-        return None, None
-    image_times, image_paths = [], []
-    for im_time, im_path in time_to_image.iteritems():
-        if start_time <= float(im_time) <= end_time:
-            image_times.append(im_time)
-            image_paths.append(im_path)
-    return image_times, image_paths
 
 if __name__ == '__main__':
     ex_id = '20130323_170511'

@@ -802,18 +802,19 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
                     CALLBACK_SAVE_FRAC * p)
     else:
         cb_load = cb_pri = cb_sec = None
+    experiment = wio.Experiment(experiment_id=ex_id)
 
     print('analzying images')
     # grab images and times.
-    times, impaths = grab_images.grab_images_in_time_range(ex_id, start_time=0)
-    times = [float(t) for t in times]
-    times, impaths = zip(*sorted(zip(times, impaths)))
+    #times, impaths = grab_images.grab_images_in_time_range(ex_id, start_time=0)
+    times, impaths = zip(*sorted(experiment.image_files.items()))
+    #times = [float(t) for t in times]
+    #times, impaths = zip(*sorted(zip(times, impaths)))
 
     # create recording background
     background = mim.create_backround(impaths)
 
     # initialize experiment
-    experiment = wio.Experiment(experiment_id=ex_id)
 
     if callback:
         cb_load(1)

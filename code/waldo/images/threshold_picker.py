@@ -20,7 +20,7 @@ from skimage.measure import regionprops
 # project specific
 from waldo.wio import paths
 
-from .grab_images import grab_images_in_time_range
+#from .grab_images import grab_images_in_time_range
 
 def perp(v):
     # adapted from http://stackoverflow.com/a/3252222/194586

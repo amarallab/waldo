@@ -20,7 +20,7 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as Naviga
 from skimage import morphology
 from skimage.measure import regionprops
 
-from waldo.images.grab_images import grab_images_in_time_range
+# from waldo.images.grab_images import grab_images_in_time_range
 from waldo.wio import paths
 
 class CacheThresholdLoadingDialog(QtGui.QDialog):
