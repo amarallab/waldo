@@ -27,10 +27,11 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
 
     def initializePage(self):
         data = {}
-        if self.data.ex_id is not None:
-            self.annotation_filename = paths.threshold_data(self.data.ex_id)
+        self.data.loadSelectedExperiment()
+        if self.data.experiment is not None:
+            self.annotation_filename = paths.threshold_data(self.data.experiment.id)
             try:
-                with open(self.annotation_filename, "rt") as f:
+                with open(str(self.annotation_filename), "rt") as f:
                     data = json.loads(f.read())
             except IOError as ex:
                 pass

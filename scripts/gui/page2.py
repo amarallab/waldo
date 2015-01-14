@@ -31,7 +31,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
         for name, dirs, files in os.walk(settings.MWT_DATA_ROOT):
             for dir in dirs:
                 self.experimentList.addItem(dir)
-                if self.data.ex_id == dir:
+                if self.data.selected_ex_id == dir:
                     selectedIndex = self.experimentList.count() - 1
         if self.experimentList.count() > 0:
             self.experimentList.setCurrentRow(selectedIndex)
@@ -39,8 +39,8 @@ class SelectExperimentPage(QtGui.QWizardPage):
 
     def experimentList_currentRowChanged(self):
         if self.experimentList.currentItem() is not None:
-            self.data.ex_id = str(self.experimentList.currentItem().text())
+            self.data.selected_ex_id = str(self.experimentList.currentItem().text())
         self.completeChanged.emit()
 
     def isComplete(self):
-        return 0 <= self.experimentList.currentRow() < self.experimentList.count()
+        return self.data.selected_ex_id is not None

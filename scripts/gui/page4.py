@@ -11,6 +11,7 @@ import numpy as np
 from scipy import ndimage
 import json
 import errno
+from waldo.wio import Experiment
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
@@ -145,13 +146,16 @@ class ThresholdCachePage(QtGui.QWizardPage):
         return np.maximum(np.maximum(first, mid), last)
 
     def initializePage(self):
-        self.label.setText("Experiment: {ex_id}".format(ex_id=self.data.ex_id))
+        if self.data.experiment is not None:
+            self.label.setText("Experiment: {ex_id}".format(ex_id=self.data.experiment.id))
+        else:
+            self.label.setText("Experiment: None")
         self.current_threshold = 0.0005
         data = {}
-        if self.data.ex_id is not None:
-            self.annotation_filename = paths.threshold_data(self.data.ex_id)
+        if self.data.experiment is not None:
+            self.annotation_filename = paths.threshold_data(self.data.experiment.id)
             try:
-                with open(self.annotation_filename, "rt") as f:
+                with open(str(self.annotation_filename), "rt") as f:
                     data = json.loads(f.read())
             except IOError as ex:
                 pass
@@ -161,7 +165,10 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.data.roi_radius = data.get('r', 1)
         self.data.threshold = data.get('threshold', 0.0005)
 
-        times, impaths = grab_images_in_time_range(self.data.ex_id, 0)
+        experiment = self.data.experiment
+        times, impaths = zip(*sorted(experiment.image_files.items()))
+        impaths = [str(s) for s in impaths]
+
         if times is not None and len(times) > 0:
             times = [float(t) for t in times]
             times, impaths = zip(*sorted(zip(times, impaths)))
@@ -174,7 +181,7 @@ class ThresholdCachePage(QtGui.QWizardPage):
             self.mid_image = mpimg.imread(impaths[int(len(impaths)/2)])
         self.mouse_points = []
 
-        dlg = CacheThresholdLoadingDialog(self.data.ex_id, self.calculate_threshold, self.finished, self)
+        dlg = CacheThresholdLoadingDialog(self.data.experiment.id, self.calculate_threshold, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
 

@@ -6,6 +6,10 @@ from PyQt4.QtCore import Qt
 
 from waldo.conf import settings
 
+from waldo import wio
+from waldo.wio import paths
+from waldo.wio import file_manager as fm
+
 
 class PreviousWaldoProcessPage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):

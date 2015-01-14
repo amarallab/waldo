@@ -21,7 +21,7 @@ class OutputWriter(object):
         self.ex_id = ex_id
 
         if data_dir is None:
-            self.data_dir = paths.experiment(ex_id, root=data_root)
+            self.data_dir = paths.experiment(ex_id)
         else:
             self.data_dir = pathlib.Path(data_dir)
 
@@ -30,7 +30,7 @@ class OutputWriter(object):
         else:
             self.output_dir = pathlib.Path(output_dir)
 
-        self.experiment = wio.Experiment(fullpath=data_dir)
+        self.experiment = wio.Experiment(fullpath=self.data_dir)
 
         if graph is None:
             graph_orig = self.experiment.graph.copy()
@@ -68,7 +68,7 @@ class OutputWriter(object):
         lines --
         """
         print sum_name, 'is writing'
-        with open(sum_name, 'w') as f:
+        with open(str(sum_name), 'w') as f:
             for line in lines:
                 f.write(line)
 
@@ -188,9 +188,8 @@ class OutputWriter(object):
             location = '{f}.{pos}'.format(f=file_counter, pos=0)
             file_management[died_f].extend([[node, location]])
             file_number = self.format_number_string(file_counter)
-            node_file = self.output_dir / '{p}_{n:05}k.blobs'.format(
-                    p=self.experiment.basename, n=file_number)
-            with open(node_file, 'w') as f:
+            node_file = self.output_dir / '{p}_{n}k.blobs'.format(p=self.experiment.basename, n=file_number)
+            with open(str(node_file), 'w') as f:
                 f.write('% {n}\n'.format(n=node))
 
                 for j, row in compiled_lines.iterrows():
