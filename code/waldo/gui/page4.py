@@ -153,9 +153,9 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.current_threshold = 0.0005
         data = {}
         if self.data.experiment is not None:
-            self.annotation_filename = paths.threshold_data(self.data.experiment.id)
+            self.annotation_filename = str(paths.threshold_data(self.data.experiment.id))
             try:
-                with open(str(self.annotation_filename), "rt") as f:
+                with open(self.annotation_filename, "rt") as f:
                     data = json.loads(f.read())
             except IOError as ex:
                 pass
