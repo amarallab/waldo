@@ -3,9 +3,6 @@ import sys
 import argparse
 import pickle
 
-import matplotlib
-
-import pathcustomize
 
 def main():
     parser = argparse.ArgumentParser()

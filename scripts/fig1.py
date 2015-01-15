@@ -1,4 +1,3 @@
-import pathcustomize
 import os
 
 import numpy as np
@@ -21,9 +20,6 @@ from waldo import wio
 import waldo.images.evaluate_acuracy as ea
 import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
-
-import waldo.metrics.step_simulation as ssim
-import waldo.viz.eye_plots as ep
 
 SAVE_DIR = os.path.abspath('../results/fig1-2014-07-31')
 style.use('ggplot')

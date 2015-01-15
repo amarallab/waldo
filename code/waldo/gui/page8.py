@@ -19,7 +19,7 @@ import waldo.metrics.report_card as report_card
 import waldo.metrics.step_simulation as ssim
 import waldo.viz.eye_plots as ep
 
-import pathcustomize
+from waldo.gui import pathcustomize
 import os
 
 import numpy as np

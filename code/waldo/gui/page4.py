@@ -6,7 +6,7 @@ from PyQt4 import QtGui
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
-from gui import tasking
+from waldo.gui import tasking
 import numpy as np
 from scipy import ndimage
 import json

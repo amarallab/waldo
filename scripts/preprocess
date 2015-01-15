@@ -30,15 +30,16 @@ __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
 # standard imports
-import os
 import json
 import glob
+
+import os
+
 
 # third party
 from docopt import docopt
 
 # project specific
-import pathcustomize
 
 from waldo.conf import settings
 from waldo import images

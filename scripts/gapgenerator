@@ -8,11 +8,11 @@ import argparse
 # third party
 
 # project specific
-import pathcustomize
 
 import wio
 import collider
 import tape
+
 
 def main():
     parser = argparse.ArgumentParser(description='Generate the gaps file for later use.')

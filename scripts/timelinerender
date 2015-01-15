@@ -3,11 +3,6 @@ import sys
 import argparse
 import pickle
 
-import networkx as nx
-
-import pathcustomize
-import wio
-import collider
 
 def main():
     parser = argparse.ArgumentParser()

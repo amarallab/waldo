@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import pathcustomize
 
 from waldo import wio
 from waldo.metrics import report_card
+
 
 def create_reports():
     ex_ids = [
