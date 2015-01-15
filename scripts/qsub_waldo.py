@@ -10,9 +10,10 @@ __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
 # standard imports
-import os
 import sys
-import glob
+
+import os
+
 
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -20,7 +21,6 @@ SHARED_DIR = CODE_DIR + '/shared/'
 sys.path.append(CODE_DIR)
 sys.path.append(SHARED_DIR)
 
-import pathcustomize
 # nonstandard imports
 from conf import settings
 from annotation.experiment_index import Experiment_Attribute_Index, list_ex_ids_with_raw_data

@@ -5,7 +5,7 @@ import sys
 import os
 import json
 
-from gui import WaldoApp
+from waldo.gui import WaldoApp
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

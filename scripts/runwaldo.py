@@ -28,16 +28,15 @@ __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
 # standard imports
-import os
-import sys
 import argparse
-from docopt import docopt
 import time
 import json
 import cProfile as profile
 import logging
 
-import pathcustomize
+import os
+from docopt import docopt
+
 
 # path definitions
 CODE_DIR = os.path.dirname(os.path.realpath(__file__))

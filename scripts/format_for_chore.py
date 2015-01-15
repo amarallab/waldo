@@ -1,5 +1,5 @@
-import pathcustomize
 from waldo.output.writer import OutputWriter
+
 
 def main(ex_id = '20130318_131111'):
     print '--------------------------', ex_id, '--------------------------'

@@ -811,6 +811,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
     #times = [float(t) for t in times]
     #times, impaths = zip(*sorted(zip(times, impaths)))
 
+    impaths = [str(s) for s in impaths]
     # create recording background
     background = mim.create_backround(impaths)
 

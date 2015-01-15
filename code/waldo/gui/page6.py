@@ -6,7 +6,7 @@ from PyQt4 import QtGui
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
-from gui import tasking
+from waldo.gui import tasking
 import numpy as np
 from scipy import ndimage
 import json
@@ -25,11 +25,11 @@ from waldo.conf import guisettings
 from waldo import images
 
 class ScoringDialog(QtGui.QDialog):
-    def __init__(self, ex_id, func, finish_func, parent=None):
+    def __init__(self, experiment, func, finish_func, parent=None):
         super(ScoringDialog, self).__init__(parent)
         self.finish_func = finish_func
 
-        label = QtGui.QLabel("Scoring experiment: {ex_id}".format(ex_id=ex_id))
+        label = QtGui.QLabel("Scoring experiment: {ex_id}".format(ex_id=experiment.id))
         progress_bar = QtGui.QProgressBar()
         progress_bar.setRange(0, 100)
 
@@ -126,14 +126,14 @@ class ScoringPage(QtGui.QWizardPage):
         self.coverageResult.setText("")
         self.scoreCompleted = False
 
-        dlg = ScoringDialog(self.data.ex_id, self.scoring, self.finished, self)
+        dlg = ScoringDialog(self.data.experiment, self.scoring, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
 
     def scoring(self, callback):
         self.result = {}
         try:
-            self.result = images.score(self.data.ex_id)
+            self.result = images.score(None, experiment=self.data.experiment)
         except:
             self.result = {}
         callback(0, 1)

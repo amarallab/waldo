@@ -111,20 +111,23 @@ def make_pixel_histogram(worm_values, background_values, n_bins = 100):
 #     scores = score_images(a, b)
 #     return a, b
 
-def score(ex_id):
+def score(ex_id, experiment=None):
 
-    experiment = wio.Experiment(experiment_id=ex_id)
+    if experiment is None:
+        experiment = wio.Experiment(experiment_id=ex_id)
 
-    pfile = wio.file_manager.ImageMarkings(ex_id=ex_id)
+    pfile = wio.file_manager.ImageMarkings(ex_id=experiment.id)
     threshold = pfile.threshold()
     roi = pfile.roi()
-    times, impaths = grab_images.grab_images_in_time_range(ex_id, start_time=0)
-    times = [float(t) for t in times]
-    times, impaths = zip(*sorted(zip(times, impaths)))
+
+    times, impaths = zip(*sorted(experiment.image_files.items()))
+    impaths = [str(s) for s in impaths]
+
+    # times, impaths = grab_images.grab_images_in_time_range(experiment.id, start_time=0)
+    # times = [float(t) for t in times]
+    # times, impaths = zip(*sorted(zip(times, impaths)))
 
     background = mim.create_backround(impaths)
-
-
 
     x, y, r = roi['x'], roi['y'], roi['r']
     roi_mask = mim.create_roi_mask(x, y, r, shape=background.shape)

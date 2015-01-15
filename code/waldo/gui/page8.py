@@ -19,7 +19,7 @@ import waldo.metrics.report_card as report_card
 import waldo.metrics.step_simulation as ssim
 import waldo.viz.eye_plots as ep
 
-import pathcustomize
+from waldo.gui import pathcustomize
 import os
 
 import numpy as np
@@ -45,7 +45,7 @@ import tasking
 from time import time
 
 class WaldoProcessDialog(QtGui.QDialog):
-    def __init__(self, ex_id, func, finish_func, parent=None):
+    def __init__(self, experiment, func, finish_func, parent=None):
         super(WaldoProcessDialog, self).__init__(parent)
         self.finish_func = finish_func
 
@@ -62,7 +62,7 @@ class WaldoProcessDialog(QtGui.QDialog):
         cancel_run_button.clicked.connect(self.cancel_run_button_clicked)
 
         main_layout = QtGui.QGridLayout()
-        main_layout.addWidget(QtGui.QLabel("Running experiment: {ex_id}".format(ex_id=ex_id)), 0, 0, 1, 2)
+        main_layout.addWidget(QtGui.QLabel("Running experiment: {ex_id}".format(ex_id=experiment.id)), 0, 0, 1, 2)
 
         row = 1
         for label, progress_bar in zip(progress_bar_labels, progress_bars):
@@ -148,7 +148,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
     def initializePage(self):
         self.waldoProcessCompleted = False
 
-        dlg = WaldoProcessDialog(self.data.ex_id, self.waldoProcess, self.finished, self)
+        dlg = WaldoProcessDialog(self.data.experiment, self.waldoProcess, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
 
@@ -161,7 +161,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         GENERATE_REPORT_CALLBACK = lambda x: callback(6, x)
 
         STEPS = 5.0
-        ex_id = self.data.ex_id
+        ex_id = self.data.experiment.id
         callback(0, 0.0 / STEPS)
 
         prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
@@ -172,7 +172,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         PROCESS_IMAGES_CALLBACK(1)
         callback(0, 2.0 / STEPS)
 
-        experiment = Experiment(experiment_id=ex_id)
+        experiment = self.data.experiment
         LOAD_EXPERIMENT_CALLBACK(1)
         callback(0, 3.0 / STEPS)
 
@@ -182,7 +182,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         CORRECT_ERROR_CALLBACK(1)
         callback(0, 4.0 / STEPS)
 
-        out_writer = OutputWriter(ex_id, graph=graph)
+        out_writer = OutputWriter(experiment.id, graph=graph)
         out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
         WRITE_OUTPUT_CALLBACK(1)
         GENERATE_REPORT_CALLBACK(1)
@@ -190,7 +190,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
 
     def finished(self):
         self.waldoProcessCompleted = True
-        self.make_figures(self.data.ex_id)
+        self.make_figures(self.data.experiment.id)
         self.completeChanged.emit()
 
     def isComplete(self):

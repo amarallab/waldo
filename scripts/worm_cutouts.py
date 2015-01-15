@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import pathcustomize
 import os
 
 from waldo.images.cutups import cutouts_for_worms
