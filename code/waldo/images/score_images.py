@@ -137,7 +137,7 @@ def score(ex_id, experiment=None):
     #print('worm', min(worm_i), np.mean(worm_i), max(worm_i))
     #print('background', min(background_i), np.mean(background_i), max(background_i))
     #print(len(worm_i), len(background_i))
-    make_pixel_histogram(worm_i, background_i)
+    #make_pixel_histogram(worm_i, background_i)
 
     img=mpimg.imread(impaths[-1])
     time = times[-1]

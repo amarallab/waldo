@@ -132,10 +132,10 @@ class ScoringPage(QtGui.QWizardPage):
 
     def scoring(self, callback):
         self.result = {}
-        try:
-            self.result = images.score(None, experiment=self.data.experiment)
-        except:
-            self.result = {}
+        #try:
+        self.result = images.score(None, experiment=self.data.experiment)
+        #except:
+        #    self.result = {}
         callback(0, 1)
 
     def _resultToString(self, value, range):
