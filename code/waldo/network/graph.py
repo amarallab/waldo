@@ -42,6 +42,18 @@ class Graph(nx.DiGraph):
         self._gap_nodes = []
         self._gap_blobs = []
 
+        self.tag_edges()
+
+    def tag_edges(self):
+        """
+        Record all original edges as the node ids can become totally
+        unhinged (and are not even guaranteed to always be the same) from
+        the original blob data. This information will be carried through
+        condensation operations.
+        """
+        for a, b in self.edges_iter():
+            self.edge[a][b]['blob_id_edges'] = {(a, b)}
+
     def copy(self):
         return type(self)(self, experiment=self.experiment)
 
@@ -87,11 +99,6 @@ class Graph(nx.DiGraph):
         if nx.number_connected_components(subg.to_undirected()) != 1:
             raise ValueError('Attempting to merge unconnected nodes.')
 
-        # for a, b in subg.edges_iter():
-        #     if subg.node[a]['died_f'] != subg.node[b]['born_f'] - 1:
-        #         raise ValueError('Non-concurrnet')
-
-
         # not sure which function is trying to merge a node with itself...
         # but it needs to be stopped. until then catch it here.
         if node in other_nodes:
@@ -101,25 +108,10 @@ class Graph(nx.DiGraph):
         if not other_nodes:
             return
 
-        #####
-        if settings.DEBUG:
-            # warning: kinda slow
-            #curframe = inspect.currentframe()
-            #calframe = inspect.getouterframes(curframe, 2)
-            #L.debug('Requestor function: {}'.format(calframe[1][3]))
-
-            lifespans = {n: self.lifespan_f(n) for n in other_nodes}
-            orig_lifespan = self.lifespan_f(node)
-
-            births = {n: self.node[n]['born_f'] for n in other_nodes}
-            deaths = {n: self.node[n]['died_f'] for n in other_nodes}
-
-            births[node] = nd['born_f']
-            deaths[node] = nd['died_f']
-        #####
-
         if 'components' not in nd:
             nd['components'] = set([node])
+
+        external_edges = set()
 
         for other_node in other_nodes:
             other_data = self.node[other_node]
@@ -149,12 +141,13 @@ class Graph(nx.DiGraph):
                 else:
                     nd[k] = v
 
-            # transfer edges
+            # # transfer edges
             self.add_edges_from(
                     (node, out_node)
                     for out_node
                     in self.successors(other_node)
                     if out_node != node)
+
             self.add_edges_from(
                     (in_node, node)
                     for in_node
@@ -167,60 +160,6 @@ class Graph(nx.DiGraph):
         # update what's where
         for component in nd['components']:
             self._whereis_data[component] = node
-
-        #####
-        if settings.DEBUG:
-            final_lifespan = self.lifespan_f(node)
-
-            longer_lifespans = []
-            no_lifespan_extentions = []
-            for n, life in six.iteritems(lifespans):
-                if life > 60 * 20 * 15 and life + orig_lifespan > final_lifespan:
-                    longer_lifespans.append(n)
-                if life > final_lifespan:
-                    no_lifespan_extentions.append(n)
-
-            if longer_lifespans:
-                L.warn('Requestor function: {}'.format(calframe[1][3]))
-                L.warn('Blob {} merging with {} other nodes'.format(
-                        node, len(other_nodes)))
-                for n in (node,) + other_nodes:
-                    L.warn('Node {:6}, born_f {:6}, died_f {:6}'.format(
-                            int(n), births[n], deaths[n]))
-                l1, l2 = orig_lifespan, final_lifespan
-                L.warn('\tWARNING: {} blobs with longer lifespans removed'.format(
-                        len(longer_lifespans)))
-                L.warn('\t{} fr --> {} fr. (gain={} fr)'.format(l1, l2, l2 - l1))
-
-                for n in longer_lifespans:
-                    L.warn('\t {} | {} + {} = {}'.format(
-                        int(n), lifespans[n], l1, lifespans[n] + l1))
-
-                L.warn('\t merged node: born {} -- died {}'.format(
-                        nd['born_f'], nd['died_f']))
-                b1 = births[node]
-                d1 = deaths[node]
-                for n in longer_lifespans:
-                    b, d = births[n], deaths[n]
-                    if b < b1:
-                        overlap = (d - b1)
-                        if overlap <0:
-                            overlap = 0
-                        L.warn('\t({}-{}) and ({}-{}) | overlap={} fr'.format(
-                                b, d, b1, d1, overlap))
-
-                    else:
-                        overlap = (d1 - b)
-                        if overlap <0:
-                            overlap = 0
-                        L.warn('\t({}-{}) and ({}-{}) | overlap={} fr'.format(
-                                b, d, b1, d1, overlap))
-
-            elif no_lifespan_extentions:
-                L.warn('WARNING: {} blobs with lifespans > 20 min'.format(
-                        len(no_lifespan_extentions)))
-                L.warn(lifespans)
-        #####
 
     def validate(self, acceptable_f_delta=-10):
         """

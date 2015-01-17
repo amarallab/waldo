@@ -9,7 +9,7 @@ venv*/
 
 # emacs cruft
 *~
-*#
+*\#
 
 # aspell cruft
 *.bak
