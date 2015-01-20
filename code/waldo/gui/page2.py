@@ -28,11 +28,10 @@ class SelectExperimentPage(QtGui.QWizardPage):
     def initializePage(self):
         self.experimentList.clear()
         selectedIndex = 0
-        for name, dirs, files in os.walk(settings.MWT_DATA_ROOT):
-            for dir in dirs:
-                self.experimentList.addItem(dir)
-                if self.data.selected_ex_id == dir:
-                    selectedIndex = self.experimentList.count() - 1
+        for dir in sorted(os.listdir(settings.MWT_DATA_ROOT)):
+            self.experimentList.addItem(dir)
+            if self.data.selected_ex_id == dir:
+                selectedIndex = self.experimentList.count() - 1
         if self.experimentList.count() > 0:
             self.experimentList.setCurrentRow(selectedIndex)
         self.completeChanged.emit()
