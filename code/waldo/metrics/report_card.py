@@ -396,21 +396,21 @@ class WaldoSolver(object):
     def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest
         """
-        graph = self.graph
+        #graph = self.graph
         experiment = self.experiment
-        collider.remove_nodes_outside_roi(graph, experiment)
+        collider.remove_nodes_outside_roi(self.graph, experiment)
         phase_name =  'pre-cleaning'
         self.phase_name = phase_name
         if callback:
             callback(0.25)
-        self.report_card.add_step(graph, step_name='roi',
+        self.report_card.add_step(self.graph, step_name='roi',
                                   phase_name=phase_name)
         if callback:
             callback(0.5)
-        collider.remove_blank_nodes(graph, experiment)
+        collider.remove_blank_nodes(self.graph, experiment)
         if callback:
             callback(0.75)
-        self.report_card.add_step(graph, step_name='blank',
+        self.report_card.add_step(self.graph, step_name='blank',
                                   phase_name=phase_name)
         if callback:
             callback(1)
@@ -459,7 +459,7 @@ class WaldoSolver(object):
         # Score is based on probability that a blob would move a certain distance (from other worms on plate)
         #ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
         #link_total = len(ll1) #+ len(ll2) + len(ll3)
-        self.report_card.add_step(graph, step_name='connect_leaves',
+        self.report_card.add_step(self.graph, step_name='connect_leaves',
                                   phase_name=self.phase_name)
 
     def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None, callback=None):
@@ -483,7 +483,7 @@ class WaldoSolver(object):
             def cb_iterate(i, x):
                 pass
 
-        self.report_card.add_step(self.graph, 'iter 0')
+        #self.report_card.add_step(self.graph, 'iter 0')
         for i in range(6):
             self.phase_name = 'iter{i}'.format(i=i+1)
             # untangle collisions
