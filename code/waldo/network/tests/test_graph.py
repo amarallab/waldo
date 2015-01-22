@@ -4,6 +4,7 @@ import itertools
 import networkx as nx
 
 from waldo.network import Graph
+from waldo.network import keyconsts as kc
 
 FRAME_TIME = 0.1
 
@@ -42,7 +43,7 @@ def node_generate(nodes, timepoints=None, graph=None):
 #         x += element
 #         yield x
 
-def diamond_graph_a():
+def diamond_graph_a(tag=False):
     nodes = [
         [1, 2],
         [3],
@@ -50,10 +51,36 @@ def diamond_graph_a():
         [6],
         [7, 8],
     ]
+
     Gtest = node_generate(nodes)
     Gtest.add_path([1, 3, 4, 6, 7])
     Gtest.add_path([2, 3, 5, 6, 8])
+
+    if tag:
+        Gtest.tag_edges()
+
     return Gtest
+
+def graph_b(tag=False):
+    nodes = [
+        [11, 12],
+        [21],
+        [31, 32],
+        [41],
+        [51, 52],
+        [61],
+        [71, 72],
+    ]
+
+    Gtest = node_generate(nodes)
+    Gtest.add_path([11, 21, 31, 41, 51, 61, 71])
+    Gtest.add_path([12, 21, 32, 41, 52, 61, 72])
+
+    if tag:
+        Gtest.tag_edges()
+
+    return Gtest
+
 
 class GraphCheck(unittest.TestCase):
     def check_graphs_equal(self, Gtest, Gexpect):
@@ -72,108 +99,11 @@ class GraphCheck(unittest.TestCase):
                         ', '.join(str(x) for x in eGt-eGe),
                         ', '.join(str(x) for x in eGe-eGt)))
 
+class GraphCreator(GraphCheck):
+    def test_empty_init(self):
+        Graph()
 
-class CondenserTopology(GraphCheck):
-    def test_forward(self):
-        Gtest = diamond_graph_a()
-
-        Gtest.condense_nodes(3, 4, 5, 6)
-
-        Gref = nx.DiGraph()
-        Gref.add_path([1, 3, 7])
-        Gref.add_path([2, 3, 8])
-
-        self.check_graphs_equal(Gtest, Gref)
-
-    def test_backward(self):
-        Gtest = diamond_graph_a()
-
-        Gtest.condense_nodes(6, 5, 4, 3)
-
-        Gref = nx.DiGraph()
-        Gref.add_path([1, 6, 7])
-        Gref.add_path([2, 6, 8])
-
-        self.check_graphs_equal(Gtest, Gref)
-
-    def test_unconnected(self):
-        nodes = [
-            [1, 4],
-            [2, 5],
-            [3, 6],
-        ]
-        Gtest = node_generate(nodes)
-        Gtest.add_path([1, 2, 3])
-        Gtest.add_path([4, 5, 6])
-
-        try:
-            Gtest.condense_nodes(2, 5)
-        except ValueError:
-            pass
-        else:
-            self.fail("Allowed unconnected nodes to be merged.")
-
-    def test_partial_connected(self):
-        nodes = [
-            [1, 2],
-            [3],
-            [4, 5],
-            [6],
-            [7, 8],
-        ]
-        Gtest = node_generate(nodes)
-        Gtest.add_path([1, 3, 4, 6, 7])
-        Gtest.add_path([2, 3])
-        Gtest.add_path([5, 6, 8])
-
-        # shouldn't complain.
-        Gtest.condense_nodes(3, 4, 5, 6)
-
-
-class CondenserEdgeInfo(GraphCheck):
-    def test_tagging(self):
-        Gtest = diamond_graph_a()
-        Gtest.tag_edges()
-
-        for a, b, data in Gtest.edges_iter(data=True):
-            self.assertEqual(
-                    data['blob_id_edges'],
-                    {(a, b)}
-                )
-
-    def test_keep_original_info(self):
-        Gtest = diamond_graph_a()
-        Gtest.tag_edges()
-
-        Gtest.condense_nodes(3, 4, 5, 6)
-
-        edge_tags = {
-            (1, 3): {(1, 3)},
-            (2, 3): {(2, 3)},
-            (3, 7): {(6, 7)},
-            (3, 8): {(6, 8)},
-        }
-
-        for a, b, data in Gtest.edges_iter(data=True):
-            self.assertEqual(
-                    data['blob_id_edges'],
-                    edge_tags[(a, b)]
-                )
-
-    def test_unclean_merge(self):
-        Gtest = diamond_graph_a()
-        Gtest.tag_edges()
-
-        Gtest.condense_nodes(3, 4, 5)
-
-        edge_tags = {
-            (1, 3): {(1, 3)},
-            (2, 3): {(2, 3)},
-            (3, 6): {(4, 6), (5, 6)},
-        }
-
-        for a, b, data in Gtest.edges_iter(data=True):
-            self.assertEqual(
-                    data['blob_id_edges'],
-                    edge_tags[(a, b)]
-                )
+    def test_init_with_graph(self):
+        G = nx.DiGraph()
+        G.add_path([1, 2, 3])
+        Graph(G)

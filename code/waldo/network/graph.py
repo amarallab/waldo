@@ -17,6 +17,8 @@ import pandas as pd
 # package specific
 from waldo.conf import settings
 
+from . import keyconsts as kc
+
 from .network_number_wizard import node_is_moving, network_number_wizard
 
 if settings.DEBUG:
@@ -26,6 +28,48 @@ if settings.DEBUG:
     import string
 
 L = logging.getLogger(__name__)
+
+def merge_mappings(a, b):
+    """
+    MutableMapping *b* is merged into MutableMapping *a*, modifying *a*
+    in-place.  Values in *a* and *b* are expected to be combinable...i.e.
+    both lists, or sets, or dicts
+    """
+    for k, v in six.iteritems(b):
+        if k in a:
+            # try .update(); works for MutableMappings (e.g. dict) and
+            # MutableSets (set).
+            try:
+                a[k].update(v)
+            except TypeError:
+                raise TypeError('Cannot update key "{}" with type {}, incompatible type provided: {}'
+                        .format(k, type(a[k]), type(v)))
+            except AttributeError:
+                # maybe it's a list? try below...
+                pass
+            else:
+                # OK, move on.
+                continue
+
+            # try .extend(); works for MutableSequences (list)
+            try:
+                a[k].extend(v)
+            except TypeError:
+                raise TypeError('Cannot extend key "{}" with type {}, incompatible type provided: {}'
+                        .format(k, type(a[k]), type(v)))
+            except AttributeError:
+                # something else?
+                pass
+            else:
+                # OK, move on.
+                continue
+
+            # give up.
+            raise TypeError('Cannot merge key "{}", unsupported type(s): {}, {}'
+                    .format(k, type(a[k]), type(v)))
+        else:
+            a[k] = v
+
 
 class Graph(nx.DiGraph):
     def __init__(self, *args, **kwargs):
@@ -52,13 +96,13 @@ class Graph(nx.DiGraph):
         condensation operations.
         """
         for a, b in self.edges_iter():
-            self.edge[a][b]['blob_id_edges'] = {(a, b)}
+            self.edge[a][b][kc.BLOB_ID_EDGES] = {(a, b)}
 
     def copy(self):
         return type(self)(self, experiment=self.experiment)
 
     def components(self, node):
-        return set(int(n) for n in self.node[node].get('components', [node]))
+        return set(int(n) for n in self.node[node].get(kc.COMPONENTS, [node]))
 
     def where_is(self, bid):
         return self._whereis_data.get(bid, bid)
@@ -94,8 +138,8 @@ class Graph(nx.DiGraph):
         L.debug('Node {} incorporating {}'.format(
                 node, ', '.join(str(x) for x in other_nodes)))
 
-
-        subg = self.subgraph((node,) + other_nodes)
+        all_nodes = (node,) + other_nodes
+        subg = self.subgraph(all_nodes)
         if nx.number_connected_components(subg.to_undirected()) != 1:
             raise ValueError('Attempting to merge unconnected nodes.')
 
@@ -108,57 +152,72 @@ class Graph(nx.DiGraph):
         if not other_nodes:
             return
 
-        if 'components' not in nd:
-            nd['components'] = set([node])
+        edges_out = set(self.out_edges_iter(all_nodes))
+        edges_in = set(self.in_edges_iter(all_nodes))
+        #edges_internal = edges_out & edges_in
+        edges_external = edges_out ^ edges_in
 
-        external_edges = set()
+        if kc.COMPONENTS not in nd:
+            nd[kc.COMPONENTS] = set([node])
 
+        # copy/update node data (NO TOPOLOGY CHANGES)
         for other_node in other_nodes:
             other_data = self.node[other_node]
 
             # abscond with born/died
             if not skip_life_recalc:
-                nd['born_f'] = min(nd['born_f'], other_data.pop('born_f'))
-                nd['died_f'] = max(nd['died_f'], other_data.pop('died_f'))
+                nd[kc.FRAME_BORN] = min(nd[kc.FRAME_BORN], other_data.pop(kc.FRAME_BORN))
+                nd[kc.FRAME_DIED] = max(nd[kc.FRAME_DIED], other_data.pop(kc.FRAME_DIED))
 
-                nd['born_t'] = min(nd['born_t'], other_data.pop('born_t'))
-                nd['died_t'] = max(nd['died_t'], other_data.pop('died_t'))
+                nd[kc.TIME_BORN] = min(nd[kc.TIME_BORN], other_data.pop(kc.TIME_BORN))
+                nd[kc.TIME_DIED] = max(nd[kc.TIME_DIED], other_data.pop(kc.TIME_DIED))
             else:
-                for key in ('born_f', 'died_f', 'born_t', 'died_t'):
+                for key in (kc.FRAME_BORN, kc.FRAME_DIED, kc.TIME_BORN, kc.TIME_DIED):
                     del other_data[key]
 
             # combine set/mapping data
-            nd['components'].update(
-                    other_data.pop('components', set([other_node])))
-            for k, v in six.iteritems(other_data):
-                if k in nd:
-                    # works for dicts and sets.
-                    try:
-                        nd[k].update(v)
-                    except TypeError:
-                        pass
+            nd[kc.COMPONENTS].update(
+                    other_data.pop(kc.COMPONENTS, set([other_node])))
 
-                else:
-                    nd[k] = v
+            merge_mappings(nd, other_data)
+            # for k, v in six.iteritems(other_data):
+            #     if k in nd:
+            #         # works for dicts and sets.
+            #         try:
+            #             nd[k].update(v)
+            #         except TypeError:
+            #             pass
+            #     else:
+            #         nd[k] = v
 
-            # # transfer edges
-            self.add_edges_from(
-                    (node, out_node)
-                    for out_node
-                    in self.successors(other_node)
-                    if out_node != node)
+        # propogate original edge data
+        for a, b in edges_external:
+            # should be in one and only one (xor)
+            assert (a in all_nodes) ^ (b in all_nodes)
 
-            self.add_edges_from(
-                    (in_node, node)
-                    for in_node
-                    in self.predecessors(other_node)
-                    if in_node != node)
+            if a in all_nodes:
+                # "leaving" edge
+                u = node
+                v = b
+            else:
+                # "incoming" edge
+                u = a
+                v = node
 
-            # remove node
+            edge_data = self.get_edge_data(a, b)
+            if self.has_edge(u, v):
+                existing_edge_data = self.get_edge_data(u, v)
+                merge_mappings(existing_edge_data, edge_data)
+            else:
+                self.add_edge(u, v, **edge_data)
+
+        # cleanup
+        for other_node in other_nodes:
+            # remove nodes (edges come off with)
             self.remove_node(other_node)
 
         # update what's where
-        for component in nd['components']:
+        for component in nd[kc.COMPONENTS]:
             self._whereis_data[component] = node
 
     def validate(self, acceptable_f_delta=-10):
@@ -169,13 +228,13 @@ class Graph(nx.DiGraph):
         * contains only causal links
         """
         for node, node_data in self.nodes_iter(data=True):
-            for req_key in ['born_f', 'died_f', 'born_t', 'died_t']:
+            for req_key in [kc.FRAME_BORN, kc.FRAME_DIED, kc.TIME_BORN, kc.TIME_DIED]:
                 if req_key not in node_data:
                     raise AssertionError("Node {} missing required key '{}'".format(
                             node, req_key))
 
         for a, b in self.edges_iter():
-            f_delta = self.node[b]['born_f'] - self.node[a]['died_f']
+            f_delta = self.node[b][kc.FRAME_BORN] - self.node[a][kc.FRAME_DIED]
             if f_delta < acceptable_f_delta:
                 raise AssertionError("Edge from {} to {} is acausal, going "
                         "back in time {:0.0f} frames".format(a, b, -f_delta))
@@ -185,12 +244,12 @@ class Graph(nx.DiGraph):
     def lifespan_f(self, node):
         # +1 because something that was born & died on the same frame exists
         # for 1 frame.
-        return self.node[node]['died_f'] - self.node[node]['born_f'] + 1
+        return self.node[node][kc.FRAME_DIED] - self.node[node][kc.FRAME_BORN] + 1
 
     def lifespan_t(self, node):
         # This is off by one frame compared to the frame-based lifespan
         # because we don't know for sure how long the frame lasted
-        return self.node[node]['died_t'] - self.node[node]['born_t']
+        return self.node[node][kc.TIME_DIED] - self.node[node][kc.TIME_BORN]
 
     def count_worms(self, experiment):
         worm_count_dict = network_number_wizard(self, experiment)
@@ -286,11 +345,7 @@ class Graph(nx.DiGraph):
         if collision_result:
             self.remove_node(collision_node)
 
-
-        #print(col)
-        for (n1, n2) in collision_result:
-            #print(cr)
-
+        for n1, n2 in collision_result:
             #parents = set(self.predecessors(n1))
             #children = set(self.successors(n2))
 
@@ -395,7 +450,7 @@ class Graph(nx.DiGraph):
         node_summaries = []
         for node in node_ids:
             node_data = self.node[node]
-            bf, df = node_data['born_f'], node_data['died_f']
+            bf, df = node_data[kc.FRAME_BORN], node_data[kc.FRAME_DIED]
             t0 = frame_times[bf - 1]
             tN = frame_times[df - 1]
             comps = list(node_data.get('components', [node]))
@@ -430,3 +485,18 @@ class Graph(nx.DiGraph):
         graph_nodes = set(self.nodes(data=False))
         actual_bbox_nodes = list(bbox_nodes & graph_nodes)
         return bboxes.loc[actual_bbox_nodes]
+
+
+class MergableValueValueDict(dict):
+    """
+    NX adjacency format (e.g. Graph.adj or DiGraph.pred):
+    {
+        node1: {
+            link1: { ... FFA bin of attributes ... },
+            ...
+        }
+    }
+
+    So...if we want to make attributes mergable, we want to monitor the
+    values' (node data) values (link data).
+    """
