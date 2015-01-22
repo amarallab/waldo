@@ -118,6 +118,10 @@ class Graph(nx.DiGraph):
 
     def condense_nodes(self, node, *other_nodes, **kwargs):
         """
+        ``condense_nodes(node1, ..., noden,
+                         [life_recalc=True],
+                         [enforce_connectivity=True])``
+
         Incorporate all nodes in *other_nodes* into *node* in-place.
 
         All nodes must have ``born_f`` and ``died_f`` keys, the condensed node
@@ -130,17 +134,26 @@ class Graph(nx.DiGraph):
         Edges that *other_nodes* had will be taken by *node*, except those to
         *node* to prevent self-loops.
 
-        If *skip_life_recalc* is True, born/died times on *node* will not be
+        If *life_recalc* is False, born/died times on *node* will not be
         changed. Use with care.
+
+        If *enforce_connectivity* is False, don't check that the nodes are
+        connected (could cause strange things to occur).
         """
-        skip_life_recalc = kwargs.get('skip_life_recalc', False)
+        life_recalc = kwargs.pop('life_recalc', True)
+        enforce_connectivity = kwargs.pop('enforce_connectivity', True)
+        if kwargs:
+            raise TypeError('Unexpected keyword argument(s): {}'
+                .format(', '.join(kwargs)))
+
         nd = self.node[node]
         L.debug('Node {} incorporating {}'.format(
                 node, ', '.join(str(x) for x in other_nodes)))
 
         all_nodes = (node,) + other_nodes
         subg = self.subgraph(all_nodes)
-        if nx.number_connected_components(subg.to_undirected()) != 1:
+        if (enforce_connectivity
+                and nx.number_connected_components(subg.to_undirected()) != 1):
             raise ValueError('Attempting to merge unconnected nodes.')
 
         # not sure which function is trying to merge a node with itself...
@@ -165,7 +178,7 @@ class Graph(nx.DiGraph):
             other_data = self.node[other_node]
 
             # abscond with born/died
-            if not skip_life_recalc:
+            if life_recalc:
                 nd[kc.FRAME_BORN] = min(nd[kc.FRAME_BORN], other_data.pop(kc.FRAME_BORN))
                 nd[kc.FRAME_DIED] = max(nd[kc.FRAME_DIED], other_data.pop(kc.FRAME_DIED))
 
@@ -180,15 +193,6 @@ class Graph(nx.DiGraph):
                     other_data.pop(kc.COMPONENTS, set([other_node])))
 
             merge_mappings(nd, other_data)
-            # for k, v in six.iteritems(other_data):
-            #     if k in nd:
-            #         # works for dicts and sets.
-            #         try:
-            #             nd[k].update(v)
-            #         except TypeError:
-            #             pass
-            #     else:
-            #         nd[k] = v
 
         # propogate original edge data
         for a, b in edges_external:
@@ -255,7 +259,6 @@ class Graph(nx.DiGraph):
         worm_count_dict = network_number_wizard(self, experiment)
         for node, count in six.iteritems(worm_count_dict):
             self.node[node]['worm_count'] = count
-            #print(self.node[node])
 
     def giant(self):
         """Return a subgraph copy of the giant component"""
@@ -276,7 +279,7 @@ class Graph(nx.DiGraph):
             self.node[node]['moved'] = is_moving
         return moving
 
-    def add_node_attributes(self, attribute_name, node_dict, default=False):
+    def add_node_attributes(self, attribute_name, node_dict, default=None):
         """
         adds a new attribute to a set of nodes in the graph and passes
         values to set the attribute to.
@@ -290,79 +293,71 @@ class Graph(nx.DiGraph):
             the new attribute value is for each node.
         default:
             the default value for nodes that are not in the node_dict.
-            if default == False, no attribute will be created.
+            if default is None, no attribute will be created.
         """
         nodes_found = 0
         nodes_not_found = 0
+
         for node in self.nodes():
-            #print(type(node))
-            #print(node, node in node_dict)
             if node in node_dict:
                 self.node[node][attribute_name] = node_dict[node]
                 nodes_found += 1
-            elif default == False: # do not add anything
+            elif default is None: # do not add anything
                 nodes_not_found += 1
-            else: # add a None placeholder
+            else: # add a placeholder
                 nodes_not_found += 1
                 self.node[node][attribute_name] = default
-        print(nodes_found, 'nodes found')
-        print(nodes_not_found, 'nodes not found')
+
+        return nodes_found, nodes_not_found
 
     def bridge_gaps(self, node_list, blob_list):
         self._gap_nodes.extend(node_list)
         self._gap_blobs.extend(blob_list)
         self.add_edges_from(node_list, taped=True)
 
-    def untangle_collision(self, collision_node, collision_result,
+    def untangle_collision(self, collision_node, connection_pairs,
                            blobs=None):
         """
-        this untangles collisions by removing the collision
-        nodes and merging the parent-child pairs that belong
-        to the same worm.
+        This untangles collisions by removing *collision_node* and
+        merging the parent-child pairs that belong to the same worm.
 
+          |   |
+          A   B
+           \ /            |    |
+        collision    =>   A    B
+           / \            |    |
+          C   D
+          |   |
 
-        A   C
-         \ /              A     C
-       collision    ==>   | and |
-         / \              B     D
-        B   D
+        The *collision_node* and all nodes in *connection_pairs* are removed
+        from the graph and replaced by compound nodes.
 
-        The collision node and all nodes in collision result are
-        removed from the self and replaced by compound nodes.
+        Parameters
+        ----------
+        collision_node : (int or tuple)
+            The node id (in self) that identifies the collision.
+        connection_pairs : iterable, 2x2
+            A pair of paired node IDs to join.
 
-
-        params
-        --------
-        collision_node: (int or tuple)
-           the node id (in self) that identifies the collision.
-        collision_result: (list)
-           Values are lists of node pairs to be joined.
-
-           example:
-           [[node_A, node_B], [node_C, node_D]]
+            example:
+            [[node_A, node_B], [node_C, node_D]]
         """
+        # save the collision node and it's data
+        collision_info = self.node[collision_node]
+        collision_info['edges_in'] = self.in_edges(collision_node, data=True)
+        collision_info['edges_out'] = self.out_edges(collision_node, data=True)
+        collision_info['solution'] = connection_pairs
 
-        if collision_result:
-            self.remove_node(collision_node)
+        self.remove_node(collision_node)
 
-        for n1, n2 in collision_result:
-            #parents = set(self.predecessors(n1))
-            #children = set(self.successors(n2))
+        for n1, n2 in connection_pairs:
+            self.condense_nodes(n1, n2, enforce_connectivity=False)
 
-            # combine data
-            #new_node, new_node_data = self.condense_nodes(n1, n2)
-            try:
-                n1_data = self.node[n1]
-            except KeyError:
-                print('Warning: {n} not found in graph'.format(n=n1))
-                continue
-            if 'collision' not in n1_data:
-                self.node[n1]['collisions'] = set()
-            self.node[n1]['collisions'].add(collision_node)
-            self.add_edge(n1, n2)
+            self.node[n1].setdefault(kc.COLLISIONS, set())
+            self.node[n1][kc.COLLISIONS].add(collision_node)
 
         # document collision
-        self._collision_nodes[collision_node] = collision_result
+        self._collision_nodes[collision_node] = collision_info
         self._collision_blobs[collision_node] = blobs
 
 

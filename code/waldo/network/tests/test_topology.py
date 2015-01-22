@@ -1,5 +1,7 @@
 import networkx as nx
 
+from waldo.network import keyconsts as kc
+
 from . import test_graph as tg
 
 class CondenserTopology(tg.GraphCheck):
@@ -57,3 +59,21 @@ class CondenserTopology(tg.GraphCheck):
 
         # shouldn't complain.
         Gtest.condense_nodes(3, 4, 5, 6)
+
+    def test_connectivity_reject(self):
+        nodes = [
+            [1, 2],
+        ]
+        Gtest = tg.node_generate(nodes)
+
+        try:
+            Gtest.condense_nodes(1, 2)
+        except ValueError as e:
+            if 'unconnected' not in str(e):
+                self.fail('Unexpected error')
+        else:
+            self.fail('Allowed merging of unconnected nodes')
+
+
+class CondenserInfo(tg.GraphCheck):
+    pass
