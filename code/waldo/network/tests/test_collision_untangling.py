@@ -51,26 +51,7 @@ def double_untangle():
     return d
 
 
-class CollisionTopology(tg.GraphCheck):
-    def test_collision(self):
-        d = single_untangle()
-
-        Gref = nx.DiGraph()
-        Gref.add_path([1, 6, 7])
-        Gref.add_path([2, 6, 8])
-
-        self.check_graphs_equal(d['G'], Gref)
-
-    def test_multi_collision(self):
-        d = double_untangle()
-
-        Gref = nx.DiGraph()
-        Gref.add_nodes_from([1, 2])
-
-        self.check_graphs_equal(d['G'], Gref)
-
-
-class CollisionInfo(tg.GraphCheck):
+class CollisionNodeInfo(tg.GraphTestCase):
     def test_collision_tagging(self):
         d = single_untangle()
 
@@ -118,3 +99,50 @@ class CollisionInfo(tg.GraphCheck):
                 self.fail('Node data missing components')
             else:
                 raise e # something probably wrong with topology.
+
+
+class CollisionEdgeInfo(tg.GraphTestCase):
+    def test_collision_resolve(self):
+        Gtest = tg.diamond_graph_a(tag=True)
+        Gtest.remove_nodes_from([6, 7, 8]) # an X remains.
+
+        Gtest.untangle_collision(3, [[1, 4], [2, 5]])
+
+        edge_tags = {
+            (1, 4): {(1, 4)},
+            (2, 5): {(2, 5)},
+        }
+
+        self.assertEdgeInfo(Gtest, edge_tags)
+
+    def test_condensed_collision(self):
+        Gtest = tg.diamond_graph_a(tag=True)
+
+        Gtest.condense_nodes(3, 4, 5, 6)
+        Gtest.untangle_collision(3, [[1, 7], [2, 8]])
+
+        edge_tags = {
+            (1, 7): {(1, 7)},
+            (2, 8): {(2, 8)},
+        }
+
+        self.assertEdgeInfo(Gtest, edge_tags)
+
+
+class CollisionTopology(tg.GraphTestCase):
+    def test_collision(self):
+        d = single_untangle()
+
+        Gref = nx.DiGraph()
+        Gref.add_path([1, 6, 7])
+        Gref.add_path([2, 6, 8])
+
+        self.assertTopologyEqual(d['G'], Gref)
+
+    def test_multi_collision(self):
+        d = double_untangle()
+
+        Gref = nx.DiGraph()
+        Gref.add_nodes_from([1, 2])
+
+        self.assertTopologyEqual(d['G'], Gref)

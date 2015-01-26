@@ -94,9 +94,12 @@ class Graph(nx.DiGraph):
         unhinged (and are not even guaranteed to always be the same) from
         the original blob data. This information will be carried through
         condensation operations.
+
+        Multiple calls to this function will not overwrite edge data if
+        already present.
         """
         for a, b in self.edges_iter():
-            self.edge[a][b][kc.BLOB_ID_EDGES] = {(a, b)}
+            self.edge[a][b].setdefault(kc.BLOB_ID_EDGES, {(a, b)})
 
     def copy(self):
         return type(self)(self, experiment=self.experiment)
@@ -167,11 +170,10 @@ class Graph(nx.DiGraph):
 
         edges_out = set(self.out_edges_iter(all_nodes))
         edges_in = set(self.in_edges_iter(all_nodes))
-        #edges_internal = edges_out & edges_in
+        #edges_internal = edges_out & edges_in # (unused, for now)
         edges_external = edges_out ^ edges_in
 
-        if kc.COMPONENTS not in nd:
-            nd[kc.COMPONENTS] = set([node])
+        nd.setdefault(kc.COMPONENTS, set([node]))
 
         # copy/update node data (NO TOPOLOGY CHANGES)
         for other_node in other_nodes:
@@ -189,8 +191,7 @@ class Graph(nx.DiGraph):
                     del other_data[key]
 
             # combine set/mapping data
-            nd[kc.COMPONENTS].update(
-                    other_data.pop(kc.COMPONENTS, set([other_node])))
+            nd[kc.COMPONENTS].update(other_data.pop(kc.COMPONENTS, set([other_node])))
 
             merge_mappings(nd, other_data)
 
@@ -309,6 +310,11 @@ class Graph(nx.DiGraph):
                 self.node[node][attribute_name] = default
 
         return nodes_found, nodes_not_found
+
+    def bridge_gap(self, a, b):
+        self.condense_nodes(a, b, enforce_connectivity=False)
+        self.node[a].setdefault(kc.TAPED, set())
+        self.node[a][kc.TAPED].add((a, b))
 
     def bridge_gaps(self, node_list, blob_list):
         self._gap_nodes.extend(node_list)
