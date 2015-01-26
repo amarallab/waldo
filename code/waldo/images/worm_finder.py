@@ -143,18 +143,19 @@ def reformat_missing(df):
     #df.reset_index(index=range(len(df)))
     #print(df)
     ids = ['m{i}'.format(i=i) for i in range(len(df.index))]
+    #print(ids, 'ids to work with')
     frames = list(set(df['f']))
     frames.sort()
     df['id'] = ids
     df = df.set_index('id')
 
     # find any potential matches
+    matches = {} # dict of all matches
     for i, f in enumerate(frames[:-1]):
         current_df = df[df['f'] == f]
         next_df = df[df['f'] == frames[i+1]]
-        matches = {}
-        for c_id, c in current_df.iterrows():
 
+        for c_id, c in current_df.iterrows():
             bbox = c['xmin'], c['ymin'], c['xmax'], c['ymax']
             x, y = c['x'], c['y']
 
@@ -176,12 +177,10 @@ def reformat_missing(df):
                         if nd < md:
                             matches[c_id] = n_id
 
-    print('persisting image objects:')
-    print(matches)
+    print(len(matches), 'persisting image objects')
 
     next_list = [matches.get(c_id, ' ') for c_id in df.index]
     df['next'] = next_list
-
     return df[['f', 't', 'x', 'y',
                'xmin', 'ymin', 'xmax', 'ymax', 'next']]
 
@@ -825,7 +824,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
     full_missing = []
     for i, (time, impath) in enumerate(zip(times, impaths)):
         # get the objects from the image
-        #print(impath)
+        print(i, impath)
         img = mpimg.imread(impath)
         bid_matching, base_acc, miss = analyze_image(experiment, time, img,
                                                background, threshold,
@@ -840,8 +839,6 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
 
     bid_matching = pd.concat(full_experiment_check)
     base_accuracy = pd.DataFrame(accuracy)
-    missing_worms = pd.concat(full_missing)
-    missing_worms = reformat_missing(missing_worms)
 
     # save datafiles
     prep_data = experiment.prepdata
@@ -850,6 +847,13 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
     cb_save(0.33)
     prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
                    index=False)
+
+    # if there are missing worms, save those too
+    missing_worms = pd.concat(full_missing)
+    if len(missing_worms):
+        print(len(missing_worms), 'missing blobs found')
+        missing_worms = reformat_missing(missing_worms)
+
     cb_save(0.66)
     prep_data.dump(data_type='missing', dataframe=missing_worms,
                    index=True)

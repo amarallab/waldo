@@ -40,16 +40,14 @@ import os
 from docopt import docopt
 
 # project specific
-
+import pathcustomize
 from waldo.conf import settings
+import waldo.images.threshold_picker as tp
 from waldo import images
 from waldo import prepare
 from waldo.wio import file_manager as fm
-from waldo.wio.id_handeling import parse_ids
 
-# PREP_DIR = os.path.abspath(settings.LOGISTICS['prep'])
-# IMAGE_MARK_DIR = os.path.join(PREP_DIR, 'image_markings')
-# CACHE_DIR = os.path.join(PREP_DIR, 'cache')
+PROJECT_DATA_ROOT = settings.PROJECT_DATA_ROOT
 
 def cache_image_data(eids, threshold_file, overwrite=True):
     fm.ensure_dir_exists(CACHE_DIR)
@@ -67,65 +65,48 @@ def cache_image_data(eids, threshold_file, overwrite=True):
     ip = images.InteractivePlot(eids)
     ip.precalculate_threshold_data()
 
-def mark_images_interactivly(eids, threshold_file, overwrite=True):
-    fm.ensure_dir_exists(settings.PROJECT_DATA_ROOT)
-    if not eids:
+def mark_images_interactivly(eid, threshold_file, overwrite=True):
+    fm.ensure_dir_exists(PROJECT_DATA_ROOT)
+    if not eid:
         return
-    if not overwrite:
-        thresholds = json.load(open(threshold_file))
-        eids_todo = set(eids) - set(thresholds.keys())
-        already_done = set(eids) & set(thresholds.keys())
-        print '{ad} already done'.format(ad=len(already_done))
-        eids = list(eids_todo)
-    ip = images.InteractivePlot(eids)
+    # currently defunct
+    ip = tp.InteractivePlot(eid)
     ip.run_plot()
-
-
-def reduce_unecessary_work(eids, overwrite, job='prepare'):
-
-    if overwrite:
-        return eids
-
-    #TODO a actual check to see if the csvs are already there.
-    return eids
-
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='prep 0.1')
     #print(arguments)
-    eids_by_dset = parse_ids(arguments['<id>'])
+    # todo: get parse_ids back from older repo version
+    #eids_by_dset = parse_ids(arguments['<id>'])
     cmd = arguments['<command>']
     overwrite = arguments['--overwrite']
-    for dset, eids in eids_by_dset.iteritems():
-        print '{cmd}ing {n} recordings for {ds}'.format(ds=dset,
-                                                        cmd=cmd,
-                                                        n=len(eids))
-        filename = 'threshold-{ds}.json'.format(ds=dset)
-        threshold_file = os.path.join(settings.PROJECT_DATA_ROOT, filename)
+    eids = arguments['<id>']
+    for eid in eids:
+        print '{cmd}ing {n} recordings'.format(cmd=cmd,
+                                               n=len(eids))
+
+        filename = '{eid}-thresholddata.json'.format(eid=eid)
+        threshold_file = os.path.join(PROJECT_DATA_ROOT, filename)
+        print threshold_file
         if cmd == 'cache':
             cache_image_data(eids, threshold_file=threshold_file,
                              overwrite=overwrite)
         elif cmd == 'mark':
-            mark_images_interactivly(eids, threshold_file=threshold_file,
+            mark_images_interactivly(eid, threshold_file=threshold_file,
                              overwrite=overwrite)
         elif cmd == 'prepare':
-            eids = reduce_unecessary_work(eids, overwrite, 'prepare')
             for ex_id in eids:
                 prepare.summarize(ex_id, verbose=True) #csvs from blob data
 
         elif cmd == 'images':
-            eids = reduce_unecessary_work(eids, overwrite, 'images')
             for ex_id in eids:
                 images.summarize(ex_id) #csvs from images
 
         elif cmd  == 'finish':
-            i_eids = reduce_unecessary_work(eids, overwrite, 'images')
-            p_eids = reduce_unecessary_work(eids, overwrite, 'prepare')
-
-            for ex_id in p_eids:
+            for ex_id in eids:
                 print ex_id, 'creating blob data csvs'
                 prepare.summarize(ex_id, verbose=True) #csvs from blob data
-            for ex_id in i_eids:
+            for ex_id in eids:
                 print ex_id, 'creating image data csvs'
                 images.summarize(ex_id) #csvs from images
 

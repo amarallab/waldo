@@ -27,15 +27,16 @@ L = logging.getLogger(__name__)
 class ReportCard(object):
 
     def __init__(self, experiment):
-        self.steps = []
+        #self.steps = []
         self.reports = []
         self.durations = []
         self.experiment = experiment
 
-    def add_step(self, graph, step_name):
+    def add_step(self, graph, step_name, phase_name):
         report, durations = self.evaluate_graph(graph)
+        report['phase'] = phase_name
         report['step'] = step_name
-        self.steps.append(step_name)
+        #self.steps.append(step_name)
         self.reports.append(report)
         self.durations.append(durations)
 
@@ -263,7 +264,6 @@ class ReportCard(object):
 
         add_out_of_roi(start_terms)
         add_out_of_roi(end_terms)
-
         # mark if nodes start or end with the start/end of the recording.
 
         start_terms['timing'] = False
@@ -377,7 +377,8 @@ class WaldoSolver(object):
         self.ex_id = experiment.id
         self.report_card = ReportCard(experiment)
         self.taper = tp.Taper(experiment=experiment, graph=graph)
-        self.report_card.add_step(graph, 'raw')
+        self.report_card.add_step(graph, step_name='raw', phase_name='input')
+        self.phase_name = 'input'
 
     def run(self, callback=None):
         """ runs full solver code
@@ -395,18 +396,22 @@ class WaldoSolver(object):
     def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest
         """
-        graph = self.graph
+        #graph = self.graph
         experiment = self.experiment
-        collider.remove_nodes_outside_roi(graph, experiment)
+        collider.remove_nodes_outside_roi(self.graph, experiment)
+        phase_name =  'pre-cleaning'
+        self.phase_name = phase_name
         if callback:
             callback(0.25)
-        self.report_card.add_step(graph, 'roi')
+        self.report_card.add_step(self.graph, step_name='roi',
+                                  phase_name=phase_name)
         if callback:
             callback(0.5)
-        collider.remove_blank_nodes(graph, experiment)
+        collider.remove_blank_nodes(self.graph, experiment)
         if callback:
             callback(0.75)
-        self.report_card.add_step(graph, 'blank')
+        self.report_card.add_step(self.graph, step_name='blank',
+                                  phase_name=phase_name)
         if callback:
             callback(1)
 
@@ -420,6 +425,8 @@ class WaldoSolver(object):
         """
         L.warn('Remove Offshoots')
         collider.remove_offshoots(self.graph, threshold=threshold)
+        self.report_card.add_step(self.graph, step_name='prune leaves',
+                                  phase_name=self.phase_name)
 
     def condense(self, max_duration=5, split_rel_time=0.5):
         """ condenses motifs that involve false splits and single straight lines.
@@ -441,7 +448,7 @@ class WaldoSolver(object):
     def connect_leaves(self, gap_validation=None):
         """ draws arcs between unconected leaf nodes
         """
-        L.warn('Patch Gaps')
+        L.warn('connect_leaves')
         gap_start, gap_end = self.taper.find_start_and_end_nodes(use_missing_objects=True)
         gaps = self.taper.score_potential_gaps(gap_start, gap_end)
         if gap_validation is not None:
@@ -451,8 +458,9 @@ class WaldoSolver(object):
         ll1, gaps = self.taper.short_tape(gaps, add_edges=True)
         # Score is based on probability that a blob would move a certain distance (from other worms on plate)
         #ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-        link_total = len(ll1) #+ len(ll2) + len(ll3)
-        self.report_card.add_step(self.graph, 'gaps ({n})'.format(n=link_total))
+        #link_total = len(ll1) #+ len(ll2) + len(ll3)
+        self.report_card.add_step(self.graph, step_name='connect_leaves',
+                                  phase_name=self.phase_name)
 
     def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None, callback=None):
         """ iterativly loop through (1) untangleing collisions (2) pruning (3) condensing and (4) connecting leaves
@@ -475,17 +483,16 @@ class WaldoSolver(object):
             def cb_iterate(i, x):
                 pass
 
-        self.report_card.add_step(self.graph, 'iter 0')
+        #self.report_card.add_step(self.graph, 'iter 0')
         for i in range(6):
+            self.phase_name = 'iter{i}'.format(i=i+1)
             # untangle collisions
             n = self.untangle_collsions()
-            self.report_card.add_step(self.graph, 'collisions untangled ({n})'.format(n=n))
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 1/6.)
 
             # prune leaves
             self.prune()
-            self.report_card.add_step(self.graph, 'leaves pruned')
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 2/6.)
 
@@ -506,7 +513,7 @@ class WaldoSolver(object):
                 L.warn('No change since last iteration, halting')
                 break
             last_graph = self.graph.copy()
-            self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
+            #self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
             cb_iterate(i, 5/6.)
 
         if callback:
@@ -594,6 +601,8 @@ class WaldoSolver(object):
             print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
             print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
 
+        self.report_card.add_step(self.graph, step_name='resolve collisions',
+                                  phase_name=self.phase_name)
         return len(resolved)
 
 

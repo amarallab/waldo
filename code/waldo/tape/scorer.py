@@ -53,6 +53,9 @@ class Scorer(object):
 
         n_good_ids = len(good_ids)
         if n_good_ids == 0:
+            print('move_threshold', move_threshold)
+            print('in roi', self.experiment.in_roi())
+
             raise InsufficientData("No good traces identified.")
         elif n_good_ids <= settings.TAPE_MIN_TRACE_FAIL:
             raise InsufficientData(
