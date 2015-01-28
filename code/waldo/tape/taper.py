@@ -69,7 +69,7 @@ class Taper(object):
             Df = lost.fN - found.f0
         return self._scorer(frame_gap=Df, distance_gap=Dr)
 
-    def find_start_and_end_nodes(self, use_missing_objects=True):
+    def find_start_and_end_nodes(self, use_missing_objects=False):
         graph = self._graph
         terms = self._terminals.copy()
         #print('raw terms')
@@ -183,6 +183,9 @@ class Taper(object):
         #print(gap_end_terms.tail())
         #print('start terms2')
         #print(gap_start_terms.head(10))
+
+        # TODO: make test that checks if all 'node_id' values present in the graph
+        # for gap_end_terms, gap_start_terms
 
         return gap_start_terms, gap_end_terms
 
@@ -560,6 +563,8 @@ class Taper(object):
 
             if n3:
                 #print('adding', n1, n3)
+                #assert n1 in self._graph
+                #assert n3 in self._graph
                 real_to_real.append((n1, n3))
                 new_real.append((n1, n3))
                 used_missing.extend(used)

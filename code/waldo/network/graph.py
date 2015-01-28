@@ -9,6 +9,7 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 # standard library
 import logging
+import warnings
 
 # third party
 import networkx as nx
@@ -193,8 +194,10 @@ class Graph(nx.DiGraph):
             # combine set/mapping data
             nd[kc.COMPONENTS].update(other_data.pop(kc.COMPONENTS, set([other_node])))
 
+            #TODO Nick: uncomment and test it
             merge_mappings(nd, other_data)
 
+        #TODO Nick: uncomment and test it
         # propogate original edge data
         for a, b in edges_external:
             # should be in one and only one (xor)
@@ -317,9 +320,14 @@ class Graph(nx.DiGraph):
         self.node[a][kc.TAPED].add((a, b))
 
     def bridge_gaps(self, node_list, blob_list):
-        self._gap_nodes.extend(node_list)
-        self._gap_blobs.extend(blob_list)
-        self.add_edges_from(node_list, taped=True)
+        #self._gap_nodes.extend(node_list)
+        #self._gap_blobs.extend(blob_list)
+        # self.add_edges_from(node_list, taped=True)
+        for a, b in node_list:
+            if a not in self or b not in self:
+                warnings.warn('bridge_gaps() trying to connect non-existant nodes', Warning)
+            else:
+                self.bridge_gap(a, b)
 
     def untangle_collision(self, collision_node, connection_pairs,
                            blobs=None):

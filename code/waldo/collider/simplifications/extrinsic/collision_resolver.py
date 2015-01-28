@@ -172,6 +172,7 @@ class CollisionResolver(object):
             print('parents:{p}'.format(p=p))
             print('children:{c}'.format(c=c))
             #print('beginning:end pixel overlap')
+
         #grab relevant outlines.
         f, p0 = self.grab_outline(p[0], first=False)
         f, p1 = self.grab_outline(p[1], first=False)
@@ -353,6 +354,9 @@ class CollisionResolver(object):
             except CollisionException:
                 #print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
                 result_report['missing_data'].append(node)
+                continue
+            except IndexError:
+                print('WARNING,index error for node:', node)
                 continue
             #print(node, 'is', collision_result)
             if collision_result:

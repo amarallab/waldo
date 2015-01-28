@@ -82,6 +82,6 @@ def remove_offshoots(digraph, threshold):
         # add to components of parent then remove node
         parent = digraph.predecessors(node)[0]
 
-        digraph.condense_nodes(parent, node, skip_life_recalc=True)
+        digraph.condense_nodes(parent, node, life_recalc=False) ## TODO: skip_life_recalc=True)
 
     # graph is modified in-place
