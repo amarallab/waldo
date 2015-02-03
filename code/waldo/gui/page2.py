@@ -101,10 +101,18 @@ class SelectExperimentPage(QtGui.QWizardPage):
         self.asyncSummaryLoader.row_summary_changed.connect(self.row_summary_changed)
         self.asyncSummaryLoader.startListening()
 
+        self.loadedRows = set()
+        self.errorRows = set()
+
     def gui_close_event(self):
         self.asyncSummaryLoader.stopListening()
 
     def row_summary_changed(self, row, valid, summary, duration):
+        if row in self.loadedRows:
+            return
+        self.loadedRows.add(row)
+        if not valid:
+            self.errorRows.add(row)
         items = [None, summary, duration]
         for col, item in enumerate(items):
             cell = self.experimentTable.item(row, col)
@@ -118,6 +126,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
 
     def initializePage(self):
         self.asyncSummaryLoader.clearRows()
+        self.loadedRows = set()
         self.experimentTable.clear()
         self.experimentTable.setColumnCount(3)
         self.experimentTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
@@ -145,11 +154,6 @@ class SelectExperimentPage(QtGui.QWizardPage):
             duration = ""
 
             items = [item, QtGui.QTableWidgetItem(summary_name), QtGui.QTableWidgetItem(duration)]
-            # if has_error:
-            #     self.errorRows.add(row)
-            #     for item in items:
-            #         item.setBackground(Qt.red)
-
             for col, item in enumerate(items):
                 self.experimentTable.setItem(row, col, item)
 
@@ -167,12 +171,19 @@ class SelectExperimentPage(QtGui.QWizardPage):
             row = values.pop()
             item = self.experimentTable.item(row, 0)
             valid = False
+
             if item is None:
                 valid = False
                 self.data.selected_ex_id = None
             else:
-                valid, summary, duration = get_summary_data(str(item.text()))
-                self.row_summary_changed(row, valid, summary, duration)
+                if row in self.loadedRows:
+                    valid = row not in self.errorRows
+                else:
+                    valid, summary, duration = get_summary_data(str(item.text()))
+                    self.row_summary_changed(row, valid, summary, duration)
+                    self.loadedRows.add(row)
+                    if not valid:
+                        self.errorRows.add(row)
                 if valid:
                     self.data.selected_ex_id = str(item.text())
                 else:
