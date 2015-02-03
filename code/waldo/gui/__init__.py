@@ -54,6 +54,11 @@ class WaldoApp(QtGui.QWizard):
         mb.setDefaultButton(QtGui.QMessageBox.Close);
         result = mb.exec_()
         if result == QtGui.QMessageBox.Close:
+            for ids in self.pageIds():
+                page = self.page(ids)
+                method = getattr(page, 'gui_close_event', None)
+                if callable(method):
+                    method()
             ev.accept()
         elif result == QtGui.QMessageBox.Cancel:
             ev.ignore()
