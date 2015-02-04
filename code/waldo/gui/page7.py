@@ -21,12 +21,18 @@ class PreviousWaldoProcessPage(QtGui.QWizardPage):
         self.setSubTitle("The next page will start running the waldo process. It could take a few minutes.")
 
         self.recalculateDataCheckbox = QtGui.QCheckBox("Recalculate data.")
-        self.recalculateDataCheckbox.setVisible(True)
-        self.recalculateDataCheckbox.setChecked(True)
+        self.recalculateDataCheckbox.setVisible(False)
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.recalculateDataCheckbox)
         self.setLayout(layout)
+
+    def initializePage(self):
+        self.data.loadSelectedExperiment()
+        if self.data.experiment is not None and self.data.experiment.prepdata.load('report-card') is not None:
+            self.recalculateDataCheckbox.setVisible(True)
+        else:
+            self.recalculateDataCheckbox.setVisible(False)
 
     def nextId(self):
         if not self.recalculateDataCheckbox.isVisible() or self.recalculateDataCheckbox.isChecked():
