@@ -61,10 +61,10 @@ class AsyncSummaryLoader(QtCore.QThread):
                 self.row_summary_changed.emit(row, valid, summary_name, duration)
 
     def stopListening(self):
+        self.finish = True
         with self.lock:
             self.queue = []
         self.sleep.release()
-        self.finish = True
         self.wait()
         self.terminate()
 
@@ -155,6 +155,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
 
             items = [item, QtGui.QTableWidgetItem(summary_name), QtGui.QTableWidgetItem(duration)]
             for col, item in enumerate(items):
+                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 self.experimentTable.setItem(row, col, item)
 
             if self.data.selected_ex_id == folder:
