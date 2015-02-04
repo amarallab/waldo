@@ -5,7 +5,7 @@ from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
 from waldo.conf import settings, guisettings
-
+import pages
 
 class WelcomePage(QtGui.QWizardPage):
     class Tooltips:
@@ -72,6 +72,10 @@ class WelcomePage(QtGui.QWizardPage):
             self.waldoDataLabel.setText(result)
             settings.PROJECT_DATA_ROOT = str(self.waldoDataLabel.text())
             settings.save()
+    #
+    # def nextId(self):
+    #     return pages.FINAL
+
 
 class ConfigDialog(QtGui.QDialog):
     class ToolTips:

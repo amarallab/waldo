@@ -49,24 +49,41 @@ class FinalPage(QtGui.QWizardPage):
         self.setSubTitle("TO-DO.")
 
         self.tab = QtGui.QTabWidget()
-        self.plot_titles = ['Figure 1', 'Figure 2', 'Figure 3']
-        self.plots = []
-        for title in self.plot_titles:
-            figure = plt.figure()
-            canvas = FigureCanvas(figure)
-            canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
-            canvas.setMinimumSize(50, 50)
-            toolbar = NavigationToolbar(canvas, self)
-            toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
-            widget = QtGui.QWidget()
-            layout = QtGui.QVBoxLayout()
-            layout.addWidget(canvas)
-            layout.addWidget(toolbar)
-            widget.setLayout(layout)
+        # Figure 1
+        figure = plt.figure()
+        canvas = FigureCanvas(figure)
+        canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        canvas.setMinimumSize(50, 50)
+        toolbar = NavigationToolbar(canvas, self)
+        toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
-            self.tab.addTab(widget, title)
-            self.plots.append(figure)
+        widget = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(canvas)
+        layout.addWidget(toolbar)
+        widget.setLayout(layout)
+        self.tab.addTab(widget, 'Results')
+        self.plot = figure
+
+        # Tab 1
+        self.trackCountsTable = QtGui.QTableWidget()
+        self.tab.addTab(self.trackCountsTable, 'Track Counts')
+
+        # Tab 2
+        self.networkOverviewTable = QtGui.QTableWidget()
+        self.tab.addTab(self.networkOverviewTable, 'Network Overview')
+
+        # Tab 3
+        self.trackTerminationTable = QtGui.QTableWidget()
+        self.trackInitiationTable = QtGui.QTableWidget()
+
+        widget = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(self.trackTerminationTable)
+        layout.addWidget(self.trackInitiationTable)
+        widget.setLayout(layout)
+        self.tab.addTab(widget, 'Track Fragmentation')
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.tab)
@@ -74,6 +91,164 @@ class FinalPage(QtGui.QWizardPage):
 
     def initializePage(self):
         self.make_figures(self.data.experiment.id)
+
+        report_card_df = self.data.experiment.prepdata.load('report-card')
+        if report_card_df is None:
+            self.trackCountsTable.clear()
+            self.networkOverviewTable.clear()
+        else:
+            self.make_trackCountsTable(report_card_df)
+            self.make_networkOverviewTable(report_card_df)
+
+        end_report_df = self.data.experiment.prepdata.load('end_report')
+        if end_report_df is None:
+            self.trackTerminationTable.clear()
+        else:
+            self.make_trackTerminationTable(end_report_df)
+
+        start_report_df = self.data.experiment.prepdata.load('start_report')
+        if start_report_df is None:
+            self.trackInitiationTable.clear()
+        else:
+            self.make_trackInitiationTable(start_report_df)
+
+    def make_trackCountsTable(self, report_card_df):
+        headers = ['phase', 'step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min', 'duration-mean', 'duration-std']
+        rightAligns = [False, False, True, True, True, True, True, True, True, True ]
+        widths = [100, 150, 100, 100, 100, 100, 100, 100, 100, 100]
+
+        self.trackCountsTable.clear()
+        self.trackCountsTable.setColumnCount(len(headers))
+        self.trackCountsTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.trackCountsTable.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        for col, (header, width) in enumerate(zip(headers, widths)):
+            self.trackCountsTable.setHorizontalHeaderItem(col, QtGui.QTableWidgetItem(header))
+            self.trackCountsTable.setColumnWidth(col, width)
+        self.trackCountsTable.verticalHeader().setVisible(False)
+
+        prev_phase = ''
+        b = report_card_df[headers]
+        for row_data in b.iterrows():
+            row = row_data[0]
+            self.trackCountsTable.setRowCount(row + 1)
+            col_data = row_data[1]
+            for col, (header, rightAlign) in enumerate(zip(headers, rightAligns)):
+                current = str(col_data[header])
+                if col == 0 and current == prev_phase:
+                    current = ""
+                item = QtGui.QTableWidgetItem(current)
+                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                if rightAlign:
+                    item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
+                self.trackCountsTable.setItem(row, col, item)
+            prev_phase = col_data['phase']
+
+    def make_networkOverviewTable(self, report_card_df):
+        headers = ['phase', 'step', 'total-nodes', 'connected-nodes', 'isolated-nodes', 'giant-component-size', '# components']
+        rightAligns = [False, False, True, True, True, True, True]
+        widths = [100, 150, 100, 100, 100, 100, 100]
+
+        self.networkOverviewTable.clear()
+        self.networkOverviewTable.setColumnCount(len(headers))
+        self.networkOverviewTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.networkOverviewTable.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        for col, (header, width) in enumerate(zip(headers, widths)):
+            self.networkOverviewTable.setHorizontalHeaderItem(col, QtGui.QTableWidgetItem(header))
+            self.networkOverviewTable.setColumnWidth(col, width)
+        self.networkOverviewTable.verticalHeader().setVisible(False)
+
+        prev_phase = ''
+        b = report_card_df[headers]
+        for row_data in b.iterrows():
+            row = row_data[0]
+            self.networkOverviewTable.setRowCount(row + 1)
+            col_data = row_data[1]
+            for col, (header, rightAlign) in enumerate(zip(headers, rightAligns)):
+                current = str(col_data[header])
+                if col == 0 and current == prev_phase:
+                    current = ""
+                item = QtGui.QTableWidgetItem(current)
+                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                if rightAlign:
+                    item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
+                self.networkOverviewTable.setItem(row, col, item)
+            prev_phase = col_data['phase']
+
+    def make_trackTerminationTable(self, end_report_df):
+        df = end_report_df
+        df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
+        df = df.rename(columns={'lifespan': 'track-duration',
+                                'unknown': 'disappear',
+                                'timing':'recording-finishes',
+                                'on_edge':'image-edge'})
+        df.set_index('track-duration', inplace=True)
+
+        headers = ['', 'disappear', 'split', 'join', 'recording-finishes', 'image-edge', 'outside-roi']
+        rightAligns = [False, True, True, True, True, True, True]
+        widths = [100, 100, 100, 100, 100, 100, 100]
+
+        self.trackTerminationTable.clear()
+        self.trackTerminationTable.setColumnCount(len(headers))
+        self.trackTerminationTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.trackTerminationTable.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        for col, (header, width) in enumerate(zip(headers, widths)):
+            self.trackTerminationTable.setHorizontalHeaderItem(col, QtGui.QTableWidgetItem(header))
+            self.trackTerminationTable.setColumnWidth(col, width)
+        self.trackTerminationTable.verticalHeader().setVisible(False)
+
+        b = df[headers[1:]]
+        for row, row_data in enumerate(b.iterrows()):
+            first_label = row_data[0]
+            self.trackTerminationTable.setRowCount(row + 1)
+            col_data = row_data[1]
+            for col, (header, rightAlign) in enumerate(zip(headers, rightAligns)):
+                if col == 0:
+                    current = first_label
+                else:
+                    current = str(col_data[header])
+                item = QtGui.QTableWidgetItem(current)
+                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                if rightAlign:
+                    item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
+                self.trackTerminationTable.setItem(row, col, item)
+
+    def make_trackInitiationTable(self, start_report_df):
+        df = start_report_df
+        df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
+        df = df.rename(columns={'lifespan': 'track-duration',
+                                'unknown': 'appear',
+                                'timing':'recording-begins',
+                                'on_edge':'image-edge'})
+        df.set_index('track-duration', inplace=True)
+
+        headers = ['', 'appear', 'split', 'join', 'recording-begins', 'image-edge', 'outside-roi']
+        rightAligns = [False, True, True, True, True, True, True]
+        widths = [100, 100, 100, 100, 100, 100, 100]
+
+        self.trackInitiationTable.clear()
+        self.trackInitiationTable.setColumnCount(len(headers))
+        self.trackInitiationTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.trackInitiationTable.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        for col, (header, width) in enumerate(zip(headers, widths)):
+            self.trackInitiationTable.setHorizontalHeaderItem(col, QtGui.QTableWidgetItem(header))
+            self.trackInitiationTable.setColumnWidth(col, width)
+        self.trackInitiationTable.verticalHeader().setVisible(False)
+
+        b = df[headers[1:]]
+        for row, row_data in enumerate(b.iterrows()):
+            first_label = row_data[0]
+            self.trackInitiationTable.setRowCount(row + 1)
+            col_data = row_data[1]
+            for col, (header, rightAlign) in enumerate(zip(headers, rightAligns)):
+                if col == 0:
+                    current = first_label
+                else:
+                    current = str(col_data[header])
+                item = QtGui.QTableWidgetItem(current)
+                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                if rightAlign:
+                    item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
+                self.trackInitiationTable.setItem(row, col, item)
 
     # MAKE FIG
 
@@ -176,12 +351,12 @@ class FinalPage(QtGui.QWizardPage):
         gs = gridspec.GridSpec(3, 2)
         gs.update(wspace=0.01, hspace=0.05) #, bottom=0.1, top=0.7)
 
-        ax_l0 = self.plots[0].add_subplot(gs[0,0])
-        ax_l1 = self.plots[0].add_subplot(gs[0,1], sharey=ax_l0)
-        ax_m0 = self.plots[0].add_subplot(gs[1,0])
-        ax_m1 = self.plots[0].add_subplot(gs[1,1], sharey=ax_m0)
-        ax_s0 = self.plots[0].add_subplot(gs[2,0])
-        ax_s1 = self.plots[0].add_subplot(gs[2,1], sharey=ax_s0)
+        ax_l0 = self.plot.add_subplot(gs[0,0])
+        ax_l1 = self.plot.add_subplot(gs[0,1], sharey=ax_l0)
+        ax_m0 = self.plot.add_subplot(gs[1,0])
+        ax_m1 = self.plot.add_subplot(gs[1,1], sharey=ax_m0)
+        ax_s0 = self.plot.add_subplot(gs[2,0])
+        ax_s1 = self.plot.add_subplot(gs[2,1], sharey=ax_s0)
 
         left = [ax_l0, ax_m0, ax_s0]
         right = [ax_l1, ax_m1, ax_s1]
