@@ -11,6 +11,29 @@ import threading
 from waldo.conf import settings
 import glob
 
+def get_summary_data(experiment_name):
+    files = glob.glob(settings.MWT_DATA_ROOT + "/" + experiment_name + "/*.summary")
+    summary_name = ""
+    duration = ""
+
+    if len(files) != 1:
+        return False, summary_name, duration
+
+    summary_name = os.path.splitext(os.path.basename(files[0]))[0]
+    with open(files[0], "rt") as f:
+        lines = f.readlines()
+        if len(lines) == 0:
+            return False, summary_name, duration
+
+        lastline = lines[-1]
+        params = lastline.split(' ')
+        if len(params) < 2:
+            return False, summary_name, duration
+
+        duration = params[1]
+    return True, summary_name, duration
+
+
 class AsyncSummaryLoader(QtCore.QThread):
     row_summary_changed = QtCore.pyqtSignal([int, bool, str, str])
 
@@ -34,33 +57,14 @@ class AsyncSummaryLoader(QtCore.QThread):
                 row, folder, item = self.queue.pop(0)
                 self.lock.release()
 
-                files = glob.glob(settings.MWT_DATA_ROOT + "/" + folder + "/*.summary")
-                summary_name = ""
-                duration = ""
-
-                has_error = False
-                if len(files) != 1:
-                    has_error = True
-                else:
-                    summary_name = os.path.splitext(os.path.basename(files[0]))[0]
-                    with open(files[0], "rt") as f:
-                        lines = f.readlines()
-                        if len(lines) == 0:
-                            has_error = True
-                        else:
-                            lastline = lines[-1]
-                            params = lastline.split(' ')
-                            if len(params) < 2:
-                                has_error = True
-                            else:
-                                duration = params[1]
-                self.row_summary_changed.emit(row, has_error, summary_name, duration)
+                valid, summary_name, duration = get_summary_data(folder)
+                self.row_summary_changed.emit(row, valid, summary_name, duration)
 
     def stopListening(self):
+        self.finish = True
         with self.lock:
             self.queue = []
         self.sleep.release()
-        self.finish = True
         self.wait()
         self.terminate()
 
@@ -97,25 +101,32 @@ class SelectExperimentPage(QtGui.QWizardPage):
         self.asyncSummaryLoader.row_summary_changed.connect(self.row_summary_changed)
         self.asyncSummaryLoader.startListening()
 
+        self.loadedRows = set()
+        self.errorRows = set()
+
     def gui_close_event(self):
         self.asyncSummaryLoader.stopListening()
 
-    def row_summary_changed(self, row, has_error, summary, duration):
+    def row_summary_changed(self, row, valid, summary, duration):
+        if row in self.loadedRows:
+            return
+        self.loadedRows.add(row)
+        if not valid:
+            self.errorRows.add(row)
         items = [None, summary, duration]
         for col, item in enumerate(items):
             cell = self.experimentTable.item(row, col)
             if cell is not None:
                 if item is not None:
                     cell.setText(QtCore.QString(item))
-                if has_error:
-                    cell.setBackground(Qt.red)
-                else:
+                if valid:
                     cell.setBackground(Qt.white)
-            else:
-                print "Row is None", row
+                else:
+                    cell.setBackground(Qt.red)
 
     def initializePage(self):
         self.asyncSummaryLoader.clearRows()
+        self.loadedRows = set()
         self.experimentTable.clear()
         self.experimentTable.setColumnCount(3)
         self.experimentTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
@@ -123,6 +134,10 @@ class SelectExperimentPage(QtGui.QWizardPage):
         self.experimentTable.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem("Filename"))
         self.experimentTable.setHorizontalHeaderItem(1, QtGui.QTableWidgetItem("Title"))
         self.experimentTable.setHorizontalHeaderItem(2, QtGui.QTableWidgetItem("Duration"))
+
+        self.experimentTable.setColumnWidth(0, 150)
+        self.experimentTable.setColumnWidth(1, 175)
+        self.experimentTable.setColumnWidth(2, 100)
 
         vh = QtGui.QHeaderView(Qt.Vertical)
         vh.setResizeMode(QtGui.QHeaderView.Fixed)
@@ -139,12 +154,8 @@ class SelectExperimentPage(QtGui.QWizardPage):
             duration = ""
 
             items = [item, QtGui.QTableWidgetItem(summary_name), QtGui.QTableWidgetItem(duration)]
-            # if has_error:
-            #     self.errorRows.add(row)
-            #     for item in items:
-            #         item.setBackground(Qt.red)
-
             for col, item in enumerate(items):
+                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 self.experimentTable.setItem(row, col, item)
 
             if self.data.selected_ex_id == folder:
@@ -159,14 +170,25 @@ class SelectExperimentPage(QtGui.QWizardPage):
         values = set([i.row() for i in self.experimentTable.selectedIndexes()])
         if len(values) == 1:
             row = values.pop()
-            if row in self.errorRows:
+            item = self.experimentTable.item(row, 0)
+            valid = False
+
+            if item is None:
+                valid = False
                 self.data.selected_ex_id = None
             else:
-                item = self.experimentTable.item(row, 0)
-                if item is None:
-                    self.data.selected_ex_id = None
+                if row in self.loadedRows:
+                    valid = row not in self.errorRows
                 else:
+                    valid, summary, duration = get_summary_data(str(item.text()))
+                    self.row_summary_changed(row, valid, summary, duration)
+                    self.loadedRows.add(row)
+                    if not valid:
+                        self.errorRows.add(row)
+                if valid:
                     self.data.selected_ex_id = str(item.text())
+                else:
+                    self.data.selected_ex_id = None
         self.completeChanged.emit()
 
     def isComplete(self):
