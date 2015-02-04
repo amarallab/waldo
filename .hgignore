@@ -31,6 +31,7 @@ venv*/
 build/
 
 # data and results files
+*.svg
 *.txt
 *.dat
 *logfile
