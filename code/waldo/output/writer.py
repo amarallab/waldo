@@ -37,7 +37,7 @@ class OutputWriter(object):
             graph, _ = report_card.iterative_solver(self.experiment, graph_orig)
         self.graph = graph
 
-    def export(self, callback1=None, callback2=None):
+    def export(self, interpolate=False, callback1=None, callback2=None):
         """
 
         """
@@ -52,7 +52,10 @@ class OutputWriter(object):
         # make this run as last step before saving
         paths.mkdirp(self.output_dir)
         print('writing blobs files')
-        file_management = self._write_blob_files(basename, summary_df, callback=callback1)
+        file_management = self._write_blob_files(basename=basename,
+                                                 summary_df=summary_df,
+                                                 callback=callback1,
+                                                 interpolate=interpolate)
 
         #lost_and_found = json.load(open('lost_and_found.json', 'r'))
         #file_management = json.load(open('file_m.json', 'r'))
@@ -79,11 +82,13 @@ class OutputWriter(object):
                 s = '0' + s
         return s
 
-    def _write_blob_files(self,  basename='chore', summary_df=None, callback=None):
+    def _write_blob_files(self, basename='chore', interpolate='False',
+                          summary_df=None, callback=None):
         experiment = self.experiment
         graph = self.graph
         #all_frames = [int(f) for f in summary_df.index]
         #sdf = summary_df.reindex(all_frames)
+
         sdf = summary_df.set_index(0)
 
         file_management = {}
@@ -157,7 +162,10 @@ class OutputWriter(object):
             all_frames = np.arange(int(existing_frames[0]), int(existing_frames[-1]) + 1)
             all_frames = [int(i) for i in all_frames]
             #print all_frames[0], type(all_frames[0])
-            if len(existing_frames) != len(all_frames):
+
+            # If interpolate == True,
+            # this section inserts values into otherwise empty rows
+            if interpolate and len(existing_frames) != len(all_frames):
                 #print len(existing_frames), 'existing'
                 #print len(all_frames), 'with gaps filled'
                 #print compiled_lines.head(2)
@@ -169,8 +177,6 @@ class OutputWriter(object):
                     t = round(sdf.loc[f][1], ndigits=3)
                     #print f, t, 'fill time'
                     compiled_lines['time'].loc[f] = t
-
-
 
                 compiled_lines['x'] = compiled_lines['x'].interpolate()
                 compiled_lines['y'] = compiled_lines['y'].interpolate()
@@ -212,6 +218,7 @@ class OutputWriter(object):
         print basename
         with self.experiment.summary_file.open() as f:
             lines = f.readlines()
+        print 'summary file has', len(lines)
 
         cleaned_lines = []
         for line in lines:
@@ -221,6 +228,7 @@ class OutputWriter(object):
             parts[1] = round(float(parts[1]), ndigits=3)
             cleaned_lines.append(parts)
         summary_df = pd.DataFrame(cleaned_lines)
+        print 'summary df has', len(summary_df)
         #print summary_df.head()
         return basename, summary_df
 
