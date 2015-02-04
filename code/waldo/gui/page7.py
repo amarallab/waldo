@@ -3,6 +3,7 @@ __author__ = 'heltena'
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
+import pages
 
 from waldo.conf import settings
 
@@ -19,5 +20,16 @@ class PreviousWaldoProcessPage(QtGui.QWizardPage):
         self.setTitle("Waldo Process")
         self.setSubTitle("The next page will start running the waldo process. It could take a few minutes.")
 
+        self.recalculateDataCheckbox = QtGui.QCheckBox("Recalculate data.")
+        self.recalculateDataCheckbox.setVisible(True)
+        self.recalculateDataCheckbox.setChecked(True)
+
         layout = QtGui.QVBoxLayout()
+        layout.addWidget(self.recalculateDataCheckbox)
         self.setLayout(layout)
+
+    def nextId(self):
+        if not self.recalculateDataCheckbox.isVisible() or self.recalculateDataCheckbox.isChecked():
+            return pages.WALDO_PROCESS
+        else:
+            return pages.FINAL
