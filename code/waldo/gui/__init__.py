@@ -39,7 +39,7 @@ class WaldoApp(QtGui.QWizard):
         self.data = WaldoAppData()
         # self.data.selected_ex_id = '20141017_123722'
         # self.data.loadSelectedExperiment()
-        #
+
         self.setPage(pages.WELCOME, WelcomePage(self.data))
         self.setPage(pages.SELECT_EXPERIMENT, SelectExperimentPage(self.data))
         self.setPage(pages.PREVIOUS_THRESHOLD_CACHE, PreviousThresholdCachePage(self.data))

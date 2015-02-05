@@ -165,6 +165,45 @@ class WaldoProcessPage(QtGui.QWizardPage):
         GENERATE_REPORT_CALLBACK(1)
         callback(0, 5.0 / STEPS)
 
+        self.export_tables()
+
+    def export_tables(self):
+        ex_id = self.data.experiment.id
+        path = os.path.join(settings.PROJECT_DATA_ROOT, ex_id)
+        report_card_df = self.data.experiment.prepdata.load('report-card')
+        if report_card_df is not None:
+            headers = ['phase', 'step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min', 'duration-mean', 'duration-std']
+            b = report_card_df[headers]
+            name = os.path.join(path, ex_id + '-track_counts.csv')
+            b.to_csv(path_or_buf=name)
+
+            headers = ['phase', 'step', 'total-nodes', 'connected-nodes', 'isolated-nodes', 'giant-component-size', '# components']
+            b = report_card_df[headers]
+            name = os.path.join(path, ex_id + '-network_overview.csv')
+            b.to_csv(path_or_buf=name)
+
+        df = self.data.experiment.prepdata.load('end_report')
+        if df is not None:
+            df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
+            df = df.rename(columns={'lifespan': 'track-duration',
+                                    'unknown': 'disappear',
+                                    'timing':'recording-finishes',
+                                    'on_edge':'image-edge'})
+            df.set_index('track-duration', inplace=True)
+            name = os.path.join(path, ex_id + '-tract_termination.csv')
+            df.to_csv(path_or_buf=name)
+
+        df = self.data.experiment.prepdata.load('start_report')
+        if df is not None:
+            df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
+            df = df.rename(columns={'lifespan': 'track-duration',
+                                    'unknown': 'appear',
+                                    'timing':'recording-begins',
+                                    'on_edge':'image-edge'})
+            df.set_index('track-duration', inplace=True)
+            name = os.path.join(path, ex_id + '-tract_initiation.csv')
+            df.to_csv(path_or_buf=name)
+
     def finished(self):
         self.waldoProcessCompleted = True
         self.completeChanged.emit()
