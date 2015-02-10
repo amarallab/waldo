@@ -329,6 +329,8 @@ class FinalPage(QtGui.QWizardPage):
         experiment = wio.Experiment(experiment_id=ex_id)
         graph = experiment.graph.copy()
 
+        self.plot.clf()
+
         moving_nodes =  [int(i) for i in graph.compound_bl_filter(experiment, threshold=step_min_move)]
         steps, durations = report_card.calculate_duration_data_from_graph(experiment, graph, moving_nodes)
 
