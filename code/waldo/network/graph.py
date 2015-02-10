@@ -228,13 +228,16 @@ class Graph(nx.DiGraph):
         for component in nd[kc.COMPONENTS]:
             self._whereis_data[component] = node
 
-    def validate(self, acceptable_f_delta=-10):
+    def validate(self, acceptable_f_delta=None):
         """
         Verify that the graph:
 
         * contains the requisite data attached to each node
         * contains only causal links
         """
+        if acceptable_f_delta is None:
+            acceptable_f_delta = settings.TAPE_ACAUSAL_FRAME_LIMIT
+
         for node, node_data in self.nodes_iter(data=True):
             for req_key in [kc.FRAME_BORN, kc.FRAME_DIED, kc.TIME_BORN, kc.TIME_DIED]:
                 if req_key not in node_data:
@@ -243,7 +246,9 @@ class Graph(nx.DiGraph):
 
         for a, b in self.edges_iter():
             f_delta = self.node[b][kc.FRAME_BORN] - self.node[a][kc.FRAME_DIED]
-            if f_delta < acceptable_f_delta:
+            if f_delta < - acceptable_f_delta:
+                print('limit', acceptable_f_delta)
+                print('actual', f_delta)
                 raise AssertionError("Edge from {} to {} is acausal, going "
                         "back in time {:0.0f} frames".format(a, b, -f_delta))
 

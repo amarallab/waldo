@@ -165,7 +165,7 @@ class SpeedWriter(object):
         self.blob_dir = blob_output_dir
         self.window_size = window_size
 
-        self._experiment = Experiment(blob_output_dir)
+        self._experiment = Experiment(fullpath=blob_output_dir)
         print 'experiment loaded from:', self._experiment.directory
         if write_dir is None:
             self.directory = paths.speed(ex_id)

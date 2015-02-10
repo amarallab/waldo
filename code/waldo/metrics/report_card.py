@@ -428,13 +428,15 @@ class WaldoSolver(object):
         self.report_card.add_step(self.graph, step_name='prune leaves',
                                   phase_name=self.phase_name)
 
-    def condense(self, max_duration=5, split_rel_time=0.5):
-        """ condenses motifs that involve false splits and single straight lines.
+    def consolidate(self, max_duration=5, split_rel_time=0.5):
+        """ consolidates motifs that involve false splits and single
+        straight lines.
 
         params
         -----
         max_duration: (int)
         split_rel_time: (float)
+
         """
         L.warn('Collapse Group')
         collider.collapse_group_of_nodes(self.graph, max_duration=max_duration)
@@ -444,6 +446,8 @@ class WaldoSolver(object):
         collider.remove_fission_fusion_rel(self.graph, split_rel_time=split_rel_time)
         L.warn('Remove Single Descendents')
         collider.remove_single_descendents(self.graph)
+        self.report_card.add_step(self.graph, step_name='consolidate',
+                                  phase_name=self.phase_name)
 
     def connect_leaves(self, gap_validation=None):
         """ draws arcs between unconected leaf nodes
@@ -459,7 +463,7 @@ class WaldoSolver(object):
         # Score is based on probability that a blob would move a certain distance (from other worms on plate)
         #ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
         #link_total = len(ll1) #+ len(ll2) + len(ll3)
-        self.report_card.add_step(self.graph, step_name='connect_leaves',
+        self.report_card.add_step(self.graph, step_name='infer-gaps',
                                   phase_name=self.phase_name)
 
     def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None, callback=None):
@@ -496,8 +500,8 @@ class WaldoSolver(object):
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 2/6.)
 
-            # condense
-            self.condense()
+            # consolidate
+            self.consolidate()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 3/6.)
 

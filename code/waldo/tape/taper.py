@@ -218,10 +218,11 @@ class Taper(object):
                              distance_gap=row['dist'])
             return s
 
-        pixel_buffer = 10
-        t_buffer = 10
-        max_distance_cutoff = 500
-        max_time_cuttoff = 12000 # ~ 10 min
+        # pull defaults from settings
+        pixel_buffer = settings.TAPE_SHAKYCAM_ALLOWANCE
+        t_buffer = settings.TAPE_ACAUSAL_FRAME_LIMIT
+        max_distance_cutoff = settings.TAPE_PIXEL_SEARCH_LIMIT
+        max_time_cuttoff = settings.TAPE_FRAME_SEARCH_LIMIT
 
         full_record = []
         all_gap_dfs = []
@@ -308,6 +309,12 @@ class Taper(object):
                 all_gap_dfs.append(gap_df)
 
         potential_gaps = pd.concat(all_gap_dfs)
+        # TODO check
+        print('-----------------------------------------------')
+        print('potential gap check')
+        gap_frames = potential_gaps['df']
+        print(min(gap_frames), 'to', max(gap_frames))
+        # End TODO
         if write_everything:
             all_gaps = pd.concat(full_record)
             all_gaps.to_csv('all_gaps.csv')
@@ -328,7 +335,7 @@ class Taper(object):
 
         self._experiment.prepdata.dump('gaps', gaps, index=False)
 
-    def short_tape(self, gaps_df, df=30, dist=50, add_edges=True):
+    def short_tape(self, gaps_df, df=None, dist=None, add_edges=True):
         """
         preferentially attaches really short gaps to one another.
 
@@ -344,10 +351,22 @@ class Taper(object):
         link_list: (list of tuples)
             the list of (node1 --> node2) tuples that were joined.
         """
+        if df is None:
+            df = settings.TAPE_FRAME_SEARCH_LIMIT
+        if dist is None:
+            dist = settings.TAPE_PIXEL_SEARCH_LIMIT
+        acausal_limit = settings.TAPE_ACAUSAL_FRAME_LIMIT
+
         gaps = gaps_df.copy()
         link_list = []
         gaps = gaps[gaps['df'] < df]
         gaps = gaps[gaps['dist'] < dist]
+        gaps = gaps[gaps['df'] > - acausal_limit]
+        # TODO remove this check when working
+        gdf = gaps['df']
+        print('gaps go from ')
+        print(min(gdf), 'to', max(gdf))
+        # remove up to here
         gaps['short_score'] = gaps['df'] * gaps['dist']
         gaps.sort('short_score', inplace=True, ascending=False)
         for i, row in gaps.iterrows():

@@ -29,7 +29,15 @@ class PreviousWaldoProcessPage(QtGui.QWizardPage):
 
     def initializePage(self):
         self.data.loadSelectedExperiment()
-        if self.data.experiment is not None and self.data.experiment.prepdata.load('report-card') is not None:
+
+        # catch prepdata.load IOerror since we only want to check
+        # if report_card file exists for experiment
+        try:
+           report_card =  self.data.experiment.prepdata.load('report-card')
+        except IOError:
+           report_card = None
+
+        if self.data.experiment is not None and report_card is not None:
             self.recalculateDataCheckbox.setVisible(True)
         else:
             self.recalculateDataCheckbox.setVisible(False)
