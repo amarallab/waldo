@@ -184,9 +184,6 @@ class Taper(object):
         #print('start terms2')
         #print(gap_start_terms.head(10))
 
-        # TODO: make test that checks if all 'node_id' values present in the graph
-        # for gap_end_terms, gap_start_terms
-
         return gap_start_terms, gap_end_terms
 
     def score_potential_gaps(self, gap_start_terms, gap_end_terms,
@@ -309,12 +306,6 @@ class Taper(object):
                 all_gap_dfs.append(gap_df)
 
         potential_gaps = pd.concat(all_gap_dfs)
-        # TODO check
-        print('-----------------------------------------------')
-        print('potential gap check')
-        gap_frames = potential_gaps['df']
-        print(min(gap_frames), 'to', max(gap_frames))
-        # End TODO
         if write_everything:
             all_gaps = pd.concat(full_record)
             all_gaps.to_csv('all_gaps.csv')
@@ -362,19 +353,25 @@ class Taper(object):
         gaps = gaps[gaps['df'] < df]
         gaps = gaps[gaps['dist'] < dist]
         gaps = gaps[gaps['df'] > - acausal_limit]
-        # TODO remove this check when working
-        gdf = gaps['df']
-        print('gaps go from ')
-        print(min(gdf), 'to', max(gdf))
-        # remove up to here
+
+        # rank all gaps based on a score
         gaps['short_score'] = gaps['df'] * gaps['dist']
         gaps.sort('short_score', inplace=True, ascending=False)
+        already_taken_nodes = set() #set of nodes already involved
         for i, row in gaps.iterrows():
             node1, node2 = row['node1'], row['node2']
+            # skip nodes if they are already used in a gap
+            if node1 in already_taken_nodes:
+                continue
+            if node2 in already_taken_nodes:
+                continue
+            # add if gap is less than distance or time requirements
             if row['df'] <= df and row['dist'] <= dist:
                 link_list.append((node1, node2))
-                gaps = gaps[gaps['node1'] != node1]
-                gaps = gaps[gaps['node2'] != node2]
+                already_taken_nodes.add(node1)
+                already_taken_nodes.add(node2)
+                #gaps = gaps[gaps['node2'] != node2]
+                #gaps = gaps[gaps['node1'] != node1]
         if add_edges:
             success, fail = self._add_taped_edges_to_graph(link_list)
         return success, gaps
@@ -411,7 +408,6 @@ class Taper(object):
         if add_edges:
             success, fail = self._add_taped_edges_to_graph(link_list)
         return success, gaps
-
 
     def greedy_tape(self, gaps_df, threshold=0.1, add_edges=True):
         """

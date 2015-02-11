@@ -425,7 +425,7 @@ class WaldoSolver(object):
         """
         L.warn('Remove Offshoots')
         collider.remove_offshoots(self.graph, threshold=threshold)
-        self.report_card.add_step(self.graph, step_name='prune leaves',
+        self.report_card.add_step(self.graph, step_name='prune',
                                   phase_name=self.phase_name)
 
     def consolidate(self, max_duration=5, split_rel_time=0.5):
@@ -452,7 +452,8 @@ class WaldoSolver(object):
     def connect_leaves(self, gap_validation=None):
         """ draws arcs between unconected leaf nodes
         """
-        L.warn('connect_leaves')
+        print('GAP TIME!')
+        L.warn('gaps')
         gap_start, gap_end = self.taper.find_start_and_end_nodes(use_missing_objects=True)
         gaps = self.taper.score_potential_gaps(gap_start, gap_end)
         if gap_validation is not None:
@@ -463,11 +464,13 @@ class WaldoSolver(object):
         # Score is based on probability that a blob would move a certain distance (from other worms on plate)
         #ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
         #link_total = len(ll1) #+ len(ll2) + len(ll3)
-        self.report_card.add_step(self.graph, step_name='infer-gaps',
+        self.report_card.add_step(self.graph, step_name='infer gaps',
                                   phase_name=self.phase_name)
 
     def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None, callback=None):
-        """ iterativly loop through (1) untangleing collisions (2) pruning (3) condensing and (4) connecting leaves
+        """iterativly loop through (1) untangleing collisions (2)
+        pruning (3) condensing and (4) infer gaps
+
         """
         last_graph = None
         #gap_validation = []
@@ -492,21 +495,25 @@ class WaldoSolver(object):
             self.phase_name = 'iter{i}'.format(i=i+1)
             # untangle collisions
             n = self.untangle_collsions()
+            print '--- collisions ---'
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 1/6.)
 
-            # prune leaves
+            # prune
             self.prune()
+            print '--- prune ---'
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 2/6.)
 
             # consolidate
             self.consolidate()
+            print '--- consolidate ---'
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 3/6.)
 
-            # connect leaves
+            # connect
             self.connect_leaves()
+            print '--- gaps ---'
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 4/6.)
 

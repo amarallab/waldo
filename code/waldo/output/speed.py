@@ -152,21 +152,18 @@ def node_speed(node, experiment, graph):
     t_spaced, speed = clean_speed(np.array(t), np.array(x), np.array(y))
     return t_spaced, speed
 
-
-
-
 class SpeedWriter(object):
 
     def __init__(self, ex_id, window_size=11, write_dir=None):
         self.ex_id = ex_id
 
         blob_output_dir = paths.output(ex_id)
-        print blob_output_dir
+        #print blob_output_dir
         self.blob_dir = blob_output_dir
         self.window_size = window_size
 
         self._experiment = Experiment(fullpath=blob_output_dir)
-        print 'experiment loaded from:', self._experiment.directory
+        #print 'experiment loaded from:', self._experiment.directory
         if write_dir is None:
             self.directory = paths.speed(ex_id)
         else:
@@ -235,7 +232,7 @@ class SpeedWriter(object):
     def write_speed(self, bid, speed_df):
         if not self.directory.is_dir():
             self.directory.mkdir()
-        file_name = '{bid}-speed.csv'.format(bid=bid)
+        file_name = '{bid}.csv'.format(bid=bid)
         file_path = self.directory / file_name
         speed_df.to_csv(str(file_path), index=False)
 
