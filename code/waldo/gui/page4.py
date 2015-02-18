@@ -90,7 +90,7 @@ class ThresholdCachePage(QtGui.QWizardPage):
         super(ThresholdCachePage, self).__init__(parent)
 
         self.data = data
-        self.setTitle("Threshold Cache")
+        self.setTitle("Image Curation")
 
         label = QtGui.QLabel("...")
 

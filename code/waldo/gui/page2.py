@@ -9,7 +9,11 @@ from PyQt4.QtCore import Qt
 import threading
 
 from waldo.conf import settings
+from waldo.wio import paths
+import pages
 import glob
+import json
+
 
 def get_summary_data(experiment_name):
     files = glob.glob(settings.MWT_DATA_ROOT + "/" + experiment_name + "/*.summary")
@@ -145,7 +149,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
 
         self.errorRows = set()
         rowToSelect = None
-        folders = sorted(os.listdir(settings.MWT_DATA_ROOT))
+        folders = sorted(os.listdir(settings.MWT_DATA_ROOT), reverse=True)
         self.experimentTable.setRowCount(len(folders))
         for row, folder in enumerate(folders):
             item = QtGui.QTableWidgetItem(folder)
@@ -193,3 +197,19 @@ class SelectExperimentPage(QtGui.QWizardPage):
 
     def isComplete(self):
         return self.data.selected_ex_id is not None
+
+    def nextId(self):
+        data = {}
+        self.data.loadSelectedExperiment()
+        if self.data.experiment is not None:
+            self.annotation_filename = paths.threshold_data(self.data.experiment.id)
+            try:
+                with open(str(self.annotation_filename), "rt") as f:
+                    data = json.loads(f.read())
+            except IOError as ex:
+                pass
+
+        if 'threshold' in data and 'r' in data and 'x' in data and 'y' in data:
+            return pages.PREVIOUS_THRESHOLD_CACHE
+        else:
+            return pages.THRESHOLD_CACHE
