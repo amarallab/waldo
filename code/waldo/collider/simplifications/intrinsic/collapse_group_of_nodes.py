@@ -2,28 +2,36 @@ from __future__ import absolute_import
 
 __author__ = 'heltena'
 
+import logging
+
+L = logging.getLogger(__name__)
+
  # This algorithm looks for a group of nodes that:
 #  - all the predecessors are in the group except for the first one
 #  - all the succesors are in the group except the last one
 #  - the "time" between the "died" value from the first one and the "died" value from the last one is less than
 #    max_duration
-def collapse_group_of_nodes(graph, max_duration, verbose=False):
+def collapse_group_of_nodes(graph, max_duration):
     nodes = set(graph.nodes())
-    while len(nodes) > 0:
+    while nodes:
         root = nodes.pop()
+        L.debug("Current root: {}".format(root))
         root_died = graph.node[root]['died_t']
         last_born = graph.node[root]['died_t']
         remain = graph.successors(root)
         current_group = [root]
 
-        while len(remain) > 0 and last_born - root_died < max_duration:
+        L.debug("1st Successors: {}".format(remain))
+
+        while remain and last_born - root_died < max_duration:
             remain = sorted(remain, key=lambda x: -graph.node[x]['born_t'])
             current = remain.pop()
             if current in current_group:
                 continue
 
             succ = graph.successors(current)
-            if len(succ) == 0:
+            L.debug("2nd Successors: {}".format(succ))
+            if not succ:
                 # test if it is a line
                 valid = True
                 head = root
@@ -41,15 +49,13 @@ def collapse_group_of_nodes(graph, max_duration, verbose=False):
                             line.append(head)
                 if valid and head == current:
                     # Yes, it is a line from 'root' to 'current', collapse it
-                    if verbose:
-                        print("I: Line between {root} and {current}: {line}".format(root=root, current=current, line=line))
+                    L.debug("I: Line between {root} and {current}: {line}".format(root=root, current=current, line=line))
                     graph.condense_nodes(line[0], *line[1:])
                     nodes.add(line[0])
                     nodes |= set(graph.predecessors(line[0]))
                     nodes -= set(line[1:])
                 else:
-                    if verbose:
-                        print("I: Node {root} has a branch in {current}".format(root=root, current=current))
+                    L.debug("I: Node {root} has a branch in {current}".format(root=root, current=current))
                 break  # branches are not allowed
 
             remain = list(set(remain) | set(succ))
@@ -86,17 +92,18 @@ def collapse_group_of_nodes(graph, max_duration, verbose=False):
 
                 # Ok, collapse!
                 if valid:
-                    if verbose:
-                        ss = []
-                        for n in current_group:
-                            preds = (str(a) for a in graph.predecessors(n))
-                            succs = (str(a) for a in graph.successors(n))
-                            ss.append("%d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
-                        print("I: Group: (%s)" % ") - (".join(ss))
+                    # Monitoring
+                    ss = []
+                    for n in current_group:
+                        preds = (str(a) for a in graph.predecessors(n))
+                        succs = (str(a) for a in graph.successors(n))
+                        ss.append("%d: Pred: %s, Succ: %s" % (n, ", ".join(preds), ", ".join(succs)))
+                    L.debug("I: Group: (%s)" % ") - (".join(ss))
+
                     graph.condense_nodes(current_group[0], *current_group[1:])
                     nodes.add(current_group[0])
                     nodes |= set(graph.predecessors(current_group[0]))
                     nodes -= set(current_group[1:])
                     break  # collapsed, start again with another node
-                elif verbose:
-                    print("I: Not valid first: {first}, last: {last}, group: {group}".format(first=first_node, last=last_node, group=current_group))
+                else:
+                    L.debug("I: Not valid first: {first}, last: {last}, group: {group}".format(first=first_node, last=last_node, group=current_group))
