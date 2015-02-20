@@ -8,12 +8,14 @@ import itertools
 
 import networkx as nx
 
-from .test_util import node_generate, GraphCheck, Graph
+from waldo.network.tests import test_graph as tg
+from waldo.network import Graph
+
 from .. import remove_offshoots
 
-class TestPruneOffshoots(GraphCheck):
+class TestPruneOffshoots(tg.GraphTestCase):
     def setUp(self):
-        self.G_basic = node_generate(
+        self.G_basic = tg.node_generate(
             [[10, 11], [20], [30, 31], [40, 41], [50]],
             itertools.count(step=100))
         self.G_basic.add_path([10, 20, 30, 40, 50])
@@ -27,16 +29,16 @@ class TestPruneOffshoots(GraphCheck):
         Gexpect.remove_node(31)
 
         remove_offshoots(Gtest, Gtest.lifespan_f(31))
-        self.check_graphs_equal(Gtest, Gexpect)
+        self.assertTopologyEqual(Gtest, Gexpect)
 
     def test_basic_threshold_ignore(self):
         Gtest = Graph(self.G_basic).copy()
 
         remove_offshoots(Gtest, Gtest.lifespan_f(31) - 1)
-        self.check_graphs_equal(Gtest, self.G_basic)
+        self.assertTopologyEqual(Gtest, self.G_basic)
 
     def test_multi(self):
-        Go = node_generate(
+        Go = tg.node_generate(
             [[10], [20, 21], [30, 31], [40, 41], [50, 51]],
             itertools.count(step=100))
         Go.add_path([10, 20, 30, 40, 50])
@@ -48,7 +50,7 @@ class TestPruneOffshoots(GraphCheck):
         Gexpect.remove_nodes_from([21, 31, 41, 51])
 
         remove_offshoots(Gtest, Go.lifespan_f(20))
-        self.check_graphs_equal(Gtest, Gexpect)
+        self.assertTopologyEqual(Gtest, Gexpect)
 
     def test_recorded_in_parent_components(self):
         Gtest = Graph(self.G_basic).copy()

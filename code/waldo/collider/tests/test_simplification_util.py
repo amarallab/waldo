@@ -5,21 +5,26 @@ from six.moves import (zip, filter, map, reduce, input, range)
 
 import networkx as nx
 
-from .test_util import node_generate, GraphCheck, Graph
+from waldo.network.tests import test_graph as tg
 
-class TestNodeCondensing(GraphCheck):
+from waldo.network import Graph
+
+class TestNodeCondensing(tg.GraphTestCase):
     def test_topology(self):
-        Go = node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go = tg.node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go.add_path([10, 20, 30])
         Gtest = Graph(Go)
 
-        Gexpect = node_generate([[10], [30]], [0, 200, 300])
+        Gexpect = tg.node_generate([[10], [30]], [0, 200, 300])
+        Gexpect.add_path([10, 30])
 
         Gtest.condense_nodes(10, 20)
 
-        self.check_graphs_equal(Gtest, Gexpect)
+        self.assertTopologyEqual(Gtest, Gexpect)
 
     def test_component_storage(self):
-        Go = node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go = tg.node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go.add_path([10, 20, 30])
         Gtest = Graph(Go)
 
         Gtest.condense_nodes(10, 20)
@@ -27,7 +32,8 @@ class TestNodeCondensing(GraphCheck):
         self.assertEquals(Gtest.node[10]['components'], set([10, 20]))
 
     def test_component_transfer(self):
-        Go = node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go = tg.node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go.add_path([10, 20, 30])
         Go.node[20]['components'] = set([20, 21, 22])
         Gtest = Graph(Go)
 
@@ -36,7 +42,8 @@ class TestNodeCondensing(GraphCheck):
         self.assertEquals(Gtest.node[10]['components'], set([10, 20, 21, 22]))
 
     def test_born_died(self):
-        Go = node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go = tg.node_generate([[10], [20], [30]], [0, 100, 200, 300])
+        Go.add_path([10, 20, 30])
         Gtest = Graph(Go)
 
         Gtest.condense_nodes(10, 20)
