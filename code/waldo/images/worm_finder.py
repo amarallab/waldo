@@ -776,7 +776,7 @@ def show_matched_image(ex_id, threshold, time, roi=None):
                                            roi=roi, show=True)
     return bid_matching, base_acc
 
-def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
+def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None, image_callback=None):
     """
     analyze all images for a given ex_id and saves the results to h5 files.
 
@@ -826,6 +826,8 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
         # get the objects from the image
         print(i, impath)
         img = mpimg.imread(impath)
+        if image_callback:
+            image_callback(img)
         bid_matching, base_acc, miss = analyze_image(experiment, time, img,
                                                background, threshold,
                                                roi=roi, show=False)
@@ -859,7 +861,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None):
                    index=True)
     cb_save(1)
 
-def summarize(ex_id, overwrite=True, callback=None):
+def summarize(ex_id, overwrite=True, callback=None, image_callback=None):
     """ short script to load threshold, roi and run
     analyze_ex_id_images.
     """
@@ -867,4 +869,4 @@ def summarize(ex_id, overwrite=True, callback=None):
     pfile = fm.ImageMarkings(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()
-    return analyze_ex_id_images(ex_id, threshold, roi, callback=callback)
+    return analyze_ex_id_images(ex_id, threshold, roi, callback=callback, image_callback=image_callback)

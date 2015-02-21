@@ -1,7 +1,7 @@
 __author__ = 'heltena'
 
 from PyQt4 import QtCore
-
+import numpy as np
 
 class _WorkerCancelled(Exception):
     pass
@@ -9,6 +9,7 @@ class _WorkerCancelled(Exception):
 
 class _Worker(QtCore.QObject):
     madeProgress = QtCore.pyqtSignal([int, float])
+    madeNumpyArrayProgress = QtCore.pyqtSignal([int, np.ndarray])
     finished = QtCore.pyqtSignal()
     cancelled = QtCore.pyqtSignal()
     finish = False
@@ -34,20 +35,26 @@ class _Worker(QtCore.QObject):
         #     self.cancelled.emit()
 
     def _callback(self, item, value):
-        if item not in self.prev_values or self.prev_values[item] != value:
-            self.prev_values[item] = value
-            self.madeProgress.emit(item, value)
+        if type(value) in [int, float]:
+            if item not in self.prev_values or self.prev_values[item] != value:
+                self.prev_values[item] = value
+                self.madeProgress.emit(item, value)
+        elif type(value) == np.ndarray:
+            self.madeNumpyArrayProgress.emit(item, value)
+        else:
+            print "E: error de parametros"
         if self.finish:
             raise _WorkerCancelled()
 
 
 class CommandTask:
-    def __init__(self, _madeProgress, _finished, _cancelled):
+    def __init__(self, _madeProgress, _finished, _cancelled, _madeNumpyArrayProgress=None):
         self.worker = None
         self.thread = None
         self._madeProgress = _madeProgress
         self._finished = _finished
         self._cancelled = _cancelled
+        self._madeNumpyArrayProgress = _madeNumpyArrayProgress
 
     def start(self, fnc, **kwargs):
         self.worker = _Worker(fnc, **kwargs)
@@ -56,6 +63,8 @@ class CommandTask:
         self.worker.madeProgress.connect(self._madeProgress)
         self.worker.cancelled.connect(self._cancelled)
         self.worker.finished.connect(self._finished)
+        if self._madeNumpyArrayProgress is not None:
+            self.worker.madeNumpyArrayProgress.connect(self._madeNumpyArrayProgress)
         self.thread.started.connect(self.worker.run)
         self.thread.start()
 

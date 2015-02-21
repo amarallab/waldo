@@ -19,7 +19,7 @@ CALLBACK_LOAD_FRAC = 0.02
 CALLBACK_PRIMARY_FRAC = 0.90
 CALLBACK_SECONDARY_FRAC = 0.08
 
-def summarize(ex_id, verbose=False, callback=None):
+def summarize(ex_id, verbose=False, callback=None, image_callback=None):
     """
     intermediate summary data.
     """
@@ -45,7 +45,7 @@ def summarize(ex_id, verbose=False, callback=None):
 
     # process the basic blob data
     talk(' - Summarizing raw data...')
-    data = primary.summarize(experiment, callback=cb_pri)
+    data = primary.summarize(experiment, callback=cb_pri, image_callback=image_callback)
 
     # generate secondary data
     talk(' - Generating secondary data...')

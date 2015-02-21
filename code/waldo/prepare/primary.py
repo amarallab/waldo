@@ -97,7 +97,7 @@ class TerminalsBuilder(DataFrameBuilder):
             })
 
 
-def summarize(experiment, callback=None):
+def summarize(experiment, callback=None, image_callback=None):
     """
     Given an experiment, generate 3 data frames returned as values in a
     dictionary.
@@ -123,6 +123,9 @@ def summarize(experiment, callback=None):
 
         if callback:
             callback(i / len(experiment))
+
+        if image_callback:
+            image_callback(i)
 
     if callback:
         callback(1)

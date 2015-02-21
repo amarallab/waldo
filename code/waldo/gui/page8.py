@@ -75,7 +75,7 @@ class WaldoProcessDialog(QtGui.QDialog):
         self.progress_bars = progress_bars
         self.cancel_run_button = cancel_run_button
 
-        self.task = tasking.CommandTask(self.madeProgress, self.finished, self.cancelled)
+        self.task = tasking.CommandTask(self.madeProgress, self.finished, self.cancelled, self.imageMadeProgress)
         self.task.start(func)
         self.setFixedSize(self.minimumSize())
         self.setWindowFlags(Qt.Tool | Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.CustomizeWindowHint)
@@ -89,7 +89,12 @@ class WaldoProcessDialog(QtGui.QDialog):
 
     def madeProgress(self, item, value):
         if self.task is not None:
-            self.progress_bars[item].setValue(value * 100)
+            if item < 10:
+                self.progress_bars[item].setValue(value * 100)
+
+    def imageMadeProgress(self, item, value):
+        if self.task is not None:
+            print "Image!"
 
     def finished(self):
         self.task.waitFinished()
@@ -117,7 +122,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
 
         self.data = data
         self.waldoProcessCompleted = False
-        self.setTitle("Waldo Process")
+        self.setTitle("Running WALDO")
 
         layout = QtGui.QVBoxLayout()
         self.setLayout(layout)
@@ -137,15 +142,18 @@ class WaldoProcessPage(QtGui.QWizardPage):
         WRITE_OUTPUT_CALLBACK = lambda x: callback(5, x)
         GENERATE_REPORT_CALLBACK = lambda x: callback(6, x)
 
+        NEW_BLOB_CALLBACK = lambda x: callback(10, x)
+        NEW_IMAGE_CALLBACK = lambda x: callback(11, x)
+
         STEPS = 5.0
         ex_id = self.data.experiment.id
         callback(0, 0.0 / STEPS)
 
-        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
+        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK, image_callback=NEW_BLOB_CALLBACK)
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 
-        images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK)
+        images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
         PROCESS_IMAGES_CALLBACK(1)
         callback(0, 2.0 / STEPS)
 
