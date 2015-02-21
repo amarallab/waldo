@@ -60,6 +60,7 @@ def assimilate(digraph, max_threshold):
 
     Who would get the small node?  Nobody hopefully.
     """
+    raise NotImplementedError('This method is broken and untested.')
     L.debug('Begin assimilate method')
 
     #digraph.validate()
@@ -83,7 +84,7 @@ def assimilate(digraph, max_threshold):
         nodes.sort()
 
         while nodes:
-            node = nodes.pop()
+            node = nodes.pop(0)
             if node not in digraph:
                 continue
 

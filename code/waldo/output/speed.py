@@ -154,24 +154,22 @@ def node_speed(node, experiment, graph):
 
 class SpeedWriter(object):
 
-    def __init__(self, ex_id, window_size=11, write_dir=None):
-        self.ex_id = ex_id
+    def __init__(self, eid, window_size=11, gap_max_seconds=10, write_dir=None):
+        self.eid = eid
 
-        blob_output_dir = paths.output(ex_id)
+        blob_output_dir = paths.output(eid)
         #print blob_output_dir
         self.blob_dir = blob_output_dir
         self.window_size = window_size
+        self.gap_max_seconds = gap_max_seconds
 
-        self._experiment = Experiment(fullpath=blob_output_dir)
+        self._experiment = Experiment(fullpath=blob_output_dir,
+                                      experiment_id=eid)
         #print 'experiment loaded from:', self._experiment.directory
         if write_dir is None:
-            self.directory = paths.speed(ex_id)
+            self.directory = paths.speed(eid)
         else:
             self.directory = write_dir
-
-    def ensure_dir_exists(self):
-        pass
-        # make sure that self.directory exists and is ready to write to
 
     def _pull_blob_positions(self, blob):
         if blob is None:
@@ -189,7 +187,8 @@ class SpeedWriter(object):
     def speed_for_bid(self, bid, window_size=None):
         blob = self._experiment[bid]
         blob_df = self._pull_blob_positions(blob)
-        return self.speed_for_blob_df(blob_df, window_size=window_size)
+        split_df_list = self.split_dfs(blob_df)
+        return self.combine_split_dfs(split_df_list, window_size)
 
     def iter_through_blob_dfs(self, min_points=60, max_count=None):
         e = self._experiment
@@ -206,7 +205,45 @@ class SpeedWriter(object):
             if max_count is not None and i + 1 >= max_count:
                 break
 
-    def speed_for_blob_df(self, blob_df, window_size=None):
+    def combine_split_dfs(self, df_list, window_size=None):
+        if window_size is None:
+            window_size = self.window_size
+        blob_parts = []
+        for b_df in df_list:
+            if len(b_df) < window_size:
+                continue
+            df = self._speed_for_blob_df(b_df, window_size=window_size)
+            blob_parts.append(df)
+        return pd.concat(blob_parts)
+
+    def split_dfs(self, blob_df, gap_max_seconds=None):
+
+        if gap_max_seconds is None:
+            gap_max_seconds = self.gap_max_seconds
+        df_list = []
+        t = np.array(blob_df['time'])
+        dt = np.diff(t)
+        gap_indicies = np.where(dt >= gap_max_seconds)[0]
+
+        #print 'indicies', gap_indicies
+        if len(gap_indicies) == 0:
+            return [blob_df]
+
+        last_gap_mid = -1
+        for gap_index in gap_indicies:
+            gap_len = t[gap_index + 1] - t[gap_index]
+            assert gap_len >= gap_max_seconds
+            gap_mid = (t[gap_index + 1] + t[gap_index]) / 2.0
+
+            df = blob_df[(blob_df['time'] < gap_mid) & (blob_df['time'] >= last_gap_mid)]
+            df_list.append(df)
+            last_gap_mid = gap_mid
+
+        df = blob_df[blob_df['time'] >= last_gap_mid]
+        df_list.append(df)
+        return df_list
+
+    def _speed_for_blob_df(self, blob_df, window_size=None, pad_ends=True):
         if window_size is None:
             window_size = self.window_size
         t = np.array(blob_df['time'])
@@ -214,9 +251,23 @@ class SpeedWriter(object):
         x = np.array(blob_df['x'])
         #print blob_df
         half_win = window_size // 2
-        ts = t[half_win:-half_win]
-        xs = smooth('boxcar', x, window_size)
-        ys = smooth('boxcar', y, window_size)
+        if pad_ends:
+
+            x0_pad = np.array([x[0] for i in range(half_win)])
+            xN_pad = np.array([x[-1] for i in range(half_win)])
+
+            y0_pad = np.array([y[0] for i in range(half_win)])
+            yN_pad = np.array([y[-1] for i in range(half_win)])
+
+            x_padded = np.concatenate((x0_pad, x, xN_pad))
+            y_padded = np.concatenate((y0_pad, y, yN_pad))
+            ts = t
+            xs = smooth('boxcar', x_padded, window_size)
+            ys = smooth('boxcar', y_padded, window_size)
+        else:
+            ts = t[half_win:-half_win]
+            xs = smooth('boxcar', x, window_size)
+            ys = smooth('boxcar', y, window_size)
 
         ti, xi = interpolate_to_1s(ts, xs)
         ti, yi = interpolate_to_1s(ts, ys)
@@ -238,6 +289,15 @@ class SpeedWriter(object):
 
 
     def write_all_speeds(self, min_points):
+        typical_bl = self._experiment.typical_bodylength
         for bid, blob_df in self.iter_through_blob_dfs(min_points=min_points):
-            speed_df = self.speed_for_blob_df(blob_df)
+            #speed_df = self._speed_for_blob_df(blob_df)
+            split_df_list = self.split_dfs(blob_df)
+            speed_df = self.combine_split_dfs(split_df_list)
+            max_speed = max(speed_df['speed'])
+            if max_speed > typical_bl:
+                print 'WARNING', self.eid, bid, 'showing unusually fast speeds'
+                print float(max_speed)/typical_bl, 'bl per s'
+                print 'skipping'
+                continue
             self.write_speed(bid, speed_df)

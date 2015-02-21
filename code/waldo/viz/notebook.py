@@ -10,6 +10,7 @@ try:
 except AttributeError:
     clock = time.time
 
+from PIL import Image
 from IPython.display import HTML, Javascript, display
 
 MAX_UPDATE_INTERVAL = 0.2
@@ -59,3 +60,16 @@ class ProgressBar(object):
     def done(self):
         self._bar(100)
         self._text('Done!')
+
+# Monkey patch pillow Image for notebook
+def pillow_repr_png(self):
+    """ iPython display hook support
+
+    :returns: png version of the image as bytes
+    """
+    from io import BytesIO
+    b = BytesIO()
+    self.save(b, 'PNG')
+    return b.getvalue()
+
+Image.Image._repr_png_ = pillow_repr_png

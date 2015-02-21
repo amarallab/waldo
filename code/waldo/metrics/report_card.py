@@ -438,12 +438,22 @@ class WaldoSolver(object):
         split_rel_time: (float)
 
         """
-        L.warn('Collapse Group')
-        collider.collapse_group_of_nodes(self.graph, max_duration=max_duration)
+        # L.warn('Collapse Group')
+        # print('collapse g')
+        # collider.collapse_group_of_nodes(self.graph, max_duration=max_duration)
+        # self.graph.deep_validate(experiment=self.experiment)
+
+        print('fission-fusion')
         L.warn('Remove Fission-Fusion')
         collider.remove_fission_fusion(self.graph)
+        self.graph.deep_validate(experiment=self.experiment)
+
+        print('fission-fusion rel')
         L.warn('Remove Fission-Fusion (relative)')
         collider.remove_fission_fusion_rel(self.graph, split_rel_time=split_rel_time)
+        self.graph.deep_validate(experiment=self.experiment)
+
+        print('remove single descendents')
         L.warn('Remove Single Descendents')
         collider.remove_single_descendents(self.graph)
         self.report_card.add_step(self.graph, step_name='consolidate',
@@ -452,7 +462,6 @@ class WaldoSolver(object):
     def connect_leaves(self, gap_validation=None):
         """ draws arcs between unconected leaf nodes
         """
-        print('GAP TIME!')
         L.warn('gaps')
         gap_start, gap_end = self.taper.find_start_and_end_nodes(use_missing_objects=True)
         gaps = self.taper.score_potential_gaps(gap_start, gap_end)
@@ -479,6 +488,7 @@ class WaldoSolver(object):
         def boiler_plate(validate_steps, subgraph_recorder):
             if validate_steps:
                 self.graph.validate()
+                self.graph.deep_validate(experiment=self.experiment)
             #L.warn('Iteration {}'.format(i + 1))
             if subgraph_recorder is not None:
                 subgraph_recorder.save_subgraph(self.graph)
@@ -500,20 +510,20 @@ class WaldoSolver(object):
             cb_iterate(i, 1/6.)
 
             # prune
-            self.prune()
             print '--- prune ---'
+            self.prune()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 2/6.)
 
             # consolidate
-            self.consolidate()
             print '--- consolidate ---'
+            self.consolidate()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 3/6.)
 
             # connect
-            self.connect_leaves()
             print '--- gaps ---'
+            self.connect_leaves()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 4/6.)
 

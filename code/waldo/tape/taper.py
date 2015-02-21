@@ -26,11 +26,13 @@ class Taper(object):
     """
     Initalized with a wio.Experiment-like object and a simplified graph.
     """
-    def __init__(self, experiment, graph):#, regenerate_cache=False):
+    def __init__(self, experiment, graph, scorer=None):#, regenerate_cache=False):
         self._experiment = experiment
         self._graph = graph
 
-        self._scorer = Scorer(experiment)
+        self._scorer = scorer
+        if scorer is None:
+            self._scorer = Scorer(experiment)
 
         self.max_speed = self._scorer.max_speed * settings.TAPE_MAX_SPEED_MULTIPLIER
 
