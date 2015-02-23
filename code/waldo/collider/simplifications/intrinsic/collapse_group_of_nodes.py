@@ -50,8 +50,8 @@ def group_can_be_collapsed(graph, root, group, max_duration):
 # This algorithm looks for a group of nodes that:
 #  - all the predecessors are in the group except for the first one
 #  - all the succesors are in the group except the last one
-#  - the "time" between the "died" value from the first one and the "died" value from the last one is less than
-#    max_duration
+#  - the "time" between the "died" value from the first one and the "born"
+#    value from the last one is less than max_duration
 def collapse_group_of_nodes(graph, max_duration):
     nodes = set(graph.nodes())
     while nodes:
