@@ -1,11 +1,17 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
+
+# third party
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
+# project specific
 from waldo.conf import settings, guisettings
-import pages
+from . import pages
 
 class WelcomePage(QtGui.QWizardPage):
     class Tooltips:

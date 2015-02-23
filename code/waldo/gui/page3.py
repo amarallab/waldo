@@ -1,15 +1,19 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
 import os
 import json
-import pages
 
+# third party
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
+# project specific
 from waldo.wio import paths
-
+from . import pages
 
 class PreviousThresholdCachePage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):

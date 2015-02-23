@@ -1,18 +1,15 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
 import os
-
-from PyQt4 import QtGui
-from PyQt4.QtGui import QSizePolicy
-from PyQt4.QtCore import Qt
-
-from waldo.gui import tasking
-import numpy as np
-from scipy import ndimage
 import json
 import errno
-from waldo.wio import Experiment
 
+# third party
+import numpy as np
+from scipy import ndimage
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 import matplotlib.image as mpimg
@@ -20,9 +17,15 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from skimage import morphology
 from skimage.measure import regionprops
+from PyQt4 import QtGui
+from PyQt4.QtGui import QSizePolicy
+from PyQt4.QtCore import Qt
 
+# project specific
 # from waldo.images.grab_images import grab_images_in_time_range
+from waldo.wio import Experiment
 from waldo.wio import paths
+from waldo.gui import tasking
 
 class CacheThresholdLoadingDialog(QtGui.QDialog):
     def __init__(self, ex_id, func, finish_func, parent=None):

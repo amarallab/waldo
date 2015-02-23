@@ -1,46 +1,51 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
+import os
+from time import time
+
+# third party
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
+import matplotlib.image as mpimg
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from skimage import morphology
+from skimage.measure import regionprops
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
+# project specific
 from waldo.conf import settings
 from waldo.prepare import summarize as prepare_summarize
 from waldo.images import summarize as images_summarize
 from waldo.metrics.report_card import WaldoSolver
 from waldo.wio import Experiment
 from waldo.output.writer import OutputWriter
-
 from waldo import wio
 import waldo.images.evaluate_acuracy as ea
 import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
-
 import waldo.metrics.step_simulation as ssim
 import waldo.viz.eye_plots as ep
-
 from waldo.gui import pathcustomize
-import os
+from . import tasking
 
-import numpy as np
-import pandas as pd
+STYLE = 'ggplot'
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
-from mpltools import style
-
-import matplotlib.image as mpimg
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from skimage import morphology
-from skimage.measure import regionprops
-
-style.use('ggplot')
-
-import tasking
-
-from time import time
+try:
+    # MPL 1.4+
+    plt.style.use(STYLE)
+except AttributeError:
+    # fallback to mpltools
+    from mpltools import style
+    style.use(STYLE)
 
 class WaldoProcessDialog(QtGui.QDialog):
     def __init__(self, experiment, func, finish_func, parent=None):
@@ -94,7 +99,7 @@ class WaldoProcessDialog(QtGui.QDialog):
 
     def imageMadeProgress(self, item, value):
         if self.task is not None:
-            print "Image!"
+            print("Image!")
 
     def finished(self):
         self.task.waitFinished()

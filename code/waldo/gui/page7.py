@@ -1,16 +1,20 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
+
+# third party
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
-import pages
 
+# project specific
 from waldo.conf import settings
-
 from waldo import wio
 from waldo.wio import paths
 from waldo.wio import file_manager as fm
-
+from . import pages
 
 class PreviousWaldoProcessPage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):

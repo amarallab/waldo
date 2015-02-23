@@ -1,7 +1,14 @@
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
+from __future__ import absolute_import, print_function
+
+# standard library
 import random
+
+# third party
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# project specific
 
 def naive_simulation(experiment, verbose=False):
     losses = experiment.prepdata.load('end_report')
@@ -13,10 +20,10 @@ def naive_simulation(experiment, verbose=False):
     crawl_on_total = (gains['on_edge'] + gains['outside-roi']).sum()
 
     if verbose:
-        print 'loading data for', experiment.id
-        print worm_count, 'worms'
-        print crawl_off_total, 'crawl off'
-        print crawl_on_total, 'crawl on'
+        print('loading data for', experiment.id)
+        print(worm_count, 'worms')
+        print(crawl_off_total, 'crawl off')
+        print(crawl_on_total, 'crawl on')
 
     N = int(worm_count)
     t_steps = 60
@@ -44,10 +51,10 @@ def naive_simulation(experiment, verbose=False):
             random.shuffle(pool)
             if e == 'off':
                 o = pool.pop()
-                #print 'removing', o, 'at', t
+                #print('removing', o, 'at', t)
                 end_record[o] = t
             if e == 'on':
-                #print 'adding', id_counter, 'at', t
+                #print('adding', id_counter, 'at', t)
                 pool.append(id_counter)
                 start_record[id_counter] = t
                 id_counter += 1
@@ -57,8 +64,8 @@ def naive_simulation(experiment, verbose=False):
         end_record[i] = t_steps
     s = pd.DataFrame(start_record, index=['t0'])
     e = pd.DataFrame(end_record, index=['tN'])
-    print id_counter - 1, 'total worm tracks'
-    #print s
+    print(id_counter - 1, 'total worm tracks')
+    #print(s)
     df = pd.concat([s, e]).T
     df['lifespan'] = df['tN'] - df['t0']
     return df
@@ -107,9 +114,9 @@ class IdealPlateSimulation(object):
         on_edge_times = list(gains[gains['reason'] == 'on_edge']['t'])
         crawl_on = sorted(on_roi_times + on_edge_times)
 
-        print 'off events', len(crawl_off)
-        print 'on events', len(crawl_on)
-        #print len(set(crawl_off) & set(crawl_on)), 'overlap'
+        print('off events', len(crawl_off))
+        print('on events', len(crawl_on))
+        #print(len(set(crawl_off) & set(crawl_on)), 'overlap')
 
         event_log = {}
         for t in crawl_off:
@@ -154,7 +161,7 @@ class IdealPlateSimulation(object):
     def return_steps(self):
         s = pd.DataFrame(self.start_record, index=['t0'])
         e = pd.DataFrame(self.end_record, index=['tN'])
-        print self.id_counter - 1, 'total worm tracks'
+        print(self.id_counter - 1, 'total worm tracks')
         df = pd.concat([s, e]).T
         df['lifespan'] = df['tN'] - df['t0']
         return df
@@ -177,7 +184,7 @@ def best_simulation(experiment, verbose=False, N0=None):
     ips = IdealPlateSimulation(experiment)
     ips.make_event_log()
     N0 = ips.estimate_N0()
-    print N0, 'initial estimate for worms'
+    print(N0, 'initial estimate for worms')
     still_running = True
     while still_running:
         try:
@@ -185,9 +192,9 @@ def best_simulation(experiment, verbose=False, N0=None):
             times, counts = ips.run_simulation(tN=3600)
             still_running = False
         except IndexError as e:
-            #print e
+            #print(e)
             N0 += 1
-            print 'increasing estimate to', N0
+            print('increasing estimate to', N0)
     #plot_simulation_comparison(times, counts, experiment)
     return ips.return_steps() / 60
 
