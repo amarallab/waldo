@@ -19,9 +19,14 @@ def group_can_be_collapsed(graph, root, group, max_duration):
         return False
 
     last_node = max(group, key=lambda x: graph.node[x]['died_t'])
-
     first_died = graph.node[first_node]['died_t']
     last_born = graph.node[last_node]['born_t']
+
+    number_of_branches = sum(1 for x in group if len(graph.successors(x)) == 0)
+    if number_of_branches > 1:
+        # If there are more that one branches, it must be check for the died time of the oldest branch
+        last_born = graph.node[last_node]['died_t']
+
     if last_born - first_died > max_duration:
         return False
 

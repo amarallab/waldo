@@ -20,7 +20,7 @@ class TestCollapseGroupOfNodes(tg.GraphTestCase):
     def test_diamond_shouldcondense(self):
         Gtest = tg.node_generate(
                 [[10], [20, 21], [30]],
-                itertools.count(100))
+                itertools.count(step=100))
         Gtest.add_path([10, 20, 30])
         Gtest.add_path([10, 21, 30])
 
@@ -36,7 +36,7 @@ class TestCollapseGroupOfNodes(tg.GraphTestCase):
     def test_diamond_toolarge(self):
         Gtest = tg.node_generate(
                 [[10], [20, 21], [30]],
-                itertools.count(100))
+                itertools.count(step=100))
         Gtest.add_path([10, 20, 30])
         Gtest.add_path([10, 21, 30])
 
@@ -56,8 +56,8 @@ class TestCollapseGroupOfNodes(tg.GraphTestCase):
         Gtest.add_path([10, 20, 30, 40])
         Gtest.add_path([10, 21, 30])
 
-        Gexpect = tg.node_generate([[10], [40]])
-        Gexpect.add_path([10, 40])
+        Gexpect = tg.node_generate([[10]])
+        Gexpect.add_path([10])
 
         max_duration = 110 * tg.FRAME_TIME
 
@@ -105,7 +105,7 @@ class TestCollapseGroupOfNodes(tg.GraphTestCase):
     def test_doublediamond_condenseboth(self):
         Gtest = tg.node_generate(
                 [[10], [20, 21], [30], [40, 41], [50]],
-                itertools.count(100))
+                itertools.count(step=100))
         Gtest.add_path([10, 20, 30, 40, 50])
         Gtest.add_path([10, 21, 30, 41, 50])
 
@@ -123,7 +123,7 @@ class TestCollapseGroupOfNodes(tg.GraphTestCase):
     def test_exchange_shouldcondense(self):
         Gtest = tg.node_generate(
                 [[10], [20, 21], [30, 31, 32], [40, 41], [50]],
-                itertools.count(100))
+                itertools.count(step=100))
         Gtest.add_path([10, 21, 30, 40, 50])
         Gtest.add_path([10, 20, 31, 40])
         Gtest.add_path([21, 32, 41, 50])
