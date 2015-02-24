@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 # standard library
 import os
 import sys
@@ -11,7 +13,6 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-import prettyplotlib as ppl
 from statsmodels.distributions.empirical_distribution import ECDF
 
 # package specific
@@ -99,19 +100,19 @@ class ReportCard(object):
         m2 = len(set(moving_nodes))
 
         if n1 != n2:
-            print 'WARNING: graphs have unequan number of nodes'
-            print n1, 'nodes in graph'
-            print n2, 'nodes in digraph'
+            print('WARNING: graphs have unequan number of nodes')
+            print(n1, 'nodes in graph')
+            print(n2, 'nodes in digraph')
         if m1 > n1 or m1 > n2:
-            print 'WARNING: more moving nodes than nodes in graph'
-            print m1, 'moving nodes'
-            print m2, 'moving nodes, no repeats'
+            print('WARNING: more moving nodes than nodes in graph')
+            print(m1, 'moving nodes')
+            print(m2, 'moving nodes, no repeats')
 
         # if len(durations) < n_nodes:
-        #     print '{x} durations found for {y} nodes'.format(x=len(durations),
-        #                                                  y=n_nodes)
-        #     print duration_med, duration_std
-        #     print round(duration_med, ndigits=2), round(duration_std, ndigits=2)
+        #     print('{x} durations found for {y} nodes'.format(x=len(durations),
+        #                                                  y=n_nodes))
+        #     print(duration_med, duration_std)
+        #     print(round(duration_med, ndigits=2), round(duration_std, ndigits=2))
 
         assert len(graph.nodes(data=False)) == n_nodes
         report = {'total-nodes':graph.number_of_nodes(),
@@ -141,10 +142,10 @@ class ReportCard(object):
         report_df = pd.DataFrame(self.reports)
         report_df.set_index('step')
         if show:
-            print report_df[['step', 'total-nodes', 'isolated-nodes', 'duration-med',
-                             'moving-nodes']]
-            print report_df[['step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min']]
-            print report_df[['step', 'wm_0min', 'wm_10min', 'wm_20min', 'wm_30min', 'wm_40min', 'wm_50min']]
+            print(report_df[['step', 'total-nodes', 'isolated-nodes', 'duration-med',
+                             'moving-nodes']])
+            print(report_df[['step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min']])
+            print(report_df[['step', 'wm_0min', 'wm_10min', 'wm_20min', 'wm_30min', 'wm_40min', 'wm_50min']])
 
         return report_df
 
@@ -191,11 +192,11 @@ class ReportCard(object):
 
                 terms['lifespan_t'].loc[list(known_comps)] = graph.lifespan_t(node_id)
         node_set = set(graph.nodes(data=False))
-        print len(term_ids), 'blobs have terminal data'
-        print len(node_set), 'nodes in graph'
-        print len(term_ids & node_set), 'overlap'
+        print(len(term_ids), 'blobs have terminal data')
+        print(len(node_set), 'nodes in graph')
+        print(len(term_ids & node_set), 'overlap')
         compound_nodes = set(terms[terms['n-blobs'] > 1]['node_id'])
-        print len(compound_nodes), 'have more than 1 blob id in them'
+        print(len(compound_nodes), 'have more than 1 blob id in them')
 
         # split dataframe into seperate dfs concerned with starts and ends
         # standardize collumn names such that both have the same columns
@@ -254,9 +255,9 @@ class ReportCard(object):
 
         # mark if nodes start or end outside region of interest ROI
         ex_id = experiment.id
-        #print ex_id
+        #print(ex_id)
         roi = fm.ImageMarkings(ex_id=ex_id).roi()
-        #print roi
+        #print(roi)
         x, y, r = roi['x'], roi['y'], roi['r']
         def add_out_of_roi(df):
             dists = np.sqrt((df['x'] - x)**2 + (df['y'] - y)**2)
@@ -299,8 +300,8 @@ class ReportCard(object):
         for bd in bin_dividers:
             b = df[df['lifespan_t'] < bd]
             df = df[df['lifespan_t'] >= bd]
-            #print bd
-            #print b.head()
+            #print(bd)
+            #print(b.head())
             counts = {}
             for reason in reasons:
                 counts[reason] = len(b[b['reason'] == reason])
@@ -318,7 +319,7 @@ class ReportCard(object):
         report_summary.set_index('lifespan', inplace=True)
         #report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
         report_summary = report_summary[['unknown', 'split', 'join', 'timing', 'on_edge', 'outside-roi']]
-        print report_summary
+        print(report_summary)
         return report_summary
 
     def save_reports(self, graph):
@@ -358,16 +359,16 @@ class SubgraphRecorder(object):
         graph_nodes = set(graph.nodes(data=False))
         check_set = check_set & graph_nodes
         all_relevant_nodes = set([])
-        #print check_set
-        #print len(check_set)
+        #print(check_set)
+        #print(len(check_set))
         while len(check_set):
             current_node = check_set.pop()
             subgraph = viz.subgraph.nearby(digraph=graph, target=current_node, max_distance=10000)
-            #print subgraph
+            #print(subgraph)
             subgraph_nodes = set(subgraph.nodes(data=False))
             check_set = check_set - subgraph_nodes
             all_relevant_nodes = all_relevant_nodes | subgraph_nodes
-        print len(all_relevant_nodes), 'nodes in subgraph'
+        print(len(all_relevant_nodes), 'nodes in subgraph')
         return relevant_subgraph(digraph=graph, nodes=list(all_relevant_nodes))
 
 class WaldoSolver(object):
@@ -463,7 +464,7 @@ class WaldoSolver(object):
         """ draws arcs between unconected leaf nodes
         """
         L.warn('gaps')
-        gap_start, gap_end = self.taper.find_start_and_end_nodes(use_missing_objects=False)
+        gap_start, gap_end = self.taper.find_start_and_end_nodes(use_missing_objects=True)
         gaps = self.taper.score_potential_gaps(gap_start, gap_end)
         if gap_validation is not None:
             gap_validation.append(gaps[['blob1', 'blob2']])
@@ -505,23 +506,24 @@ class WaldoSolver(object):
             self.phase_name = 'iter{i}'.format(i=i+1)
             # untangle collisions
             n = self.untangle_collsions()
-            print '--- collisions ---'
+            print('--- collisions ---')
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 1/6.)
 
             # prune
-            print '--- prune ---'
+            print('--- prune ---')
             self.prune()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 2/6.)
 
             # consolidate
-            print '--- consolidate ---'
+            print('--- consolidate ---')
             self.consolidate()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 3/6.)
 
             # connect
+            print('--- gaps ---')
             self.connect_leaves()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 4/6.)
@@ -560,7 +562,7 @@ class WaldoSolver(object):
         experiment = self.experiment
         cr = collider.CollisionResolver(experiment, graph)
         # bounding box method
-        print 'collisions from bbox'
+        print('collisions from bbox')
 
         # initialize records
         resolved = set()
@@ -616,10 +618,10 @@ class WaldoSolver(object):
             else:
                 p_res = p_dat = p_no1 = p_no2 = 0.0
 
-            print '\t{n} resolved {p}%'.format(n=n_res, p=p_res)
-            print '\t{n} missing data {p}%'.format(n= n_dat, p=p_dat)
-            print '\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1)
-            print '\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2)
+            print('\t{n} resolved {p}%'.format(n=n_res, p=p_res))
+            print('\t{n} missing data {p}%'.format(n= n_dat, p=p_dat))
+            print('\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1))
+            print('\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2))
 
         self.report_card.add_step(self.graph, step_name='resolve collisions',
                                   phase_name=self.phase_name)
