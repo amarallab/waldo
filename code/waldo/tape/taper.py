@@ -26,7 +26,8 @@ class Taper(object):
     """
     Initalized with a wio.Experiment-like object and a simplified graph.
     """
-    def __init__(self, experiment, graph, scorer=None):#, regenerate_cache=False):
+    def __init__(self, experiment, graph, scorer=None,
+                 acausal_frame_limit=None):#, regenerate_cache=False):
         self._experiment = experiment
         self._graph = graph
 
@@ -35,6 +36,11 @@ class Taper(object):
             self._scorer = Scorer(experiment)
 
         self.max_speed = self._scorer.max_speed * settings.TAPE_MAX_SPEED_MULTIPLIER
+        if acausal_frame_limit is None:
+            self.acausal_limit = settings.TAPE_ACAUSAL_FRAME_LIMIT
+        else:
+            self.acausal_limit = acausal_frame_limit
+        self.acausal_limit = np.abs(self.acausal_limit)
 
         self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
         self._missing = self._load_missing()
@@ -219,7 +225,8 @@ class Taper(object):
 
         # pull defaults from settings
         pixel_buffer = settings.TAPE_SHAKYCAM_ALLOWANCE
-        t_buffer = settings.TAPE_ACAUSAL_FRAME_LIMIT
+        #t_buffer = settings.TAPE_ACAUSAL_FRAME_LIMIT
+        t_buffer = self.acausal_limit
         max_distance_cutoff = settings.TAPE_PIXEL_SEARCH_LIMIT
         max_time_cuttoff = settings.TAPE_FRAME_SEARCH_LIMIT
 
@@ -271,12 +278,11 @@ class Taper(object):
             if write_everything:
                 full_record.append(gap_df)
 
-
             #gap_df = gap_df[gap_df['dt'] > 0]
-            gap_df['max_dist'] = self.max_speed * gap_df['df']
+            gap_df['max_dist'] = self.max_speed * np.abs(gap_df['df'])
             gap_df = gap_df[gap_df['dist'] < (gap_df['max_dist'] + pixel_buffer)]
-
             gap_df = gap_df[gap_df['dist'] <  max_distance_cutoff]
+
 
             # remove self links if we allow short backwards links.
             if t_buffer > 0:
@@ -306,6 +312,10 @@ class Taper(object):
                 a = gap_df[['dist', 'df']].apply(score, axis=1)
                 gap_df['score'] = a
                 all_gap_dfs.append(gap_df)
+
+        any_data = [d for d in all_gap_dfs if d is not None]
+        if not any_data:
+            return None
 
         potential_gaps = pd.concat(all_gap_dfs)
         if write_everything:
@@ -348,7 +358,8 @@ class Taper(object):
             df = settings.TAPE_FRAME_SEARCH_LIMIT
         if dist is None:
             dist = settings.TAPE_PIXEL_SEARCH_LIMIT
-        acausal_limit = settings.TAPE_ACAUSAL_FRAME_LIMIT
+
+        acausal_limit = self.acausal_limit
 
         gaps = gaps_df.copy()
         link_list = []
@@ -532,7 +543,6 @@ class Taper(object):
         print(len(to_missing), 'to_missing')
         print(len(from_missing), 'from_missing')
         print(len(missing_to_missing), 'missing_to_missing')
-
 
         missing_df = self._missing
         for i, row in missing_df.iterrows():
