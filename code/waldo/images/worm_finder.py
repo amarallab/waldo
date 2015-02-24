@@ -800,7 +800,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None, image_callba
             callback(CALLBACK_LOAD_FRAC + CALLBACK_LOOP_FRAC +
                     CALLBACK_SAVE_FRAC * p)
     else:
-        cb_load = cb_pri = cb_sec = None
+        cb_load = cb_loop = cb_save = None
     experiment = wio.Experiment(experiment_id=ex_id)
 
     print('analzying images')

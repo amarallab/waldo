@@ -4,7 +4,7 @@ import os
 
 from PyQt4 import QtGui
 from PyQt4.QtGui import QSizePolicy
-from PyQt4.QtCore import Qt
+from PyQt4.QtCore import Qt, QTimer
 
 from waldo.gui import tasking
 import numpy as np
@@ -92,13 +92,12 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.data = data
         self.setTitle("Image Curation")
 
-        label = QtGui.QLabel("...")
-
         self.histogram_figure = plt.figure()
         self.histogram_canvas = FigureCanvas(self.histogram_figure)
         self.histogram_canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.histogram_canvas.setMinimumSize(50, 50)
         self.histogram_toolbar = NavigationToolbar(self.histogram_canvas, self)
+        self.histogram_toolbar.coordinates = False
         self.histogram_toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         self.image_figure = plt.figure()
@@ -106,6 +105,7 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.image_canvas.setMinimumSize(50, 50)
         self.image_canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.image_toolbar = NavigationToolbar(self.image_canvas, self)
+        self.image_toolbar.coordinates = False
         self.image_toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         gs = grd.GridSpec(2, 1)
@@ -113,15 +113,26 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.ax_area = self.histogram_figure.add_subplot(gs[1, 0], sharex=self.ax_objects)
         self.ax_image = self.image_figure.add_subplot(111)
 
-        # First row
         layout = QtGui.QGridLayout()
-        layout.addWidget(self.histogram_canvas, 0, 0, 1, 1)
-        layout.addWidget(self.image_canvas, 0, 1, 1, 1)
-        layout.addWidget(self.histogram_toolbar, 1, 0, 1, 1)
-        layout.addWidget(self.image_toolbar, 1, 1, 1, 1)
+        q1 = QtGui.QLabel("<b>Choose Threshold</b>")
+        # q1.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(q1, 0, 0, 1, 1)
+        layout.addWidget(QtGui.QLabel("Click on either graph to pick a threshold value"), 1, 0, 1, 1)
+        layout.addWidget(self.histogram_canvas, 2, 0, 1, 1)
+
+        q2 = QtGui.QLabel("<b>Define Region of Interest</b>")
+        # q2.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(q2, 0, 1, 1, 1)
+        layout.addWidget(QtGui.QLabel("Click on image three times to define the region of interest"), 1, 1, 1, 1)
+        layout.addWidget(self.image_canvas, 2, 1, 1, 1)
+        layout.addWidget(self.image_toolbar, 3, 1, 1, 1)
+
+        # layout.addWidget(self.histogram_canvas, 0, 0, 1, 1)
+        # layout.addWidget(self.image_canvas, 0, 1, 1, 1)
+        # layout.addWidget(self.histogram_toolbar, 1, 0, 1, 1)
+        # layout.addWidget(self.image_toolbar, 1, 1, 1, 1)
         self.setLayout(layout)
 
-        self.label = label
         self.thresholds = []
 
         self.histogram_figure.canvas.mpl_connect('button_press_event', self.on_histogram_button_pressed)
@@ -146,10 +157,6 @@ class ThresholdCachePage(QtGui.QWizardPage):
         return np.maximum(np.maximum(first, mid), last)
 
     def initializePage(self):
-        if self.data.experiment is not None:
-            self.label.setText("Experiment: {ex_id}".format(ex_id=self.data.experiment.id))
-        else:
-            self.label.setText("Experiment: None")
         self.current_threshold = 0.0005
         data = {}
         if self.data.experiment is not None:
@@ -181,6 +188,9 @@ class ThresholdCachePage(QtGui.QWizardPage):
             self.mid_image = mpimg.imread(impaths[int(len(impaths)/2)])
         self.mouse_points = []
 
+        QTimer.singleShot(0, self.show_dialog)
+
+    def show_dialog(self):
         dlg = CacheThresholdLoadingDialog(self.data.experiment.id, self.calculate_threshold, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
@@ -304,7 +314,6 @@ class ThresholdCachePage(QtGui.QWizardPage):
         self.ax_image.clear()
         self.ax_image.imshow(self.mid_image, cmap=plt.cm.gray, interpolation='nearest')
         self.ax_image.contour(mask, [0.5], linewidths=1.2, colors='b')
-        self.ax_image.set_title('threshold = {t}'.format(t=self.data.threshold))
         self.ax_image.axis('off')
         self.circle = None
         self.update_image_circle()
