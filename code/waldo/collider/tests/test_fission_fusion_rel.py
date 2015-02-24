@@ -96,7 +96,7 @@ class TestFissionFusion(tg.GraphTestCase):
     # def test_component_conservation_chain(self):
     #     Go = tg.node_generate(
     #         [[10, 11], [20], [30, 31], [40], [50, 51], [60], [70, 71]],
-    #         itertools.count(100))
+    #         itertools.count(step=100))
     #     Go.add_path([10, 20, 30, 40, 50, 60, 70])
     #     Go.add_path([11, 20, 31, 40, 51, 60, 71])
     #     Gtest = Go.copy()

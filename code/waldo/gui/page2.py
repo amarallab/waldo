@@ -1,18 +1,22 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
 import os
+import glob
+import json
+import threading
 
+# third party
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
-import threading
-
+# project specific
 from waldo.conf import settings
 from waldo.wio import paths
-import pages
-import glob
-import json
+from . import pages
 
 
 def get_summary_data(experiment_name):

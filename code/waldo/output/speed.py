@@ -1,11 +1,18 @@
 #!/usr/bin/env python
+from __future__ import absolute_import, print_function
+
+# standard library
 import os
 import math
+
+# third party
 import numpy as np
 import pandas as pd
 #from scipy import stats
 import scipy.interpolate as interpolate
 import scipy.signal as ss
+
+# project specific
 from waldo.wio import paths
 from waldo.wio.experiment import Experiment
 

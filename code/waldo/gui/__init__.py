@@ -1,19 +1,26 @@
+from __future__ import absolute_import
+
 __author__ = 'heltena'
 
+# standard library
+
+# third party
+from PyQt4 import QtGui
+
+# project specific
 from waldo.wio import Experiment
 
-from PyQt4 import QtGui
-from page1 import WelcomePage
-from page2 import SelectExperimentPage
-from page3 import PreviousThresholdCachePage
-from page4 import ThresholdCachePage
-from page5 import PreviousScoringPage
-from page6 import ScoringPage
-from page7 import PreviousWaldoProcessPage
-from page8 import WaldoProcessPage
-from page9 import FinalPage
+from .page1 import WelcomePage
+from .page2 import SelectExperimentPage
+from .page3 import PreviousThresholdCachePage
+from .page4 import ThresholdCachePage
+from .page5 import PreviousScoringPage
+from .page6 import ScoringPage
+from .page7 import PreviousWaldoProcessPage
+from .page8 import WaldoProcessPage
+from .page9 import FinalPage
 
-import pages
+from . import pages
 
 class WaldoAppData:
     def __init__(self):

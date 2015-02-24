@@ -1,7 +1,12 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
-from PyQt4 import QtCore
+# standard library
+
+# third party
 import numpy as np
+from PyQt4 import QtCore
 
 class _WorkerCancelled(Exception):
     pass
@@ -42,7 +47,7 @@ class _Worker(QtCore.QObject):
         elif type(value) == np.ndarray:
             self.madeNumpyArrayProgress.emit(item, value)
         else:
-            print "E: error de parametros"
+            print("E: error de parametros")
         if self.finish:
             raise _WorkerCancelled()
 

@@ -1,44 +1,49 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
+import os
+
+# third party
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
+import matplotlib.image as mpimg
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from skimage import morphology
+from skimage.measure import regionprops
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
+# project specific
 from waldo.conf import settings
 from waldo.prepare import summarize as prepare_summarize
 from waldo.images import summarize as images_summarize
 from waldo.metrics.report_card import WaldoSolver
 from waldo.wio import Experiment
 from waldo.output.writer import OutputWriter
-
 from waldo import wio
 import waldo.images.evaluate_acuracy as ea
 import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
-
 import waldo.metrics.step_simulation as ssim
 import waldo.viz.eye_plots as ep
-
 from waldo.gui import pathcustomize
-import os
 
-import numpy as np
-import pandas as pd
+STYLE = 'ggplot'
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
-from mpltools import style
-
-import matplotlib.image as mpimg
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from skimage import morphology
-from skimage.measure import regionprops
-
-style.use('ggplot')
-
-
+try:
+    # MPL 1.4+
+    plt.style.use(STYLE)
+except AttributeError:
+    # fallback to mpltools
+    from mpltools import style
+    style.use(STYLE)
 
 class FinalPage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):
@@ -256,21 +261,21 @@ class FinalPage(QtGui.QWizardPage):
         move = prep_data.load('moved')
 
         base_accuracy = prep_data.load('accuracy', index_col=False)
-        print base_accuracy.head()
-        print base_accuracy.columns
+        print(base_accuracy.head())
+        print(base_accuracy.columns)
         matches = prep_data.load('matches')
         counts, tps, fps, fns = [], [], [], []
         for mm in min_moves:
-            print mm
+            print(mm)
             moved = move[move['bl_moved'] >= mm]
             bids = list(moved['bid'])
             filtered_accuracy = ea.recalculate_accuracy(matches, base_accuracy, bids=bids)
             #filtered_accuracy = filtered_accuracy[np.isfinite(filtered_accuracy['true-pos'])]
             counts.append(len(bids))
             tp = filtered_accuracy['true-pos'].mean()
-            #print 'tp', tp
+            #print('tp', tp)
             fp = filtered_accuracy['false-pos'].mean()
-            #print 'fp', fp
+            #print('fp', fp)
             fn = filtered_accuracy['false-neg'].mean()
 
             tps.append(tp)
@@ -315,7 +320,7 @@ class FinalPage(QtGui.QWizardPage):
 
     def steps_from_node_report(self, experiment, min_bl=1):
         node_report = experiment.prepdata.load('node-summary')
-        print node_report.head()
+        print(node_report.head())
         steps = node_report[['bl', 't0', 'tN', 'bid']]
         steps.set_index('bid', inplace=True)
 
@@ -337,10 +342,10 @@ class FinalPage(QtGui.QWizardPage):
         final_steps = self.steps_from_node_report(experiment)
         accuracy = experiment.prepdata.load('accuracy')
         worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
-        print 'worm count:', worm_count
+        print('worm count:', worm_count)
 
         ### AX 0
-        # print 'starting ax 0'
+        # print('starting ax 0')
         # color_cycle = ax._get_lines.color_cycle
         # for i in range(5):
         #     c = color_cycle.next()
@@ -377,10 +382,10 @@ class FinalPage(QtGui.QWizardPage):
         short_max = max([len(short1), len(short2)])
         mid_max = max([len(mid1), len(mid2)])
         long_max = max([len(long1), len(long2)])
-        print 'short', short_max
-        print 'long', long_max
-        print 'mid', mid_max
-        print long1.head(20)
+        print('short', short_max)
+        print('long', long_max)
+        print('mid', mid_max)
+        print(long1.head(20))
 
         self._new_plot(ax_s0, short1, 'raw', xmax=xmax)
         self._new_plot(ax_m0, mid1, 'raw', xmax=xmax)
