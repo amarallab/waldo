@@ -164,10 +164,13 @@ class WaldoProcessPage(QtGui.QWizardPage):
 
         self.last_image_index = 0
         def callback_with_image(x):
+            if len(impaths) == 0:
+                return
             index = int(x * len(impaths))
+            if index > len(impaths) - 1:
+                index = len(impaths) - 1
             if index - self.last_image_index < 1:
                 return
-            print "New Image: {}".format(index)
             self.last_image_index = index
             im = mpimg.imread(impaths[index])
             callback(10, im)

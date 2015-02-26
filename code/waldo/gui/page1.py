@@ -54,16 +54,19 @@ class WelcomePage(QtGui.QWizardPage):
         folderLayout.addWidget(self.waldoDataLabel, col, 1, 1, 1)
         folderLayout.addWidget(waldoDataButton, col, 2, 1, 1)
 
+        self.runBatchModeCheckBox = QtGui.QCheckBox("Run in Batch Mode")
+        self.runBatchModeCheckBox.setChecked(self.data.experiment_id_list is not None)
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(config_button)
         layout.addLayout(folderLayout)
+        layout.addWidget(self.runBatchModeCheckBox)
         self.setLayout(layout)
 
     def config_button_clicked(self):
         dlg = ConfigDialog(self)
         dlg.setModal(True)
         dlg.exec_()
-
 
     def rawDataButton_clicked(self, ev):
         result = str(QtGui.QFileDialog.getExistingDirectory(directory=self.rawDataLabel.text()))
@@ -78,9 +81,12 @@ class WelcomePage(QtGui.QWizardPage):
             self.waldoDataLabel.setText(result)
             settings.PROJECT_DATA_ROOT = str(self.waldoDataLabel.text())
             settings.save()
-    #
-    # def nextId(self):
-    #     return pages.FINAL
+
+    def nextId(self):
+        if self.runBatchModeCheckBox.isChecked():
+            return pages.SELECT_BATCHMODE_EXPERIMENTS
+        else:
+            return pages.SELECT_EXPERIMENT
 
 
 class ConfigDialog(QtGui.QDialog):
