@@ -86,7 +86,6 @@ def df_equal( df1, df2 ):
 
 class TestTaper(unittest.TestCase):
 
-    @nottest
     def test_basic_pass(self):
         # taper settings
         max_df = 6
@@ -126,7 +125,6 @@ class TestTaper(unittest.TestCase):
             self.assertTrue(s in expected_pairs)
             self.assertTrue(expected_pairs[s] == e)
 
-    @nottest
     def test_basic_dy_fail(self):
         # the relative position of the start of the sink node
         df = 5
@@ -165,7 +163,6 @@ class TestTaper(unittest.TestCase):
             self.assertTrue(s in expected_pairs)
             self.assertTrue(expected_pairs[s] == e)
 
-    @nottest
     def test_basic_dx_fail(self):
         # the relative position of the start of the sink node
         df = 5
@@ -205,7 +202,6 @@ class TestTaper(unittest.TestCase):
             self.assertTrue(s in expected_pairs)
             self.assertTrue(expected_pairs[s] == e)
 
-    @nottest
     def test_basic_dt_fail(self):
         # the relative position of the start of the sink node
         df = 6
@@ -244,7 +240,6 @@ class TestTaper(unittest.TestCase):
             self.assertTrue(s in expected_pairs)
             self.assertTrue(expected_pairs[s] == e)
 
-    @nottest
     def test_basic_acausal_pass(self):
         # the relative position of the start of the sink node
         df = -20
@@ -284,7 +279,7 @@ class TestTaper(unittest.TestCase):
         for s, e in link_list:
             self.assertTrue(s in expected_pairs)
             self.assertTrue(expected_pairs[s] == e)
-    @nottest
+
     def test_basic_acausal_fail(self):
         # the relative position of the start of the sink node
         df = -3
@@ -318,6 +313,7 @@ class TestTaper(unittest.TestCase):
         gaps = taper.score_potential_gaps(gap_start, gap_end)
         self.assertTrue(gaps is None)
 
+    @nottest
     def test_component_terminal_selection(self):
         # the relative position of the start of the sink node
         df = 20

@@ -429,7 +429,8 @@ class WaldoSolver(object):
         self.report_card.add_step(self.graph, step_name='prune',
                                   phase_name=self.phase_name)
 
-    def consolidate(self, max_duration=5, split_rel_time=0.5):
+    def consolidate(self, max_duration=None, split_rel_time=None,
+                    fission_fusion_max=None):
         """ consolidates motifs that involve false splits and single
         straight lines.
 
@@ -439,24 +440,32 @@ class WaldoSolver(object):
         split_rel_time: (float)
 
         """
-        # L.warn('Collapse Group')
-        # print('collapse g')
-        # collider.collapse_group_of_nodes(self.graph, max_duration=max_duration)
-        # self.graph.deep_validate(experiment=self.experiment)
+        if max_duration is None:
+            max_duration = settings.COLLIDER_SUITE_ASSIMILATE_SIZE
+        if split_rel_time is None:
+            split_rel_time = settings.COLLIDER_SUITE_SPLIT_REL
+        if fission_fusion_max is None:
+            fission_fusion_max = settings.COLLIDER_SUITE_SPLIT_ABS
+
+        L.warn('Collapse Group')
+        print('collapse g')
+        collider.collapse_group_of_nodes(self.graph, max_duration=max_duration)
+        #self.graph.deep_validate(experiment=self.experiment)
 
         print('fission-fusion')
         L.warn('Remove Fission-Fusion')
-        collider.remove_fission_fusion(self.graph)
-        self.graph.deep_validate(experiment=self.experiment)
+        collider.remove_fission_fusion(self.graph, max_split_frames=fission_fusion_max)
+        #self.graph.deep_validate(experiment=self.experiment)
 
         print('fission-fusion rel')
         L.warn('Remove Fission-Fusion (relative)')
         collider.remove_fission_fusion_rel(self.graph, split_rel_time=split_rel_time)
-        self.graph.deep_validate(experiment=self.experiment)
+        #self.graph.deep_validate(experiment=self.experiment)
 
         print('remove single descendents')
         L.warn('Remove Single Descendents')
         collider.remove_single_descendents(self.graph)
+        #self.graph.deep_validate(experiment=self.experiment)
         self.report_card.add_step(self.graph, step_name='consolidate',
                                   phase_name=self.phase_name)
 

@@ -242,7 +242,7 @@ class Graph(nx.DiGraph):
         if acceptable_overlap_fraction is None:
             acceptable_overlap_fraction = 0.2
         if acceptable_dist_gap is None:
-            acceptable_dist_gap = 10000
+            acceptable_dist_gap = 100000 #experiment.typical_bodylength
 
         for node in self.nodes_iter(data=False):
             df = self.consolidate_node_data(node=node, experiment=experiment)
@@ -252,19 +252,46 @@ class Graph(nx.DiGraph):
             if not len(df):
                 continue
 
-            # check for excessive overlap
+            # check for excessive overlap among big players
             duplicate_count, duplicate_fraction = self._check_node_df_overlap(df)
             if (duplicate_count > 60 and
                 duplicate_fraction > acceptable_overlap_fraction):
-                print('Node {n} has {o} overlap'.format(n=node, o=duplicate_fraction))
+
                 components = list(set(df['blob']))
+                big_comps = []
                 for c in components:
                     d = df[df['blob'] == c]
                     t = d['time']
-                    print('\t{c} from {t0} to {tN} seconds | {n}'.format(c=c, t0=min(t), tN=max(t), n=len(d)))
-                raise AssertionError("Node {} too many overlapping timepoints".format(node))
+                    if len(d) > 30:
+                        big_comps.append(d)
 
-            # check for big jumps in position
+                if not big_comps:
+                    continue
+
+                big_comps_df = pd.concat(big_comps, axis=0)
+                dupc, dupf = self._check_node_df_overlap(big_comps_df)
+
+                # node gets a pass if duplicate count low for big
+                # players
+                if dupf < acceptable_overlap_fraction:
+                    continue
+
+                print('Node {n} has {o} overlap'.format(n=node, o=dupf))
+                # for c in components:
+                #     d = df[df['blob'] == c]
+                #     t = d['time']
+                #     print('\t{c} from {t0} to {tN} seconds | {n}'.format(c=c, t0=min(t), tN=max(t), n=len(d)))
+                #raise AssertionError("Node {} too many overlapping timepoints".format(node))
+                components = list(set(big_comps_df['blob']))
+                #print('\n\n')
+                for c in sorted(components):
+                    d = df[df['blob'] == c]
+                    t = d['time']
+                    print('\t{c} from {t0} to {tN} seconds | {n}'.format(c=c, t0=min(t), tN=max(t), n=len(d)))
+                #raise AssertionError("Node {} too many overlapping timepoints".format(node))
+
+            # TODO make functional
+            # check for big jumps in position/speed
             if len(df) < 2:
                 continue
             x, y = zip(*df['centroid'])
@@ -274,6 +301,7 @@ class Graph(nx.DiGraph):
                 continue
             if max(dist) > acceptable_dist_gap:
                 print('Node {n} has {d} dist gap'.format(n=node, d=max(dist)))
+                print('or {bl}'.format(bl=max(dist)/self.typical_bl))
                 raise AssertionError("Node {}'s position jumps too far'".format(node))
         L.warn('Validation pass')
 
@@ -476,7 +504,7 @@ class Graph(nx.DiGraph):
             #if duplicate_count > 60 and duplicate_fraction > 0.2:
             #    print('WARNING:', node, 'has', duplicate_fraction, 'overlapping timepoints')
 
-            df.set_index('frame', inplace=True)
+            #all_data.set_index('frame', inplace=True)
             all_data.sort(inplace=True)
             return all_data
 

@@ -303,8 +303,8 @@ class SpeedWriter(object):
             speed_df = self.combine_split_dfs(split_df_list)
             max_speed = max(speed_df['speed'])
             if max_speed > typical_bl:
-                print 'WARNING', self.eid, bid, 'showing unusually fast speeds'
-                print float(max_speed)/typical_bl, 'bl per s'
-                print 'skipping'
+                print('WARNING', self.eid, bid, 'showing unusually fast speeds')
+                print(float(max_speed)/typical_bl, 'bl per s')
+                print('skipping')
                 continue
             self.write_speed(bid, speed_df)
