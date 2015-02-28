@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 __author__ = 'heltena'
 
 # standard library
+import traceback
 
 # third party
 import numpy as np
@@ -33,11 +34,9 @@ class _Worker(QtCore.QObject):
             self.finished.emit()
         except _WorkerCancelled:
             self.cancelled.emit()
-        # except Exception, ex:
-        #     print "EXCEPTION!"
-        #     print ex.message
-        #     raise ex
-        #     self.cancelled.emit()
+        except Exception, ex:
+            traceback.print_exc()
+            self.cancelled.emit()
 
     def _callback(self, item, value):
         if type(value) in [int, float]:

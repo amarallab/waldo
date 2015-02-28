@@ -1,7 +1,5 @@
 from __future__ import absolute_import, print_function
 
-__author__ = 'heltena'
-
 # standard library
 import os
 import glob
@@ -20,14 +18,14 @@ from . import pages
 from .loaders import get_summary_data, AsyncSummaryLoader
 
 
-class SelectExperimentPage(QtGui.QWizardPage):
+class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):
-        super(SelectExperimentPage, self).__init__(parent)
+        super(SelectBatchModeExperimentsPage, self).__init__(parent)
 
         self.data = data
-        self.setTitle("Select Experiment")
-        self.setSubTitle("Select the experiment you want to run. If it is not appearing, click 'back' and change "
-                         "the 'Raw Data' folder.")
+        self.setTitle("Select an Experiment List")
+        self.setSubTitle("Select the experiment list you want to run in batch mode. If one of your experiments is not "
+                         "appearing, click 'back' and change the 'Raw Data' folder.")
 
         self.experimentTable = QtGui.QTableWidget()
         self.experimentTable.itemSelectionChanged.connect(self.experimentTable_itemSelectionChanged)
@@ -67,7 +65,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
     def _setup_table_headers(self, table):
         table.setColumnCount(3)
         table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        table.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         table.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem("Filename"))
         table.setHorizontalHeaderItem(1, QtGui.QTableWidgetItem("Title"))
         table.setHorizontalHeaderItem(2, QtGui.QTableWidgetItem("Duration"))
@@ -112,8 +110,8 @@ class SelectExperimentPage(QtGui.QWizardPage):
 
     def experimentTable_itemSelectionChanged(self):
         values = set([i.row() for i in self.experimentTable.selectedIndexes()])
-        if len(values) == 1:
-            row = values.pop()
+        self.data.experiment_id_list = []
+        for row in values:
             item = self.experimentTable.item(row, 0)
             valid = False
 
@@ -130,15 +128,14 @@ class SelectExperimentPage(QtGui.QWizardPage):
                     if not valid:
                         self.errorRows.add(row)
                 if valid:
-                    self.data.selected_ex_id = str(item.text())
-                else:
-                    self.data.selected_ex_id = None
+                    self.data.experiment_id_list.append(item.text())
         self.completeChanged.emit()
 
     def isComplete(self):
-        return self.data.selected_ex_id is not None
+        return len(self.data.experiment_id_list) > 0
 
     def nextId(self):
+        #TODO: poner el ID bueno
         data = {}
         self.data.loadSelectedExperiment()
         if self.data.experiment is not None:

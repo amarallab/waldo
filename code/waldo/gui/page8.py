@@ -1,55 +1,51 @@
-from __future__ import absolute_import, print_function
-
 __author__ = 'heltena'
 
-# standard library
-import os
-from time import time
-
-# third party
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
-import matplotlib.image as mpimg
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from skimage import morphology
-from skimage.measure import regionprops
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
-from PyQt4.QtCore import Qt
+from PyQt4.QtCore import Qt, QTimer
 
-# project specific
 from waldo.conf import settings
 from waldo.prepare import summarize as prepare_summarize
 from waldo.images import summarize as images_summarize
 from waldo.metrics.report_card import WaldoSolver
 from waldo.wio import Experiment
 from waldo.output.writer import OutputWriter
+
 from waldo import wio
 import waldo.images.evaluate_acuracy as ea
 import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
+
 import waldo.metrics.step_simulation as ssim
 import waldo.viz.eye_plots as ep
+
 from waldo.gui import pathcustomize
-from . import tasking
+import os
 
-STYLE = 'ggplot'
+import numpy as np
+import pandas as pd
 
-try:
-    # MPL 1.4+
-    plt.style.use(STYLE)
-except AttributeError:
-    # fallback to mpltools
-    from mpltools import style
-    style.use(STYLE)
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
+from mpltools import style
+
+import matplotlib.image as mpimg
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from skimage import morphology
+from skimage.measure import regionprops
+
+style.use('ggplot')
+
+import tasking
+
+from time import time
 
 class WaldoProcessDialog(QtGui.QDialog):
-    def __init__(self, experiment, func, finish_func, parent=None):
+    def __init__(self, experiment, func, image_func, finish_func, parent=None):
         super(WaldoProcessDialog, self).__init__(parent)
+        self.image_func = image_func
         self.finish_func = finish_func
 
         progress_bar_labels = ["Global progress", "Process blobs", "Process images", "Load experiment",
@@ -99,7 +95,7 @@ class WaldoProcessDialog(QtGui.QDialog):
 
     def imageMadeProgress(self, item, value):
         if self.task is not None:
-            print("Image!")
+            self.image_func(item, value)
 
     def finished(self):
         self.task.waitFinished()
@@ -129,32 +125,72 @@ class WaldoProcessPage(QtGui.QWizardPage):
         self.waldoProcessCompleted = False
         self.setTitle("Running WALDO")
 
+        self.image_figure = plt.figure()
+        self.image_canvas = FigureCanvas(self.image_figure)
+        self.image_canvas.setMinimumSize(50, 50)
+        self.image_canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.ax_image = self.image_figure.add_subplot(111)
+        self.ax_image.axis('off')
+
+        self.main_layout = QtGui.QHBoxLayout()
+        self.showing_image = False
+
         layout = QtGui.QVBoxLayout()
+        layout.addLayout(self.main_layout)
         self.setLayout(layout)
 
     def initializePage(self):
         self.waldoProcessCompleted = False
 
-        dlg = WaldoProcessDialog(self.data.experiment, self.waldoProcess, self.finished, self)
+        QTimer.singleShot(0, self.show_dialog)
+
+    def show_dialog(self):
+        dlg = WaldoProcessDialog(self.data.experiment, self.waldoProcess, self.show_image, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
 
+    def _set_image(self, image):
+        if not self.showing_image:
+            self.main_layout.addWidget(self.image_canvas)
+            self.showing_image = True
+
+        self.ax_image.clear()
+        self.ax_image.imshow(image, cmap=plt.cm.gray, interpolation='nearest')
+        self.ax_image.axis('off')
+
     def waldoProcess(self, callback):
-        PROCESS_BLOBS_CALLBACK = lambda x: callback(1, x)
+        times, impaths = zip(*sorted(self.data.experiment.image_files.items()))
+        impaths = [str(s) for s in impaths]
+
+        self.last_image_index = 0
+        def callback_with_image(x):
+            if len(impaths) == 0:
+                return
+            index = int(x * len(impaths))
+            if index > len(impaths) - 1:
+                index = len(impaths) - 1
+            if index - self.last_image_index < 1:
+                return
+            self.last_image_index = index
+            im = mpimg.imread(impaths[index])
+            callback(10, im)
+
+        def PROCESS_BLOBS_CALLBACK(x):
+            callback(1, x)
+            callback_with_image(x)
+
         PROCESS_IMAGES_CALLBACK = lambda x: callback(2, x)
         LOAD_EXPERIMENT_CALLBACK = lambda x: callback(3, x)
         CORRECT_ERROR_CALLBACK = lambda x: callback(4, x)
         WRITE_OUTPUT_CALLBACK = lambda x: callback(5, x)
         GENERATE_REPORT_CALLBACK = lambda x: callback(6, x)
-
-        NEW_BLOB_CALLBACK = lambda x: callback(10, x)
-        NEW_IMAGE_CALLBACK = lambda x: callback(11, x)
+        NEW_IMAGE_CALLBACK = lambda im: callback(11, im)
 
         STEPS = 5.0
         ex_id = self.data.experiment.id
         callback(0, 0.0 / STEPS)
 
-        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK, image_callback=NEW_BLOB_CALLBACK)
+        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 
@@ -179,6 +215,9 @@ class WaldoProcessPage(QtGui.QWizardPage):
         callback(0, 5.0 / STEPS)
 
         self.export_tables()
+
+    def show_image(self, id, image):
+        self._set_image(image)
 
     def export_tables(self):
         ex_id = self.data.experiment.id

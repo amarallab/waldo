@@ -3,9 +3,10 @@ from __future__ import absolute_import
 __author__ = 'heltena'
 
 # standard library
+import sys, argparse
 
 # third party
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 # project specific
 from waldo.wio import Experiment
@@ -19,6 +20,8 @@ from .page6 import ScoringPage
 from .page7 import PreviousWaldoProcessPage
 from .page8 import WaldoProcessPage
 from .page9 import FinalPage
+
+from .page10 import SelectBatchModeExperimentsPage
 
 from . import pages
 
@@ -47,6 +50,14 @@ class WaldoApp(QtGui.QWizard):
         # self.data.selected_ex_id = '20141017_123722'
         # self.data.loadSelectedExperiment()
 
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-b', '--batch', type=str, help="List of experiment ids")
+        args = parser.parse_args()
+        if args.batch is not None:
+            self.data.experiment_id_list = args.batch.split(',')
+        else:
+            self.data.experiment_id_list = None
+
         self.setPage(pages.WELCOME, WelcomePage(self.data))
         self.setPage(pages.SELECT_EXPERIMENT, SelectExperimentPage(self.data))
         self.setPage(pages.PREVIOUS_THRESHOLD_CACHE, PreviousThresholdCachePage(self.data))
@@ -56,6 +67,8 @@ class WaldoApp(QtGui.QWizard):
         self.setPage(pages.PREVIOUS_WALDO_PROCESS, PreviousWaldoProcessPage(self.data))
         self.setPage(pages.WALDO_PROCESS, WaldoProcessPage(self.data))
         self.setPage(pages.FINAL, FinalPage(self.data))
+
+        self.setPage(pages.SELECT_BATCHMODE_EXPERIMENTS, SelectBatchModeExperimentsPage(self.data))
 
     def closeEvent(self, ev):
         mb = QtGui.QMessageBox()

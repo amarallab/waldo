@@ -1,15 +1,17 @@
-from __future__ import absolute_import
-
 __author__ = 'heltena'
 
-# standard library
 import os
+
+from PyQt4 import QtGui
+from PyQt4.QtGui import QSizePolicy
+from PyQt4.QtCore import Qt, QTimer
+
+from waldo.gui import tasking
+import numpy as np
+from scipy import ndimage
 import json
 import errno
 
-# third party
-import numpy as np
-from scipy import ndimage
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 import matplotlib.image as mpimg
@@ -17,15 +19,10 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from skimage import morphology
 from skimage.measure import regionprops
-from PyQt4 import QtGui
-from PyQt4.QtGui import QSizePolicy
-from PyQt4.QtCore import Qt
 
-# project specific
 #from waldo.images.grab_images import grab_images_in_time_range
 from waldo.conf import guisettings
 from waldo import images
-from waldo.gui import tasking
 
 class ScoringDialog(QtGui.QDialog):
     def __init__(self, experiment, func, finish_func, parent=None):
@@ -128,7 +125,9 @@ class ScoringPage(QtGui.QWizardPage):
         self.accuracyResult.setText("")
         self.coverageResult.setText("")
         self.scoreCompleted = False
+        QTimer.singleShot(0, self.show_dialog)
 
+    def show_dialog(self):
         dlg = ScoringDialog(self.data.experiment, self.scoring, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
