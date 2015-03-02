@@ -15,6 +15,7 @@ from PyQt4.QtCore import Qt
 from waldo.conf import settings
 from waldo.wio import paths
 from . import pages
+from .helpers import experiment_has_thresholdCache
 from .loaders import get_summary_data, AsyncSummaryLoader
 
 
@@ -86,7 +87,7 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
         self._setup_table_headers(self.experimentTable)
 
         self.errorRows = set()
-        rowToSelect = None
+        rowsToSelect = []
         folders = sorted(os.listdir(settings.MWT_DATA_ROOT), reverse=True)
         self.experimentTable.setRowCount(len(folders))
         for row, folder in enumerate(folders):
@@ -100,11 +101,11 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
                 item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 self.experimentTable.setItem(row, col, item)
 
-            if self.data.selected_ex_id == folder:
-                rowToSelect = row
+            if folder in self.data.experiment_id_list:
+                rowsToSelect.append(row)
 
-        if rowToSelect is not None:
-            self.experimentTable.selectRow(rowToSelect)
+        for row in rowsToSelect:
+            self.experimentTable.selectRow(row)
 
         self.completeChanged.emit()
 
@@ -128,25 +129,16 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
                     if not valid:
                         self.errorRows.add(row)
                 if valid:
-                    self.data.experiment_id_list.append(item.text())
+                    self.data.experiment_id_list.append(str(item.text()))
+        self.data.no_thresholdcache_experiment_id_list = [id for id in self.data.experiment_id_list
+                                                          if not experiment_has_thresholdCache(id)]
         self.completeChanged.emit()
 
     def isComplete(self):
         return len(self.data.experiment_id_list) > 0
 
     def nextId(self):
-        #TODO: poner el ID bueno
-        data = {}
-        self.data.loadSelectedExperiment()
-        if self.data.experiment is not None:
-            self.annotation_filename = paths.threshold_data(self.data.experiment.id)
-            try:
-                with open(str(self.annotation_filename), "rt") as f:
-                    data = json.loads(f.read())
-            except IOError as ex:
-                pass
-
-        if 'threshold' in data and 'r' in data and 'x' in data and 'y' in data:
-            return pages.PREVIOUS_THRESHOLD_CACHE
+        if len(self.data.no_thresholdcache_experiment_id_list) > 0:
+            return pages.BATCHMODE_THRESHOLD_CACHE
         else:
-            return pages.THRESHOLD_CACHE
+            return pages.FINAL  # TODO

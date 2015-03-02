@@ -34,12 +34,12 @@ class ThresholdCachePage(QtGui.QWizardPage):
 
         self.thresholdCache = ThresholdCacheWidget(self.thresholdCache_changed, self)
         layout = QtGui.QVBoxLayout()
-        layout.addLayout(self.thresholdCache)
+        layout.addWidget(self.thresholdCache)
         self.setLayout(layout)
 
     def initializePage(self):
         if self.data.experiment is None:
-            self.thresholdCache.clear_data()
+            self.thresholdCache.clear_experiment_data()
         else:
             self.thresholdCache.load_experiment(self.data.experiment)
 
