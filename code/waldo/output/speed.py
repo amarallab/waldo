@@ -241,7 +241,6 @@ class SpeedWriter(object):
             gap_len = t[gap_index + 1] - t[gap_index]
             assert gap_len >= gap_max_seconds
             gap_mid = (t[gap_index + 1] + t[gap_index]) / 2.0
-
             df = blob_df[(blob_df['time'] < gap_mid) & (blob_df['time'] >= last_gap_mid)]
             df_list.append(df)
             last_gap_mid = gap_mid
@@ -250,7 +249,10 @@ class SpeedWriter(object):
         df_list.append(df)
         return df_list
 
-    def _speed_for_blob_df(self, blob_df, window_size=None, pad_ends=True):
+    def _speed_for_blob_df(self, blob_df, window_size=None,
+                           pad_ends=True, prelim_interp=True,
+                           remove_outliers=True):
+
         if window_size is None:
             window_size = self.window_size
         t = np.array(blob_df['time'])
@@ -258,8 +260,32 @@ class SpeedWriter(object):
         x = np.array(blob_df['x'])
         #print blob_df
         half_win = window_size // 2
-        if pad_ends:
 
+        prelim_interp = True
+        if prelim_interp:
+            interp_x = interpolate.interp1d(t, x, kind='linear')
+            interp_y = interpolate.interp1d(t, y, kind='linear')
+
+            time_segments = []
+
+            dt = np.diff(t)
+            break_points = np.where(dt > 1)[0]
+
+            last_bp = 0
+            for bp in break_points:
+                t0, t1 = t[bp], t[bp+1]
+                t_fill = np.linspace(start=t0, stop=t1,
+                                     num=10 * int(dt[bp]))[1:-1]
+                time_segments.append(t[last_bp:bp])
+                time_segments.append(t_fill)
+                last_bp = bp
+
+            time_segments.append(t[last_bp:])
+
+            t = np.concatenate(time_segments)
+            x = interp_x(t)
+            y = interp_y(t)
+        if pad_ends:
             x0_pad = np.array([x[0] for i in range(half_win)])
             xN_pad = np.array([x[-1] for i in range(half_win)])
 
@@ -285,6 +311,8 @@ class SpeedWriter(object):
         df['x'] = xi[1:]
         df['y'] = yi[1:]
         df['speed'] = speed
+        if remove_outliers:
+            df = self.iterativly_remove_outliers(df)
         return df
 
     def write_speed(self, bid, speed_df):
@@ -294,6 +322,56 @@ class SpeedWriter(object):
         file_path = self.directory / file_name
         speed_df.to_csv(str(file_path), index=False)
 
+    def outlier_detection_df(self, df, col='speed', window_size = 21):
+        good_rows = []
+        outlier_rows = []
+
+        half_win = 11 // 2
+        N = len(df)
+
+
+        # do not cut off front
+        for i in range(half_win):
+            row = df.iloc[i]
+            row_name = row.name
+            good_rows.append(row_name)
+
+
+        for i in range(half_win, N - half_win):
+            # row
+            row = df.iloc[i]
+            row_name = row.name
+            x = row[col]
+
+            # m is the number of standard deviations for 99% confidence (normal)
+            m = 2.3263
+            data = df[i - half_win: i + half_win][col]
+            mean = np.mean(data)
+            std = np.std(data)
+            deviation = np.abs(x - mean) / std
+
+            if deviation > m:
+                outlier_rows.append(row_name)
+            else:
+                good_rows.append(row_name)
+
+        # do not cut off back
+        for i in range(N - half_win, N):
+            row = df.iloc[-i]
+            row_name = row.name
+            good_rows.append(row_name)
+
+        good_rows = sorted(list(set(good_rows)))
+        outlier_rows = sorted(list(set(outlier_rows)))
+        return good_rows, outlier_rows
+
+    def iterativly_remove_outliers(self, df, col='speed'):
+        for i in range(10):
+            g, o = self.outlier_detection_df(df, col=col)
+            if not len(o):
+                break
+            df = df.loc[g]
+        return df
 
     def write_all_speeds(self, min_points):
         typical_bl = self._experiment.typical_bodylength
