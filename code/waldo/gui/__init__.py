@@ -23,6 +23,7 @@ from .page9 import FinalPage
 
 from .page10 import SelectBatchModeExperimentsPage
 from .page11 import BatchModeThresholdCachePage
+from .page12 import BatchModeWaldoProcessPage
 
 from . import pages
 
@@ -73,6 +74,7 @@ class WaldoApp(QtGui.QWizard):
 
         self.setPage(pages.SELECT_BATCHMODE_EXPERIMENTS, SelectBatchModeExperimentsPage(self.data))
         self.setPage(pages.BATCHMODE_THRESHOLD_CACHE, BatchModeThresholdCachePage(self.data))
+        self.setPage(pages.BATCHODE_WALDO_PROCESS, BatchModeWaldoProcessPage(self.data))
 
     def closeEvent(self, ev):
         mb = QtGui.QMessageBox()

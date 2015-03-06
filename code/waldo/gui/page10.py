@@ -141,4 +141,4 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
         if len(self.data.no_thresholdcache_experiment_id_list) > 0:
             return pages.BATCHMODE_THRESHOLD_CACHE
         else:
-            return pages.FINAL  # TODO
+            return pages.BATCHODE_WALDO_PROCESS
