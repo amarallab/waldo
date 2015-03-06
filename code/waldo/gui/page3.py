@@ -14,6 +14,8 @@ from PyQt4.QtCore import Qt
 # project specific
 from waldo.wio import paths
 from . import pages
+from .helpers import experiment_has_thresholdCache
+
 
 class PreviousThresholdCachePage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):
@@ -32,15 +34,7 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
     def initializePage(self):
         data = {}
         self.data.loadSelectedExperiment()
-        if self.data.experiment is not None:
-            self.annotation_filename = paths.threshold_data(self.data.experiment.id)
-            try:
-                with open(str(self.annotation_filename), "rt") as f:
-                    data = json.loads(f.read())
-            except IOError as ex:
-                pass
-
-        if 'threshold' in data and 'r' in data and 'x' in data and 'y' in data:
+        if self.data.experiment is None or experiment_has_thresholdCache(self.data.experiment.id):
             self.recalculateDataCheckbox.setVisible(True)
         else:
             self.recalculateDataCheckbox.setVisible(False)
@@ -50,3 +44,4 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
             return pages.THRESHOLD_CACHE
         else:
             return pages.PREVIOUS_SCORING
+

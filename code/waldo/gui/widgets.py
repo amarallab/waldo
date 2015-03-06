@@ -22,9 +22,10 @@ from skimage.measure import regionprops
 from waldo.gui import tasking
 from waldo.wio import paths
 from .loaders import CacheThresholdLoadingDialog
+from .helpers import circle_3pt
 
 
-class ThresholdCacheWidget(QtGui.QGridLayout):
+class ThresholdCacheWidget(QtGui.QWidget):
     def __init__(self, on_changed_ev, parent=None):
         super(ThresholdCacheWidget, self).__init__()
         self.on_changed_ev = on_changed_ev
@@ -51,19 +52,20 @@ class ThresholdCacheWidget(QtGui.QGridLayout):
         self.ax_area = self.histogram_figure.add_subplot(gs[1, 0], sharex=self.ax_objects)
         self.ax_image = self.image_figure.add_subplot(111)
 
+        layout = QtGui.QGridLayout()
+
         q1 = QtGui.QLabel("<b>Choose Threshold</b>")
-        # q1.setAlignment(Qt.AlignHCenter)
-        self.addWidget(q1, 0, 0, 1, 1)
-        self.addWidget(QtGui.QLabel("Click on either graph to pick a threshold value"), 1, 0, 1, 1)
-        self.addWidget(self.histogram_canvas, 2, 0, 1, 1)
-        self.addWidget(self.histogram_toolbar, 3, 0, 1, 1)
+        layout.addWidget(q1, 0, 0, 1, 1)
+        layout.addWidget(QtGui.QLabel("Click on either graph to pick a threshold value"), 1, 0, 1, 1)
+        layout.addWidget(self.histogram_canvas, 2, 0, 1, 1)
+        layout.addWidget(self.histogram_toolbar, 3, 0, 1, 1)
 
         q2 = QtGui.QLabel("<b>Define Region of Interest</b>")
-        # q2.setAlignment(Qt.AlignHCenter)
-        self.addWidget(q2, 0, 1, 1, 1)
-        self.addWidget(QtGui.QLabel("Click on image three times to define the region of interest"), 1, 1, 1, 1)
-        self.addWidget(self.image_canvas, 2, 1, 1, 1)
-        self.addWidget(self.image_toolbar, 3, 1, 1, 1)
+        layout.addWidget(q2, 0, 1, 1, 1)
+        layout.addWidget(QtGui.QLabel("Click on image three times to define the region of interest"), 1, 1, 1, 1)
+        layout.addWidget(self.image_canvas, 2, 1, 1, 1)
+        layout.addWidget(self.image_toolbar, 3, 1, 1, 1)
+        self.setLayout(layout)
 
         self.histogram_figure.canvas.mpl_connect('button_press_event', self.on_histogram_button_pressed)
         self.image_figure.canvas.mpl_connect('button_press_event', self.on_image_button_pressed)
@@ -301,48 +303,3 @@ class ThresholdCacheWidget(QtGui.QGridLayout):
                 self.save_data()
                 self.on_changed_ev()
 
-def perp(v):
-    # adapted from http://stackoverflow.com/a/3252222/194586
-    p = np.empty_like(v)
-    p[0] = -v[1]
-    p[1] = v[0]
-    return p
-
-
-def circle_3pt(a, b, c):
-    """
-    1. Make some arbitrary vectors along the perpendicular bisectors between
-        two pairs of points.
-    2. Find where they intersect (the center).
-    3. Find the distance between center and any one of the points (the
-        radius).
-    """
-
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
-
-    # find perpendicular bisectors
-    ab = b - a
-    c_ab = (a + b) / 2
-    pb_ab = perp(ab)
-    bc = c - b
-    c_bc = (b + c) / 2
-    pb_bc = perp(bc)
-
-    ab2 = c_ab + pb_ab
-    bc2 = c_bc + pb_bc
-
-    # find where some example vectors intersect
-    #center = seg_intersect(c_ab, c_ab + pb_ab, c_bc, c_bc + pb_bc)
-
-    A1 = ab2[1] - c_ab[1]
-    B1 = c_ab[0] - ab2[0]
-    C1 = A1 * c_ab[0] + B1 * c_ab[1]
-    A2 = bc2[1] - c_bc[1]
-    B2 = c_bc[0] - bc2[0]
-    C2 = A2 * c_bc[0] + B2 * c_bc[1]
-    center = np.linalg.inv(np.matrix([[A1, B1],[A2, B2]])) * np.matrix([[C1], [C2]])
-    center = np.array(center).flatten()
-    radius = np.linalg.norm(a - center)
-    return center, radius
