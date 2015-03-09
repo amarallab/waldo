@@ -23,26 +23,37 @@ def get_summary_data(experiment_name):
     duration = ""
 
     if len(files) != 1:
-        return False, summary_name, duration
+        return AsyncSummaryLoader.ROW_STATE_INVALID, summary_name, duration
 
     summary_name = os.path.splitext(os.path.basename(files[0]))[0]
     with open(files[0], "rt") as f:
         lines = f.readlines()
         if len(lines) == 0:
-            return False, summary_name, duration
+            return AsyncSummaryLoader.ROW_STATE_INVALID, summary_name, duration
 
         lastline = lines[-1]
         params = lastline.split(' ')
         if len(params) < 2:
-            return False, summary_name, duration
+            return AsyncSummaryLoader.ROW_STATE_INVALID, summary_name, duration
 
         duration = params[1]
-    return True, summary_name, duration
+
+    filename = settings.PROJECT_DATA_ROOT + "/" + experiment_name + "/waldo/" + experiment_name + "-report-card.csv"
+    if os.path.isfile(filename):
+        state = AsyncSummaryLoader.ROW_STATE_VALID_HAS_RESULTS
+    else:
+        state = AsyncSummaryLoader.ROW_STATE_VALID
+    return state, summary_name, duration
 
 
 # Load data from an experiment list
 class AsyncSummaryLoader(QtCore.QThread):
-    row_summary_changed = QtCore.pyqtSignal([int, bool, str, str])
+    ROW_STATE_INVALID = -1
+    ROW_STATE_NOT_LOADED = 0
+    ROW_STATE_VALID = 1
+    ROW_STATE_VALID_HAS_RESULTS = 2
+
+    row_summary_changed = QtCore.pyqtSignal([int, int, str, str])
 
     def __init__(self):
         QtCore.QThread.__init__(self)
@@ -64,8 +75,12 @@ class AsyncSummaryLoader(QtCore.QThread):
                 row, folder, item = self.queue.pop(0)
                 self.lock.release()
 
-                valid, summary_name, duration = get_summary_data(folder)
-                self.row_summary_changed.emit(row, valid, summary_name, duration)
+                try:
+                    row_state, summary_name, duration = get_summary_data(folder)
+                except:
+                    import traceback
+                    traceback.print_exc()
+                self.row_summary_changed.emit(row, row_state, summary_name, duration)
 
     def stopListening(self):
         self.finish = True

@@ -47,11 +47,17 @@ class SelectExperimentPage(QtGui.QWizardPage):
     def gui_close_event(self):
         self.asyncSummaryLoader.stopListening()
 
-    def row_summary_changed(self, row, valid, summary, duration):
+    def row_summary_changed(self, row, state, summary, duration):
         if row in self.loadedRows:
             return
         self.loadedRows.add(row)
-        if not valid:
+
+        color = {AsyncSummaryLoader.ROW_STATE_INVALID: Qt.red,
+                 AsyncSummaryLoader.ROW_STATE_NOT_LOADED: Qt.white,
+                 AsyncSummaryLoader.ROW_STATE_VALID: Qt.white,
+                 AsyncSummaryLoader.ROW_STATE_VALID_HAS_RESULTS: Qt.green}[state]
+
+        if state == AsyncSummaryLoader.ROW_STATE_INVALID:
             self.errorRows.add(row)
         items = [None, summary, duration]
         for col, item in enumerate(items):
@@ -59,10 +65,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
             if cell is not None:
                 if item is not None:
                     cell.setText(QtCore.QString(item))
-                if valid:
-                    cell.setBackground(Qt.white)
-                else:
-                    cell.setBackground(Qt.red)
+                cell.setBackground(color)
 
     def _setup_table_headers(self, table):
         table.setColumnCount(3)
