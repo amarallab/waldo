@@ -7,6 +7,8 @@ import sys, argparse
 
 # third party
 from PyQt4 import QtGui, QtCore
+import numpy as np
+import pandas as pd
 
 # project specific
 from waldo.wio import Experiment
@@ -24,20 +26,35 @@ from .page9 import FinalPage
 from .page10 import SelectBatchModeExperimentsPage
 from .page11 import BatchModeThresholdCachePage
 from .page12 import BatchModeWaldoProcessPage
+from .page13 import BatchModeFinalPage
 
 from . import pages
 
 class WaldoAppData:
     def __init__(self):
+        self.single_mode = True
+        # Single mode data
         self.selected_ex_id = None
         self.experiment = None
         self.threshold = 0
         self.roi_center = (0, 0)
         self.roi_radius = 0
+
+        # Batch mode data
         self.experiment_id_list = []
         self.no_thresholdcache_experiment_id_list = []
 
+    def singleMode(self):
+        self.single_mode = True
+
+    def batchMode(self):
+        self.single_mode = False
+
     def loadSelectedExperiment(self):
+        if not self.single_mode:
+            self.experiment = None
+            return
+
         if self.selected_ex_id is not None:
             self.loadExperiment(self.selected_ex_id)
         else:
@@ -51,7 +68,7 @@ class WaldoApp(QtGui.QWizard):
         super(WaldoApp, self).__init__(parent)
 
         self.data = WaldoAppData()
-        # self.data.selected_ex_id = '20141017_123722'
+        # self.data.selected_ex_id = '20130226_010927'
         # self.data.loadSelectedExperiment()
 
         parser = argparse.ArgumentParser()
@@ -75,6 +92,7 @@ class WaldoApp(QtGui.QWizard):
         self.setPage(pages.SELECT_BATCHMODE_EXPERIMENTS, SelectBatchModeExperimentsPage(self.data))
         self.setPage(pages.BATCHMODE_THRESHOLD_CACHE, BatchModeThresholdCachePage(self.data))
         self.setPage(pages.BATCHODE_WALDO_PROCESS, BatchModeWaldoProcessPage(self.data))
+        self.setPage(pages.BATCHMODE_FINAL, BatchModeFinalPage(self.data))
 
     def closeEvent(self, ev):
         mb = QtGui.QMessageBox()

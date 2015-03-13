@@ -36,6 +36,8 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as Naviga
 from skimage import morphology
 from skimage.measure import regionprops
 
+from .helpers import experiment_has_final_results
+
 style.use('ggplot')
 
 import tasking
@@ -163,8 +165,11 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
             return
         count = 0
         for ex_id in self.data.experiment_id_list:
-            experiment = Experiment(experiment_id=ex_id)
-            self.waldoProcessOneExperiment(experiment, lambda x, y: callback(x+1, y))
+            for current in [2, 3, 4, 5, 6]:
+                callback(current, 0)
+            if not experiment_has_final_results(ex_id):
+                experiment = Experiment(experiment_id=ex_id)
+                self.waldoProcessOneExperiment(experiment, lambda x, y: callback(x+1, y))
             callback(0, float(count) / len(self.data.experiment_id_list))
             count += 1
 

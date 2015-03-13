@@ -14,7 +14,7 @@ from PyQt4.QtCore import Qt
 # project specific
 from waldo.wio import paths
 from . import pages
-from .helpers import experiment_has_thresholdCache
+from .helpers import experiment_has_thresholdCache, experiment_has_final_results
 
 
 class PreviousThresholdCachePage(QtGui.QWizardPage):
@@ -25,23 +25,38 @@ class PreviousThresholdCachePage(QtGui.QWizardPage):
         self.setTitle("Threshold Cache")
         self.setSubTitle("The next page will load the threshold cache data. It could take a few minutes.")
 
-        self.recalculateDataCheckbox = QtGui.QCheckBox("Recalculate data.")
-        self.recalculateDataCheckbox.setVisible(False)
+        self.recalculateThresholdButton = QtGui.QRadioButton("Choose Threshold and Calculate Final Results")
+        self.skipThresholdButton = QtGui.QRadioButton("Calculate Final Result with Current Threshold")
+        self.showFinalResultsButton = QtGui.QRadioButton("Show The Final Result")
+
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(self.recalculateDataCheckbox)
+        layout.addWidget(self.recalculateThresholdButton)
+        layout.addWidget(self.skipThresholdButton)
+        layout.addWidget(self.showFinalResultsButton)
         self.setLayout(layout)
 
     def initializePage(self):
-        data = {}
         self.data.loadSelectedExperiment()
-        if self.data.experiment is None or experiment_has_thresholdCache(self.data.experiment.id):
-            self.recalculateDataCheckbox.setVisible(True)
+        if self.data.experiment is None or not experiment_has_thresholdCache(self.data.experiment.id):
+            self.recalculateThresholdButton.setVisible(False)
+            self.skipThresholdButton.setVisible(False)
+            self.showFinalResultsButton.setVisible(False)
+        elif not experiment_has_final_results(self.data.experiment.id):
+            self.skipThresholdButton.setChecked(True)
+            self.recalculateThresholdButton.setVisible(True)
+            self.skipThresholdButton.setVisible(True)
+            self.showFinalResultsButton.setVisible(False)
         else:
-            self.recalculateDataCheckbox.setVisible(False)
+            self.showFinalResultsButton.setChecked(True)
+            self.recalculateThresholdButton.setVisible(True)
+            self.skipThresholdButton.setVisible(True)
+            self.showFinalResultsButton.setVisible(True)
 
     def nextId(self):
-        if not self.recalculateDataCheckbox.isVisible() or self.recalculateDataCheckbox.isChecked():
+        if self.recalculateThresholdButton.isChecked():
             return pages.THRESHOLD_CACHE
-        else:
+        elif self.skipThresholdButton.isChecked():
             return pages.PREVIOUS_SCORING
+        else:
+            return pages.FINAL
 

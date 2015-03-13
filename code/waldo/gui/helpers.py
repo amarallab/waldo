@@ -1,10 +1,12 @@
 # standard library
 import json
+import os
 
 # third party
 import numpy as np
 
 # project specific
+from waldo.conf import settings
 from waldo.wio import paths
 
 def experiment_has_thresholdCache(experiment_id):
@@ -20,6 +22,11 @@ def experiment_has_thresholdCache(experiment_id):
         pass
 
     return 'threshold' in data and 'r' in data and 'x' in data and 'y' in data
+
+
+def experiment_has_final_results(experiment_id):
+    filename = settings.PROJECT_DATA_ROOT + "/" + experiment_id + "/waldo/" + experiment_id + "-report-card.csv"
+    return os.path.isfile(filename)
 
 
 def perp(v):

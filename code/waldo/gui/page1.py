@@ -83,9 +83,12 @@ class WelcomePage(QtGui.QWizardPage):
             settings.save()
 
     def nextId(self):
+        # return pages.FINAL
         if self.runBatchModeCheckBox.isChecked():
+            self.data.batchMode()
             return pages.SELECT_BATCHMODE_EXPERIMENTS
         else:
+            self.data.singleMode()
             return pages.SELECT_EXPERIMENT
 
 
