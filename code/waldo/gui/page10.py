@@ -30,7 +30,6 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
 
         self.experimentTable = QtGui.QTableWidget()
         self.experimentTable.itemSelectionChanged.connect(self.experimentTable_itemSelectionChanged)
-        self.errorRows = set()
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.experimentTable)
@@ -40,6 +39,7 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
         self.asyncSummaryLoader.row_summary_changed.connect(self.row_summary_changed)
         self.asyncSummaryLoader.startListening()
 
+        self.valid_selection = False
         self.loadedRows = set()
         self.errorRows = set()
 
@@ -89,6 +89,7 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
         self.experimentTable.clear()
         self._setup_table_headers(self.experimentTable)
 
+        self.valid_selection = False
         self.errorRows = set()
         rowsToSelect = []
         folders = sorted(os.listdir(settings.MWT_DATA_ROOT), reverse=True)
@@ -113,9 +114,11 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
         self.completeChanged.emit()
 
     def experimentTable_itemSelectionChanged(self):
-        values = set([i.row() for i in self.experimentTable.selectedIndexes()])
         self.data.experiment_id_list = []
-        for row in values:
+        valid_selection = True
+        for row in set([i.row() for i in self.experimentTable.selectedIndexes()]):
+            if row in self.errorRows:
+                valid_selection = False
             item = self.experimentTable.item(row, 0)
             valid = False
 
@@ -131,14 +134,16 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
                     self.loadedRows.add(row)
                     if not valid:
                         self.errorRows.add(row)
-                if valid:
-                    self.data.experiment_id_list.append(str(item.text()))
+                        valid_selection = False
+            if valid:
+                self.data.experiment_id_list.append(str(item.text()))
         self.data.no_thresholdcache_experiment_id_list = [id for id in self.data.experiment_id_list
                                                           if not experiment_has_thresholdCache(id)]
+        self.valid_selection = valid_selection
         self.completeChanged.emit()
 
     def isComplete(self):
-        return len(self.data.experiment_id_list) > 0
+        return self.valid_selection and len(self.data.experiment_id_list) > 0
 
     def nextId(self):
         if len(self.data.no_thresholdcache_experiment_id_list) > 0:

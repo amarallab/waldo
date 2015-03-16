@@ -63,8 +63,8 @@ class BatchModeThresholdCachePage(QtGui.QWizardPage):
 
     def load_current_experiment(self):
         experiment_id = self.data.no_thresholdcache_experiment_id_list[self.current_index]
-        if len(self.data.experiment_id_list) > 1:
-            suffix = "(remain: {})".format(len(self.data.experiment_id_list) - 1)
+        if len(self.data.no_thresholdcache_experiment_id_list) > 1:
+            suffix = "(remain: {})".format(len(self.data.no_thresholdcache_experiment_id_list) - 1)
         else:
             suffix = ""
         self.experimentLabel.setText("Experiment: {} {}".format(experiment_id, suffix))

@@ -169,6 +169,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
 
     def finished(self):
         self.update_data(self.thresholds, self.threshold)
+        self.histogram_figure.canvas.draw()
 
     def isComplete(self):
         return self.roi_center[0] != 0 or self.roi_center[1] != 0
@@ -295,7 +296,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
         else:
             self.circle = plt.Circle(self.roi_center, self.roi_radius, color=(1, 0, 0, 0.25))
             self.ax_image.add_artist(self.circle)
-        self.image_figure.canvas.draw()
+            self.image_figure.canvas.draw()
 
     def on_histogram_button_pressed(self, ev):
         if self.threshold != ev.xdata:
