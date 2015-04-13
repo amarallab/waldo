@@ -308,6 +308,7 @@ class OutputWriter(object):
 
             line_contains_info = False
             lf_line = ' %%'
+            parents, children = zip(*lf)
             for a, b in lf:
                 if a not in blobs_in_files: # remove references to blobs that are not actually saved
                     a = 0

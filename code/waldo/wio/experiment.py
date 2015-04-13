@@ -137,8 +137,14 @@ class Experiment(multiworm.Experiment):
     def typical_bodylength(self):
         if self._typical_bodylength is None:
             # find out the typical body length if we haven't already
-            im_df = self.prepdata.load('matches')
-            matched_blobs = im_df[im_df['good'] & im_df['roi']]['bid']
+            try:
+                im_df = self.prepdata.load('matches')
+                matched_blobs = im_df[im_df['good'] & im_df['roi']]['bid']
+            except IOError:
+                # TODO: load something else to identify good worms
+                m_df = self.prepdata.load('moved')
+                matched_blobs = m_df[m_df['bl_moved'] > 2]['bid']
+                print('using moved rather than matches')
 
             sizes = self.prepdata.load('sizes')
             sizes.set_index('bid', inplace=True)

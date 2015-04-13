@@ -372,14 +372,22 @@ def analyze_image(experiment, time, img, background, threshold,
     mask = mim.create_binary_mask(img, background, threshold)
     labels, n_img = ndimage.label(mask)
     image_objects = regionprops(labels)
+    image_objects_exist = len(list(image_objects)) > 0
 
     frame, blob_data = grab_blob_data(experiment, time)
     #print(frame)
-    bids, blob_centroids, outlines = zip(*blob_data)
-    match = match_objects(bids, blob_centroids, outlines,
-                          image_objects, roi=roi)
-    matches, false_pos, blobs_to_join, more = match
-
+    if len(blob_data) and image_objects_exist:
+        bids, blob_centroids, outlines = zip(*blob_data)
+        match = match_objects(bids, blob_centroids, outlines,
+                              image_objects, roi=roi)
+        matches, false_pos, blobs_to_join, more = match
+    elif show:
+        # no blob data... but make sure plotting succeeds
+        outlines = []
+        lines = []
+    else:
+        # no blobs found for frame... return None
+        return None, None, None
     ##### for plotting
 
     # show how well blobs are matched at this threshold.
@@ -483,7 +491,6 @@ def draw_colors_on_image(ex_id, time, ax=None, colors=None):
     good = prepdata.good()
     bad = prepdata.bad()
     outside = prepdata.outside()
-
 
     frame, blob_data = grab_blob_data(experiment, time)
     print(frame)
@@ -831,34 +838,45 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None, image_callba
         bid_matching, base_acc, miss = analyze_image(experiment, time, img,
                                                background, threshold,
                                                roi=roi, show=False)
+        if bid_matching is None or base_acc is None or miss is None:
+            continue
         #print(base_acc)
-        full_experiment_check.append(bid_matching)
-        accuracy.append(base_acc)
+        if full_experiment_check is not None:
+            full_experiment_check.append(bid_matching)
+        if accuracy is not None:
+            accuracy.append(base_acc)
+
         full_missing.append(miss)
 
         if callback:
             cb_loop(float(i) / len(times))
 
-    bid_matching = pd.concat(full_experiment_check)
-    base_accuracy = pd.DataFrame(accuracy)
-
     # save datafiles
     prep_data = experiment.prepdata
-    prep_data.dump(data_type='matches', dataframe=bid_matching,
-                   index=False)
-    cb_save(0.33)
-    prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
-                   index=False)
 
-    # if there are missing worms, save those too
-    missing_worms = pd.concat(full_missing)
-    if len(missing_worms):
-        print(len(missing_worms), 'missing blobs found')
-        missing_worms = reformat_missing(missing_worms)
+    if len(full_experiment_check):
+        bid_matching = pd.concat(full_experiment_check)
+        prep_data.dump(data_type='matches', dataframe=bid_matching,
+                       index=False)
+
+    cb_save(0.33)
+
+    if len(accuracy):
+        base_accuracy = pd.DataFrame(accuracy)
+        prep_data.dump(data_type='accuracy', dataframe=base_accuracy,
+                       index=False)
 
     cb_save(0.66)
-    prep_data.dump(data_type='missing', dataframe=missing_worms,
-                   index=True)
+
+    # if there are missing worms, save those too
+    if len(accuracy):
+        missing_worms = pd.concat(full_missing)
+        if len(missing_worms):
+            print(len(missing_worms), 'missing blobs found')
+            missing_worms = reformat_missing(missing_worms)
+
+        prep_data.dump(data_type='missing', dataframe=missing_worms,
+                       index=True)
     cb_save(1)
 
 def summarize(ex_id, overwrite=True, callback=None, image_callback=None):

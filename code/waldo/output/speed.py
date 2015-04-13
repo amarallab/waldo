@@ -2,18 +2,20 @@
 from __future__ import absolute_import, print_function
 
 # standard library
-import os
+#import os
 import math
 
 # third party
 import numpy as np
 import pandas as pd
-#from scipy import stats
+import scipy.stats as stats
 import scipy.interpolate as interpolate
 import scipy.signal as ss
+import random
 
 # project specific
 from waldo.wio import paths
+from waldo.wio.worm_writer import WormWriter
 from waldo.wio.experiment import Experiment
 
 STOCK_METHODS = [
@@ -329,6 +331,10 @@ class SpeedWriter(object):
         half_win = 11 // 2
         N = len(df)
 
+        if len(df) < window_size * 1.1:
+            good_rows = list(df.index)
+            outlier_rows = []
+            return good_rows, outlier_rows
 
         # do not cut off front
         for i in range(half_win):
@@ -379,10 +385,163 @@ class SpeedWriter(object):
             #speed_df = self._speed_for_blob_df(blob_df)
             split_df_list = self.split_dfs(blob_df)
             speed_df = self.combine_split_dfs(split_df_list)
+            if not len(speed_df):
+                print('WARNING', self.eid, bid, 'has no speeds')
+                continue
             max_speed = max(speed_df['speed'])
             if max_speed > typical_bl:
                 print('WARNING', self.eid, bid, 'showing unusually fast speeds')
                 print(float(max_speed)/typical_bl, 'bl per s')
-                print('skipping')
+                #print('skipping')
                 continue
             self.write_speed(bid, speed_df)
+
+def pull_track_dfs(eid, start_time=0, min_time=10):
+    """ returns a dictionary containing dataframes used for speed
+    and position calculations.
+
+    params:
+    -----
+    eid: (str)
+        the experiment-id
+    start_time: (int)
+        the time in minutes from the begining of the recording
+        that should be cut off of the front of all tracks.
+    min_time: (int)
+        the minimum amount of minutes a track should exist for in
+        order to be included in the dictionary.
+    """
+    # data_id could be eventually included as a paramiter.
+    # but more work would be needed to make all the scaling
+    data_id = 'speed_files'
+    track_dfs = {}
+    wr = WormWriter(eid)
+    sw = SpeedWriter(eid)
+
+    typical_bl = sw._experiment.typical_bodylength
+    for bid in wr.blobs(data_id=data_id):
+        unique_id = '{eid}-{bid}'.format(eid=eid, bid=bid)
+        sdf = wr.load(bid, data_id)
+        sdf['minutes'] = sdf['time'] / 60.0
+        df = sdf[sdf['minutes'] > start_time]
+        if df is None or len(df) < 100:
+            continue
+        if  max(df['minutes']) - min(df['minutes']) > min_time:
+            df = sw.iterativly_remove_outliers(df, col='speed')
+            df['bl / s'] = df['speed'] / typical_bl
+            track_dfs[unique_id] = df
+    return track_dfs
+
+
+def bootstrap_ks(df, col='bl / s', sample_frac=0.1, sample_num=100,
+                 sample_size=None):
+    """
+    """
+    scales = []
+    locs = []
+    if sample_frac is not None and sample_size is None:
+        size = int(round(sample_frac * len(df)))
+    elif sample_frac is None and sample_size is not None:
+        size =  sample_size
+    else:
+        print('Warning: both sample size and sample fraction'
+              'specified, using sample fraction')
+    # fit exponential dist to many subsamples of data
+    for i in range(sample_num):
+        sample_df = df.loc[random.sample(df.index, size)]
+        s = sample_df[col]
+        loc, scale = stats.expon.fit(s, floc=0)
+        locs.append(loc)
+        scales.append(scale)
+    # take mean of all fits
+    mean_scale = np.mean(scales)
+    mean_loc = np.mean(locs)
+
+    # subsample data one more time. and test against mean fit.
+    sample_df = df.loc[random.sample(df.index, size)]
+    s = sample_df[col]
+    ks_stat, p_val = stats.kstest(s, 'expon', args=(loc, scale))
+    sample_size = size
+    return p_val, sample_size, mean_loc, mean_scale
+
+
+def get_ks_df_for_eid(eid, start_time = 30, sample_frac = 0.05, min_time=10):
+
+    track_dfs = pull_track_dfs(eid=eid, start_time=start_time, min_time=min_time)
+
+    test_data = []
+    for track, df in track_dfs.items():
+
+        if df is None or len(df) < 100:
+            print(track, 'too few points')
+            continue
+
+        if  max(df['minutes']) - min(df['minutes']) < min_time:
+            print(track, 'too few minutes')
+            continue
+
+        p_val, n, loc, scale = bootstrap_ks(df, sample_frac=sample_frac)
+        data = {'eid':eid,
+                'track': track,
+                'p-val': p_val,
+                'n-points': n,
+                'loc':loc,
+                'scale':scale,
+                't0': min(df['minutes']),
+                'tN': max(df['minutes']),
+                'minutes': max(df['minutes']) - min(df['minutes'])}
+        #print(data)
+        test_data.append(data)
+    ks_df = pd.DataFrame(test_data)
+    return ks_df
+
+def get_ks_df_for_eid_window_size(eid, start_time=30,
+                                  sample_frac=0.05, window_size=10,
+                                  sample_size=None):
+
+
+    track_dfs = pull_track_dfs(eid=eid, start_time=start_time,
+                               min_time=window_size)
+    test_data = []
+    for track, df in track_dfs.items():
+
+        # keep the part of the track that is after start_time
+        if df is None: continue
+        df = df[df['minutes'] >= start_time]
+        if len(df) < 100: continue
+
+        end = max(df['minutes'])
+        start = min(df['minutes'])
+
+        if end -  start < window_size: continue
+
+        # loop through all possible windows in track
+        for i in range(1000):
+            t0 = start + window_size * i
+            t1 = start + window_size * (i + 1)
+
+            if t1 > end: break
+
+            locs = (df['minutes'] >= t0) & (df['minutes'] <= t1)
+            window_df = df.loc[locs]
+
+            p_val, n, loc, scale = bootstrap_ks(window_df,
+                                                sample_frac=sample_frac,
+                                                sample_size=sample_size)
+            data = {'eid':eid,
+                    'window':window_size,
+                    'part': i,
+                    'track': track,
+                    'p-val': p_val,
+                    'n-points': n,
+                    'loc':loc,
+                    'scale':scale,
+                    'mean': np.nanmean(window_df['bl / s']),
+                    't0': min(window_df['minutes']),
+                    'tN': max(window_df['minutes']),
+                    'minutes': (max(window_df['minutes']) -
+                                min(window_df['minutes']))}
+
+            test_data.append(data)
+    ks_df = pd.DataFrame(test_data)
+    return ks_df
