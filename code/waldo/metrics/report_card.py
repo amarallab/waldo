@@ -547,6 +547,12 @@ class WaldoSolver(object):
             #self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
             cb_iterate(i, 5/6.)
 
+
+            # TODO Helio: update figure in GUI
+            # use df = self.report()
+            # pass to plot_report_df in workbooks/dev/progress_update_graph.ipynb
+            # show result in GUI
+
         if callback:
             callback(1)
 
