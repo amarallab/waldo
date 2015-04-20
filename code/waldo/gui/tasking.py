@@ -46,7 +46,7 @@ class _Worker(QtCore.QObject):
         elif type(value) == np.ndarray:
             self.madeNumpyArrayProgress.emit(item, value)
         else:
-            print("E: error de parametros")
+            print("E: error in parameters")
         if self.finish:
             raise _WorkerCancelled()
 
