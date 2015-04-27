@@ -287,6 +287,7 @@ class SpeedWriter(object):
             t = np.concatenate(time_segments)
             x = interp_x(t)
             y = interp_y(t)
+
         if pad_ends:
             x0_pad = np.array([x[0] for i in range(half_win)])
             xN_pad = np.array([x[-1] for i in range(half_win)])

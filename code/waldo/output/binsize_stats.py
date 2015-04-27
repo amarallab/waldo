@@ -59,7 +59,7 @@ class BinSelfTest(object):
             sb = np.array(df_b['speed'])
 
             if df_a is None or df_b is None:
-                print 'skipping', bin_name, 'because it contains no data'
+                print('skipping', bin_name, 'because it contains no data')
                 continue
             min_len = min([len(ta), len(tb)])
             if min_data_fraction:
@@ -67,9 +67,9 @@ class BinSelfTest(object):
                     #print 'skipping', bin_name, 'because it contains only', float(len(bin_df))/self.bin_size, '% bin data'
                     continue
             if min_len < 30:
-                print 'skipping', bin_name, 'because it contains only', min_len, 'data points'
-                print bin_a, len(ta)
-                print bin_b, len(tb)
+                print('skipping', bin_name, 'because it contains only', min_len, 'data points')
+                print(bin_a, len(ta))
+                print(bin_b, len(tb))
                 continue
 
 
@@ -133,14 +133,14 @@ class BinSelfTest(object):
             #    continue
 
             if bin_df is None:
-                print 'skipping', bin_name, 'because it contains no data'
+                print('skipping', bin_name, 'because it contains no data')
                 continue
             if min_data_fraction:
                 if len(bin_df) < min_data_fraction * self.bin_size:
                     #print 'skipping', bin_name, 'because it contains only', float(len(bin_df))/self.bin_size, '% bin data'
                     continue
             if len(bin_df) < 30:
-                print 'skipping', bin_name, 'because it contains only', len(bin_df), 'data points'
+                print('skipping', bin_name, 'because it contains only', len(bin_df), 'data points')
                 continue
 
             row = {'bin-name': bin_name,
@@ -193,14 +193,14 @@ class BinSelfTest(object):
             #    continue
 
             if bin_df is None:
-                print 'skipping', bin_name, 'because it contains no data'
+                print('skipping', bin_name, 'because it contains no data')
                 continue
             if min_data_fraction:
                 if len(bin_df) < min_data_fraction * self.bin_size:
                     #print 'skipping', bin_name, 'because it contains only', float(len(bin_df))/self.bin_size, '% bin data'
                     continue
             if len(bin_df) < 30:
-                print 'skipping', bin_name, 'because it contains only', len(bin_df), 'data points'
+                print('skipping', bin_name, 'because it contains only', len(bin_df), 'data points')
                 continue
             ks_stat, p_ks = stats.ks_2samp(full, s)
 
@@ -298,7 +298,7 @@ class BinSelfTest(object):
     def write_bin_test(self, df):
         data_id = 'bin_size_self_test'
         bid = self.bid
-        print self.ww._filepath(bid, data_id)
+        print(self.ww._filepath(bid, data_id))
         self.ww.dump(bid=bid, data_id=data_type, dataframe=df)
 
 
@@ -333,12 +333,12 @@ class BinSelfTest(object):
         self.bin_ends = [(((i + 1) * bin_size) + start_pos - 1) for i in range(self.bin_num)]
 
         if min(bin_assignment) < 0:
-            print 'first last t', self.first_t, self.last_t
-            print 'desired start pos', start_pos
-            print 'num', self.bin_num
-            print 'starts', self.bin_starts
-            print 'ends', self.bin_ends
-            print 'bins', set(bin_assignment)
+            print('first last t', self.first_t, self.last_t)
+            print('desired start pos', start_pos)
+            print('num', self.bin_num)
+            print('starts', self.bin_starts)
+            print('ends', self.bin_ends)
+            print('bins', set(bin_assignment))
 
         assert min(bin_assignment) >= 0
         assert len(self.bin_starts) == self.bin_num
@@ -360,14 +360,14 @@ def self_bin_experiment(ex_id, minimum_minutes=40):
         if dt > minimum_minutes * 60:
             acceptable_bids.append(bid)
 
-    print acceptable_bids
+    print(acceptable_bids)
     for bid in acceptable_bids:
         speed_df = sw.speed_for_bid(bid=bid)
         speed_df['time'] = speed_df['time'] / 60.0 # convert to min
         bst = BinSelfTest(speed_df, bid=bid, worm_writer=wr)
         sweep_bins = bst.create_bin_and_start_sweep()
         bin_results = bst.test_bin_array(sweep_bins)
-        print bin_results.head()
+        print(bin_results.head())
         bst.write_bin_test(bin_results)
 
     return acceptable_bids
