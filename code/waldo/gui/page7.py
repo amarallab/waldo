@@ -1,16 +1,20 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
+
+# third party
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
-import pages
 
+# project specific
 from waldo.conf import settings
-
 from waldo import wio
 from waldo.wio import paths
 from waldo.wio import file_manager as fm
-
+from . import pages
 
 class PreviousWaldoProcessPage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):
@@ -29,7 +33,15 @@ class PreviousWaldoProcessPage(QtGui.QWizardPage):
 
     def initializePage(self):
         self.data.loadSelectedExperiment()
-        if self.data.experiment is not None and self.data.experiment.prepdata.load('report-card') is not None:
+
+        # catch prepdata.load IOerror since we only want to check
+        # if report_card file exists for experiment
+        try:
+           report_card =  self.data.experiment.prepdata.load('report-card')
+        except IOError:
+           report_card = None
+
+        if self.data.experiment is not None and report_card is not None:
             self.recalculateDataCheckbox.setVisible(True)
         else:
             self.recalculateDataCheckbox.setVisible(False)

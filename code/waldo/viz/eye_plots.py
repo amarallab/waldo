@@ -1,9 +1,9 @@
-import pandas as pd
+from __future__ import absolute_import, print_function
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
-from mpltools import style
 
 def add_simulation_lines(ax, dfs, n=1, ymax=None, labels=['simulated begining tracks', 'simulated end tracks'], **kwargs):
     """
@@ -47,7 +47,7 @@ def add_simulation_lines(ax, dfs, n=1, ymax=None, labels=['simulated begining tr
     front_xy = front_xy + [front_buffer]
     back_xy = back_xy + [back_buffer]
 
-    #print front_xy
+    #print(front_xy)
     f_x, f_y = zip(*front_xy)
     b_x, b_y = zip(*back_xy)
 
@@ -55,14 +55,14 @@ def add_simulation_lines(ax, dfs, n=1, ymax=None, labels=['simulated begining tr
     ax.plot(f_x, f_y, drawstyle='steps', label=labels[0], color=color)
     ax.plot(b_x, b_y, drawstyle='steps-pre', label=labels[1], color=color, linestyle='--')
     #ax.set_ylim([0, ymax])
-    #print 'front xy\n', front_xy
+    #print('front xy\n', front_xy)
 
 # def calculate_duration_data(prep_data, min_move=2):
 #     move = prep_data.load('moved')
 #     terminals = prep_data.load('terminals')[['bid', 't0', 'tN']]
 #     terminals.set_index('bid', inplace=True)
 #     terminals.dropna(inplace=True)
-#     #print terminals.head()
+#     #print(terminals.head())
 
 #     moved_bids = set(move[move['bl_moved'] >= min_move]['bid'])
 #     term_bids = set(terminals.index)
@@ -166,7 +166,7 @@ def eye_plot(ax, df, color=None, label='', ymax=None, short_lim=5, front_back_ma
     # longest = a[(a['lifespan'] > long_lim)]
     # a = return_remaining(a, sub_df=longest) #, all_ids=all_ids)
     # longest.sort('mid', inplace=True, ascending=False)
-    # print len(longest), 'longest'
+    # print(len(longest), 'longest')
     back = a[(a['tN'] >= back_lim) & (a['lifespan'] > 0)]
     a = return_remaining(a, sub_df=back) #, all_ids)
     back.sort('t0', inplace=True, ascending=False)
@@ -182,7 +182,7 @@ def eye_plot(ax, df, color=None, label='', ymax=None, short_lim=5, front_back_ma
     #steps = [longest, front, mid, back]
     a = pd.concat(steps)
     div = make_dividers(steps)
-    print div, 'dividers'
+    print(div, 'dividers')
     plot_patches(ax,a, ymax=ymax, dividers=div, color=color, label=label)
 
     legend_props = {'loc':'upper right'}

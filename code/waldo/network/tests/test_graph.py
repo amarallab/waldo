@@ -11,8 +11,12 @@ FRAME_TIME = 0.1
 def node_generate(nodes, timepoints=None, graph=None):
     """
     *nodes* is an iterable of iterables that define what nodes to create
-    spanning each gap in *timepoints*, an iterable of numbers.  *timepoints*
-    must be 1 longer than nodes.
+    spanning each gap in *timepoints*, an iterable of frame lengths
+    (converted into seconds by dividing by 10).
+
+    If *timepoints* is not None, it must be a sequence of length 1 more than
+    *nodes*, or an iterator that can provide at least that many values. If
+    not provided, each tier of nodes is 100 frames long.
     """
     if timepoints is None:
         timepoints = itertools.count(start=100, step=100)

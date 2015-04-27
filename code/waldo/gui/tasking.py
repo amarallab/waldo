@@ -1,6 +1,14 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
+import traceback
+
+# third party
+import numpy as np
 from PyQt4 import QtCore
+import pandas as pd
 
 
 class _WorkerCancelled(Exception):
@@ -9,6 +17,8 @@ class _WorkerCancelled(Exception):
 
 class _Worker(QtCore.QObject):
     madeProgress = QtCore.pyqtSignal([int, float])
+    madeNumpyArrayProgress = QtCore.pyqtSignal([int, np.ndarray])
+    madePandasDataFrameProgress = QtCore.pyqtSignal([int, pd.DataFrame])
     finished = QtCore.pyqtSignal()
     cancelled = QtCore.pyqtSignal()
     finish = False
@@ -27,27 +37,34 @@ class _Worker(QtCore.QObject):
             self.finished.emit()
         except _WorkerCancelled:
             self.cancelled.emit()
-        # except Exception, ex:
-        #     print "EXCEPTION!"
-        #     print ex.message
-        #     raise ex
-        #     self.cancelled.emit()
+        except Exception, ex:
+            traceback.print_exc()
+            self.cancelled.emit()
 
     def _callback(self, item, value):
-        if item not in self.prev_values or self.prev_values[item] != value:
-            self.prev_values[item] = value
-            self.madeProgress.emit(item, value)
+        if type(value) in [int, float]:
+            if item not in self.prev_values or self.prev_values[item] != value:
+                self.prev_values[item] = value
+                self.madeProgress.emit(item, value)
+        elif type(value) == np.ndarray:
+            self.madeNumpyArrayProgress.emit(item, value)
+        elif type(value) == pd.DataFrame:
+            self.madePandasDataFrameProgress.emit(item, value)
+        else:
+            print("E: error in parameters {}".format(type(value)))
         if self.finish:
             raise _WorkerCancelled()
 
 
 class CommandTask:
-    def __init__(self, _madeProgress, _finished, _cancelled):
+    def __init__(self, _madeProgress, _finished, _cancelled, _madeNumpyArrayProgress=None, _madePandasDataFrameProgress=None):
         self.worker = None
         self.thread = None
         self._madeProgress = _madeProgress
         self._finished = _finished
         self._cancelled = _cancelled
+        self._madeNumpyArrayProgress = _madeNumpyArrayProgress
+        self._madePandasDataFrameProgress = _madePandasDataFrameProgress
 
     def start(self, fnc, **kwargs):
         self.worker = _Worker(fnc, **kwargs)
@@ -56,6 +73,10 @@ class CommandTask:
         self.worker.madeProgress.connect(self._madeProgress)
         self.worker.cancelled.connect(self._cancelled)
         self.worker.finished.connect(self._finished)
+        if self._madeNumpyArrayProgress is not None:
+            self.worker.madeNumpyArrayProgress.connect(self._madeNumpyArrayProgress)
+        if self._madePandasDataFrameProgress is not None:
+            self.worker.madePandasDataFrameProgress.connect(self._madePandasDataFrameProgress)
         self.thread.started.connect(self.worker.run)
         self.thread.start()
 

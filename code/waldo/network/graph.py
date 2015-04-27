@@ -12,6 +12,7 @@ import logging
 import warnings
 
 # third party
+import numpy as np
 import networkx as nx
 import pandas as pd
 
@@ -228,24 +229,105 @@ class Graph(nx.DiGraph):
         for component in nd[kc.COMPONENTS]:
             self._whereis_data[component] = node
 
-    def validate(self, acceptable_f_delta=-10):
+    def deep_validate(self, experiment,
+                  acceptable_overlap_fraction=None,
+                  acceptable_dist_gap=None):
+        """
+        Verify that nodes in the graph:
+
+        * do not have too many overlapping timepionts
+        * do not have large jumps in centroid position
+        """
+        # TODO: add these params to the settings file
+        if acceptable_overlap_fraction is None:
+            acceptable_overlap_fraction = 0.2
+        if acceptable_dist_gap is None:
+            acceptable_dist_gap = 100000 #experiment.typical_bodylength
+
+        for node in self.nodes_iter(data=False):
+            df = self.consolidate_node_data(node=node, experiment=experiment)
+
+            if df is None:
+                continue
+            if not len(df):
+                continue
+
+            # check for excessive overlap among big players
+            duplicate_count, duplicate_fraction = self._check_node_df_overlap(df)
+            if (duplicate_count > 60 and
+                duplicate_fraction > acceptable_overlap_fraction):
+
+                components = list(set(df['blob']))
+                big_comps = []
+                for c in components:
+                    d = df[df['blob'] == c]
+                    t = d['time']
+                    if len(d) > 30:
+                        big_comps.append(d)
+
+                if not big_comps:
+                    continue
+
+                big_comps_df = pd.concat(big_comps, axis=0)
+                dupc, dupf = self._check_node_df_overlap(big_comps_df)
+
+                # node gets a pass if duplicate count low for big
+                # players
+                if dupf < acceptable_overlap_fraction:
+                    continue
+
+                print('Node {n} has {o} overlap'.format(n=node, o=dupf))
+                # for c in components:
+                #     d = df[df['blob'] == c]
+                #     t = d['time']
+                #     print('\t{c} from {t0} to {tN} seconds | {n}'.format(c=c, t0=min(t), tN=max(t), n=len(d)))
+                #raise AssertionError("Node {} too many overlapping timepoints".format(node))
+                components = list(set(big_comps_df['blob']))
+                #print('\n\n')
+                for c in sorted(components):
+                    d = df[df['blob'] == c]
+                    t = d['time']
+                    print('\t{c} from {t0} to {tN} seconds | {n}'.format(c=c, t0=min(t), tN=max(t), n=len(d)))
+                #raise AssertionError("Node {} too many overlapping timepoints".format(node))
+
+            # TODO make functional
+            # check for big jumps in position/speed
+            if len(df) < 2:
+                continue
+            x, y = zip(*df['centroid'])
+            dx, dy = np.diff(x), np.diff(y)
+            dist = np.sqrt(dx**2 + dy**2)
+            if dist is None or not len(dist):
+                continue
+            if max(dist) > acceptable_dist_gap:
+                print('Node {n} has {d} dist gap'.format(n=node, d=max(dist)))
+                print('or {bl}'.format(bl=max(dist)/self.typical_bl))
+                raise AssertionError("Node {}'s position jumps too far'".format(node))
+        L.warn('Validation pass')
+
+    def validate(self, acceptable_f_delta=None):
         """
         Verify that the graph:
 
         * contains the requisite data attached to each node
         * contains only causal links
         """
+        if acceptable_f_delta is None:
+            acceptable_f_delta = settings.TAPE_ACAUSAL_FRAME_LIMIT
+
         for node, node_data in self.nodes_iter(data=True):
             for req_key in [kc.FRAME_BORN, kc.FRAME_DIED, kc.TIME_BORN, kc.TIME_DIED]:
                 if req_key not in node_data:
                     raise AssertionError("Node {} missing required key '{}'".format(
-                            node, req_key))
+                        node, req_key))
 
         for a, b in self.edges_iter():
             f_delta = self.node[b][kc.FRAME_BORN] - self.node[a][kc.FRAME_DIED]
-            if f_delta < acceptable_f_delta:
+            if f_delta < - acceptable_f_delta:
+                print('limit', acceptable_f_delta)
+                print('actual', f_delta)
                 raise AssertionError("Edge from {} to {} is acausal, going "
-                        "back in time {:0.0f} frames".format(a, b, -f_delta))
+                                     "back in time {:0.0f} frames".format(a, b, -f_delta))
 
         L.warn('Validation pass')
 
@@ -280,8 +362,8 @@ class Graph(nx.DiGraph):
             if node_is_moving(node, terminals_df):
                 is_moving = 1
                 moving.append(node)
-            self.node[node]['moved'] = is_moving
-        return moving
+                self.node[node]['moved'] = is_moving
+                return moving
 
     def add_node_attributes(self, attribute_name, node_dict, default=None):
         """
@@ -291,13 +373,13 @@ class Graph(nx.DiGraph):
         params
         -----
         attribute_name: (str)
-            the key used to store the new attribute in node_data
+        the key used to store the new attribute in node_data
         node_dict: (dict)
-            a dictionary with {node: value} pairs specifying what
-            the new attribute value is for each node.
+        a dictionary with {node: value} pairs specifying what
+        the new attribute value is for each node.
         default:
-            the default value for nodes that are not in the node_dict.
-            if default is None, no attribute will be created.
+        the default value for nodes that are not in the node_dict.
+        if default is None, no attribute will be created.
         """
         nodes_found = 0
         nodes_not_found = 0
@@ -337,11 +419,11 @@ class Graph(nx.DiGraph):
 
           |   |
           A   B
-           \ /            |    |
+        \ /            |    |
         collision    =>   A    B
-           / \            |    |
+        / \            |    |
           C   D
-          |   |
+        |   |
 
         The *collision_node* and all nodes in *connection_pairs* are removed
         from the graph and replaced by compound nodes.
@@ -349,12 +431,12 @@ class Graph(nx.DiGraph):
         Parameters
         ----------
         collision_node : (int or tuple)
-            The node id (in self) that identifies the collision.
+        The node id (in self) that identifies the collision.
         connection_pairs : iterable, 2x2
-            A pair of paired node IDs to join.
+        A pair of paired node IDs to join.
 
             example:
-            [[node_A, node_B], [node_C, node_D]]
+        [[node_A, node_B], [node_C, node_D]]
         """
         # save the collision node and it's data
         collision_info = self.node[collision_node]
@@ -371,9 +453,8 @@ class Graph(nx.DiGraph):
             self.node[n1][kc.COLLISIONS].add(collision_node)
 
         # document collision
-        self._collision_nodes[collision_node] = collision_info
-        self._collision_blobs[collision_node] = blobs
-
+            self._collision_nodes[collision_node] = collision_info
+            self._collision_blobs[collision_node] = blobs
 
     def consolidate_node_data(self, experiment, node):
         """
@@ -412,14 +493,36 @@ class Graph(nx.DiGraph):
                 #print(subnode, 'subnode of', node, 'is empty')
                 continue
 
-            df.set_index('frame', inplace=True)
             df['blob'] = subnode
             data.append(df)
+
         if data:
             all_data = pd.concat(data)
+
+            # check for excessive overlap
+            #duplicate_count, duplicate_fraction = self._check_overlap(all_data)
+            #if duplicate_count > 60 and duplicate_fraction > 0.2:
+            #    print('WARNING:', node, 'has', duplicate_fraction, 'overlapping timepoints')
+
+            #all_data.set_index('frame', inplace=True)
             all_data.sort(inplace=True)
             return all_data
 
+    def _check_node_df_overlap(self, df, column='frame'):
+        """ used to check dataframes from self.consolidate_node_data()
+        """
+        duplicates = df[df[column].duplicated()]
+        duplicate_count = len(duplicates) * 2
+        duplicate_fraction = duplicate_count / float(len(df))
+        return duplicate_count, duplicate_fraction
+
+    def _check_node_df_jumps(self, df, column='frame'):
+        """ used to check dataframes from self.consolidate_node_data()
+        """
+        duplicates = df[df[column].duplicated()]
+        duplicate_count = len(duplicates) * 2
+        duplicate_fraction = duplicate_count / float(len(df))
+        return duplicate_count, duplicate_fraction
     def compound_bl_filter(self, experiment, threshold):
         """
         Return node IDs from *graph* and *experiment* if they moved at least

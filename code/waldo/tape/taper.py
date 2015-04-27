@@ -26,13 +26,21 @@ class Taper(object):
     """
     Initalized with a wio.Experiment-like object and a simplified graph.
     """
-    def __init__(self, experiment, graph):#, regenerate_cache=False):
+    def __init__(self, experiment, graph, scorer=None,
+                 acausal_frame_limit=None):#, regenerate_cache=False):
         self._experiment = experiment
         self._graph = graph
 
-        self._scorer = Scorer(experiment)
+        self._scorer = scorer
+        if scorer is None:
+            self._scorer = Scorer(experiment)
 
         self.max_speed = self._scorer.max_speed * settings.TAPE_MAX_SPEED_MULTIPLIER
+        if acausal_frame_limit is None:
+            self.acausal_limit = settings.TAPE_ACAUSAL_FRAME_LIMIT
+        else:
+            self.acausal_limit = acausal_frame_limit
+        self.acausal_limit = np.abs(self.acausal_limit)
 
         self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
         self._missing = self._load_missing()
@@ -184,9 +192,6 @@ class Taper(object):
         #print('start terms2')
         #print(gap_start_terms.head(10))
 
-        # TODO: make test that checks if all 'node_id' values present in the graph
-        # for gap_end_terms, gap_start_terms
-
         return gap_start_terms, gap_end_terms
 
     def score_potential_gaps(self, gap_start_terms, gap_end_terms,
@@ -218,10 +223,12 @@ class Taper(object):
                              distance_gap=row['dist'])
             return s
 
-        pixel_buffer = 10
-        t_buffer = 10
-        max_distance_cutoff = 500
-        max_time_cuttoff = 12000 # ~ 10 min
+        # pull defaults from settings
+        pixel_buffer = settings.TAPE_SHAKYCAM_ALLOWANCE
+        #t_buffer = settings.TAPE_ACAUSAL_FRAME_LIMIT
+        t_buffer = self.acausal_limit
+        max_distance_cutoff = settings.TAPE_PIXEL_SEARCH_LIMIT
+        max_time_cuttoff = settings.TAPE_FRAME_SEARCH_LIMIT
 
         full_record = []
         all_gap_dfs = []
@@ -271,12 +278,11 @@ class Taper(object):
             if write_everything:
                 full_record.append(gap_df)
 
-
             #gap_df = gap_df[gap_df['dt'] > 0]
-            gap_df['max_dist'] = self.max_speed * gap_df['df']
+            gap_df['max_dist'] = self.max_speed * np.abs(gap_df['df'])
             gap_df = gap_df[gap_df['dist'] < (gap_df['max_dist'] + pixel_buffer)]
-
             gap_df = gap_df[gap_df['dist'] <  max_distance_cutoff]
+
 
             # remove self links if we allow short backwards links.
             if t_buffer > 0:
@@ -307,6 +313,10 @@ class Taper(object):
                 gap_df['score'] = a
                 all_gap_dfs.append(gap_df)
 
+        any_data = [d for d in all_gap_dfs if d is not None]
+        if not any_data:
+            return None
+
         potential_gaps = pd.concat(all_gap_dfs)
         if write_everything:
             all_gaps = pd.concat(full_record)
@@ -328,7 +338,7 @@ class Taper(object):
 
         self._experiment.prepdata.dump('gaps', gaps, index=False)
 
-    def short_tape(self, gaps_df, df=30, dist=50, add_edges=True):
+    def short_tape(self, gaps_df, df=None, dist=None, add_edges=True):
         """
         preferentially attaches really short gaps to one another.
 
@@ -344,18 +354,37 @@ class Taper(object):
         link_list: (list of tuples)
             the list of (node1 --> node2) tuples that were joined.
         """
+        if df is None:
+            df = settings.TAPE_FRAME_SEARCH_LIMIT
+        if dist is None:
+            dist = settings.TAPE_PIXEL_SEARCH_LIMIT
+
+        acausal_limit = self.acausal_limit
+
         gaps = gaps_df.copy()
         link_list = []
         gaps = gaps[gaps['df'] < df]
         gaps = gaps[gaps['dist'] < dist]
+        gaps = gaps[gaps['df'] > - acausal_limit]
+
+        # rank all gaps based on a score
         gaps['short_score'] = gaps['df'] * gaps['dist']
         gaps.sort('short_score', inplace=True, ascending=False)
+        already_taken_nodes = set() #set of nodes already involved
         for i, row in gaps.iterrows():
             node1, node2 = row['node1'], row['node2']
+            # skip nodes if they are already used in a gap
+            if node1 in already_taken_nodes:
+                continue
+            if node2 in already_taken_nodes:
+                continue
+            # add if gap is less than distance or time requirements
             if row['df'] <= df and row['dist'] <= dist:
                 link_list.append((node1, node2))
-                gaps = gaps[gaps['node1'] != node1]
-                gaps = gaps[gaps['node2'] != node2]
+                already_taken_nodes.add(node1)
+                already_taken_nodes.add(node2)
+                #gaps = gaps[gaps['node2'] != node2]
+                #gaps = gaps[gaps['node1'] != node1]
         if add_edges:
             success, fail = self._add_taped_edges_to_graph(link_list)
         return success, gaps
@@ -392,7 +421,6 @@ class Taper(object):
         if add_edges:
             success, fail = self._add_taped_edges_to_graph(link_list)
         return success, gaps
-
 
     def greedy_tape(self, gaps_df, threshold=0.1, add_edges=True):
         """
@@ -515,7 +543,6 @@ class Taper(object):
         print(len(to_missing), 'to_missing')
         print(len(from_missing), 'from_missing')
         print(len(missing_to_missing), 'missing_to_missing')
-
 
         missing_df = self._missing
         for i, row in missing_df.iterrows():

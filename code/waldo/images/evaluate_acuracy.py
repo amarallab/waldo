@@ -1,18 +1,21 @@
 #!/usr/bin/env python
-
 '''
 Filename: evaluate_acuracy.py
 
 Description: holds many low-level scripts for finding, sorting, and saving files
 in a rigid directory structure.
 '''
+from __future__ import absolute_import, print_function
 # standard library
 
 # third party
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import prettyplotlib as ppl
+try:
+    import prettyplotlib as ppl
+except ImportError:
+    ppl = plt
 
 # projects specific
 import waldo.wio as wio
@@ -39,7 +42,7 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
     base_accuracy.drop_duplicates(cols='frame', inplace=True)
     ba_len2 = len(base_accuracy)
     if ba_len1 != ba_len2:
-        print 'WARNING: base accuracy file has duplicate frames'
+        print('WARNING: base accuracy file has duplicate frames')
     ba = base_accuracy.set_index('frame')
     for frame, df in matches.groupby('frame'):
         tp_bids = list(df[df['good']]['bid'])

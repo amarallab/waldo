@@ -4,7 +4,7 @@ import os
 
 from PyQt4 import QtGui
 from PyQt4.QtGui import QSizePolicy
-from PyQt4.QtCore import Qt
+from PyQt4.QtCore import Qt, QTimer
 
 from waldo.gui import tasking
 import numpy as np
@@ -125,7 +125,9 @@ class ScoringPage(QtGui.QWizardPage):
         self.accuracyResult.setText("")
         self.coverageResult.setText("")
         self.scoreCompleted = False
+        QTimer.singleShot(0, self.show_dialog)
 
+    def show_dialog(self):
         dlg = ScoringDialog(self.data.experiment, self.scoring, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()

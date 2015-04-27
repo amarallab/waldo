@@ -1,7 +1,5 @@
 from __future__ import absolute_import, print_function
 
-__author__ = 'heltena'
-
 # standard library
 import os
 import glob
@@ -17,21 +15,21 @@ from PyQt4.QtCore import Qt
 from waldo.conf import settings
 from waldo.wio import paths
 from . import pages
+from .helpers import experiment_has_thresholdCache
 from .loaders import get_summary_data, AsyncSummaryLoader
 
 
-class SelectExperimentPage(QtGui.QWizardPage):
+class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):
-        super(SelectExperimentPage, self).__init__(parent)
+        super(SelectBatchModeExperimentsPage, self).__init__(parent)
 
         self.data = data
-        self.setTitle("Select Experiment")
-        self.setSubTitle("Select the experiment you want to run. If it is not appearing, click 'back' and change "
-                         "the 'Raw Data' folder.")
+        self.setTitle("Select an Experiment List")
+        self.setSubTitle("Select the experiment list you want to run in batch mode. If one of your experiments is not "
+                         "appearing, click 'back' and change the 'Raw Data' folder.")
 
         self.experimentTable = QtGui.QTableWidget()
         self.experimentTable.itemSelectionChanged.connect(self.experimentTable_itemSelectionChanged)
-        self.errorRows = set()
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.experimentTable)
@@ -41,6 +39,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
         self.asyncSummaryLoader.row_summary_changed.connect(self.row_summary_changed)
         self.asyncSummaryLoader.startListening()
 
+        self.valid_selection = False
         self.loadedRows = set()
         self.errorRows = set()
 
@@ -70,7 +69,7 @@ class SelectExperimentPage(QtGui.QWizardPage):
     def _setup_table_headers(self, table):
         table.setColumnCount(3)
         table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        table.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         table.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem("Filename"))
         table.setHorizontalHeaderItem(1, QtGui.QTableWidgetItem("Title"))
         table.setHorizontalHeaderItem(2, QtGui.QTableWidgetItem("Duration"))
@@ -90,8 +89,9 @@ class SelectExperimentPage(QtGui.QWizardPage):
         self.experimentTable.clear()
         self._setup_table_headers(self.experimentTable)
 
+        self.valid_selection = False
         self.errorRows = set()
-        rowToSelect = None
+        rowsToSelect = []
         folders = sorted(os.listdir(settings.MWT_DATA_ROOT), reverse=True)
         self.experimentTable.setRowCount(len(folders))
         for row, folder in enumerate(folders):
@@ -105,18 +105,20 @@ class SelectExperimentPage(QtGui.QWizardPage):
                 item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 self.experimentTable.setItem(row, col, item)
 
-            if self.data.selected_ex_id == folder:
-                rowToSelect = row
+            if folder in self.data.experiment_id_list:
+                rowsToSelect.append(row)
 
-        if rowToSelect is not None:
-            self.experimentTable.selectRow(rowToSelect)
+        for row in rowsToSelect:
+            self.experimentTable.selectRow(row)
 
         self.completeChanged.emit()
 
     def experimentTable_itemSelectionChanged(self):
-        values = set([i.row() for i in self.experimentTable.selectedIndexes()])
-        if len(values) == 1:
-            row = values.pop()
+        self.data.experiment_id_list = []
+        valid_selection = True
+        for row in set([i.row() for i in self.experimentTable.selectedIndexes()]):
+            if row in self.errorRows:
+                valid_selection = False
             item = self.experimentTable.item(row, 0)
             valid = False
 
@@ -132,27 +134,19 @@ class SelectExperimentPage(QtGui.QWizardPage):
                     self.loadedRows.add(row)
                     if not valid:
                         self.errorRows.add(row)
-                if valid:
-                    self.data.selected_ex_id = str(item.text())
-                else:
-                    self.data.selected_ex_id = None
+                        valid_selection = False
+            if valid:
+                self.data.experiment_id_list.append(str(item.text()))
+        self.data.no_thresholdcache_experiment_id_list = [id for id in self.data.experiment_id_list
+                                                          if not experiment_has_thresholdCache(id)]
+        self.valid_selection = valid_selection
         self.completeChanged.emit()
 
     def isComplete(self):
-        return self.data.selected_ex_id is not None
+        return self.valid_selection and len(self.data.experiment_id_list) > 0
 
     def nextId(self):
-        data = {}
-        self.data.loadSelectedExperiment()
-        if self.data.experiment is not None:
-            self.annotation_filename = paths.threshold_data(self.data.experiment.id)
-            try:
-                with open(str(self.annotation_filename), "rt") as f:
-                    data = json.loads(f.read())
-            except IOError as ex:
-                pass
-
-        if 'threshold' in data and 'r' in data and 'x' in data and 'y' in data:
-            return pages.PREVIOUS_THRESHOLD_CACHE
+        if len(self.data.no_thresholdcache_experiment_id_list) > 0:
+            return pages.BATCHMODE_THRESHOLD_CACHE
         else:
-            return pages.THRESHOLD_CACHE
+            return pages.BATCHODE_WALDO_PROCESS

@@ -18,7 +18,7 @@ import unittest
 import numpy as np
 
 # package specific
-from .shape_thinning import skeletonize2 as skeletonize
+from .shape_thinning import skeletonize#2 as skeletonize
 
 class TestShapeThinning(unittest.TestCase):
 

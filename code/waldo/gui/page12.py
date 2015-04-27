@@ -37,19 +37,22 @@ import os
 #from skimage.measure import regionprops
 
 #style.use('ggplot')
+from .helpers import experiment_has_final_results
+
+style.use('ggplot')
 
 import tasking
 
 from time import time
 
-class WaldoProcessDialog(QtGui.QDialog):
+class BatchModeWaldoProcessDialog(QtGui.QDialog):
     def __init__(self, experiment, func, image_func, report_func, finish_func, parent=None):
-        super(WaldoProcessDialog, self).__init__(parent)
+        super(BatchModeWaldoProcessDialog, self).__init__(parent)
         self.image_func = image_func
         self.report_func = report_func
         self.finish_func = finish_func
 
-        progress_bar_labels = ["Global progress", "Process blobs", "Process images", "Load experiment",
+        progress_bar_labels = ["Experiments", "Global progress", "Process blobs", "Process images", "Load experiment",
                                "Correct errors", "Write output", "Generate report"]
         progress_bars = []
         for i in range(len(progress_bar_labels)):
@@ -62,7 +65,7 @@ class WaldoProcessDialog(QtGui.QDialog):
         cancel_run_button.clicked.connect(self.cancel_run_button_clicked)
 
         main_layout = QtGui.QGridLayout()
-        main_layout.addWidget(QtGui.QLabel("Running experiment: {ex_id}".format(ex_id=experiment.id)), 0, 0, 1, 2)
+        main_layout.addWidget(QtGui.QLabel("Running batch mode"), 0, 0, 1, 2)
 
         row = 1
         for label, progress_bar in zip(progress_bar_labels, progress_bars):
@@ -123,17 +126,17 @@ class WaldoProcessDialog(QtGui.QDialog):
             ev.ignore()
 
 
-class WaldoProcessPage(QtGui.QWizardPage):
+class BatchModeWaldoProcessPage(QtGui.QWizardPage):
     SHOWING_NOTHING=0
     SHOWING_IMAGE=1
     SHOWING_REPORT=2
 
     def __init__(self, data, parent=None):
-        super(WaldoProcessPage, self).__init__(parent)
+        super(BatchModeWaldoProcessPage, self).__init__(parent)
 
         self.data = data
         self.waldoProcessCompleted = False
-        self.setTitle("Running WALDO")
+        self.setTitle("Running WALDO in Batch Mode")
 
         self.image_figure = plt.figure()
         self.image_canvas = FigureCanvas(self.image_figure)
@@ -149,7 +152,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         self.ax_report = self.report_figure.add_subplot(111)
 
         self.main_layout = QtGui.QHBoxLayout()
-        self.showing_status = WaldoProcessPage.SHOWING_NOTHING
+        self.showing_status = BatchModeWaldoProcessPage.SHOWING_NOTHING
 
         layout = QtGui.QVBoxLayout()
         layout.addLayout(self.main_layout)
@@ -161,33 +164,32 @@ class WaldoProcessPage(QtGui.QWizardPage):
         QTimer.singleShot(0, self.show_dialog)
 
     def show_dialog(self):
-        dlg = WaldoProcessDialog(self.data.experiment,
-                                 self.waldoProcess, self.show_image, self.show_report, self.finished, self)
+        dlg = BatchModeWaldoProcessDialog(self.data.experiment,
+                                          self.waldoProcess, self.show_image, self.show_report, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
 
     def _set_image(self, image):
-        if self.showing_status == WaldoProcessPage.SHOWING_REPORT:
+        if self.showing_status == BatchModeWaldoProcessPage.SHOWING_REPORT:
             self.report_canvas.setParent(None)
-            self.showing_status = WaldoProcessPage.SHOWING_NOTHING
+            self.showing_status = BatchModeWaldoProcessPage.SHOWING_NOTHING
 
-        if self.showing_status == WaldoProcessPage.SHOWING_NOTHING:
+        if self.showing_status == BatchModeWaldoProcessPage.SHOWING_NOTHING:
             self.main_layout.addWidget(self.image_canvas)
-            self.showing_status = WaldoProcessPage.SHOWING_IMAGE
+            self.showing_status = BatchModeWaldoProcessPage.SHOWING_IMAGE
 
         self.ax_image.clear()
         self.ax_image.imshow(image, cmap=plt.cm.gray, interpolation='nearest')
         self.ax_image.axis('off')
 
     def _set_report(self, report):
-        print("HELIO", report.head())
-        if self.showing_status == WaldoProcessPage.SHOWING_IMAGE:
+        if self.showing_status == BatchModeWaldoProcessPage.SHOWING_IMAGE:
             self.image_canvas.setParent(None)
-            self.showing_status = WaldoProcessPage.SHOWING_NOTHING
+            self.showing_status = BatchModeWaldoProcessPage.SHOWING_NOTHING
 
-        if self.showing_status == WaldoProcessPage.SHOWING_NOTHING:
+        if self.showing_status == BatchModeWaldoProcessPage.SHOWING_NOTHING:
             self.main_layout.addWidget(self.report_canvas)
-            self.showing_status = WaldoProcessPage.SHOWING_REPORT
+            self.showing_status = BatchModeWaldoProcessPage.SHOWING_REPORT
 
         d = report[['phase', 'connected-nodes', 'total-nodes']][::-1]
         d = d.drop_duplicates('phase', take_last=False)
@@ -206,7 +208,20 @@ class WaldoProcessPage(QtGui.QWizardPage):
         # plt.xticks(fontsize=12)
 
     def waldoProcess(self, callback):
-        times, impaths = zip(*sorted(self.data.experiment.image_files.items()))
+        if self.data.experiment_id_list is None:
+            return
+        count = 0
+        for ex_id in self.data.experiment_id_list:
+            for current in [2, 3, 4, 5, 6]:
+                callback(current, 0)
+            if not experiment_has_final_results(ex_id):
+                experiment = Experiment(experiment_id=ex_id)
+                self.waldoProcessOneExperiment(experiment, lambda x, y: callback(x+1, y))
+            callback(0, float(count) / len(self.data.experiment_id_list))
+            count += 1
+
+    def waldoProcessOneExperiment(self, experiment, callback):
+        times, impaths = zip(*sorted(experiment.image_files.items()))
         impaths = [str(s) for s in impaths]
 
         self.last_image_index = 0
@@ -235,7 +250,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         REDRAW_SOLVE_FIGURE_CALLBACK = lambda df: callback(21, df)
 
         STEPS = 5.0
-        ex_id = self.data.experiment.id
+        ex_id = experiment.id
         callback(0, 0.0 / STEPS)
 
         prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
@@ -246,13 +261,11 @@ class WaldoProcessPage(QtGui.QWizardPage):
         PROCESS_IMAGES_CALLBACK(1)
         callback(0, 2.0 / STEPS)
 
-        experiment = self.data.experiment
         LOAD_EXPERIMENT_CALLBACK(1)
         callback(0, 3.0 / STEPS)
 
         graph = experiment.graph.copy()
         solver = WaldoSolver(experiment, graph)
-        callback(22, solver.report())
         solver.run(callback=CORRECT_ERROR_CALLBACK, redraw_callback=REDRAW_SOLVE_FIGURE_CALLBACK)
         graph = solver.graph
         CORRECT_ERROR_CALLBACK(1)
@@ -264,7 +277,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         GENERATE_REPORT_CALLBACK(1)
         callback(0, 5.0 / STEPS)
 
-        self.export_tables()
+        self.export_tables(experiment)
 
     def show_image(self, id, image):
         self._set_image(image)
@@ -272,10 +285,10 @@ class WaldoProcessPage(QtGui.QWizardPage):
     def show_report(self, id, report):
         self._set_report(report)
 
-    def export_tables(self):
-        ex_id = self.data.experiment.id
+    def export_tables(self, experiment):
+        ex_id = experiment.id
         path = os.path.join(settings.PROJECT_DATA_ROOT, ex_id)
-        report_card_df = self.data.experiment.prepdata.load('report-card')
+        report_card_df = experiment.prepdata.load('report-card')
         if report_card_df is not None:
             headers = ['phase', 'step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min', 'duration-mean', 'duration-std']
             b = report_card_df[headers]
@@ -287,7 +300,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
             name = os.path.join(path, ex_id + '-network_overview.csv')
             b.to_csv(path_or_buf=name)
 
-        df = self.data.experiment.prepdata.load('end_report')
+        df = experiment.prepdata.load('end_report')
         if df is not None:
             df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
             df = df.rename(columns={'lifespan': 'track-duration',
@@ -298,7 +311,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
             name = os.path.join(path, ex_id + '-tract_termination.csv')
             df.to_csv(path_or_buf=name)
 
-        df = self.data.experiment.prepdata.load('start_report')
+        df = experiment.prepdata.load('start_report')
         if df is not None:
             df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
             df = df.rename(columns={'lifespan': 'track-duration',
@@ -312,7 +325,6 @@ class WaldoProcessPage(QtGui.QWizardPage):
     def finished(self):
         self.waldoProcessCompleted = True
         self.completeChanged.emit()
-        self.wizard().next()
 
     def isComplete(self):
         return self.waldoProcessCompleted

@@ -1,11 +1,36 @@
+from __future__ import absolute_import, print_function
+
 __author__ = 'heltena'
 
+# standard library
+
+# third party
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
+# project specific
 from waldo.conf import settings, guisettings
-import pages
+from . import pages
+
+
+
+#HELIO
+import pandas as pd
+
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
+from mpltools import style
+
+import matplotlib.image as mpimg
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from skimage import morphology
+from skimage.measure import regionprops
+
+style.use('ggplot')
+#ENDHELIO
 
 class WelcomePage(QtGui.QWizardPage):
     class Tooltips:
@@ -48,16 +73,72 @@ class WelcomePage(QtGui.QWizardPage):
         folderLayout.addWidget(self.waldoDataLabel, col, 1, 1, 1)
         folderLayout.addWidget(waldoDataButton, col, 2, 1, 1)
 
+        self.runBatchModeCheckBox = QtGui.QCheckBox("Run in Batch Mode")
+        self.runBatchModeCheckBox.setChecked(self.data.experiment_id_list is not None)
+
+        #BEGIN 2015-apr-22 TEST
+
+        self.report_figure = plt.figure()
+        self.report_canvas = FigureCanvas(self.report_figure)
+        self.report_canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.report_canvas.setMinimumSize(50, 50)
+        self.ax_report = self.report_figure.add_subplot(111)
+
+        df = pd.DataFrame([['P1',   4,   3,   2,    4,   7,   2,    7,   4,   6,  217,   3,  10],
+                           ['P2',   5,   7,   2,  270, 310,   5,    5,   8, 301,    5,   4,   3],
+                           ['P3', 389, 370, 261,    4,   7, 355,    5, 424,   5,    3, 414,  10],
+                           ['P4',   4,   4,   3,    5,   4,   5,  349,   4,   3,    3,   6, 368],
+                           ['P5',   4,   4,   5,    5,   6,   6,    8,   3,   4,    6,   2,   5],
+                           ['P6',   2,   3,   2,    3,   3,   1,    4,   1,   2,    8,   1,   3],
+                           ['P7',   5,   5,   4,    6,   2,   7,  436,   7,   5,    7,   6, 406]],
+                          columns=['ID',
+                                   'P1_A', 'P1_B', 'P1_C', 'P2_A', 'P2_B', 'P2_C',
+                                   'P3_A', 'P3_B', 'P3_C', 'P4_A', 'P4_B', 'P4_C'])
+
+        self.ax_report.clear()
+        df.plot(ax=self.ax_report, kind='barh')
+        self.ax_report.set_xlabel('Number of Track Fragments', size=15)
+        self.ax_report.legend(frameon=False, loc=(1.01, 0.7), fontsize=15)
+        self.ax_report.set_ylabel('phase', size=15)
+        self.report_figure.tight_layout()
+        self.report_figure.subplots_adjust(right=0.75)
+
+        self.tmp_button = QtGui.QPushButton('Change!')
+        self.tmp_button.clicked.connect(self.tmp_button_clicked)
+
+        #END 2015-apr-22 TEST
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(config_button)
         layout.addLayout(folderLayout)
+        layout.addWidget(self.runBatchModeCheckBox)
+        layout.addWidget(self.report_canvas)
+        layout.addWidget(self.tmp_button)
         self.setLayout(layout)
+
+    def tmp_button_clicked(self):
+        df = pd.DataFrame([['P1',   4,   3,   2,    4,   7,   2,    7,   4,   6,  217,   3,  10],
+                           ['P2',   5,   7,   2,  270, 310,   5,    5,   8, 301,    5,   4,   3],
+                           ['P3', 389, 370, 261,    4,   7, 355,    5, 424,   5,    3, 414,  10],
+                           ['P7',   5,   5,   4,    6,   2,   7,  436,   7,   5,    7,   6, 406]],
+                          columns=['ID',
+                                   'P1_A', 'P1_B', 'P1_C', 'P2_A', 'P2_B', 'P2_C',
+                                   'P3_A', 'P3_B', 'P3_C', 'P4_A', 'P4_B', 'P4_C'])
+
+
+        self.ax_report.clear()
+        df.plot(ax=self.ax_report, kind='barh')
+        self.ax_report.set_xlabel('Number of Track Fragments', size=15)
+        self.ax_report.legend(frameon=False, loc=(1.01, 0.7), fontsize=15)
+        self.ax_report.set_ylabel('phase', size=15)
+        self.report_figure.tight_layout()
+        self.report_figure.subplots_adjust(right=0.75)
+        self.report_figure.canvas.draw()
 
     def config_button_clicked(self):
         dlg = ConfigDialog(self)
         dlg.setModal(True)
         dlg.exec_()
-
 
     def rawDataButton_clicked(self, ev):
         result = str(QtGui.QFileDialog.getExistingDirectory(directory=self.rawDataLabel.text()))
@@ -72,9 +153,15 @@ class WelcomePage(QtGui.QWizardPage):
             self.waldoDataLabel.setText(result)
             settings.PROJECT_DATA_ROOT = str(self.waldoDataLabel.text())
             settings.save()
-    #
-    # def nextId(self):
-    #     return pages.FINAL
+
+    def nextId(self):
+        # return pages.FINAL
+        if self.runBatchModeCheckBox.isChecked():
+            self.data.batchMode()
+            return pages.SELECT_BATCHMODE_EXPERIMENTS
+        else:
+            self.data.singleMode()
+            return pages.SELECT_EXPERIMENT
 
 
 class ConfigDialog(QtGui.QDialog):

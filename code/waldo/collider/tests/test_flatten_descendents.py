@@ -7,12 +7,14 @@ import itertools
 
 import networkx as nx
 
-from .test_util import node_generate, GraphCheck
+from waldo.network.tests import test_graph as tg
+from waldo.network import Graph
+
 from .. import remove_single_descendents
 
-class TestDirectDescendents(GraphCheck):
+class TestDirectDescendents(tg.GraphTestCase):
     def test_basic_pass(self):
-        Go = node_generate(
+        Go = tg.node_generate(
             [[10, 11], [20], [30], [40, 41]],
             itertools.count(start=100, step=100))
         Go.add_path([10, 20, 30, 40])
@@ -26,10 +28,10 @@ class TestDirectDescendents(GraphCheck):
         Gexpect.add_path([10, 20, 40])
         Gexpect.add_path([11, 20, 41])
 
-        self.check_graphs_equal(Gtest, Gexpect)
+        self.assertTopologyEqual(Gtest, Gexpect)
 
     def test_multi_descendent_abort(self):
-        Go = node_generate(
+        Go = tg.node_generate(
             [[10, 11], [20], [30, 31], [40]],
             itertools.count(start=100, step=100))
         Go.add_path([10, 20, 30, 40])
@@ -38,10 +40,10 @@ class TestDirectDescendents(GraphCheck):
 
         remove_single_descendents(Gtest)
 
-        self.check_graphs_equal(Gtest, Go)
+        self.assertTopologyEqual(Gtest, Go)
 
     def test_descendent_multiparent_abort(self):
-        Go = node_generate(
+        Go = tg.node_generate(
             [[10, 11], [20, 21], [30], [40, 41]],
             itertools.count(start=100, step=100))
         Go.add_path([10, 20, 30, 40])
@@ -52,10 +54,10 @@ class TestDirectDescendents(GraphCheck):
 
         remove_single_descendents(Gtest)
 
-        self.check_graphs_equal(Gtest, Go)
+        self.assertTopologyEqual(Gtest, Go)
 
     def test_consecutive(self):
-        Go = node_generate(
+        Go = tg.node_generate(
             [[10, 11], [20], [30], [40], [50, 51]],
             itertools.count(start=100, step=100))
         Go.add_path([10, 20, 30, 40, 50])
@@ -69,4 +71,4 @@ class TestDirectDescendents(GraphCheck):
         Gexpect.add_path([10, 20, 50])
         Gexpect.add_path([11, 20, 51])
 
-        self.check_graphs_equal(Gtest, Gexpect)
+        self.assertTopologyEqual(Gtest, Gexpect)
