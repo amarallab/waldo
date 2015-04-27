@@ -32,6 +32,7 @@ class ReportCard(object):
         self.reports = []
         self.durations = []
         self.experiment = experiment
+        print('HELTENA: Reportcard init {}'.format(len(self.reports)))
 
     def add_step(self, graph, step_name, phase_name):
         report, durations = self.evaluate_graph(graph)
@@ -40,6 +41,7 @@ class ReportCard(object):
         #self.steps.append(step_name)
         self.reports.append(report)
         self.durations.append(durations)
+        print('HELTENA: Reportcard add_step {}'.format(len(self.reports)))
 
 
     def evaluate_graph(self, digraph, threshold=2):
@@ -147,6 +149,7 @@ class ReportCard(object):
             print(report_df[['step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min']])
             print(report_df[['step', 'wm_0min', 'wm_10min', 'wm_20min', 'wm_30min', 'wm_40min', 'wm_50min']])
 
+        print('HELTENA: Reportcard report called: {}'.format(len(self.reports)))
         return report_df
 
     def determine_lost_and_found_causes(self, graph):
@@ -381,16 +384,18 @@ class WaldoSolver(object):
         self.report_card.add_step(graph, step_name='raw', phase_name='input')
         self.phase_name = 'input'
 
-    def run(self, callback=None):
+    def run(self, callback=None, redraw_callback=None):
         """ runs full solver code
         """
         if callback:
             self.initial_clean(callback=lambda x: callback(x * 0.2))
-            self.solve(callback=lambda x: callback(0.2 + x * 0.6))
-            return self.report(callback=lambda x: callback(0.8 + x * 0.2))
+            self.solve(callback=lambda x: callback(0.2 + x * 0.6), redraw_callback=redraw_callback)
+            self.write_reports()
+            return self.report()
         else:
             self.initial_clean()
-            self.solve()
+            self.solve(redraw_callback=redraw_callback)
+            self.write_reports()
             return self.report()
 
 
@@ -486,7 +491,7 @@ class WaldoSolver(object):
         self.report_card.add_step(self.graph, step_name='infer gaps',
                                   phase_name=self.phase_name)
 
-    def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None, callback=None):
+    def solve(self, iterations=6, validate_steps=True, subgraph_recorder=None, callback=None, redraw_callback=None):
         """iterativly loop through (1) untangleing collisions (2)
         pruning (3) condensing and (4) infer gaps
 
@@ -498,7 +503,7 @@ class WaldoSolver(object):
         def boiler_plate(validate_steps, subgraph_recorder):
             if validate_steps:
                 self.graph.validate()
-                self.graph.deep_validate(experiment=self.experiment)
+                #self.graph.deep_validate(experiment=self.experiment)
             #L.warn('Iteration {}'.format(i + 1))
             if subgraph_recorder is not None:
                 subgraph_recorder.save_subgraph(self.graph)
@@ -544,31 +549,34 @@ class WaldoSolver(object):
                 L.warn('No change since last iteration, halting')
                 break
             last_graph = self.graph.copy()
-            #self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
+            # self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
             cb_iterate(i, 5/6.)
 
-
-            # TODO Helio: update figure in GUI
-            # use df = self.report()
-            # pass to plot_report_df in workbooks/dev/progress_update_graph.ipynb
-            # show result in GUI
+            if redraw_callback is not None:
+                df = self.report()
+                redraw_callback(df)
 
         if callback:
             callback(1)
 
         return self.graph
 
-    def report(self, callback=None):
+    def report(self):
         """ returns the latest graph object as well as a dataframe with a
         report
         """
-        report_df = self.report_card.report(show=True)
-        if callback:
-            callback(0.5)
-        report_df = self.report_card.save_reports(self.graph)
-        if callback:
-            callback(1)
-        return self.graph, report_df
+        return self.report_card.report(show=False)
+        # #report_df = self.report_card.report(show=True)
+        # if callback:
+        #     callback(0.5)
+        # #report_df = self.report_card.save_reports(self.graph)
+        # if callback:
+        #     callback(1)
+        # return self.graph, report_df
+
+    def write_reports(self):
+        return self.report_card.save_reports(self.graph)
+
 
     def untangle_collsions(self, verbose=True):
         """ attempt to find and untangle collisions in the graph

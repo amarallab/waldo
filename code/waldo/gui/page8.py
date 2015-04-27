@@ -43,9 +43,10 @@ import tasking
 from time import time
 
 class WaldoProcessDialog(QtGui.QDialog):
-    def __init__(self, experiment, func, image_func, finish_func, parent=None):
+    def __init__(self, experiment, func, image_func, report_func, finish_func, parent=None):
         super(WaldoProcessDialog, self).__init__(parent)
         self.image_func = image_func
+        self.report_func = report_func
         self.finish_func = finish_func
 
         progress_bar_labels = ["Global progress", "Process blobs", "Process images", "Load experiment",
@@ -76,7 +77,8 @@ class WaldoProcessDialog(QtGui.QDialog):
         self.progress_bars = progress_bars
         self.cancel_run_button = cancel_run_button
 
-        self.task = tasking.CommandTask(self.madeProgress, self.finished, self.cancelled, self.imageMadeProgress)
+        self.task = tasking.CommandTask(self.madeProgress, self.finished, self.cancelled,
+                                        self.imageMadeProgress, self.reportMadeProgress)
         self.task.start(func)
         self.setFixedSize(self.minimumSize())
         self.setWindowFlags(Qt.Tool | Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.CustomizeWindowHint)
@@ -96,6 +98,10 @@ class WaldoProcessDialog(QtGui.QDialog):
     def imageMadeProgress(self, item, value):
         if self.task is not None:
             self.image_func(item, value)
+
+    def reportMadeProgress(self, item, report):
+        if self.task is not None:
+            self.report_func(item, report)
 
     def finished(self):
         self.task.waitFinished()
@@ -118,6 +124,10 @@ class WaldoProcessDialog(QtGui.QDialog):
 
 
 class WaldoProcessPage(QtGui.QWizardPage):
+    SHOWING_NOTHING=0
+    SHOWING_IMAGE=1
+    SHOWING_REPORT=2
+
     def __init__(self, data, parent=None):
         super(WaldoProcessPage, self).__init__(parent)
 
@@ -132,8 +142,14 @@ class WaldoProcessPage(QtGui.QWizardPage):
         self.ax_image = self.image_figure.add_subplot(111)
         self.ax_image.axis('off')
 
+        self.report_figure = plt.figure()
+        self.report_canvas = FigureCanvas(self.report_figure)
+        self.report_canvas.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.report_canvas.setMinimumSize(50, 50)
+        self.ax_report = self.report_figure.add_subplot(111)
+
         self.main_layout = QtGui.QHBoxLayout()
-        self.showing_image = False
+        self.showing_status = WaldoProcessPage.SHOWING_NOTHING
 
         layout = QtGui.QVBoxLayout()
         layout.addLayout(self.main_layout)
@@ -145,18 +161,49 @@ class WaldoProcessPage(QtGui.QWizardPage):
         QTimer.singleShot(0, self.show_dialog)
 
     def show_dialog(self):
-        dlg = WaldoProcessDialog(self.data.experiment, self.waldoProcess, self.show_image, self.finished, self)
+        dlg = WaldoProcessDialog(self.data.experiment,
+                                 self.waldoProcess, self.show_image, self.show_report, self.finished, self)
         dlg.setModal(True)
         dlg.exec_()
 
     def _set_image(self, image):
-        if not self.showing_image:
+        if self.showing_status == WaldoProcessPage.SHOWING_REPORT:
+            self.report_canvas.setParent(None)
+            self.showing_status = WaldoProcessPage.SHOWING_NOTHING
+
+        if self.showing_status == WaldoProcessPage.SHOWING_NOTHING:
             self.main_layout.addWidget(self.image_canvas)
-            self.showing_image = True
+            self.showing_status = WaldoProcessPage.SHOWING_IMAGE
 
         self.ax_image.clear()
         self.ax_image.imshow(image, cmap=plt.cm.gray, interpolation='nearest')
         self.ax_image.axis('off')
+
+    def _set_report(self, report):
+        print("HELIO", report.head())
+        if self.showing_status == WaldoProcessPage.SHOWING_IMAGE:
+            self.image_canvas.setParent(None)
+            self.showing_status = WaldoProcessPage.SHOWING_NOTHING
+
+        if self.showing_status == WaldoProcessPage.SHOWING_NOTHING:
+            self.main_layout.addWidget(self.report_canvas)
+            self.showing_status = WaldoProcessPage.SHOWING_REPORT
+
+        d = report[['phase', 'connected-nodes', 'total-nodes']][::-1]
+        d = d.drop_duplicates('phase', take_last=False)
+        d = d.set_index('phase')
+
+        self.ax_report.clear()
+        d.plot(ax=self.ax_report, kind='barh')
+        self.ax_report.set_xlabel('Number of Track Fragments', size=15)
+        self.ax_report.legend(frameon=False, loc=(1.01, 0.7), fontsize=15)
+        self.ax_report.set_ylabel('phase', size=15)
+        self.report_figure.tight_layout()
+        self.report_figure.subplots_adjust(right=0.6)
+        self.report_figure.canvas.draw()
+
+        # plt.yticks(fontsize=12)
+        # plt.xticks(fontsize=12)
 
     def waldoProcess(self, callback):
         times, impaths = zip(*sorted(self.data.experiment.image_files.items()))
@@ -185,6 +232,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         WRITE_OUTPUT_CALLBACK = lambda x: callback(5, x)
         GENERATE_REPORT_CALLBACK = lambda x: callback(6, x)
         NEW_IMAGE_CALLBACK = lambda im: callback(11, im)
+        REDRAW_SOLVE_FIGURE_CALLBACK = lambda df: callback(21, df)
 
         STEPS = 5.0
         ex_id = self.data.experiment.id
@@ -204,7 +252,9 @@ class WaldoProcessPage(QtGui.QWizardPage):
 
         graph = experiment.graph.copy()
         solver = WaldoSolver(experiment, graph)
-        graph, report_df = solver.run(callback=CORRECT_ERROR_CALLBACK)
+        callback(22, solver.report())
+        solver.run(callback=CORRECT_ERROR_CALLBACK, redraw_callback=REDRAW_SOLVE_FIGURE_CALLBACK)
+        graph = solver.graph
         CORRECT_ERROR_CALLBACK(1)
         callback(0, 4.0 / STEPS)
 
@@ -218,6 +268,9 @@ class WaldoProcessPage(QtGui.QWizardPage):
 
     def show_image(self, id, image):
         self._set_image(image)
+
+    def show_report(self, id, report):
+        self._set_report(report)
 
     def export_tables(self):
         ex_id = self.data.experiment.id
