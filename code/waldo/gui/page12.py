@@ -25,21 +25,21 @@ import os
 #import numpy as np
 #import pandas as pd
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 #import matplotlib.gridspec as gridspec
 #import matplotlib.patches as patches
 #from mpltools import style
 
-#import matplotlib.image as mpimg
-#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-#from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+import matplotlib.image as mpimg
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 #from skimage import morphology
 #from skimage.measure import regionprops
 
 #style.use('ggplot')
 from .helpers import experiment_has_final_results
 
-style.use('ggplot')
+#style.use('ggplot')
 
 import tasking
 
