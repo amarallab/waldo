@@ -1,15 +1,15 @@
 __author__ = 'heltena'
 
-#class Blackhole(object):
-#    def write(self, text):
-#        pass
-#    def flush(self):
-#        pass
+class Blackhole(object):
+    def write(self, text):
+        pass
+    def flush(self):
+        pass
 
 import sys
-#sys.stdout = Blackhole()
-#sys.stderr = Blackhole()
-#del Blackhole
+sys.stdout = Blackhole()
+sys.stderr = Blackhole()
+del Blackhole
 
 import matplotlib
 matplotlib.use('Qt4Agg')
