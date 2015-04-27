@@ -13,14 +13,14 @@ from waldo.output.writer import OutputWriter
 
 from waldo import wio
 import waldo.images.evaluate_acuracy as ea
-import waldo.images.worm_finder as wf
+#import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
 
-import waldo.metrics.step_simulation as ssim
-import waldo.viz.eye_plots as ep
+#import waldo.metrics.step_simulation as ssim
+#import waldo.viz.eye_plots as ep
 
-from waldo.gui import pathcustomize
-import os
+#from waldo.gui import pathcustomize
+#import os
 
 import numpy as np
 import pandas as pd
@@ -28,15 +28,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
-from mpltools import style
+#from mpltools import style
 
-import matplotlib.image as mpimg
+#import matplotlib.image as mpimg
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from skimage import morphology
-from skimage.measure import regionprops
+#from skimage import morphology
+#from skimage.measure import regionprops
 
-style.use('ggplot')
+#style.use('ggplot')
 
 
 

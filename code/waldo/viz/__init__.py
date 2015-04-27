@@ -10,6 +10,6 @@ from .network.degrees import direct_degree_distribution
 from .network.dot import render_nx_as_dot
 from .network.outlines import show_before_and_after
 from .network.ages import age_distribution
-from .network.notebook import look, save_graphs
+#from .network.notebook import look, save_graphs
 
-from .notebook import ProgressBar
+#from .notebook import ProgressBar
