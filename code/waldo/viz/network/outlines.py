@@ -14,9 +14,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
-
 import multiworm
-from .. import tools as vt
+
+# import sys
+# import os
+
+# path = os.path.dirname(__file__)
+# print('here', os.path.abspath(path))
+
+# for i in sys.path:
+#     print(i, os.path.abspath(i))
+# import tools as vt
+from .. import tools as vt # failed attempts at importing.
+#import .. tools as vt
 
 def before_and_after(experiment, target):
     """

@@ -10,6 +10,7 @@ from waldo.images import summarize as images_summarize
 from waldo.metrics.report_card import WaldoSolver
 #from waldo.wio import Experiment
 from waldo.output.writer import OutputWriter
+import matplotlib.pyplot as plt
 
 #from waldo import wio
 #import waldo.images.evaluate_acuracy as ea
@@ -39,7 +40,7 @@ import os
 #style.use('ggplot')
 from .helpers import experiment_has_final_results
 
-style.use('ggplot')
+plt.style.use('ggplot')
 
 import tasking
 

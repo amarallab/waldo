@@ -46,7 +46,7 @@ class Behavior_Coding(object):
         len_x, len_y = zip(*blob_df['std_vector'])
         df.loc[:, 'len_x'] = len_x
         df.loc[:, 'len_y'] = len_y
-        df.loc[:, 'angle'] = np.arctan2(len_x, len_y)
+        df.loc[:, 'angle'] = np.arctan2(len_y, len_x)
 
         df.loc[:, 'std_width'] = blob_df['std_ortho']
         self.raw_df = df
@@ -84,8 +84,7 @@ class Behavior_Coding(object):
         df.loc[:, 'dy'] = df['y'].diff()
 
         df.loc[:, 'move_or'] = np.arctan2(df['dy'], df['dx'])
-        # weirdly, orientation data from arctan2(x, y) is correct and not (y, x)
-        df.loc[:, 'orientation'] = np.arctan2(df['len_x'], df['len_y'])
+        df.loc[:, 'orientation'] = np.arctan2(df['len_y'], df['len_x'])
         self.fix_orientation(df)
 
         dt = df['time'].diff()
@@ -517,8 +516,7 @@ class Worm_Shape(object):
 
         length, width = zip(*d['size'])
         length, width = np.array(length), np.array(width)
-        # yes, weirdly arctan2(x, y) is correct and not (y, x)
-        outline_df.loc[:, 'elipse_angle'] = np.arctan2(x, y)
+        outline_df.loc[:, 'elipse_angle'] = np.arctan2(y, x)
         outline_df.loc[:, 'elipse_major'] = length
         outline_df.loc[:, 'elipse_minor'] = width
 
@@ -570,7 +568,9 @@ class Worm_Shape(object):
             outline2 = outline - shift + np.array([buffer_size, buffer_size])
             for point in outline2:
                 pt = point
-                contours[i][pt[0], pt[1]] = 1
+                # TESTING, the contours are given in transposed coordinates...?
+                #contours[i][pt[0], pt[1]] = 1
+                contours[i][pt[1], pt[0]] = 1
         self.contours = contours
 
 

@@ -25,6 +25,8 @@ from waldo.gui import tasking
 from waldo.wio import paths
 from .widgets import ThresholdCacheWidget
 
+
+
 class ThresholdCachePage(QtGui.QWizardPage):
     def __init__(self, data, parent=None):
         super(ThresholdCachePage, self).__init__(parent)
@@ -48,4 +50,3 @@ class ThresholdCachePage(QtGui.QWizardPage):
 
     def isComplete(self):
         return self.thresholdCache.isComplete()
-
