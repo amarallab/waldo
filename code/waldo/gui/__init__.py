@@ -94,23 +94,38 @@ class WaldoApp(QtGui.QWizard):
         self.setPage(pages.BATCHODE_WALDO_PROCESS, BatchModeWaldoProcessPage(self.data))
         self.setPage(pages.BATCHMODE_FINAL, BatchModeFinalPage(self.data))
 
-    def closeEvent(self, ev):
+        self.setMinimumSize(800, 600)
+
+    def _askForClose(self):
         mb = QtGui.QMessageBox()
         mb.setText("Are you sure you want to close?")
         mb.setStandardButtons(QtGui.QMessageBox.Close | QtGui.QMessageBox.Cancel)
-        mb.setDefaultButton(QtGui.QMessageBox.Close);
+        mb.setDefaultButton(QtGui.QMessageBox.Close)
         result = mb.exec_()
         if result == QtGui.QMessageBox.Close:
+            return True
+        elif result == QtGui.QMessageBox.Cancel:
+            return False
+        else:
+            return None
+
+    def closeEvent(self, ev):
+        result = self._askForClose()
+        if result:
             for ids in self.pageIds():
                 page = self.page(ids)
                 method = getattr(page, 'gui_close_event', None)
                 if callable(method):
                     method()
             ev.accept()
-        elif result == QtGui.QMessageBox.Cancel:
+        elif result == False:
             ev.ignore()
         else:
             super(WaldoApp, self).closeEvent(ev)
 
     def accept(self):
         self.restart()
+
+    def reject(self):
+        if self._askForClose():
+            super(WaldoApp, self).reject()
