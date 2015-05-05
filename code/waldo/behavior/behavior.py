@@ -11,6 +11,7 @@ import matplotlib as mpl
 import scipy
 import scipy.ndimage.morphology as morph
 
+
 class Behavior_Coding(object):
 
     def __init__(self, bl=None, body_length=None):
@@ -19,23 +20,23 @@ class Behavior_Coding(object):
         self.bl = bl
         self.moving_window_size = 11
         self.body_length = body_length
-        self.behavior_codes = {-1:'unclassified',
-                                0:'pause',
-                                1:'forward',
-                                2:'back',
-                                3:'coil',
-                                4:'pirouette'}
+        self.behavior_codes = {-1: 'unclassified',
+                               0: 'pause',
+                               1: 'forward',
+                               2: 'back',
+                               3: 'coil',
+                               4: 'pirouette'}
 
         # not sure if this is wise?
-        self.movement_codes = {-1:'unclassified',
-                                0:'back',
-                                1:'pause',
-                                2:'forward'}
+        self.movement_codes = {-1: 'unclassified',
+                               0: 'back',
+                               1: 'pause',
+                               2: 'forward'}
 
     def read_from_blob_df(self, blob_df):
         df = blob_df[['frame', 'time']].copy()
 
-        x, y = zip(*blob_df.loc[:,'centroid'])
+        x, y = zip(*blob_df.loc[:, 'centroid'])
         df['x'] = x
         df['y'] = y
 
@@ -53,8 +54,8 @@ class Behavior_Coding(object):
         self.df = df.copy()
 
     def preprocess(self, dt=0.2):
-        max_gap_seconds=5 #
-        min_window_seconds=5 #
+        max_gap_seconds = 5
+        min_window_seconds = 5
 
         raw_df = self.raw_df
         raw_df_list = self.split_df(raw_df, max_gap_seconds)
@@ -101,9 +102,9 @@ class Behavior_Coding(object):
         df.loc[:, 'angular_v'] = df['d_angle'] / df['time'].diff()
         df.loc[:, 'ar'] = df['width'] / df['length']
         df.loc[:, 'std_ar'] = df['std_width'] / df['std_length']
-        df.loc[:, 'minutes'] = df['time']  / 60.0
-        df.loc[:, 'minutes'] = df['time']  / 60.0
-        #df = self.bound_angular_velocity(df=df)
+        df.loc[:, 'minutes'] = df['time'] / 60.0
+        df.loc[:, 'minutes'] = df['time'] / 60.0
+        # df = self.bound_angular_velocity(df=df)
         return df
 
     def smooth_df(self, df=None, window=11, cols_to_smooth=None):
@@ -119,14 +120,15 @@ class Behavior_Coding(object):
                                  'angle', 'orientation'])
             cols_to_smooth = list(set(df.columns) - cols_to_leave)
 
-        ### Fill small gaps using frames
+        # Fill small gaps using frames
         df = df.set_index(['frame'])
         f0, f1 = int(df.index[0]), int(df.index[-1])
         df = df.reindex(range(f0, f1))
         df = df.interpolate('linear')
         df = df.reset_index()
 
-        df[cols_to_smooth] = pd.rolling_mean(df[cols_to_smooth], window=window, center=True)
+        df[cols_to_smooth] = pd.rolling_mean(df[cols_to_smooth],
+                                             window=window, center=True)
         df = df.fillna(method='bfill')
         df = df.fillna(method='ffill')
         return df
@@ -145,39 +147,39 @@ class Behavior_Coding(object):
                                  'angle', 'orientation'])
             cols_to_smooth = list(set(df.columns) - cols_to_leave)
 
-
         if df.index.name is not None:
             df = df.reset_index()
 
-        ### Calculate sample times that fit timeseries
+        # Calculate sample times that fit timeseries
         scale_factor = 1.0 / dt
         t0 = np.ceil(df['time'].iloc[0] * scale_factor) / scale_factor
         t1 = np.floor(df['time'].iloc[-1] * scale_factor) / scale_factor
-        #print(t0, t1)
+        # print(t0, t1)
         n = (t1 - t0) * scale_factor + 1
         t = np.round(np.linspace(t0, t1, n), decimals=1)
 
-        ### Add rows to fit exact sample times.
+        # Add rows to fit exact sample times.
         df = df.set_index(['time'])
         df = add_empty_rows(df, keys=t)
         df.index.name = 'time'
 
-        ### Interpolate missing values
+        # Interpolate missing values
         df.loc[:, cols_to_smooth] = df[cols_to_smooth].interpolate('linear')
         df.loc[:, 'frame'] = df['frame'].interpolate('nearest')
         df.loc[:, 'orientation'] = df['orientation'].interpolate('nearest')
         df.loc[:, 'angle'] = df['angle'].interpolate('nearest')
         df.loc[:, 'minutes'] = df.index / 60.0
 
-        ### Downsample to exact second times
+        # Downsample to exact second times
         df = df.loc[t]
         df = df.reset_index()
         df = df.drop_duplicates('time')
         df.head(30)
         min_dif = np.nanmin(np.nanmin(np.diff(df['time'])))
         max_dif = np.nanmax(np.nanmax(np.diff(df['time'])))
-        #print(min_dif, max_dif, type(min_dif), type(max_dif), min_dif == max_dif)
-        assert min_dif - max_dif < 0.000001 #assert almost equal
+        # print(min_dif, max_dif, type(min_dif), type(max_dif),
+        # min_dif == max_dif)
+        assert min_dif - max_dif < 0.000001  # assert almost equal
         return df
 
     def bound_angular_velocity(self, df=None):
@@ -214,7 +216,7 @@ class Behavior_Coding(object):
         gap_indicies = np.where(dt > max_gap_seconds)[0]
 
         if len(gap_indicies) == 0:
-            return [blob_df]
+            return [df]
 
         last_gap_mid = -1
         for gap_index in gap_indicies:
@@ -232,7 +234,8 @@ class Behavior_Coding(object):
     def combine_split_dfs(self, df_list, min_window_seconds=0):
 
         # if list contains one element, return element
-        if len(df_list) == 1: return df_list[0]
+        if len(df_list) == 1:
+            return df_list[0]
 
         blob_parts = []
         for df_part in df_list:
@@ -240,7 +243,7 @@ class Behavior_Coding(object):
                 continue
             t = df_part['time']
             t0, t1 = t.iloc[0], t.iloc[-1]
-            #print('combine', t0, 'to', t1)
+            # print('combine', t0, 'to', t1)
             seconds = t1 - t0
             if seconds < min_window_seconds:
                 continue
@@ -248,14 +251,14 @@ class Behavior_Coding(object):
             blob_parts.append(df_part)
         combined = pd.concat(blob_parts)
         combined = combined.sort('time')
-        #print('min diff', np.nanmin(np.diff(combined['time'])))
-        #print('max diff', np.nanmax(np.diff(combined['time'])))
+        # print('min diff', np.nanmin(np.diff(combined['time'])))
+        # print('max diff', np.nanmax(np.diff(combined['time'])))
         assert np.diff(combined['time']).all() > 0
         return combined
 
-    def fix_orientation(self, df, orientation_col ='orientation'):
+    def fix_orientation(self, df, orientation_col='orientation'):
         df.loc[:, 'dorr'] = df[orientation_col].diff()
-        df.loc[:,'dorr'].fillna(0, inplace=True)
+        df.loc[:, 'dorr'].fillna(0, inplace=True)
         df['dorr'].iloc[0] = df.iloc[0][orientation_col]
 
         pi = np.pi
@@ -281,32 +284,34 @@ class Behavior_Coding(object):
                 break
         return y
 
-    def _show_assignment(self, df, plot_col='ar', assignment_col='behavior_class', assignment_value=1, ax=None):
-        #counts = [1,5,10]
+    def _show_assignment(self, df, plot_col='ar',
+                         assignment_col='behavior_class',
+                         assignment_value=1, ax=None):
+        # counts = [1,5,10]
         if ax is None:
             fig, ax = plt.subplots(figsize=(13, 3))
-        #df.plot(x='time', y='speed', color='k', alpha=0.3, ax=ax)
+        # df.plot(x='time', y='speed', color='k', alpha=0.3, ax=ax)
         assigned = (df[assignment_col] == assignment_value)
         print(np.sum(assigned), 'assigned')
-        not_assingned = (assigned == False)
+        not_assingned = not assigned  # (assigned == False)
         print(np.sum(not_assingned), 'not assigned')
-
-        #print(not_paused)
+        # print(not_paused)
 
         d1 = df[assigned]
         if d1 is not None and len(d1):
-            ax.plot(np.array(d1['time']),np.array(d1[plot_col]), '.', color='red', alpha=0.8, label='assinged')
-            #d1.plot(kind='scatter', x='minutes', y='speed', color='red', alpha=0.8, ax=ax)
+            ax.plot(np.array(d1['time']), np.array(d1[plot_col]), '.',
+                    color='red', alpha=0.8, label='assinged')
         d2 = df[not_assingned]
         if d2 is not None and len(d2):
-            ax.plot(np.array(d2['time']),np.array(d2[plot_col]), '.', color='blue', alpha=0.8, label='not_assigned')
-
-            #d2.plot(kind='scatter', x='minutes', y='speed', color='blue', alpha=0.8, ax=ax)
+            ax.plot(np.array(d2['time']), np.array(d2[plot_col]), '.',
+                    color='blue', alpha=0.8, label='not_assigned')
         ax.legend(loc=(1.1, 0.1))
         return ax
 
-    def _assign_behavior(self, df, col_name='ar', value_cuttoff=0.8, operation='>', min_points=5,
-                        assignment_col='behavior_class', assignment_value=1):
+    def _assign_behavior(self, df, col_name='ar', value_cuttoff=0.8,
+                         operation='>', min_points=5,
+                         assignment_col='behavior_class',
+                         assignment_value=1):
         parts = []
         if 'behavior_class' not in df.columns:
             df.loc[:, 'behavior_class'] = -1
@@ -322,8 +327,7 @@ class Behavior_Coding(object):
                 x = np.array(df_part[col_name] <= value_cuttoff, dtype=int)
 
             y = self.count_true_values(x)
-            #df_part[assignment_col].iloc[y>= min_points] = assignment_value
-            df_part.loc[y>= min_points, assignment_col] = assignment_value
+            df_part.loc[y >= min_points, assignment_col] = assignment_value
 
             parts.append(df_part)
         df = self.combine_split_dfs(parts)
@@ -339,42 +343,43 @@ class Behavior_Coding(object):
                                      assignment_value=1)
 
     def assign_pauses(self, df, speed_cut=0.8, min_points=5):
-        return self._assign_behavior(  df,
+        return self._assign_behavior(df,
 
-                                       #if
-                                       col_name='speed',
-                                       operation='<',
-                                       value_cuttoff=speed_cut,
+                                     # if
+                                     col_name='speed',
+                                     operation='<',
+                                     value_cuttoff=speed_cut,
 
-                                       # for more than min_points, points
-                                       min_points=min_points,
+                                     # for more than min_points, points
+                                     min_points=min_points,
 
-                                       # than assign col to value
-                                       assignment_col='behavior_class',
-                                       assignment_value=0)
+                                     # than assign col to value
+                                     assignment_col='behavior_class',
+                                     assignment_value=0)
 
     def show_pauses(self, df, ax=None):
-        #counts = [1,5,10]
+        # counts = [1,5,10]
         if ax is None:
             fig, ax = plt.subplots(figsize=(13, 3))
-        #df.plot(x='time', y='speed', color='k', alpha=0.3, ax=ax)
+        # df.plot(x='time', y='speed', color='k', alpha=0.3, ax=ax)
         paused = (df['behavior_class'] == 0)
-        not_paused = (paused == False)
-        #print(not_paused)
+        not_paused = not paused  # (paused == False)
+        # print(not_paused)
 
         d1 = df[paused]
         if d1 is not None and len(d1):
-            ax.plot(np.array(d1['time']),np.array(d1['speed']), '.', color='red', alpha=0.5, label='paused')
-            #d1.plot(kind='scatter', x='minutes', y='speed', color='red', alpha=0.8, ax=ax)
+            ax.plot(np.array(d1['time']), np.array(d1['speed']), '.',
+                    color='red', alpha=0.5, label='paused')
         d2 = df[not_paused]
         if d2 is not None and len(d2):
-            ax.plot(np.array(d2['time']),np.array(d2['speed']), '.', color='blue', alpha=0.5, label='moving')
+            ax.plot(np.array(d2['time']), np.array(d2['speed']), '.',
+                    color='blue', alpha=0.5, label='moving')
 
-            #d2.plot(kind='scatter', x='minutes', y='speed', color='blue', alpha=0.8, ax=ax)
         ax.legend(loc=(1.1, 0.1))
         return ax
 
-    def reassign_front_back(self, df=None, speed_cuttoff = 1.0, ar_cut= 0.8, min_points=5):
+    def reassign_front_back(self, df=None, speed_cuttoff=1.0,
+                            ar_cut=0.8, min_points=5):
         was_self = False
         if df is None:
             was_self = True
@@ -386,7 +391,8 @@ class Behavior_Coding(object):
 
         # remove all coiled segments from consideration
         df_unclassified = df[df['behavior_class'] == -1]
-        df_classified = df[df['behavior_class'] != -1] # store classified values to be added later.
+        # store classified values to be added later.
+        df_classified = df[df['behavior_class'] != -1]
 
         df_list = self.split_df(df=df_unclassified)
         parts = [df_classified]
@@ -407,13 +413,15 @@ class Behavior_Coding(object):
                 df_part.loc[:, 'speed_along'] = move_dist * np.cos(theta) / dt
                 df_part.loc[:, 'd_angle'] = df_part['orientation'].diff()
                 df_part.loc[:, 'angular_v'] = df_part['d_angle'] / dt
-                df_part.loc[:, 'move_dir'] = np.sign(np.array(df_part['speed_along']))
+                move_dir = np.sign(np.array(df_part['speed_along']))
+                df_part.loc[:, 'move_dir'] = move_dir
 
             parts.append(df_part)
         df = self.combine_split_dfs(parts)
         if was_self:
             self.df = df
         return df
+
 
 class Worm_Shape(object):
 
@@ -463,8 +471,8 @@ class Worm_Shape(object):
         total_steps = np.sum(xy_steps)
         if total_steps > 1:
 
-
-            direction = missing_distance / missing_distance * np.sign(missing_distance)
+            direction = (missing_distance / missing_distance *
+                         np.sign(missing_distance))
             correction = np.ones(shape=(total_steps, 2)) * direction
             for i in range(int(total_steps)):
                 if xy_steps[0] >= xy_steps[1]:
@@ -473,10 +481,10 @@ class Worm_Shape(object):
                     shift = np.array([0, 1])
                 correction[i] = correction[i] * shift
                 xy_steps -= shift
-                #print('xy steps')
-                #print(xy_steps)
+                # print('xy steps')
+                # print(xy_steps)
 
-            last_point = points[-1].reshape(1,2)
+            last_point = points[-1].reshape(1, 2)
             new_point_shifts = np.concatenate([last_point, correction], axis=0)
             new_points = np.cumsum(new_point_shifts, axis=0)[1:]
             points = np.concatenate([points, new_points], axis=0)
@@ -492,13 +500,22 @@ class Worm_Shape(object):
                 print(new_points)
                 print('points')
                 print(points[-6:])
-                plt.plot(points[:,0], points[:,1], '.-')
+                plt.plot(points[:, 0], points[:, 1], '.-')
                 plt.show()
             assert np.sum(np.abs(np.array(points[0] - points[-1]))) <= 1, 'outline not closed loop'
         return points
 
     def read_blob_df(self, blob_df):
         d = blob_df.dropna(subset=['contour_encoded'])
+
+        n_rows = len(d)
+        x_midlines = np.zeros(shape=(n_rows, 11))
+        y_midlines = np.zeros(shape=(n_rows, 11))
+        for i, (_, row) in enumerate(d.iterrows()):
+            xi, yi = zip(*row['midline'])
+            x_midlines[i] = xi
+            y_midlines[i] = yi
+
         outline_df = d[['frame', 'time']].copy()
         x, y = zip(*d['centroid'])
         outline_df.loc[:, 'centroid_x'] = np.round(x)
@@ -511,8 +528,8 @@ class Worm_Shape(object):
         x, y = zip(*d['std_vector'])
         x = np.array(x)
         y = np.array(y)
-        #outline_df.loc[:, 'elipse_major_x'] = x
-        #outline_df.loc[:, 'elipse_major_y'] = y
+        # outline_df.loc[:, 'elipse_major_x'] = x
+        # outline_df.loc[:, 'elipse_major_y'] = y
 
         length, width = zip(*d['size'])
         length, width = np.array(length), np.array(width)
@@ -547,10 +564,15 @@ class Worm_Shape(object):
         outline_df.loc[:, 'y_max'] = ymaxs - center_shift_y
         outline_df.loc[:, 'y_min'] = ymins - center_shift_y
 
-        buffer_size = np.max(np.max(np.abs(outline_df[['x_max', 'x_min', 'y_max', 'y_min']])))
+
+
+        buffer_size = np.max(np.max(np.abs(outline_df[['x_max',
+                                                       'x_min', 'y_max', 'y_min']])))
         self.df = outline_df
         self.buffer_size = buffer_size
         self.outlines = outlines
+        self.x_mid = x_midlines
+        self.y_mid = y_midlines
 
     def create_contours(self):
 
@@ -589,6 +611,14 @@ class Worm_Shape(object):
         shape = list(self.contours.shape)
         shape[0] = len(desired_contours)
 
+        xshape = list(self.x_mid.shape)
+        xshape[0] = len(desired_contours)
+        x_mid2 = np.zeros(xshape)
+
+        yshape = list(self.y_mid.shape)
+        yshape[0] = len(desired_contours)
+        y_mid2 = np.zeros(yshape)
+
         contours2 = np.zeros(shape)
         for i, j in enumerate(desired_contours):
             if j > len(self.contours):
@@ -596,7 +626,10 @@ class Worm_Shape(object):
             if j < 0:
                 print(j, 'wtf')
             contours2[i] = morph.binary_fill_holes(self.contours[j])
-        return contours2
+            x_mid2[i] = self.x_mid[j]
+            y_mid2[i] = self.y_mid[j]
+
+        return contours2, x_mid2, y_mid2
 
 
         # TODO: Add next steps into process.
