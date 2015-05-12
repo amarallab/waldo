@@ -39,14 +39,13 @@ DIST_DIR = HERE + '/../Data/Distributions/'
 def get_plate_distribution(data):
     plate_distribution = []
     for i, t_bin in enumerate(data):
-        plate_distribution += list(t_bin)            
+        plate_distribution += list(t_bin)
     return plate_distribution
-    
+
 if __name__ == '__main__':
     #data_ID = 'N2_aging-curvature_all_bl'
     data_ID = 'N2_aging-centroid_speed'
     #data_ID = 'N2_aging-smooth_length'
-        
     timeseries_dir = TIME_SERIES_DIR + data_ID + '/'
     save_name = DIST_DIR + data_ID + '.json'
     compiled_data = {}

@@ -2,7 +2,6 @@ import sys
 import os
 
 import pathlib
-
 import random
 import pandas as pd
 import numpy as np
@@ -11,13 +10,18 @@ import matplotlib as mpl
 import scipy
 import scipy.ndimage.morphology as morph
 
+class BaseDataFrame(object):
 
-class Behavior_Coding(object):
+    def __init__(self):
+        self.df = None
+        self.fd = None
+
+class Behavior_Coding(BaseDataFrame):
 
     def __init__(self, bl=None, body_length=None):
         self.raw_df = None
         self.df = None
-        self.bl = bl
+        self.bl= bl
         self.moving_window_size = 11
         self.body_length = body_length
         self.behavior_codes = {-1: 'unclassified',
@@ -53,9 +57,7 @@ class Behavior_Coding(object):
         self.raw_df = df
         self.df = df.copy()
 
-    def preprocess(self, dt=0.2):
-        max_gap_seconds = 5
-        min_window_seconds = 5
+    def preprocess(self, dt=0.2, max_gap_seconds=5,min_window_seconds=5):
 
         raw_df = self.raw_df
         raw_df_list = self.split_df(raw_df, max_gap_seconds)
@@ -107,7 +109,8 @@ class Behavior_Coding(object):
         # df = self.bound_angular_velocity(df=df)
         return df
 
-    def smooth_df(self, df=None, window=11, cols_to_smooth=None):
+    def smooth_df(self, df=None, window=11, cols_to_smooth=None,
+                  fill_gaps=True):
 
         if df is None:
             df = self.df
@@ -121,11 +124,12 @@ class Behavior_Coding(object):
             cols_to_smooth = list(set(df.columns) - cols_to_leave)
 
         # Fill small gaps using frames
-        df = df.set_index(['frame'])
-        f0, f1 = int(df.index[0]), int(df.index[-1])
-        df = df.reindex(range(f0, f1))
-        df = df.interpolate('linear')
-        df = df.reset_index()
+        if fill_gaps:
+            df = df.set_index(['frame'])
+            f0, f1 = int(df.index[0]), int(df.index[-1])
+            df = df.reindex(range(f0, f1))
+            df = df.interpolate('linear')
+            df = df.reset_index()
 
         df[cols_to_smooth] = pd.rolling_mean(df[cols_to_smooth],
                                              window=window, center=True)
@@ -165,20 +169,21 @@ class Behavior_Coding(object):
 
         # Interpolate missing values
         df.loc[:, cols_to_smooth] = df[cols_to_smooth].interpolate('linear')
-        df.loc[:, 'frame'] = df['frame'].interpolate('nearest')
-        df.loc[:, 'orientation'] = df['orientation'].interpolate('nearest')
-        df.loc[:, 'angle'] = df['angle'].interpolate('nearest')
-        df.loc[:, 'minutes'] = df.index / 60.0
+        if 'frame' in df:
+            df.loc[:, 'frame'] = df['frame'].interpolate('nearest')
+        if 'orientation' in df:
+            df.loc[:, 'orientation'] = df['orientation'].interpolate('nearest')
+        if 'angle' in df:
+            df.loc[:, 'angle'] = df['angle'].interpolate('nearest')
+        if 'minutes' in df:
+            df.loc[:, 'minutes'] = df.index / 60.0
 
         # Downsample to exact second times
         df = df.loc[t]
         df = df.reset_index()
         df = df.drop_duplicates('time')
-        df.head(30)
         min_dif = np.nanmin(np.nanmin(np.diff(df['time'])))
         max_dif = np.nanmax(np.nanmax(np.diff(df['time'])))
-        # print(min_dif, max_dif, type(min_dif), type(max_dif),
-        # min_dif == max_dif)
         assert min_dif - max_dif < 0.000001  # assert almost equal
         return df
 
@@ -611,13 +616,13 @@ class Worm_Shape(object):
         shape = list(self.contours.shape)
         shape[0] = len(desired_contours)
 
-        xshape = list(self.x_mid.shape)
-        xshape[0] = len(desired_contours)
-        x_mid2 = np.zeros(xshape)
+        # xshape = list(self.x_mid.shape)
+        # xshape[0] = len(desired_contours)
+        # x_mid2 = np.zeros(xshape)
 
-        yshape = list(self.y_mid.shape)
-        yshape[0] = len(desired_contours)
-        y_mid2 = np.zeros(yshape)
+        # yshape = list(self.y_mid.shape)
+        # yshape[0] = len(desired_contours)
+        # y_mid2 = np.zeros(yshape)
 
         contours2 = np.zeros(shape)
         for i, j in enumerate(desired_contours):
@@ -626,10 +631,10 @@ class Worm_Shape(object):
             if j < 0:
                 print(j, 'wtf')
             contours2[i] = morph.binary_fill_holes(self.contours[j])
-            x_mid2[i] = self.x_mid[j]
-            y_mid2[i] = self.y_mid[j]
+            # x_mid2[i] = self.x_mid[j]
+            # y_mid2[i] = self.y_mid[j]
 
-        return contours2, x_mid2, y_mid2
+        return contours2 #, x_mid2, y_mid2
 
 
         # TODO: Add next steps into process.
