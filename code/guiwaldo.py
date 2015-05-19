@@ -1,11 +1,5 @@
 __author__ = 'heltena'
 
-class Blackhole(object):
-    def write(self, text):
-        pass
-    def flush(self):
-        pass
-
 import sys
 # sys.stdout = Blackhole()
 # sys.stderr = Blackhole()
@@ -14,10 +8,17 @@ import sys
 import matplotlib
 matplotlib.use('Qt4Agg')
 from PyQt4 import QtGui
-import os
-import json
-
+# import os
+# import json
 from waldo.gui import WaldoApp
+
+
+class Blackhole(object):
+    def write(self, text):
+        pass
+
+    def flush(self):
+        pass
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

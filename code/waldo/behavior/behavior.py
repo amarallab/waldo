@@ -1,112 +1,35 @@
-import sys
-import os
+# import sys
+# import os
+# import pathlib
+# import random
+# import matplotlib as mpl
+# import scipy
 
-import pathlib
-import random
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-import scipy
 import scipy.ndimage.morphology as morph
+
 
 class BaseDataFrame(object):
 
     def __init__(self):
         self.df = None
-        self.fd = None
+        self.protected_cols = []
 
-class Behavior_Coding(BaseDataFrame):
-
-    def __init__(self, bl=None, body_length=None):
-        self.raw_df = None
-        self.df = None
-        self.bl= bl
-        self.moving_window_size = 11
-        self.body_length = body_length
-        self.behavior_codes = {-1: 'unclassified',
-                               0: 'pause',
-                               1: 'forward',
-                               2: 'back',
-                               3: 'coil',
-                               4: 'pirouette'}
-
-        # not sure if this is wise?
-        self.movement_codes = {-1: 'unclassified',
-                               0: 'back',
-                               1: 'pause',
-                               2: 'forward'}
-
-    def read_from_blob_df(self, blob_df):
-        df = blob_df[['frame', 'time']].copy()
-
-        x, y = zip(*blob_df.loc[:, 'centroid'])
-        df['x'] = x
-        df['y'] = y
-
-        length, width = zip(*blob_df['size'])
-        df.loc[:, 'length'] = length
-        df.loc[:, 'width'] = width
-
-        len_x, len_y = zip(*blob_df['std_vector'])
-        df.loc[:, 'len_x'] = len_x
-        df.loc[:, 'len_y'] = len_y
-        df.loc[:, 'angle'] = np.arctan2(len_y, len_x)
-
-        df.loc[:, 'std_width'] = blob_df['std_ortho']
-        self.raw_df = df
-        self.df = df.copy()
-
-    def preprocess(self, dt=0.2, max_gap_seconds=5,min_window_seconds=5):
-
-        raw_df = self.raw_df
-        raw_df_list = self.split_df(raw_df, max_gap_seconds)
-        df_list = []
-        for rdf in raw_df_list:
-            if len(rdf) > 11:
-                df = self.smooth_df(df=rdf)
-                df = self.calculate_columns_df(df=df)
-                df = self.smooth_df(df=df)
-                df = self.equally_space_df(df=df, dt=dt)
-                df_list.append(df)
-        df = self.combine_split_dfs(df_list, min_window_seconds)
-        self.df = df
-        self.df.loc[:, 'behavior_class'] = -1
-        self.df.loc[:, 'move_dir'] = -1
-
-    def calculate_columns_df(self, df=None):
-
+    def fill_gaps(self, df=None):
         if df is None:
             df = self.df
 
         if df.index.name is not None:
             df = df.reset_index()
 
-        # calculate aditional columns
-        df.loc[:, 'dx'] = df['x'].diff()
-        df.loc[:, 'dy'] = df['y'].diff()
-
-        df.loc[:, 'move_or'] = np.arctan2(df['dy'], df['dx'])
-        df.loc[:, 'orientation'] = np.arctan2(df['len_y'], df['len_x'])
-        self.fix_orientation(df)
-
-        dt = df['time'].diff()
-        move_dist = np.sqrt(df['dx']**2 + df['dy']**2)
-
-        theta = (df['orientation'] - df['move_or'])
-
-        df.loc[:, 'speed'] = move_dist / dt
-        df.loc[:, 'speed_perp'] = move_dist * np.sin(theta) / dt
-        df.loc[:, 'speed_along'] = move_dist * np.cos(theta) / dt
-
-        df.loc[:, 'std_length'] = np.sqrt(df['dx']**2 + df['dy']**2)
-        df.loc[:, 'd_angle'] = df['orientation'].diff()
-        df.loc[:, 'angular_v'] = df['d_angle'] / df['time'].diff()
-        df.loc[:, 'ar'] = df['width'] / df['length']
-        df.loc[:, 'std_ar'] = df['std_width'] / df['std_length']
-        df.loc[:, 'minutes'] = df['time'] / 60.0
-        df.loc[:, 'minutes'] = df['time'] / 60.0
-        # df = self.bound_angular_velocity(df=df)
+        # Fill small gaps using frames
+        df = df.set_index(['frame'])
+        f0, f1 = int(df.index[0]), int(df.index[-1])
+        df = df.reindex(range(f0, f1))
+        df = df.interpolate('linear')
+        df = df.reset_index()
         return df
 
     def smooth_df(self, df=None, window=11, cols_to_smooth=None,
@@ -119,17 +42,16 @@ class Behavior_Coding(BaseDataFrame):
             df = df.reset_index()
 
         if cols_to_smooth is None:
-            cols_to_leave = set(['minutes', 'time', 'frame',
-                                 'angle', 'orientation'])
+            cols_to_leave = set(self.protected_cols)
             cols_to_smooth = list(set(df.columns) - cols_to_leave)
 
         # Fill small gaps using frames
-        if fill_gaps:
-            df = df.set_index(['frame'])
-            f0, f1 = int(df.index[0]), int(df.index[-1])
-            df = df.reindex(range(f0, f1))
-            df = df.interpolate('linear')
-            df = df.reset_index()
+        # if fill_gaps:
+        #     df = df.set_index(['frame'])
+        #     f0, f1 = int(df.index[0]), int(df.index[-1])
+        #     df = df.reindex(range(f0, f1))
+        #     df = df.interpolate('linear')
+        #     df = df.reset_index()
 
         df[cols_to_smooth] = pd.rolling_mean(df[cols_to_smooth],
                                              window=window, center=True)
@@ -137,7 +59,8 @@ class Behavior_Coding(BaseDataFrame):
         df = df.fillna(method='ffill')
         return df
 
-    def equally_space_df(self, df=None, dt=0.5, cols_to_smooth=None):
+    def equally_space_df(self, df=None, dt=0.5, cols_to_smooth=None,
+                         key_col='time'):
         def add_empty_rows(df, keys=None):
             cols = df.columns
             index = keys
@@ -147,8 +70,9 @@ class Behavior_Coding(BaseDataFrame):
             return pd.concat([df, df2]).sort()
 
         if cols_to_smooth is None:
-            cols_to_leave = set(['minutes', 'time', 'frame',
-                                 'angle', 'orientation'])
+            cols_to_leave = set(self.protected_cols)
+            # cols_to_leave = set(['minutes', 'time', 'frame',
+            #                      'angle', 'orientation'])
             cols_to_smooth = list(set(df.columns) - cols_to_leave)
 
         if df.index.name is not None:
@@ -169,14 +93,17 @@ class Behavior_Coding(BaseDataFrame):
 
         # Interpolate missing values
         df.loc[:, cols_to_smooth] = df[cols_to_smooth].interpolate('linear')
-        if 'frame' in df:
-            df.loc[:, 'frame'] = df['frame'].interpolate('nearest')
-        if 'orientation' in df:
-            df.loc[:, 'orientation'] = df['orientation'].interpolate('nearest')
-        if 'angle' in df:
-            df.loc[:, 'angle'] = df['angle'].interpolate('nearest')
-        if 'minutes' in df:
-            df.loc[:, 'minutes'] = df.index / 60.0
+        for col in self.protected_cols:
+            if col in df:
+                df.loc[:, col] = df[col].interpolate('nearest')
+        # if 'frame' in df:
+        #     df.loc[:, 'frame'] = df['frame'].interpolate('nearest')
+        # if 'orientation' in df:
+        #   df.loc[:, 'orientation'] = df['orientation'].interpolate('nearest')
+        # if 'angle' in df:
+        #     df.loc[:, 'angle'] = df['angle'].interpolate('nearest')
+        # if 'minutes' in df:
+        #     df.loc[:, 'minutes'] = df.index / 60.0
 
         # Downsample to exact second times
         df = df.loc[t]
@@ -185,23 +112,6 @@ class Behavior_Coding(BaseDataFrame):
         min_dif = np.nanmin(np.nanmin(np.diff(df['time'])))
         max_dif = np.nanmax(np.nanmax(np.diff(df['time'])))
         assert min_dif - max_dif < 0.000001  # assert almost equal
-        return df
-
-    def bound_angular_velocity(self, df=None):
-        if df is None:
-            df = self.df
-
-        for _ in range(10):
-            i = df[df['angular_v'] > 2*np.pi].index
-            df.loc[i, 'angular_v'] = df.loc[i, 'angular_v'] - 2*np.pi
-            i = df[df['angular_v'] < 2*np.pi].index
-            df.loc[i, 'angular_v'] = df.loc[i, 'angular_v'] + 2*np.pi
-
-        i = df[df['angular_v'] > np.pi].index
-        df.loc[i, 'angular_v'] = df.loc[i]['angular_v'] - 2*np.pi
-
-        i = df[df['angular_v'] < -np.pi].index
-        df.loc[i, 'angular_v'] = df['angular_v'].loc[i] + 2*np.pi
         return df
 
     def split_df(self, df=None, max_gap_seconds=1, max_gap_frames=None):
@@ -261,20 +171,6 @@ class Behavior_Coding(BaseDataFrame):
         assert np.diff(combined['time']).all() > 0
         return combined
 
-    def fix_orientation(self, df, orientation_col='orientation'):
-        df.loc[:, 'dorr'] = df[orientation_col].diff()
-        df.loc[:, 'dorr'].fillna(0, inplace=True)
-        df['dorr'].iloc[0] = df.iloc[0][orientation_col]
-
-        pi = np.pi
-        for i in range(10):
-            big_minus = df['dorr'] < - pi
-            df.loc[big_minus, 'dorr'] = df.loc[big_minus, 'dorr'] + (2*pi)
-            big_plus = df['dorr'] > pi
-            df.loc[big_plus, 'dorr'] = df.loc[big_plus, 'dorr'] - (2*pi)
-        df.loc[:, orientation_col] = np.cumsum(df['dorr'])
-        return df
-
     def count_true_values(self, x):
         for i in range(len(x)):
             x[(x[1:] > i) & (x[:-1] > i)] = i + 2
@@ -288,6 +184,134 @@ class Behavior_Coding(BaseDataFrame):
             if np.max(y) < i:
                 break
         return y
+
+
+class Behavior_Coding(BaseDataFrame):
+
+    def __init__(self, bl=None, body_length=None):
+        self.raw_df = None
+        self.df = None
+        self.bl = bl
+        self.moving_window_size = 11
+        self.body_length = body_length
+        self.protected_cols = ['time', 'frame']
+
+        self.behavior_codes = {-1: 'unclassified',
+                               0: 'pause',
+                               1: 'forward',
+                               2: 'back',
+                               3: 'coil',
+                               4: 'pirouette'}
+
+        # not sure if this is wise?
+        self.movement_codes = {-1: 'unclassified',
+                               0: 'back',
+                               1: 'pause',
+                               2: 'forward'}
+
+    def read_from_blob_df(self, blob_df):
+        df = blob_df[['frame', 'time']].copy()
+
+        x, y = zip(*blob_df.loc[:, 'centroid'])
+        df['x'] = x
+        df['y'] = y
+
+        length, width = zip(*blob_df['size'])
+        df.loc[:, 'length'] = length
+        df.loc[:, 'width'] = width
+
+        len_x, len_y = zip(*blob_df['std_vector'])
+        df.loc[:, 'len_x'] = len_x
+        df.loc[:, 'len_y'] = len_y
+        df.loc[:, 'angle'] = np.arctan2(len_y, len_x)
+
+        df.loc[:, 'std_width'] = blob_df['std_ortho']
+        self.raw_df = df
+        self.df = df.copy()
+
+    def preprocess(self, dt=0.2, max_gap_seconds=5, min_window_seconds=5):
+
+        raw_df = self.raw_df
+        raw_df_list = self.split_df(raw_df, max_gap_seconds)
+        df_list = []
+        for rdf in raw_df_list:
+            if len(rdf) > 11:
+                df = self.fill_gaps(df=rdf)
+                df = self.smooth_df(df=df)
+                df = self.calculate_columns_df(df=df)
+                df = self.smooth_df(df=df)
+                df = self.equally_space_df(df=df, dt=dt)
+                df_list.append(df)
+        df = self.combine_split_dfs(df_list, min_window_seconds)
+        self.df = df
+        self.df.loc[:, 'behavior_class'] = -1
+        self.df.loc[:, 'move_dir'] = -1
+
+    def calculate_columns_df(self, df=None):
+
+        if df is None:
+            df = self.df
+
+        if df.index.name is not None:
+            df = df.reset_index()
+
+        # calculate aditional columns
+        df.loc[:, 'dx'] = df['x'].diff()
+        df.loc[:, 'dy'] = df['y'].diff()
+
+        df.loc[:, 'move_or'] = np.arctan2(df['dy'], df['dx'])
+        df.loc[:, 'orientation'] = np.arctan2(df['len_y'], df['len_x'])
+        self.fix_orientation(df)
+
+        dt = df['time'].diff()
+        move_dist = np.sqrt(df['dx']**2 + df['dy']**2)
+
+        theta = (df['orientation'] - df['move_or'])
+
+        df.loc[:, 'speed'] = move_dist / dt
+        df.loc[:, 'speed_perp'] = move_dist * np.sin(theta) / dt
+        df.loc[:, 'speed_along'] = move_dist * np.cos(theta) / dt
+
+        df.loc[:, 'std_length'] = np.sqrt(df['dx']**2 + df['dy']**2)
+        df.loc[:, 'd_angle'] = df['orientation'].diff()
+        df.loc[:, 'angular_v'] = df['d_angle'] / df['time'].diff()
+        df.loc[:, 'ar'] = df['width'] / df['length']
+        df.loc[:, 'std_ar'] = df['std_width'] / df['std_length']
+        df.loc[:, 'minutes'] = df['time'] / 60.0
+        df.loc[:, 'minutes'] = df['time'] / 60.0
+        # df = self.bound_angular_velocity(df=df)
+        return df
+
+    # def bound_angular_velocity(self, df=None):
+    #     if df is None:
+    #         df = self.df
+
+    #     for _ in range(10):
+    #         i = df[df['angular_v'] > 2*np.pi].index
+    #         df.loc[i, 'angular_v'] = df.loc[i, 'angular_v'] - 2*np.pi
+    #         i = df[df['angular_v'] < 2*np.pi].index
+    #         df.loc[i, 'angular_v'] = df.loc[i, 'angular_v'] + 2*np.pi
+
+    #     i = df[df['angular_v'] > np.pi].index
+    #     df.loc[i, 'angular_v'] = df.loc[i]['angular_v'] - 2*np.pi
+
+    #     i = df[df['angular_v'] < -np.pi].index
+    #     df.loc[i, 'angular_v'] = df['angular_v'].loc[i] + 2*np.pi
+    #     return df
+
+    def fix_orientation(self, df, orientation_col='orientation'):
+        df.loc[:, 'dorr'] = df[orientation_col].diff()
+        df.loc[:, 'dorr'].fillna(0, inplace=True)
+        df['dorr'].iloc[0] = df.iloc[0][orientation_col]
+
+        pi = np.pi
+        for i in range(10):
+            big_minus = df['dorr'] < - pi
+            df.loc[big_minus, 'dorr'] = df.loc[big_minus, 'dorr'] + (2*pi)
+            big_plus = df['dorr'] > pi
+            df.loc[big_plus, 'dorr'] = df.loc[big_plus, 'dorr'] - (2*pi)
+        df.loc[:, orientation_col] = np.cumsum(df['dorr'])
+        return df
 
     def _show_assignment(self, df, plot_col='ar',
                          assignment_col='behavior_class',
@@ -507,7 +531,9 @@ class Worm_Shape(object):
                 print(points[-6:])
                 plt.plot(points[:, 0], points[:, 1], '.-')
                 plt.show()
-            assert np.sum(np.abs(np.array(points[0] - points[-1]))) <= 1, 'outline not closed loop'
+            start_end_dist = np.sum(np.abs(np.array(points[0] - points[-1])))
+            assert start_end_dist <= 1, 'outline not closed loop'
+
         return points
 
     def read_blob_df(self, blob_df):
@@ -528,7 +554,6 @@ class Worm_Shape(object):
         x, y = zip(*d['contour_start'])
         outline_df.loc[:, 'contour_x'] = x
         outline_df.loc[:, 'contour_y'] = y
-
 
         x, y = zip(*d['std_vector'])
         x = np.array(x)
@@ -560,8 +585,10 @@ class Worm_Shape(object):
             ymaxs.append(max(y))
             outlines.append(points)
 
-        center_shift_x = - outline_df.loc[:, 'contour_x'] + outline_df.loc[:, 'centroid_x']
-        center_shift_y = - outline_df.loc[:, 'contour_y'] + outline_df.loc[:, 'centroid_y']
+        center_shift_x = (- outline_df.loc[:, 'contour_x']
+                          + outline_df.loc[:, 'centroid_x'])
+        center_shift_y = (- outline_df.loc[:, 'contour_y']
+                          + outline_df.loc[:, 'centroid_y'])
         outline_df.loc[:, 'center_shift_x'] = center_shift_x
         outline_df.loc[:, 'center_shift_y'] = center_shift_y
         outline_df.loc[:, 'x_max'] = xmaxs - center_shift_x
@@ -569,10 +596,8 @@ class Worm_Shape(object):
         outline_df.loc[:, 'y_max'] = ymaxs - center_shift_y
         outline_df.loc[:, 'y_min'] = ymins - center_shift_y
 
-
-
-        buffer_size = np.max(np.max(np.abs(outline_df[['x_max',
-                                                       'x_min', 'y_max', 'y_min']])))
+        buffer_size = np.max(np.max(np.abs(outline_df[['x_max', 'x_min',
+                                                       'y_max', 'y_min']])))
         self.df = outline_df
         self.buffer_size = buffer_size
         self.outlines = outlines
@@ -581,25 +606,26 @@ class Worm_Shape(object):
 
     def create_contours(self):
 
-        buffer_size = self.buffer_size #np.max(np.max(np.abs(outline_df[['x_max', 'x_min', 'y_max', 'y_min']])))
+        buffer_size = self.buffer_size
+        # np.max(np.max(np.abs(outline_df[['x_max', 'x_min',
+        # 'y_max', 'y_min']])))
         outlines = self.outlines
-        contours = np.zeros(shape=(len(outlines), 2 * buffer_size + 1, 2 * buffer_size + 1))
+        contours = np.zeros(shape=(len(outlines),
+                                   2 * buffer_size + 1,
+                                   2 * buffer_size + 1))
 
         lenght, xlim, ylim = contours.shape
         print(xlim, ylim)
-        point_shifts = []
         o = np.array(self.df[['center_shift_x', 'center_shift_y']])
         for i, outline in enumerate(outlines):
             shift = o[i]
-            #print(shift)
             outline2 = outline - shift + np.array([buffer_size, buffer_size])
             for point in outline2:
                 pt = point
                 # TESTING, the contours are given in transposed coordinates...?
-                #contours[i][pt[0], pt[1]] = 1
+                # contours[i][pt[0], pt[1]] = 1
                 contours[i][pt[1], pt[0]] = 1
         self.contours = contours
-
 
     def match_contour_frames(self, desired_frames):
 
@@ -633,12 +659,10 @@ class Worm_Shape(object):
             contours2[i] = morph.binary_fill_holes(self.contours[j])
             # x_mid2[i] = self.x_mid[j]
             # y_mid2[i] = self.y_mid[j]
-
-        return contours2 #, x_mid2, y_mid2
-
+        return contours2  # , x_mid2, y_mid2
 
         # TODO: Add next steps into process.
-        #contours2 = [morph.binary_fill_holes(c) for c in contours]
+        # contours2 = [morph.binary_fill_holes(c) for c in contours]
 
         # def loop_thinning(contours2):
         #     thin = []
