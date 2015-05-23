@@ -37,7 +37,7 @@ class _Worker(QtCore.QObject):
             self.finished.emit()
         except _WorkerCancelled:
             self.cancelled.emit()
-        except Exception, ex:
+        except Exception as ex:
             traceback.print_exc()
             self.cancelled.emit()
 

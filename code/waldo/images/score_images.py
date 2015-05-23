@@ -3,15 +3,16 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import scipy
 import skimage
+
 # import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
-from . import manipulations as mim
 # from . import grab_images
-from . import draw
+# from . import draw
 import waldo.wio as wio
-import code.waldo.images.summarize
+from . import summarize
+from . import manipulations as mim
 
 
 def get_background_and_worm_pixels(background, roi_mask, threshold, impaths):
@@ -125,9 +126,9 @@ def score(ex_id, experiment=None):
     time = times[-1]
     # print(threshold, type(threshold))
     # print(roi, type(roi))
-    _, base_acc, _ = code.waldo.images.summarize.analyze_image(experiment, time, img,
-                                               background, threshold,
-                                               roi, show=False)
+    _, base_acc, _ = summarize.analyze_image(experiment, time, img,
+                                             background, threshold,
+                                             roi, show=False)
     # print(base_acc)
     false_neg = base_acc['false-neg']
     false_pos = base_acc['false-pos']

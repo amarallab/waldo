@@ -1,10 +1,10 @@
-from matplotlib import pyplot as plt, image
+from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import ndimage
 from skimage.measure import regionprops
-from code.waldo.images import manipulations as mim
-from code.waldo.images.blob_interface import grab_blob_data
+from waldo.images import manipulations as mim
+from waldo.images.blob_interface import grab_blob_data
 
 __author__ = 'peterwinter'
 
@@ -455,7 +455,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None,
     cb_save(1)
 
 
-def summarize(ex_id, overwrite=True, callback=None, image_callback=None):
+def summarize_ex_id(ex_id, overwrite=True, callback=None, image_callback=None):
     """ short script to load threshold, roi and run
     analyze_ex_id_images.
     """

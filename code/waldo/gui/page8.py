@@ -1,6 +1,7 @@
 __author__ = 'heltena'
 
-from PyQt4 import QtGui, QtCore
+import os
+from PyQt4 import QtGui
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt, QTimer
 
@@ -8,39 +9,36 @@ from waldo.conf import settings
 from waldo.prepare import summarize as prepare_summarize
 from waldo.images import summarize as images_summarize
 from waldo.metrics.report_card import WaldoSolver
-#from waldo.wio import Experiment
 from waldo.output.writer import OutputWriter
-
-#from waldo import wio
-#import waldo.images.evaluate_acuracy as ea
-#import waldo.images.worm_finder as wf
-#import waldo.metrics.report_card as report_card
-
-#import waldo.metrics.step_simulation as ssim
-#import waldo.viz.eye_plots as ep
-
-#from waldo.gui import pathcustomize
-import os
-
-#import numpy as np
-#import pandas as pd
+from . import tasking
 
 import matplotlib.pyplot as plt
-#import matplotlib.gridspec as gridspec
-#import matplotlib.patches as patches
-#from mpltools import style
-
 import matplotlib.image as mpimg
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-#from skimage import morphology
-#from skimage.measure import regionprops
 
-#style.use('ggplot')
+# from waldo.wio import Experiment
+# from waldo import wio
+# import waldo.images.evaluate_acuracy as ea
+# import waldo.images.worm_finder as wf
+# import waldo.metrics.report_card as report_card
 
-import tasking
+# import waldo.metrics.step_simulation as ssim
+# import waldo.viz.eye_plots as ep
 
-from time import time
+
+
+
+# import numpy as np
+# import pandas as pd
+# import matplotlib.gridspec as gridspec
+# import matplotlib.patches as patches
+# from mpltools import style
+# from skimage import morphology
+# from skimage.measure import regionprops
+# style.use('ggplot')
+
+# from waldo.gui import pathcustomize
+
 
 class WaldoProcessDialog(QtGui.QDialog):
     def __init__(self, experiment, func, image_func, report_func, finish_func, parent=None):
@@ -124,9 +122,9 @@ class WaldoProcessDialog(QtGui.QDialog):
 
 
 class WaldoProcessPage(QtGui.QWizardPage):
-    SHOWING_NOTHING=0
-    SHOWING_IMAGE=1
-    SHOWING_REPORT=2
+    SHOWING_NOTHING = 0
+    SHOWING_IMAGE = 1
+    SHOWING_REPORT = 2
 
     def __init__(self, data, parent=None):
         super(WaldoProcessPage, self).__init__(parent)
@@ -210,6 +208,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         impaths = [str(s) for s in impaths]
 
         self.last_image_index = 0
+
         def callback_with_image(x):
             if len(impaths) == 0:
                 return
@@ -277,12 +276,14 @@ class WaldoProcessPage(QtGui.QWizardPage):
         path = os.path.join(settings.PROJECT_DATA_ROOT, ex_id)
         report_card_df = self.data.experiment.prepdata.load('report-card')
         if report_card_df is not None:
-            headers = ['phase', 'step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min', 'duration-mean', 'duration-std']
+            headers = ['phase', 'step', 'total-nodes', '>10min', '>20min', '>30min', '>40min', '>50min',
+                       'duration-mean', 'duration-std']
             b = report_card_df[headers]
             name = os.path.join(path, ex_id + '-track_counts.csv')
             b.to_csv(path_or_buf=name)
 
-            headers = ['phase', 'step', 'total-nodes', 'connected-nodes', 'isolated-nodes', 'giant-component-size', '# components']
+            headers = ['phase', 'step', 'total-nodes', 'connected-nodes', 'isolated-nodes', 'giant-component-size',
+                       '# components']
             b = report_card_df[headers]
             name = os.path.join(path, ex_id + '-network_overview.csv')
             b.to_csv(path_or_buf=name)
@@ -292,8 +293,8 @@ class WaldoProcessPage(QtGui.QWizardPage):
             df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
             df = df.rename(columns={'lifespan': 'track-duration',
                                     'unknown': 'disappear',
-                                    'timing':'recording-finishes',
-                                    'on_edge':'image-edge'})
+                                    'timing': 'recording-finishes',
+                                    'on_edge': 'image-edge'})
             df.set_index('track-duration', inplace=True)
             name = os.path.join(path, ex_id + '-tract_termination.csv')
             df.to_csv(path_or_buf=name)
@@ -303,8 +304,8 @@ class WaldoProcessPage(QtGui.QWizardPage):
             df['lifespan'] = ['0-1 min', '1-5 min', '6-10 min', '11-20 min', '21-60 min', 'total']
             df = df.rename(columns={'lifespan': 'track-duration',
                                     'unknown': 'appear',
-                                    'timing':'recording-begins',
-                                    'on_edge':'image-edge'})
+                                    'timing': 'recording-begins',
+                                    'on_edge': 'image-edge'})
             df.set_index('track-duration', inplace=True)
             name = os.path.join(path, ex_id + '-tract_initiation.csv')
             df.to_csv(path_or_buf=name)

@@ -24,24 +24,24 @@ import numpy as np
 
 # package specific
 
-# TODO. move this into the testing dir.
-def sample_function(ex_dir):
-    sfile = glob.glob(ex_dir + '*.summary')[0]
-    blob_files = sorted(glob.glob(ex_dir + '*.blobs'))
-    blob_durations, blob_locations, blob_starts, blob_ends = read_summary_events(sfile)
-
-    # check if blob numbers match the correct files.
-    '''
-    falsely_identified = []
-    for b, (f_num, bit_offset) in blob_locations.iteritems():
-        if b not in bfile_blobs[f_num]:
-            falsely_identified.append(b)
-    print len(falsely_identified), 'wrong out of', len(blob_locations)
-    '''
-    min_time = 120
-    blobs_to_check = [b for (b, dur) in blob_durations.iteritems() if dur >= min_time]
-    for b in blobs_to_check[:]:
-        blob_lines = return_blob_lines(blob_id=b, blob_locations=blob_locations, file_index=blob_files)
+# # TODO. move this into the testing dir.
+# def sample_function(ex_dir):
+#     sfile = glob.glob(ex_dir + '*.summary')[0]
+#     blob_files = sorted(glob.glob(ex_dir + '*.blobs'))
+#     blob_durations, blob_locations, blob_starts, blob_ends = read_summary_events(sfile)
+#
+#     # check if blob numbers match the correct files.
+#     '''
+#     falsely_identified = []
+#     for b, (f_num, bit_offset) in blob_locations.iteritems():
+#         if b not in bfile_blobs[f_num]:
+#             falsely_identified.append(b)
+#     print len(falsely_identified), 'wrong out of', len(blob_locations)
+#     '''
+#     min_time = 120
+#     blobs_to_check = [b for (b, dur) in blob_durations.iteritems() if dur >= min_time]
+#     for b in blobs_to_check[:]:
+#         blob_lines = return_blob_lines(blob_id=b, blob_locations=blob_locations, file_index=blob_files)
 
 class Blob_Reader(object):
     """
@@ -102,7 +102,7 @@ class Blob_Reader(object):
         N = len(self.blobs_to_check)
         for i, bID in enumerate(self.blobs_to_check):
             if verbose:
-                print 'checking {bID} ({i}/{N})'.format(bID=bID, i=i, N=N)
+                print('checking {bID} ({i}/{N})'.format(bID=bID, i=i, N=N))
             local_id = make_local_id(str(bID))
             temp_blob = make_temp_blob()
             for line in self.return_blob_lines(blob_id=bID):
@@ -209,9 +209,9 @@ class Blob_Reader(object):
                     else:
                         line_id = int(line[1:])
                         if line_id != blob_id:
-                            print 'WARNING index/blobs file mismatch'
-                            print 'blob id:', blob_id
-                            print 'line id:', line_id
+                            print('WARNING index/blobs file mismatch')
+                            print('blob id:', blob_id)
+                            print('line id:', line_id)
                             return []
                 # data line, store for processing
                 else:
@@ -235,7 +235,7 @@ def parse_outline_from_line(line):
         outline_code = cols[3]
         return x, y, p_num, outline_code
     except Exception as e:
-        print e
+        print(e)
         return None
 
 def calculate_midline_from_line(line):
@@ -263,7 +263,7 @@ def calculate_midline_from_line(line):
         #    midline += math.sqrt((ys[i] - ys[i+1])**2 + (xs[i] - xs[i+1])**2)
         return midline
     except Exception as e:
-        print e
+        print(e)
         sys.exit(-1)
         return None
 
@@ -284,7 +284,7 @@ def calculate_midline_from_line2(line):
         dy = np.diff(np.array([float(y) for y in cols[1::2]]))
         return np.sqrt(dx**2 +dy**2)
     except Exception as e:
-        print e
+        print(e)
         return None
 
 def is_blob_worthy(aggregate_attributes, min_body_lengths, min_duration, min_size):
@@ -370,7 +370,7 @@ def main():
     #print glob.glob(data_dir + '*')
     ex_id = '20130621_121947'
     #ex_id = '20130318_153749'
-    print ex_id
+    print(ex_id)
     path = data_dir + ex_id + '/'
     bfiles = glob.glob(path + '*.blobs')
 
@@ -379,28 +379,29 @@ def main():
     blobs_method2 = BR.pull_worthy_blobs()
     t2 = time.time() - start_time2
     b2 = blobs_method2.keys()
-    print 'time2', t2
-    print 'len', len(b2), b2
+    print('time2', t2)
+    print('len', len(b2), b2)
 
     start_time1 = time.time()
     blobs_method1 = {}
     for bfile in bfiles:
-        print bfile
-        blobs_method1.update(pull_worthy_blobs_from_blobs_file(bfile, min_body_lengths=2, min_duration=120, min_size=50))
+        print(bfile)
+        blobs_method1.update(pull_worthy_blobs_from_blobs_file(bfile, min_body_lengths=2,
+                                                               min_duration=120, min_size=50))
 
     t1 = time.time() - start_time1
     b1 = blobs_method1.keys()
-    print 'time1', t1
-    print 'len', len(b1), b1
+    print('time1', t1)
+    print('len', len(b1), b1)
 
 
-    print 't2 is ', t1 / t2, 'times faster'
+    print('t2 is ', t1 / t2, 'times faster')
     for b in b1:
         if b not in b2:
-            print 'did not find', b
+            print('did not find', b)
     for b in b2:
         if b not in b1:
-            print 'found extra', b
+            print('found extra', b)
 
 
 

@@ -25,19 +25,19 @@ from waldo.wio import paths
 from .loaders import CacheThresholdLoadingDialog
 from .helpers import circle_3pt
 
-from waldo.conf import settings
-from waldo.prepare import summarize as prepare_summarize
-from waldo.images import summarize as images_summarize
-from waldo.metrics.report_card import WaldoSolver
-from waldo.wio import Experiment
-from waldo.output.writer import OutputWriter
+# from waldo.conf import settings
+# from waldo.prepare import summarize as prepare_summarize
+# from waldo.images import summarize as images_summarize
+# from waldo.metrics.report_card import WaldoSolver
+# from waldo.wio import Experiment
+# from waldo.output.writer import OutputWriter
 from waldo import wio
 import waldo.images.evaluate_acuracy as ea
-import waldo.images.worm_finder as wf
+# import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
-import waldo.metrics.step_simulation as ssim
-import waldo.viz.eye_plots as ep
-from waldo.gui import pathcustomize
+# import waldo.metrics.step_simulation as ssim
+# import waldo.viz.eye_plots as ep
+# from waldo.gui import pathcustomize
 
 
 STYLE = 'ggplot'

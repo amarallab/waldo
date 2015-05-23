@@ -41,7 +41,7 @@ from .helpers import experiment_has_final_results
 
 #style.use('ggplot')
 
-import tasking
+from . import tasking
 
 from time import time
 

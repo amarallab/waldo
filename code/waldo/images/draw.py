@@ -19,19 +19,19 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 # package specific
-from Code.waldo import wio
-from Code.waldo.wio import paths
-from Code.waldo.wio import file_manager as fm
+# from waldo import wio
+# from waldo.wio import paths
+from waldo.wio import file_manager as fm
 
-from ..extern import multiworm
+# from ..extern import multiworm
 
 from . import manipulations as mim
-from . import grab_images
+# from . import grab_images
 
 # Derived from http://stackoverflow.com/a/2566508/194586
 # However, I claim these as below the threshold of originality
-from code.waldo.images.blob_interface import grab_blob_data
-from code.waldo.images.summarize import match_objects, analyze_image
+from .blob_interface import grab_blob_data
+from .summarize import match_objects, analyze_image
 
 
 def draw_colors_on_image(experiment, time, ax=None, colors=None):
