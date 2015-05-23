@@ -8,32 +8,32 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
-from mpltools import style
+#from mpltools import style
 
 
 #import sys
 #sys.path.append('../scripts')
 #print sys.path
-#import pathcustomize
+import pathcustomize
 
-from waldo import wio
+from code.waldo import wio
 import waldo.images.evaluate_acuracy as ea
 import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
 
 SAVE_DIR = os.path.abspath('../results/fig1-2014-07-31')
-style.use('ggplot')
+plt.style.use('ggplot')
 
 def calculate_stats_for_moves(min_moves, prep_data):
     move = prep_data.load('moved')
 
     base_accuracy = prep_data.load('accuracy', index_col=False)
-    print base_accuracy.head()
-    print base_accuracy.columns
+    print(base_accuracy.head())
+    print(base_accuracy.columns)
     matches = prep_data.load('matches')
     counts, tps, fps, fns = [], [], [], []
     for mm in min_moves:
-        print mm
+        print(mm)
         moved = move[move['bl_moved'] >= mm]
         bids = list(moved['bid'])
         filtered_accuracy = ea.recalculate_accuracy(matches, base_accuracy, bids=bids)
@@ -172,10 +172,10 @@ def step_facets(df, df2, t1=5, t2=20):
     short_max = max([len(short1), len(short2)])
     mid_max = max([len(mid1), len(mid2)])
     long_max = max([len(long1), len(long2)])
-    print 'short', short_max
-    print 'long', long_max
-    print 'mid', mid_max
-    print long1.head(20)
+    print('short', short_max)
+    print('long', long_max)
+    print('mid', mid_max)
+    print(long1.head(20))
 
     new_plot(ax_s0, short1, 'raw', xmax=xmax)
     new_plot(ax_m0, mid1, 'raw', xmax=xmax)
@@ -216,7 +216,7 @@ def step_facets(df, df2, t1=5, t2=20):
 
 def steps_from_node_report(experiment, min_bl=1):
     node_report = experiment.prepdata.load('node-summary')
-    print node_report.head()
+    print(node_report.head())
     steps = node_report[['bl', 't0', 'tN', 'bid']]
     steps.set_index('bid', inplace=True)
 
@@ -238,7 +238,7 @@ def make_fig1(ex_id, step_min_move = 1, save_fig=False):
     final_steps = steps_from_node_report(experiment)
     accuracy = experiment.prepdata.load('accuracy')
     worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
-    print 'worm count:', worm_count
+    print('worm count:', worm_count)
 
     fig, ax = plt.subplots()
     ### AX 0

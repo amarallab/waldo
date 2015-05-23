@@ -659,17 +659,79 @@ class Worm_Shape(object):
             contours2[i] = morph.binary_fill_holes(self.contours[j])
             # x_mid2[i] = self.x_mid[j]
             # y_mid2[i] = self.y_mid[j]
-        return contours2  # , x_mid2, y_mid2
+        return contours2
 
         # TODO: Add next steps into process.
         # contours2 = [morph.binary_fill_holes(c) for c in contours]
 
-        # def loop_thinning(contours2):
-        #     thin = []
-        #     for c in contours2:
-        #         m = c.copy()
-        #         for i in range(10):
-        #             m, p = iterate_z(m, 0)
-        #             m, p = iterate_z(m, 1)
-        #         thin.append(m)
-        #     return thin
+    def loop_thinning(self, contours2):
+        thin = np.zeros(shape=contours2.shape)
+        for i, c in enumerate(contours2):
+            m = c.copy()
+            for j in range(10):
+                m, p1 = iterate_z(m, 0)
+                m, p2 = iterate_z(m, 1)
+
+                if not p1 and not p2:
+                    break
+            # thin.append(m)
+            thin[i] = m
+        return thin
+
+def iterate_z(Z, subiteration=0):
+
+    p = [Z[0:-2, 1:-1], Z[0:-2, 2:], Z[1:-1, 2:], Z[2:, 2:],
+         Z[2:  , 1:-1], Z[2:  , 0:-2], Z[1:-1, 0:-2], Z[0:-2, 0:-2]]
+    N = np.zeros(Z.shape, int)
+    N[1:-1, 1:-1] = sum(p)
+    check1 = (2 <= N) & (N <= 6)
+
+    # count 01 edges, E
+    E = np.zeros(Z.shape, int)
+    p.append(p[0])
+
+    pold = p[0]
+    for pi in p[1:]:
+        E[1:-1, 1:-1] += (pold == 0) & (pi == 1)
+        pold = pi
+
+    # if edge count ==1 consider for removal
+    check2 = (E == 1)
+
+    #HELTENA removed, we can use the defined above, offset -2!
+    #p = [0, 0, Z[0:-2,1:-1], Z[0:-2,2:], Z[1:-1,2:], Z[2:  ,2:],
+    #     Z[2:  ,1:-1], Z[2:  ,0:-2], Z[1:-1,0:-2], Z[0:-2,0:-2]]
+
+    if subiteration == 0:
+        p24 = p[2] * p[4]
+        east_wind = np.zeros(Z.shape, int)
+        #east_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[1:-1,2:] * Z[2:  ,1:-1]
+        #east_wind[1:-1,1:-1] = p[2] *p[4] * p[6]
+        east_wind[1:-1,1:-1] = p[0] * p24 # p[2] * p[4] # offset p[-2]!!
+        check3 = (east_wind == 0)
+
+        south_wind = np.zeros(Z.shape, int)
+        #south_wind[1:-1,1:-1] = Z[1:-1,2:] * Z[2:  ,1:-1] * Z[1:-1, :-2]
+        #south_wind[1:-1,1:-1] = p[4] * p[6] * p[8]
+        south_wind[1:-1,1:-1] = p24 * p[6] #p[2] * p[4] * p[6] # offset p[-2]!!
+        check4 = (south_wind == 0)
+    else:
+        p06 = p[0] * p[6]
+        west_wind = np.zeros(Z.shape, int)
+        #west_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[1:-1,2:] * Z[1:-1, :-2]
+        #west_wind[1:-1,1:-1] = p[2] *p[4] * p[8]
+        west_wind[1:-1,1:-1] = p06 * p[2] # p[0] *p[2] * p[6] # offset p[-2]!!
+        check3 = (west_wind == 0)
+
+        north_wind = np.zeros(Z.shape, int)
+        #north_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[2:  ,1:-1] * Z[1:-1, :-2]
+        #north_wind[1:-1,1:-1] = p[2] * p[6] * p[8]
+        north_wind[1:-1,1:-1] = p06 * p[4] # p[0] * p[4] * p[6] # offset p[-2]!!
+        check4 = (north_wind == 0)
+
+    removal = check1 & check2 & check3 & check4
+    Z1 = (Z == 1)
+    removed = Z1 & (removal == 1)
+    points_removed = removed.any()
+    Z = np.array(Z1 & (removal == 0), int)
+    return Z, points_removed

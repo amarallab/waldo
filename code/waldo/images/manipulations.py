@@ -3,18 +3,18 @@ from __future__ import absolute_import, division, print_function
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
 # standard library
-#import sys
-#import os
+# import sys
+# import os
 
 # third party
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-#import matplotlib.cm as cm
+# import matplotlib.cm as cm
 from scipy import ndimage
 from skimage import morphology
-#from skimage.measure import regionprops
-#from skimage.filter.rank import entropy
+# from skimage.measure import regionprops
+# from skimage.filter.rank import entropy
 import matplotlib.patches as mpatches
 
 # package specific
@@ -40,11 +40,10 @@ def outline_to_outline_matrix(outline, bbox=None):
         print(outline)
     # prepare blob outline and bounding box.
     if isinstance(outline, np.ndarray):
-        x = outline[:,0]
-        y = outline[:,1]
+        x = outline[:, 0]
+        y = outline[:, 1]
     else:
         x, y = zip(*outline)
-
 
     if bbox == None:
         bbox = (min(x), min(y), max(x), max(y))
@@ -54,9 +53,10 @@ def outline_to_outline_matrix(outline, bbox=None):
     shape = (maxx - minx + 1, maxy - miny + 1)
     outline_matrix = np.zeros(shape)
     for i, j in zip(x, y):
-        #print(i, j)
+        # print(i, j)
         outline_matrix[i, j] = 1
     return ndimage.morphology.binary_fill_holes(outline_matrix)
+
 
 def create_roi_mask(x, y, r, shape):
     nx, ny = shape
@@ -65,24 +65,28 @@ def create_roi_mask(x, y, r, shape):
     xv, yv = np.meshgrid(xs, ys)
     dy = yv - y
     dx = xv - x
-    d = np.sqrt(dy**2 + dx**2).T
+    d = np.sqrt(dy ** 2 + dx ** 2).T
     roi_mask = d <= r
     return roi_mask
+
 
 def create_backround(impaths):
     """
     create a background image for background subtraction.
-    The background image is the maximum pixel values from three grayscale images.
+    The background image is the maximum pixel values from three grayscale
+    images.
 
     params
     ---------
     impaths: (list)
-       this is a sorted list containing paths to all the image files from one recording.
+       this is a sorted list containing paths to all the image files from one
+       recording.
     """
     first = mpimg.imread(impaths[0])
-    mid = mpimg.imread(impaths[int(len(impaths)/2)])
+    mid = mpimg.imread(impaths[int(len(impaths) / 2)])
     last = mpimg.imread(impaths[-1])
     return np.maximum(np.maximum(first, mid), last)
+
 
 def create_binary_mask(img, background, threshold, minsize=100):
     """
@@ -102,6 +106,7 @@ def create_binary_mask(img, background, threshold, minsize=100):
     """
     mask = (background - img) > threshold
     return morphology.remove_small_objects(mask, minsize)
+
 
 def show_threshold(img, background, threshold):
     """
@@ -124,26 +129,11 @@ def show_threshold(img, background, threshold):
     ax.set_title('threshold = {t}'.format(t=threshold))
     ax.axis('off')
 
-# def check_entropy(img):
-#     """
-#     for fun, show the entropy for a given image
-#     using three different radius sizes.
-
-#     params
-#     ------
-#     img: (image or array)
-#         the image.
-#     """
-#     fig, ax = plt.subplots(2,2, sharex=True, sharey=True)
-#     ax[0, 0].imshow(img, cmap=plt.cm.Greys_r)
-#     ax[0, 1].imshow(entropy(img, morphology.disk(3)))
-#     ax[1, 0].imshow(entropy(img, morphology.disk(5)))
-#     ax[1, 1].imshow(entropy(img, morphology.disk(20)))
-
 
 def flip_bbox_xy(bbox):
     """ flips x and y positions for all parts of a bounding box """
     return (bbox[1], bbox[0], bbox[3], bbox[2])
+
 
 def do_boxes_overlap(box1, box2, show=False):
     """
@@ -160,11 +150,11 @@ def do_boxes_overlap(box1, box2, show=False):
     xmin1, ymin1, xmax1, ymax1 = box1
     xmin2, ymin2, xmax2, ymax2 = box2
     # calculate centroids
-    c1 = [(xmax1 + xmin1) / 2.0 , (ymax1 + ymin1) / 2.0]
-    c2 = [(xmax2 + xmin2) / 2.0 , (ymax2 + ymin2) / 2.0]
+    c1 = [(xmax1 + xmin1) / 2.0, (ymax1 + ymin1) / 2.0]
+    c2 = [(xmax2 + xmin2) / 2.0, (ymax2 + ymin2) / 2.0]
     # calculate radius
-    r1 = [(xmax1 - xmin1) / 2.0 , (ymax1 - ymin1) / 2.0]
-    r2 = [(xmax2 - xmin2) / 2.0 , (ymax2 - ymin2) / 2.0]
+    r1 = [(xmax1 - xmin1) / 2.0, (ymax1 - ymin1) / 2.0]
+    r2 = [(xmax2 - xmin2) / 2.0, (ymax2 - ymin2) / 2.0]
     # calculate dists between centroids and check against radii
     r12 = np.abs(np.array(c1) - np.array(c2))
     check = (r12 <= np.array(r1) + np.array(r2)).all()
@@ -182,6 +172,7 @@ def do_boxes_overlap(box1, box2, show=False):
         ax.set_ylim([0, 20])
         plt.show()
     return check
+
 
 def points_to_aligned_matrix(outline_points):
     """
@@ -209,6 +200,7 @@ def points_to_aligned_matrix(outline_points):
     aligned_matricies, bbox = align_outline_matricies(outline_matricies, bboxes)
     return aligned_matricies, bbox
 
+
 def align_outline_matricies(outline_matricies, bboxes):
     """
     aligns a list of outline matricies so that all of them are on the same coordinate system.
@@ -232,26 +224,25 @@ def align_outline_matricies(outline_matricies, bboxes):
     primary_matrix = outline_matricies[0]
     primary_bbox = bboxes[0]
 
-    #fig, ax = plt.subplots()
-    #ax.imshow(primary_matrix)
+    # fig, ax = plt.subplots()
+    # ax.imshow(primary_matrix)
 
     # the loop creates a primary with a bbox that encompasses all other boxes.
     for om, bb in zip(outline_matricies[1:], bboxes[1:]):
         primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
-        #print(primary_bbox)
+        # print(primary_bbox)
     aligned_matricies = [primary_matrix]
 
-    #fig, ax = plt.subplots()
-    #ax.imshow(primary_matrix)
-    #plt.show()
+    # fig, ax = plt.subplots()
+    # ax.imshow(primary_matrix)
+    # plt.show()
 
     # the loop ensures all boxes match the primary.
     for om, bb in zip(outline_matricies[1:], bboxes[1:]):
         primary_matrix, om, primary_bbox = coordiate_match_offset_arrays(primary_bbox, primary_matrix, bb, om)
         aligned_matricies.append(om)
-        #print(primary_bbox)
+        # print(primary_bbox)
     return aligned_matricies, primary_bbox
-
 
 
 def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
@@ -293,23 +284,24 @@ def coordiate_match_offset_arrays(bbox1, array1, bbox2, array2):
 
     # initialize new array shapes
     box_shape = (xmax - xmin + 1, ymax - ymin + 1)
+
     def fit_old_array_into_new_shape(a, off, shape):
         new = np.zeros(shape, dtype=int)
         xoff, yoff = np.array(off)
         off2 = off + np.array(a.shape)
         xoff2, yoff2 = off2
-        #print('new', shape)
-        #print(off, list(off2), list(off2 - off))
-        #print('x', xoff, ':', xoff2, len(new[xoff:xoff2, 0]))
-        #print('broadcast', new[xoff:xoff2, yoff:yoff2].shape, a.shape)
+        # print('new', shape)
+        # print(off, list(off2), list(off2 - off))
+        # print('x', xoff, ':', xoff2, len(new[xoff:xoff2, 0]))
+        # print('broadcast', new[xoff:xoff2, yoff:yoff2].shape, a.shape)
         new[xoff:xoff2, yoff:yoff2] = a
         return new
 
     # calculate first offsets.
-    #print('array 1')
+    # print('array 1')
     offsets = ((xmin1 - xmin), (ymin1 - ymin))
     new1 = fit_old_array_into_new_shape(a=array1, off=offsets, shape=box_shape)
-    #print('array 2')
+    # print('array 2')
     offsets = ((xmin2 - xmin), (ymin2 - ymin))
     new2 = fit_old_array_into_new_shape(a=array2, off=offsets, shape=box_shape)
     return new1, new2, bbox

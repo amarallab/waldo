@@ -1,2 +1,1 @@
 scikit-image>=0.10.0
-mpltools==0.1

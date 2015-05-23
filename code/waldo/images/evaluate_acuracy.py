@@ -12,26 +12,22 @@ from __future__ import absolute_import, print_function
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-try:
-    import prettyplotlib as ppl
-except ImportError:
-    ppl = plt
 
 # projects specific
-import waldo.wio as wio
+#import waldo.wio as wio
 
 __author__ = 'Peter B. Winter'
 __email__ = 'peterwinteriii@gmail.com'
 __status__ = 'prototype'
 
-def grab_files(ex_id):
-    print(ex_id)
-    prep_data = wio.file_manager.PrepData(ex_id)
-    matches = prep_data.load('matches')
-    base_accuracy = prep_data.load('base_accuracy')
-    # do I need to set index col to 'frame'?
-    #base_accuracy = pd.read_csv(s2, index_col='frame')
-    return base_accuracy, matches
+# def grab_files(ex_id):
+#     print(ex_id)
+#     prep_data = wio.file_manager.PrepData(ex_id)
+#     matches = prep_data.load('matches')
+#     base_accuracy = prep_data.load('base_accuracy')
+#     # do I need to set index col to 'frame'?
+#     #base_accuracy = pd.read_csv(s2, index_col='frame')
+#     return base_accuracy, matches
 
 def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
 
@@ -93,9 +89,9 @@ def recalculate_accuracy(matches, base_accuracy, bids=[], unforgiving=False):
 
 def plot_accuracy_time(df, title=''):
     fig, ax = plt.subplots()
-    ppl.plot(ax, df.index, df['true-pos'], label='true positives')
-    ppl.plot(ax, df.index, df['false-pos'], label='false pos')
-    ppl.plot(ax, df.index, df['false-neg'], label='false neg')
+    plt.plot(ax, df.index, df['true-pos'], label='true positives')
+    plt.plot(ax, df.index, df['false-pos'], label='false pos')
+    plt.plot(ax, df.index, df['false-neg'], label='false neg')
     if title:
         ax.set_title(title)
     ax.set_xlabel('frames')
@@ -123,7 +119,7 @@ def plot_accuracy_bar(df, title=''):
     print(int(100 * truth), '% true worms')
 
     n = 3
-    ppl.bar(ax, np.arange(n), data, yerr = bars,
+    plt.bar(ax, np.arange(n), data, yerr = bars,
             xticklabels=['TP', 'FP', 'FN'], grid='y')
 
     if title:

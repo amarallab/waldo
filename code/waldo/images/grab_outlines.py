@@ -23,58 +23,8 @@ import math
 # sys.path.append(CODE_DIR)
 
 # nonstandard imports
-from waldo.conf import settings
-from waldo.encoding.decode_outline import decode_outline
-#from database.mongo_retrieve import mongo_query, pull_data_type_for_blob
-
-# Globals
-# DATA_DIR = settings.LOGISTICS['filesystem_data']
-
-'''
-def grab_db_outlines(ex_id, timepoint, data_dir=DATA_DIR, overwrite_temp=False, **kwargs):
-    timekey = ('%.3f' % float(timepoint)).replace('.', '?')
-    temp_filename = '{path}{ex_id}/timekey{tk}_blobs.tmp'.format(path=data_dir, ex_id=ex_id, tk=timekey)
-    if overwrite_temp or not os.path.exists(temp_filename):
-
-        # test query to ensure good behavior
-        #eligable_blobs = [(d['blob_id'], d['start_time'], timepoint, d['stop_time'], (d['start_time'] <= float(timepoint) <= d['stop_time']))
-        #                  for d in mongo_query({'ex_id':ex_id, 'data_type':'encoded_outline'}, {'data':0})]
-        eligable_blobs = [d['blob_id']
-                          for d in mongo_query({'ex_id':ex_id, 'data_type':'encoded_outline'}, {'data':0})
-                          if (d['start_time'] <= float(timepoint) <= d['stop_time'])]
-
-
-        lines = []
-        for blob_id in eligable_blobs:
-            print(blob_id)
-            all_outlines = pull_data_type_for_blob(blob_id=blob_id, data_type='encoded_outline', **kwargs)['data']
-            encoded_outline = all_outlines.get(timekey, None)
-            if encoded_outline:
-                xy, l, code = encoded_outline
-                line = '{tk} {blob_id} %% {x} {y} {l} {code} \n'.format(tk=timekey, blob_id=blob_id, x=xy[0], y=xy[1], l=l, code=code)
-                print(line)
-                lines.append(line)
-
-        with open(temp_filename, 'w') as f:
-            for line in lines:
-                f.write(line)
-    return parse_temp_file_into_outlines(temp_filename)
-
-
-def db_check(ex_id, pictime=500):
-    import grab_images as raw
-
-    print('time chosen:', pictime)
-    image_times = raw.create_image_directory(ex_id=ex_id)
-    closest_image_time, closest_image = raw.get_closest_image(target_time=pictime, image_dict=image_times)
-    print('closest image time:', closest_image_time)
-    #print(image_times)
-    frame, timepoint = find_frame_for_time(ex_id=ex_id, time=closest_image_time)
-    print('closest frame and time:', frame, timepoint)
-    outlines = grab_db_outlines(ex_id=ex_id, timepoint=timepoint)
-    for i in outlines:
-        print(i)
-'''
+from Code.waldo.conf import settings
+from Code.waldo.encoding.decode_outline import decode_outline
 
 def find_outlines_for_timepoint(ex_id, frame, data_dir=None, overwrite_temp=False):
     """
