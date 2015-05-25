@@ -3,16 +3,16 @@ from __future__ import absolute_import, print_function
 __author__ = 'heltena'
 
 # standard library
-import os
-import json
+# import os
+# import json
 
 # third party
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QSizePolicy
-from PyQt4.QtCore import Qt
+# from PyQt4.QtGui import QSizePolicy
+# from PyQt4.QtCore import Qt
 
 # project specific
-from waldo.wio import paths
+# from waldo.wio import paths
 from . import pages
 from .helpers import experiment_has_thresholdCache, experiment_has_final_results
 

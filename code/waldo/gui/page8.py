@@ -7,7 +7,7 @@ from PyQt4.QtCore import Qt, QTimer
 
 from waldo.conf import settings
 from waldo.prepare import summarize as prepare_summarize
-from waldo.images import summarize as images_summarize
+from waldo.images import summarize_experiment as images_summarize
 from waldo.metrics.report_card import WaldoSolver
 from waldo.output.writer import OutputWriter
 from . import tasking
@@ -24,9 +24,6 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 
 # import waldo.metrics.step_simulation as ssim
 # import waldo.viz.eye_plots as ep
-
-
-
 
 # import numpy as np
 # import pandas as pd
@@ -241,7 +238,8 @@ class WaldoProcessPage(QtGui.QWizardPage):
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 
-        images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
+        images_summarize(experiment=self.data.experiment, callback=PROCESS_IMAGES_CALLBACK,
+                         image_callback=NEW_IMAGE_CALLBACK)
         PROCESS_IMAGES_CALLBACK(1)
         callback(0, 2.0 / STEPS)
 

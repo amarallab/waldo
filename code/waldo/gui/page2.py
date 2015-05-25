@@ -4,13 +4,11 @@ __author__ = 'heltena'
 
 # standard library
 import os
-import glob
 import json
-import threading
 
 # third party
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QSizePolicy
+# from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt
 
 # project specific

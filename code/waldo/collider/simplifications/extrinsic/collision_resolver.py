@@ -3,23 +3,20 @@
 Manipulations removing degree-one things (short offshoots and basic chains)
 """
 from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
-import six
-from six.moves import (zip, filter, map, reduce, input, range)
+    absolute_import, division, print_function, unicode_literals)
+from six.moves import (zip)
 
 # standard library
 
 # third party
-import numpy as np
 import pandas as pd
 
 # package specific
-#from waldo.conf import settings
+# from waldo.conf import settings
 from waldo.images.manipulations import points_to_aligned_matrix
 
 from ..util import consolidate_node_data
 import waldo.encoding.decode_outline as de
-
 
 __all__ = [
     'CollisionException',
@@ -30,15 +27,17 @@ __all__ = [
 class CollisionException(Exception):
     pass
 
+
 class CollisionResolver(object):
     """
     Initalized with a wio.Experiment-like object and a simplified graph.
     """
-    def __init__(self, experiment, graph):#, regenerate_cache=False):
+
+    def __init__(self, experiment, graph):  # , regenerate_cache=False):
         self._experiment = experiment
         self._graph = graph
         self._mask_counts = {}
-        #self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
+        # self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
         self.reports = {}
         self.parent_node_to_blob = {}
         self.child_node_to_blob = {}
@@ -88,7 +87,7 @@ class CollisionResolver(object):
         current = node
         backup_nodes = next_node(current)
         while len(backup_nodes) == 1:
-            current=backup_nodes[0]
+            current = backup_nodes[0]
             nodes.append(current)
             backup_nodes = next_node(current)
 
@@ -104,7 +103,7 @@ class CollisionResolver(object):
             df = consolidate_node_data(graph, experiment, node)
             if df is None:
                 print('Failed to find node data')
-                #print('grabbing', node, type(node))
+                # print('grabbing', node, type(node))
                 raise CollisionException
 
 
@@ -122,8 +121,14 @@ class CollisionResolver(object):
                 is_good = True
                 if not enc or not l:
                     is_good = False
-                if not isinstance(enc, basestring):
-                    is_good = False
+                try:
+                    # python 2
+                    if not isinstance(enc, basestring):
+                        is_good = False
+                except:
+                    # python 3
+                    if not isinstance(enc, str):
+                        is_good = False
                 if is_good:
                     # record which blob id the outline originated from
                     if first:
@@ -171,9 +176,9 @@ class CollisionResolver(object):
         if verbose:
             print('parents:{p}'.format(p=p))
             print('children:{c}'.format(c=c))
-            #print('beginning:end pixel overlap')
+            # print('beginning:end pixel overlap')
 
-        #grab relevant outlines.
+        # grab relevant outlines.
         f, p0 = self.grab_outline(p[0], first=False)
         f, p1 = self.grab_outline(p[1], first=False)
         f, c0 = self.grab_outline(c[0], first=True)
@@ -181,7 +186,7 @@ class CollisionResolver(object):
 
         # align outline masks
         outline_list = [o for o in [p0, p1, c0, c1] if o is not None]
-        #print(len(outline_list), 'outlines found for', node)
+        # print(len(outline_list), 'outlines found for', node)
         if not outline_list:
             raise CollisionException
         masks, bbox = points_to_aligned_matrix(outline_list)
@@ -334,35 +339,35 @@ class CollisionResolver(object):
                 if self._mask_counts[node] < 4:
                     result_report['missing_data'].append(node)
 
-                #INFO: if you want to see the outmasks and the relation between them
-                # data = [parent_masks[0], parent_masks[1], children_masks[0], children_masks[1]]
-                # outmasks = {i: o for i, o in data if o is not None}
-                #
-                # v = [len(c) for c in collision_result]
-                # if len(v) == 0:
-                #     print("Problems in collision_result: ", collision_result, " node: ", node)
-                # else:
-                #     cols = max(v)
-                #     f, axs = plt.subplots(cols, len(collision_result))
-                #     for i, cr in enumerate(collision_result):
-                #         for col, id in enumerate(cr):
-                #             axs[i][col].axis('off')
-                #             if id in outmasks:
-                #                 axs[i][col].imshow(outmasks[id], interpolation='none')
-                #     plt.show()
+                    # INFO: if you want to see the outmasks and the relation between them
+                    # data = [parent_masks[0], parent_masks[1], children_masks[0], children_masks[1]]
+                    # outmasks = {i: o for i, o in data if o is not None}
+                    #
+                    # v = [len(c) for c in collision_result]
+                    # if len(v) == 0:
+                    #     print("Problems in collision_result: ", collision_result, " node: ", node)
+                    # else:
+                    #     cols = max(v)
+                    #     f, axs = plt.subplots(cols, len(collision_result))
+                    #     for i, cr in enumerate(collision_result):
+                    #         for col, id in enumerate(cr):
+                    #             axs[i][col].axis('off')
+                    #             if id in outmasks:
+                    #                 axs[i][col].imshow(outmasks[id], interpolation='none')
+                    #     plt.show()
 
             except CollisionException:
-                #print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
+                # print('Warning: {n} has insuficient parent/child data to resolve collision'.format(n=node))
                 result_report['missing_data'].append(node)
                 continue
             except IndexError:
                 print('WARNING,index error for node:', node)
                 continue
-            #print(node, 'is', collision_result)
+            # print(node, 'is', collision_result)
             if collision_result:
                 result_report['collision_lifespans_t'][node] = graph.lifespan_t(node)
                 collision_results[node] = collision_result
-                #print('result', collision_result)
+                # print('result', collision_result)
                 blobs = self.result_nodes_to_blobs(collision_result)
                 graph.untangle_collision(node, collision_result, blobs=blobs)
                 result_report['resolved'].append(node)

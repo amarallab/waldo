@@ -14,24 +14,6 @@ from waldo.conf import settings, guisettings
 from . import pages
 
 
-
-#HELIO
-import pandas as pd
-
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
-#from mpltools import style
-
-import matplotlib.image as mpimg
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from skimage import morphology
-from skimage.measure import regionprops
-
-#style.use('ggplot')
-#ENDHELIO
-
 class WelcomePage(QtGui.QWizardPage):
     class Tooltips:
         config_button = "Configure"
@@ -136,21 +118,21 @@ class ConfigDialog(QtGui.QDialog):
 
         # Collider Suite
         self.colliderSuiteAssimilateSize = self.createQLineEditIntValidator(
-                str(settings.COLLIDER_SUITE_ASSIMILATE_SIZE),
-                guisettings.COLLIDER_SUITE_ASSIMILATE_SIZE_RANGE,
-                self.ToolTips.colliderSuiteAssimilateSize)
+            str(settings.COLLIDER_SUITE_ASSIMILATE_SIZE),
+            guisettings.COLLIDER_SUITE_ASSIMILATE_SIZE_RANGE,
+            self.ToolTips.colliderSuiteAssimilateSize)
         self.colliderSuiteOffshoot = self.createQLineEditIntValidator(
-                str(settings.COLLIDER_SUITE_OFFSHOOT),
-                guisettings.COLLIDER_SUITE_OFFSHOOT_RANGE,
-                self.ToolTips.colliderSuiteOffshoot)
+            str(settings.COLLIDER_SUITE_OFFSHOOT),
+            guisettings.COLLIDER_SUITE_OFFSHOOT_RANGE,
+            self.ToolTips.colliderSuiteOffshoot)
         self.colliderSuiteSplitAbs = self.createQLineEditIntValidator(
-                str(settings.COLLIDER_SUITE_SPLIT_ABS),
-                guisettings.COLLIDER_SUITE_SPLIT_ABS_RANGE,
-                self.ToolTips.colliderSuiteSplitAbs)
+            str(settings.COLLIDER_SUITE_SPLIT_ABS),
+            guisettings.COLLIDER_SUITE_SPLIT_ABS_RANGE,
+            self.ToolTips.colliderSuiteSplitAbs)
         self.colliderSuiteSplitRel = self.createQLineEditDoubleValidator(
-                str(settings.COLLIDER_SUITE_SPLIT_REL),
-                guisettings.COLLIDER_SUITE_SPLIT_REL_RANGE,
-                self.ToolTips.colliderSuiteSplitRel)
+            str(settings.COLLIDER_SUITE_SPLIT_REL),
+            guisettings.COLLIDER_SUITE_SPLIT_REL_RANGE,
+            self.ToolTips.colliderSuiteSplitRel)
 
         col = 0
         layout.addWidget(QtGui.QLabel("<b>Collider suite</b>"), col, 0, 1, 2)
@@ -173,41 +155,41 @@ class ConfigDialog(QtGui.QDialog):
 
         # Tape
         self.tapeFrameSearchLimit = self.createQLineEditIntValidator(
-                str(settings.TAPE_FRAME_SEARCH_LIMIT),
-                guisettings.TAPE_FRAME_SEARCH_LIMIT_RANGE,
-                self.ToolTips.tapeFrameSearchLimit)
+            str(settings.TAPE_FRAME_SEARCH_LIMIT),
+            guisettings.TAPE_FRAME_SEARCH_LIMIT_RANGE,
+            self.ToolTips.tapeFrameSearchLimit)
         self.tapeKdeSamples = self.createQLineEditIntValidator(
-                str(settings.TAPE_KDE_SAMPLES),
-                guisettings.TAPE_KDE_SAMPLES_RANGE,
-                self.ToolTips.tapeKdeSamples)
+            str(settings.TAPE_KDE_SAMPLES),
+            guisettings.TAPE_KDE_SAMPLES_RANGE,
+            self.ToolTips.tapeKdeSamples)
         self.tapeMaxSpeedMultiplier = self.createQLineEditDoubleValidator(
-                str(settings.TAPE_MAX_SPEED_MULTIPLIER),
-                guisettings.TAPE_MAX_SPEED_MULTIPLIER_RANGE,
-                self.ToolTips.tapeMaxSpeedMultiplier)
+            str(settings.TAPE_MAX_SPEED_MULTIPLIER),
+            guisettings.TAPE_MAX_SPEED_MULTIPLIER_RANGE,
+            self.ToolTips.tapeMaxSpeedMultiplier)
         self.tapeMaxSpeedSmoothing = self.createQLineEditIntValidator(
-                str(settings.TAPE_MAX_SPEED_SMOOTHING),
-                guisettings.TAPE_MAX_SPEED_SMOOTHING_RANGE,
-                self.ToolTips.tapeMaxSpeedSmoothing)
+            str(settings.TAPE_MAX_SPEED_SMOOTHING),
+            guisettings.TAPE_MAX_SPEED_SMOOTHING_RANGE,
+            self.ToolTips.tapeMaxSpeedSmoothing)
         self.tapeMinTraceFail = self.createQLineEditIntValidator(
-                str(settings.TAPE_MIN_TRACE_FAIL),
-                guisettings.TAPE_MIN_TRACE_FAIL_RANGE,
-                self.ToolTips.tapeMinTraceFail)
+            str(settings.TAPE_MIN_TRACE_FAIL),
+            guisettings.TAPE_MIN_TRACE_FAIL_RANGE,
+            self.ToolTips.tapeMinTraceFail)
         self.tapeMinTraceWarn = self.createQLineEditIntValidator(
-                str(settings.TAPE_MIN_TRACE_WARN),
-                guisettings.TAPE_MIN_TRACE_WARN_RANGE,
-                self.ToolTips.tapeMinTraceWarn)
+            str(settings.TAPE_MIN_TRACE_WARN),
+            guisettings.TAPE_MIN_TRACE_WARN_RANGE,
+            self.ToolTips.tapeMinTraceWarn)
         self.tapeRelMoveThreshold = self.createQLineEditDoubleValidator(
-                str(settings.TAPE_REL_MOVE_THRESHOLD),
-                guisettings.TAPE_REL_MOVE_THRESHOLD_RANGE,
-                self.ToolTips.tapeRelMoveThreshold)
+            str(settings.TAPE_REL_MOVE_THRESHOLD),
+            guisettings.TAPE_REL_MOVE_THRESHOLD_RANGE,
+            self.ToolTips.tapeRelMoveThreshold)
         self.tapeShakycamAllowance = self.createQLineEditIntValidator(
-                str(settings.TAPE_SHAKYCAM_ALLOWANCE),
-                guisettings.TAPE_SHAKYCAM_ALLOWANCE_RANGE,
-                self.ToolTips.tapeShakycamAllowance)
+            str(settings.TAPE_SHAKYCAM_ALLOWANCE),
+            guisettings.TAPE_SHAKYCAM_ALLOWANCE_RANGE,
+            self.ToolTips.tapeShakycamAllowance)
         self.tapeTraceLimitNum = self.createQLineEditIntValidator(
-                str(settings.TAPE_TRACE_LIMIT_NUM),
-                guisettings.TAPE_TRACE_LIMIT_NUM_RANGE,
-                self.ToolTips.tapeTraceLimitNum)
+            str(settings.TAPE_TRACE_LIMIT_NUM),
+            guisettings.TAPE_TRACE_LIMIT_NUM_RANGE,
+            self.ToolTips.tapeTraceLimitNum)
 
         col = 0
         layout.addWidget(QtGui.QLabel("<b>Tape</b>"), col, 2, 1, 2)
@@ -249,7 +231,8 @@ class ConfigDialog(QtGui.QDialog):
         layout.addWidget(self.tapeTraceLimitNum, col, 3, 1, 1)
 
         # Buttons
-        buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save|QtGui.QDialogButtonBox.Cancel, Qt.Horizontal, self)
+        buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | QtGui.QDialogButtonBox.Cancel, Qt.Horizontal,
+                                         self)
         buttons.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.save_clicked)
         buttons.button(QtGui.QDialogButtonBox.Cancel).clicked.connect(self.cancel_clicked)
         mainLayout = QtGui.QVBoxLayout()
@@ -282,20 +265,28 @@ class ConfigDialog(QtGui.QDialog):
         return value if result else currentValue
 
     def save_clicked(self, ev):
-        settings.COLLIDER_SUITE_ASSIMILATE_SIZE = self._intValueOf(self.colliderSuiteAssimilateSize, settings.COLLIDER_SUITE_ASSIMILATE_SIZE)
-        settings.COLLIDER_SUITE_OFFSHOOT = self._intValueOf(self.colliderSuiteOffshoot, settings.COLLIDER_SUITE_OFFSHOOT)
-        settings.COLLIDER_SUITE_SPLIT_ABS = self._intValueOf(self.colliderSuiteSplitAbs, settings.COLLIDER_SUITE_SPLIT_ABS)
-        settings.COLLIDER_SUITE_SPLIT_REL = self._doubleValueOf(self.colliderSuiteSplitRel, settings.COLLIDER_SUITE_SPLIT_REL)
+        settings.COLLIDER_SUITE_ASSIMILATE_SIZE = self._intValueOf(self.colliderSuiteAssimilateSize,
+                                                                   settings.COLLIDER_SUITE_ASSIMILATE_SIZE)
+        settings.COLLIDER_SUITE_OFFSHOOT = self._intValueOf(self.colliderSuiteOffshoot,
+                                                            settings.COLLIDER_SUITE_OFFSHOOT)
+        settings.COLLIDER_SUITE_SPLIT_ABS = self._intValueOf(self.colliderSuiteSplitAbs,
+                                                             settings.COLLIDER_SUITE_SPLIT_ABS)
+        settings.COLLIDER_SUITE_SPLIT_REL = self._doubleValueOf(self.colliderSuiteSplitRel,
+                                                                settings.COLLIDER_SUITE_SPLIT_REL)
 
-        settings.TAPE_REL_MOVE_THRESHOLD = self._doubleValueOf(self.tapeRelMoveThreshold, settings.TAPE_REL_MOVE_THRESHOLD)
+        settings.TAPE_REL_MOVE_THRESHOLD = self._doubleValueOf(self.tapeRelMoveThreshold,
+                                                               settings.TAPE_REL_MOVE_THRESHOLD)
         settings.TAPE_MIN_TRACE_FAIL = self._intValueOf(self.tapeMinTraceFail, settings.TAPE_MIN_TRACE_FAIL)
         settings.TAPE_MIN_TRACE_WARN = self._intValueOf(self.tapeMinTraceWarn, settings.TAPE_MIN_TRACE_WARN)
         settings.TAPE_TRACE_LIMIT_NUM = self._intValueOf(self.tapeTraceLimitNum, settings.TAPE_TRACE_LIMIT_NUM)
         settings.TAPE_FRAME_SEARCH_LIMIT = self._intValueOf(self.tapeFrameSearchLimit, settings.TAPE_FRAME_SEARCH_LIMIT)
         settings.TAPE_KDE_SAMPLES = self._intValueOf(self.tapeKdeSamples, settings.TAPE_KDE_SAMPLES)
-        settings.TAPE_MAX_SPEED_MULTIPLIER = self._doubleValueOf(self.tapeMaxSpeedMultiplier, settings.TAPE_MAX_SPEED_MULTIPLIER)
-        settings.TAPE_SHAKYCAM_ALLOWANCE = self._intValueOf(self.tapeShakycamAllowance, settings.TAPE_SHAKYCAM_ALLOWANCE)
-        settings.TAPE_MAX_SPEED_SMOOTHING = self._intValueOf(self.tapeMaxSpeedSmoothing, settings.TAPE_MAX_SPEED_SMOOTHING)
+        settings.TAPE_MAX_SPEED_MULTIPLIER = self._doubleValueOf(self.tapeMaxSpeedMultiplier,
+                                                                 settings.TAPE_MAX_SPEED_MULTIPLIER)
+        settings.TAPE_SHAKYCAM_ALLOWANCE = self._intValueOf(self.tapeShakycamAllowance,
+                                                            settings.TAPE_SHAKYCAM_ALLOWANCE)
+        settings.TAPE_MAX_SPEED_SMOOTHING = self._intValueOf(self.tapeMaxSpeedSmoothing,
+                                                             settings.TAPE_MAX_SPEED_SMOOTHING)
 
         settings.save()
         self.close()

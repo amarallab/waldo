@@ -1,34 +1,26 @@
 from __future__ import absolute_import, print_function
 
 # standard library
-import os
-import sys
-from glob import glob
-import pickle
-import itertools
 import logging
 
 # third party
 import pandas as pd
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
-from statsmodels.distributions.empirical_distribution import ECDF
 
 # package specific
-from waldo.conf import settings
-from waldo.wio import Experiment
-#from waldo import viz
+from waldo import viz
 from waldo import collider
+from waldo.conf import settings
 import waldo.tape.taper as tp
 import waldo.wio.file_manager as fm
 
 L = logging.getLogger(__name__)
 
-class ReportCard(object):
 
+class ReportCard(object):
     def __init__(self, experiment):
-        #self.steps = []
+        # self.steps = []
         self.reports = []
         self.durations = []
         self.experiment = experiment
@@ -38,11 +30,10 @@ class ReportCard(object):
         report, durations = self.evaluate_graph(graph)
         report['phase'] = phase_name
         report['step'] = step_name
-        #self.steps.append(step_name)
+        # self.steps.append(step_name)
         self.reports.append(report)
         self.durations.append(durations)
         print('HELTENA: Reportcard add_step {}'.format(len(self.reports)))
-
 
     def evaluate_graph(self, digraph, threshold=2):
         graph = digraph.to_undirected()
@@ -65,7 +56,6 @@ class ReportCard(object):
             except KeyError:
                 pass
 
-
         duration_med = np.median(durations)
         duration_mean = np.mean(durations)
         duration_std = np.std(durations)
@@ -78,7 +68,7 @@ class ReportCard(object):
         n_50_min = len([d for d in duration_min if d >= 50])
 
         bins = [50, 40, 30, 20, 10, 0]
-        worm_minutes = {} #'10min':0, '20min':0, '30min':0, '40min':0, '50min':0}
+        worm_minutes = {}  # '10min':0, '20min':0, '30min':0, '40min':0, '50min':0}
         for b in bins:
             worm_minutes[b] = 0
 
@@ -89,7 +79,8 @@ class ReportCard(object):
                     break
 
         wm = {}
-        for b, worm_m in worm_minutes.iteritems():
+        for b in worm_minutes:
+            worm_m = worm_minutes[b]
             label = 'wm_{b}min'.format(b=b)
             wm[label] = worm_m
 
@@ -117,19 +108,19 @@ class ReportCard(object):
         #     print(round(duration_med, ndigits=2), round(duration_std, ndigits=2))
 
         assert len(graph.nodes(data=False)) == n_nodes
-        report = {'total-nodes':graph.number_of_nodes(),
+        report = {'total-nodes': graph.number_of_nodes(),
                   'isolated-nodes': isolated_count,
                   'connected-nodes': connected_count,
-                  'giant-component-size':giant_size,
+                  'giant-component-size': giant_size,
                   'duration-mean': round(duration_mean, ndigits=2),
                   'duration-med': round(duration_med, ndigits=2),
                   'duration-std': round(duration_std, ndigits=2),
                   '# components': len(components),
-                  '>10min':  n_10_min,
-                  '>20min':  n_20_min,
-                  '>30min':  n_30_min,
-                  '>40min':  n_40_min,
-                  '>50min':  n_50_min,
+                  '>10min': n_10_min,
+                  '>20min': n_20_min,
+                  '>30min': n_30_min,
+                  '>40min': n_40_min,
+                  '>50min': n_50_min,
                   'moving-nodes': len(moving_nodes)
                   }
         report.update(wm)
@@ -160,7 +151,7 @@ class ReportCard(object):
         terms = terms[np.isfinite(terms['t0'])]
         if 'bid' in terms.columns:
             terms.set_index('bid', inplace=True)
-        term_ids = set(terms.index) # get set of all bids with data
+        term_ids = set(terms.index)  # get set of all bids with data
         terms['node_id'] = 0
         terms['n-blobs'] = 1
         terms['id_change_found'] = False
@@ -206,17 +197,16 @@ class ReportCard(object):
 
         start_terms = terms[['t0', 'x0', 'y0', 'f0', 'node_id', 'id_change_found',
                              'split_found', 'join_found', 'lifespan_t']]
-        start_terms.rename(columns={'t0':'t', 'x0':'x', 'y0':'y', 'f0':'f',
+        start_terms.rename(columns={'t0': 't', 'x0': 'x', 'y0': 'y', 'f0': 'f',
                                     'split_found': 'split',
                                     'join_found': 'join',
                                     'id_change_found': 'id_change'},
                            inplace=True)
 
+        end_terms = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost',
+                           'split_lost', 'join_lost', 'lifespan_t']]
 
-        end_terms  = terms[['tN', 'xN', 'yN', 'fN', 'node_id', 'id_change_lost',
-                             'split_lost', 'join_lost', 'lifespan_t']]
-
-        end_terms.rename(columns={'tN':'t', 'xN':'x', 'yN':'y', 'fN':'f',
+        end_terms.rename(columns={'tN': 't', 'xN': 'x', 'yN': 'y', 'fN': 'f',
                                   'split_lost': 'split',
                                   'join_lost': 'join',
                                   'id_change_lost': 'id_change'},
@@ -250,20 +240,21 @@ class ReportCard(object):
             df['on_edge'] = False
             df['on_edge'][df['x'] < xlow] = True
             df['on_edge'][df['y'] < ylow] = True
-            df['on_edge'][ xhigh < df['x']] = True
-            df['on_edge'][ yhigh < df['y']] = True
+            df['on_edge'][xhigh < df['x']] = True
+            df['on_edge'][yhigh < df['y']] = True
 
         add_on_edge(start_terms)
         add_on_edge(end_terms)
 
         # mark if nodes start or end outside region of interest ROI
         ex_id = experiment.id
-        #print(ex_id)
+        # print(ex_id)
         roi = fm.ImageMarkings(ex_id=ex_id).roi()
-        #print(roi)
+        # print(roi)
         x, y, r = roi['x'], roi['y'], roi['r']
+
         def add_out_of_roi(df):
-            dists = np.sqrt((df['x'] - x)**2 + (df['y'] - y)**2)
+            dists = np.sqrt((df['x'] - x) ** 2 + (df['y'] - y) ** 2)
             df['outside-roi'] = dists > r
 
         add_out_of_roi(start_terms)
@@ -279,7 +270,7 @@ class ReportCard(object):
 
         def determine_reason(df):
             df['reason'] = 'unknown'
-            #reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+            # reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
             reasons = ['unknown', 'on_edge', 'split', 'join', 'outside-roi', 'timing']
             for reason in reasons[1:]:
                 df['reason'][df[reason]] = reason
@@ -296,21 +287,20 @@ class ReportCard(object):
         df = df.copy()
         df['lifespan_t'] = df['lifespan_t'] / 60.0
         bin_dividers = [1, 5, 10, 20, 61]
-        #reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
+        # reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
         reasons = ['unknown', 'on_edge', 'split', 'join', 'outside-roi', 'timing']
-        #stuff = pd.DataFrame(columns=reasons, index=bin_dividers)
+        # stuff = pd.DataFrame(columns=reasons, index=bin_dividers)
         data = []
         for bd in bin_dividers:
             b = df[df['lifespan_t'] < bd]
             df = df[df['lifespan_t'] >= bd]
-            #print(bd)
-            #print(b.head())
+            # print(bd)
+            # print(b.head())
             counts = {}
             for reason in reasons:
                 counts[reason] = len(b[b['reason'] == reason])
 
             data.append(counts)
-
 
         counts = {}
         for reason in reasons:
@@ -320,7 +310,7 @@ class ReportCard(object):
         report_summary = pd.DataFrame(data)
         report_summary['lifespan'] = bin_dividers + ['total']
         report_summary.set_index('lifespan', inplace=True)
-        #report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
+        # report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
         report_summary = report_summary[['unknown', 'split', 'join', 'timing', 'on_edge', 'outside-roi']]
         print(report_summary)
         return report_summary
@@ -340,8 +330,8 @@ class ReportCard(object):
         experiment.prepdata.dump('end_report', end_report)
         return report
 
-class SubgraphRecorder(object):
 
+class SubgraphRecorder(object):
     def __init__(self, nodes):
         self.nodes = nodes
         self.subgraphs = []
@@ -353,26 +343,29 @@ class SubgraphRecorder(object):
     def extract_subgraph(self, graph):
         """
         """
+
         def relevant_subgraph(digraph, nodes):
             subgraph = digraph.copy()
             unwanted_nodes = [n for n in subgraph.nodes(data=False) if n not in nodes]
             subgraph.remove_nodes_from(unwanted_nodes)
             return subgraph
+
         check_set = set(self.nodes)
         graph_nodes = set(graph.nodes(data=False))
         check_set = check_set & graph_nodes
         all_relevant_nodes = set([])
-        #print(check_set)
-        #print(len(check_set))
+        # print(check_set)
+        # print(len(check_set))
         while len(check_set):
             current_node = check_set.pop()
             subgraph = viz.subgraph.nearby(digraph=graph, target=current_node, max_distance=10000)
-            #print(subgraph)
+            # print(subgraph)
             subgraph_nodes = set(subgraph.nodes(data=False))
             check_set = check_set - subgraph_nodes
             all_relevant_nodes = all_relevant_nodes | subgraph_nodes
         print(len(all_relevant_nodes), 'nodes in subgraph')
         return relevant_subgraph(digraph=graph, nodes=list(all_relevant_nodes))
+
 
 class WaldoSolver(object):
     def __init__(self, experiment, graph):
@@ -398,14 +391,13 @@ class WaldoSolver(object):
             self.write_reports()
             return self.report()
 
-
     def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest
         """
-        #graph = self.graph
+        # graph = self.graph
         experiment = self.experiment
         collider.remove_nodes_outside_roi(self.graph, experiment)
-        phase_name =  'pre-cleaning'
+        phase_name = 'pre-cleaning'
         self.phase_name = phase_name
         if callback:
             callback(0.25)
@@ -455,22 +447,22 @@ class WaldoSolver(object):
         L.warn('Collapse Group')
         print('collapse g')
         collider.collapse_group_of_nodes(self.graph, max_duration=max_duration)
-        #self.graph.deep_validate(experiment=self.experiment)
+        # self.graph.deep_validate(experiment=self.experiment)
 
         print('fission-fusion')
         L.warn('Remove Fission-Fusion')
         collider.remove_fission_fusion(self.graph, max_split_frames=fission_fusion_max)
-        #self.graph.deep_validate(experiment=self.experiment)
+        # self.graph.deep_validate(experiment=self.experiment)
 
         print('fission-fusion rel')
         L.warn('Remove Fission-Fusion (relative)')
         collider.remove_fission_fusion_rel(self.graph, split_rel_time=split_rel_time)
-        #self.graph.deep_validate(experiment=self.experiment)
+        # self.graph.deep_validate(experiment=self.experiment)
 
         print('remove single descendents')
         L.warn('Remove Single Descendents')
         collider.remove_single_descendents(self.graph)
-        #self.graph.deep_validate(experiment=self.experiment)
+        # self.graph.deep_validate(experiment=self.experiment)
         self.report_card.add_step(self.graph, step_name='consolidate',
                                   phase_name=self.phase_name)
 
@@ -486,8 +478,8 @@ class WaldoSolver(object):
         # Score is based on (delta t) * (delta dist)
         ll1, gaps = self.taper.short_tape(gaps, add_edges=True)
         # Score is based on probability that a blob would move a certain distance (from other worms on plate)
-        #ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-        #link_total = len(ll1) #+ len(ll2) + len(ll3)
+        # ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
+        # link_total = len(ll1) #+ len(ll2) + len(ll3)
         self.report_card.add_step(self.graph, step_name='infer gaps',
                                   phase_name=self.phase_name)
 
@@ -497,60 +489,60 @@ class WaldoSolver(object):
 
         """
         last_graph = None
-        #gap_validation = []
+        # gap_validation = []
         # graph = self.graph
 
         def boiler_plate(validate_steps, subgraph_recorder):
             if validate_steps:
                 self.graph.validate()
-                #self.graph.deep_validate(experiment=self.experiment)
-            #L.warn('Iteration {}'.format(i + 1))
+                # self.graph.deep_validate(experiment=self.experiment)
+            # L.warn('Iteration {}'.format(i + 1))
             if subgraph_recorder is not None:
                 subgraph_recorder.save_subgraph(self.graph)
 
         if callback:
             def cb_iterate(i, x):
-                callback(i/6.0 + x/6.0)
+                callback(i / 6.0 + x / 6.0)
         else:
             def cb_iterate(i, x):
                 pass
 
-        #self.report_card.add_step(self.graph, 'iter 0')
+        # self.report_card.add_step(self.graph, 'iter 0')
         for i in range(6):
-            self.phase_name = 'iter{i}'.format(i=i+1)
+            self.phase_name = 'iter{i}'.format(i=i + 1)
             # untangle collisions
             n = self.untangle_collsions()
             print('--- collisions ---')
             boiler_plate(validate_steps, subgraph_recorder)
-            cb_iterate(i, 1/6.)
+            cb_iterate(i, 1 / 6.)
 
             # prune
             print('--- prune ---')
             self.prune()
             boiler_plate(validate_steps, subgraph_recorder)
-            cb_iterate(i, 2/6.)
+            cb_iterate(i, 2 / 6.)
 
             # consolidate
             print('--- consolidate ---')
             self.consolidate()
             boiler_plate(validate_steps, subgraph_recorder)
-            cb_iterate(i, 3/6.)
+            cb_iterate(i, 3 / 6.)
 
             # connect
             print('--- gaps ---')
             self.connect_leaves()
             boiler_plate(validate_steps, subgraph_recorder)
-            cb_iterate(i, 4/6.)
+            cb_iterate(i, 4 / 6.)
 
             # iteration boiler plate
             if (last_graph is not None and
-               set(last_graph.nodes()) == set(self.graph.nodes()) and
-               set(last_graph.edges()) == set(self.graph.edges())):
+                        set(last_graph.nodes()) == set(self.graph.nodes()) and
+                        set(last_graph.edges()) == set(self.graph.edges())):
                 L.warn('No change since last iteration, halting')
                 break
             last_graph = self.graph.copy()
             # self.report_card.add_step(self.graph, 'iter {i}'.format(i=i+1))
-            cb_iterate(i, 5/6.)
+            cb_iterate(i, 5 / 6.)
 
             if redraw_callback is not None:
                 df = self.report()
@@ -577,7 +569,6 @@ class WaldoSolver(object):
     def write_reports(self):
         return self.report_card.save_reports(self.graph)
 
-
     def untangle_collsions(self, verbose=True):
         """ attempt to find and untangle collisions in the graph
         """
@@ -593,7 +584,7 @@ class WaldoSolver(object):
         data_fails = set()
         dont_bother = set()
 
-        #trying_new_suspects = True
+        # trying_new_suspects = True
         collisions_were_resolved = True
         while collisions_were_resolved:
             suspects = set(collider.find_bbox_based_collisions(graph, experiment))
@@ -616,7 +607,7 @@ class WaldoSolver(object):
             # keep track of all fails that had missing data that have
             # not been resolved yet
             data_fails = data_fails | set(report['missing_data'])
-            #data_fails = data_fails - resolved
+            # data_fails = data_fails - resolved
 
             # if overlap fails but data is missing try again later
             # if overlap fails but data is there, dont bother
@@ -634,15 +625,15 @@ class WaldoSolver(object):
             no2 = len(dont_bother)
 
             if float(full_count):
-                p_res = int(100.0 * n_res/float(full_count))
-                p_dat = int(100.0 * len(data_fails)/float(full_count))
-                p_no1 = int(100.0 * no1/float(full_count))
-                p_no2 = int(100.0 * no2/float(full_count))
+                p_res = int(100.0 * n_res / float(full_count))
+                p_dat = int(100.0 * len(data_fails) / float(full_count))
+                p_no1 = int(100.0 * no1 / float(full_count))
+                p_no2 = int(100.0 * no2 / float(full_count))
             else:
                 p_res = p_dat = p_no1 = p_no2 = 0.0
 
             print('\t{n} resolved {p}%'.format(n=n_res, p=p_res))
-            print('\t{n} missing data {p}%'.format(n= n_dat, p=p_dat))
+            print('\t{n} missing data {p}%'.format(n=n_dat, p=p_dat))
             print('\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1))
             print('\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2))
 
@@ -662,11 +653,11 @@ def calculate_duration_data_from_graph(experiment, graph, node_ids=[]):
         bf, df = node_data['born_f'], node_data['died_f']
         t0 = frame_times[bf - 1]
         tN = frame_times[df - 1]
-        step_data.append({'bid':node, 't0':t0, 'tN':tN, 'lifespan':tN-t0})
+        step_data.append({'bid': node, 't0': t0, 'tN': tN, 'lifespan': tN - t0})
 
     steps = pd.DataFrame(step_data)
     steps.set_index('bid', inplace=True)
-    steps = steps / 60.0   # convert to minutes.
+    steps = steps / 60.0  # convert to minutes.
     steps.sort('t0', inplace=True)
     steps = steps[['t0', 'tN', 'lifespan']]
     durations = np.array(steps['lifespan'])

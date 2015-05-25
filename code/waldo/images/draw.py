@@ -7,11 +7,10 @@ from __future__ import absolute_import, division, print_function
 from six.moves import (zip)
 
 # standard library
-
 from math import fabs
+
 # third party
 import numpy as np
-#import scipy
 from scipy import ndimage
 from skimage.measure import regionprops
 
@@ -19,14 +18,9 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 # package specific
-# from waldo import wio
-# from waldo.wio import paths
 from waldo.wio import file_manager as fm
 
-# from ..extern import multiworm
-
 from . import manipulations as mim
-# from . import grab_images
 
 # Derived from http://stackoverflow.com/a/2566508/194586
 # However, I claim these as below the threshold of originality

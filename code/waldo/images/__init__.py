@@ -1,5 +1,5 @@
 from .threshold_picker import InteractivePlot
-from .summarize import summarize_ex_id
+from .summarize import summarize_experiment
 #from .grab_images import grab_images_in_time_range
 from .manipulations import *
 from .score_images import score

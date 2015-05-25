@@ -16,19 +16,19 @@ __status__ = 'prototype'
 
 # standard library
 import os
-import sys
+# import sys
 import json
-from glob import iglob
-import datetime
-import errno
+# from glob import iglob
+# import datetime
+# import errno
 
 # third party
-import pandas as pd
-import numpy as np
+# import pandas as pd
+# import numpy as np
 
 # nonstandard imports
-from waldo.conf import settings
-from waldo.annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
+# from waldo.conf import settings
+# from waldo.annotation.experiment_index import Experiment_Attribute_Index, organize_plate_metadata
 
 from .prepdata import PrepData
 from . import paths

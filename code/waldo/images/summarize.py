@@ -1,10 +1,14 @@
 from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
+
 import numpy as np
 import pandas as pd
 from scipy import ndimage
 from skimage.measure import regionprops
+
 from waldo.images import manipulations as mim
 from waldo.images.blob_interface import grab_blob_data
+from waldo.wio import file_manager as fm
 
 __author__ = 'peterwinter'
 
@@ -353,7 +357,7 @@ def analyze_image(experiment, time, img, background, threshold,
     return bid_matching, base_accuracy, missing_df
 
 
-def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None,
+def analyze_experiment_images(experiment, threshold, roi=None, callback=None,
                          image_callback=None):
     """
     analyze all images for a given ex_id and saves the results to h5 files.
@@ -382,7 +386,6 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None,
                      CALLBACK_SAVE_FRAC * p)
     else:
         cb_load = cb_loop = cb_save = None
-    experiment = wio.Experiment(experiment_id=ex_id)
 
     print('analzying images')
     # grab images and times.
@@ -406,7 +409,7 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None,
     full_missing = []
     for i, (time, impath) in enumerate(zip(times, impaths)):
         # get the objects from the image
-        print(i, impath)
+        # print(i, impath)
         img = mpimg.imread(impath)
         if image_callback:
             image_callback(img)
@@ -455,13 +458,13 @@ def analyze_ex_id_images(ex_id, threshold, roi=None, callback=None,
     cb_save(1)
 
 
-def summarize_ex_id(ex_id, overwrite=True, callback=None, image_callback=None):
+def summarize_experiment(experiment, callback=None, image_callback=None):
     """ short script to load threshold, roi and run
     analyze_ex_id_images.
     """
-
+    ex_id = experiment.id
     pfile = fm.ImageMarkings(ex_id=ex_id)
     threshold = pfile.threshold()
     roi = pfile.roi()
-    return analyze_ex_id_images(ex_id, threshold, roi, callback=callback,
-                                image_callback=image_callback)
+    return analyze_experiment_images(experiment, threshold, roi, callback=callback,
+                                     image_callback=image_callback)

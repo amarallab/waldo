@@ -9,10 +9,9 @@ import pandas as pd
 import numpy as np
 
 # project specific
-from waldo.conf import settings
+# from waldo.conf import settings
 from waldo import wio
 from waldo.wio import paths
-import waldo.collider
 import multiworm
 import waldo.metrics.report_card as report_card
 
@@ -21,6 +20,7 @@ class OutputWriter(object):
     """
 
     """
+
     def __init__(self, ex_id, graph=None, data_dir=None, output_dir=None):
         self.ex_id = ex_id
 
@@ -50,8 +50,8 @@ class OutputWriter(object):
         print('loading summary data')
         basename, summary_df = self._load_summary()
         lost_and_found = self._create_lost_and_found()
-        #json.dump(lost_and_found, open('lost_and_found.json', 'w'))
-        #blob_basename = '{bn}'.format(bn=basename)
+        # json.dump(lost_and_found, open('lost_and_found.json', 'w'))
+        # blob_basename = '{bn}'.format(bn=basename)
 
         # make this run as last step before saving
         paths.mkdirp(self.output_dir)
@@ -61,8 +61,8 @@ class OutputWriter(object):
                                                  callback=callback1,
                                                  interpolate=interpolate)
 
-        #lost_and_found = json.load(open('lost_and_found.json', 'r'))
-        #file_management = json.load(open('file_m.json', 'r'))
+        # lost_and_found = json.load(open('lost_and_found.json', 'r'))
+        # file_management = json.load(open('file_m.json', 'r'))
         print('recreating summary file')
         summary_lines = self._recreate_summary_file(summary_df, lost_and_found, file_management, callback=callback2)
         # def _recreate_summary_file(self, summary_df, lost_and_found, file_management, basename='chore'):
@@ -90,20 +90,20 @@ class OutputWriter(object):
                           summary_df=None, callback=None):
         experiment = self.experiment
         graph = self.graph
-        #all_frames = [int(f) for f in summary_df.index]
-        #sdf = summary_df.reindex(all_frames)
+        # all_frames = [int(f) for f in summary_df.index]
+        # sdf = summary_df.reindex(all_frames)
 
         sdf = summary_df.set_index(0)
 
         file_management = {}
 
         mashup_history = []
-        file_counter = 0 # increments every time file is sucessfully written
+        file_counter = 0  # increments every time file is sucessfully written
         node_length = len(self.graph)
         for current_node_index, node in enumerate(self.graph):
             # get save file name in order.
-            #print(node)
-            #print(node_file)
+            # print(node)
+            # print(node_file)
 
             if callback:
                 callback(current_node_index / float(node_length))
@@ -112,10 +112,9 @@ class OutputWriter(object):
             died_f = node_data['died_f']
             components = node_data.get('components', [])
 
-
             if not components:
                 components = [node]
-            #print(components)
+            # print(components)
 
             line_data = []
             component_record = []
@@ -147,9 +146,8 @@ class OutputWriter(object):
                 continue
             compiled_lines = pd.DataFrame(line_data)
             compiled_lines.fillna(' ', inplace=True)
-            compiled_lines.rename(columns={0:'frame', 1:'time', 2:'x', 3:'y'},
+            compiled_lines.rename(columns={0: 'frame', 1: 'time', 2: 'x', 3: 'y'},
                                   inplace=True)
-
 
             mashup_df = compiled_lines[['frame', 'time', 'x', 'y']]
             mashup_df['node'] = node
@@ -161,25 +159,24 @@ class OutputWriter(object):
             compiled_lines.drop_duplicates('frame', take_last=False,
                                            inplace=True)
 
-
             existing_frames = list(compiled_lines['frame'])
             all_frames = np.arange(int(existing_frames[0]), int(existing_frames[-1]) + 1)
             all_frames = [int(i) for i in all_frames]
-            #print(all_frames[0], type(all_frames[0]))
+            # print(all_frames[0], type(all_frames[0]))
 
             # If interpolate == True,
             # this section inserts values into otherwise empty rows
             if interpolate and len(existing_frames) != len(all_frames):
-                #print(len(existing_frames), 'existing')
-                #print(len(all_frames), 'with gaps filled')
-                #print(compiled_lines.head(2))
+                # print(len(existing_frames), 'existing')
+                # print(len(all_frames), 'with gaps filled')
+                # print(compiled_lines.head(2))
 
                 compiled_lines.set_index('frame', inplace=True)
                 compiled_lines = compiled_lines.reindex(all_frames)
-                #print(compiled_lines.head())
+                # print(compiled_lines.head())
                 for f in compiled_lines[compiled_lines['time'].isnull()].index:
                     t = round(sdf.loc[f][1], ndigits=3)
-                    #print(f, t, 'fill time')
+                    # print(f, t, 'fill time')
                     compiled_lines['time'].loc[f] = t
 
                 compiled_lines['x'] = compiled_lines['x'].interpolate()
@@ -189,7 +186,7 @@ class OutputWriter(object):
 
                 cl = compiled_lines.fillna(method='ffill')
                 compiled_lines = cl.reset_index()
-                #print(compiled_lines.head())
+                # print(compiled_lines.head())
 
             # Now that actual lines of data found for blob
             # Store the data and
@@ -203,12 +200,12 @@ class OutputWriter(object):
                 f.write('% {n}\n'.format(n=node))
 
                 for j, row in compiled_lines.iterrows():
-                    #print(row)
-                    #print(row['line'])
+                    # print(row)
+                    # print(row['line'])
                     row = ' '.join(['{i}'.format(i=i) for i in row])
                     row = row + '\n'
                     f.write(row)
-            file_counter += 1 # increments every time file is sucessfully written
+            file_counter += 1  # increments every time file is sucessfully written
         all_mashups = pd.concat(mashup_history)
         all_mashups.sort('frame', inplace=True)
         all_mashups.to_csv('mashup_record.csv', index=False)
@@ -233,23 +230,23 @@ class OutputWriter(object):
             cleaned_lines.append(parts)
         summary_df = pd.DataFrame(cleaned_lines)
         print('summary df has', len(summary_df))
-        #print(summary_df.head())
+        # print(summary_df.head())
         return basename, summary_df
 
     def _create_lost_and_found(self):
         graph = self.graph
         lost_and_found = {}
         for i, node in enumerate(graph):
-            #print(node)
+            # print(node)
             node_data = graph.node[node]
-            #print(node_data)
+            # print(node_data)
             successors = list(graph.successors(node))
             predecessors = list(graph.predecessors(node))
             s_data = [[node, 0]]
             p_data = [[0, node]]
 
             if successors:
-                s_data =[[node, s] for s in successors]
+                s_data = [[node, s] for s in successors]
             if predecessors:
                 p_data = [[p, node] for p in predecessors]
 
@@ -268,8 +265,8 @@ class OutputWriter(object):
     def _recreate_summary_file(self, summary_df, lost_and_found, file_management, callback=None):
         """ writes a summary file based on the data collected
         """
-        #summary_df['lost_found'] = ''
-        #summary_df['location'] = ''
+        # summary_df['lost_found'] = ''
+        # summary_df['location'] = ''
         lf_lines = {}
         fm_lines = {}
         blobs_in_files = []
@@ -281,18 +278,21 @@ class OutputWriter(object):
 
             def cb_step1(p):
                 callback(STEP1_FRAC * p)
+
             def cb_step2(p):
                 callback(STEP1_FRAC + STEP2_FRAC * p)
+
             def cb_step3(p):
                 callback(STEP1_FRAC + STEP2_FRAC + STEP3_FRAC * p)
         else:
             def cb_step1(p):
                 pass
+
             cb_step2 = cb_step3 = cb_step1
 
         count = len(file_management.values())
         for current, fl in enumerate(file_management.values()):
-            cb_step1(current/float(count))
+            cb_step1(current / float(count))
             if len(fl) > 1:
                 bs, fs = zip(*fl)
                 blobs_in_files.extend(bs)
@@ -302,15 +302,16 @@ class OutputWriter(object):
 
         count = len(lost_and_found.items())
         current = 0
-        for frame, lf in lost_and_found.iteritems():
-            cb_step2(current/float(count))
+        for frame in lost_and_found:
+            lf = lost_and_found[frame]
+            cb_step2(current / float(count))
             current += 1
 
             line_contains_info = False
             lf_line = ' %%'
             parents, children = zip(*lf)
             for a, b in lf:
-                if a not in blobs_in_files: # remove references to blobs that are not actually saved
+                if a not in blobs_in_files:  # remove references to blobs that are not actually saved
                     a = 0
                 if b not in blobs_in_files:
                     b = 0
@@ -320,35 +321,35 @@ class OutputWriter(object):
                     lf_line = lf_line + ' {a} {b}'.format(a=int(a), b=int(b))
                     line_contains_info = True
 
-            if line_contains_info: # only save this line if it contains data
+            if line_contains_info:  # only save this line if it contains data
                 lf_lines[int(frame)] = lf_line
-            #print(frame, lf_line)
+                # print(frame, lf_line)
 
         for frame, fm in file_management.iteritems():
             fm_line = ' %%%'
             for a, b in fm:
                 fm_line = fm_line + ' {a} {b}'.format(a=a, b=b)
-            #print(frame, fm_line)
+            # print(frame, fm_line)
             fm_lines[int(frame)] = fm_line
 
         count = summary_df[0].count()
         current = 0
         lines = []
         for i, row in summary_df.iterrows():
-            cb_step3(current/float(count))
+            cb_step3(current / float(count))
             current += 1
 
             line = ' '.join(['{i}'.format(i=i) for i in row])
             frame = int(row[0])
-            #print(frame)
+            # print(frame)
             line = line + lf_lines.get(frame, '')
             line = line + fm_lines.get(frame, '')
-            #if lf_lines.get(frame, ''):
+            # if lf_lines.get(frame, ''):
             #    print(line)
-            #if fm_lines.get(frame, ''):
+            # if fm_lines.get(frame, ''):
             #    print(line)
             line = line + '\n'
             lines.append(line)
-        #print(lost_and_found)
+        # print(lost_and_found)
         # TODO: add both lines to summary file.
         return lines

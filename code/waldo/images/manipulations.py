@@ -2,22 +2,14 @@ from __future__ import absolute_import, division, print_function
 # This notebook is for finding the segmentation threshold that most clearly finds worms in a recording.
 # It is intended as an alternative method of validating the MultiWorm Tracker's results.
 
-# standard library
-# import sys
-# import os
-
 # third party
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-# import matplotlib.cm as cm
 from scipy import ndimage
 from skimage import morphology
-# from skimage.measure import regionprops
-# from skimage.filter.rank import entropy
 import matplotlib.patches as mpatches
 
-# package specific
 
 def outline_to_outline_matrix(outline, bbox=None):
     """

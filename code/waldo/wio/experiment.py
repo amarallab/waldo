@@ -4,9 +4,8 @@
 A specialized Waldo version of the Experiment class that contains specific
 features.
 """
-from __future__ import (
-        absolute_import, division, print_function, unicode_literals)
-import six
+from __future__ import (absolute_import, division,
+                        print_function, unicode_literals)
 from six.moves import (zip, filter, map, reduce, input, range)
 
 # standard library

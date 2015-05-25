@@ -12,7 +12,6 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 import matplotlib.image as mpimg
-import matplotlib.cm as cm
 from matplotlib.widgets import Button, Slider
 from skimage import morphology
 from skimage.measure import regionprops
@@ -20,7 +19,6 @@ from skimage.measure import regionprops
 # project specific
 from waldo.wio import paths
 
-#from .grab_images import grab_images_in_time_range
 
 def perp(v):
     # adapted from http://stackoverflow.com/a/3252222/194586
@@ -55,7 +53,7 @@ def circle_3pt(a, b, c):
     bc2 = c_bc + pb_bc
 
     # find where some example vectors intersect
-    #center = seg_intersect(c_ab, c_ab + pb_ab, c_bc, c_bc + pb_bc)
+    # center = seg_intersect(c_ab, c_ab + pb_ab, c_bc, c_bc + pb_bc)
 
     A1 = ab2[1] - c_ab[1]
     B1 = c_ab[0] - ab2[0]
@@ -63,14 +61,16 @@ def circle_3pt(a, b, c):
     A2 = bc2[1] - c_bc[1]
     B2 = c_bc[0] - bc2[0]
     C2 = A2 * c_bc[0] + B2 * c_bc[1]
-    center = np.linalg.inv(np.matrix([[A1, B1],[A2, B2]])) * np.matrix([[C1], [C2]])
+    center = np.linalg.inv(np.matrix([[A1, B1], [A2, B2]])) * np.matrix([[C1], [C2]])
     center = np.array(center).flatten()
     radius = np.linalg.norm(a - center)
     return center, radius
 
+
 INCR_X = 1
 INCR_Y = 1
 INCR_RADIUS = 1
+
 
 class InteractivePlot:
     def __init__(self, ids, initial_threshold=0.0005):
@@ -145,24 +145,24 @@ class InteractivePlot:
             with filename.open("rt") as f:
                 data = json.loads(f.read())
             self.current_threshold = data['threshold']
-            self.circle_pos = (data['y'], data['x']) #note xy are purposely switched
+            self.circle_pos = (data['y'], data['x'])  # note xy are purposely switched
             self.circle_radius = data['r']
         except IOError as ex:
             self.circle_pos = (0, 0)
-            self.circle_radius = max(self.background.shape)/2
+            self.circle_radius = max(self.background.shape) / 2
 
         self.centerx.label.set_text("< X: %d >" % self.circle_pos[0])
         self.centery.label.set_text("< Y: %d >" % self.circle_pos[1])
         self.radius.label.set_text("< R: %d >" % self.circle_radius)
 
         # pick an image to test. the middle one is good.
-        self.mid_image = mpimg.imread(impaths[int(len(impaths)/2)])
+        self.mid_image = mpimg.imread(impaths[int(len(impaths) / 2)])
 
-        self.mouse_points = [] # for generate circle from 3 points
+        self.mouse_points = []  # for generate circle from 3 points
         # run functions.
         thresholds = np.linspace(start=0.00001, stop=0.001, num=30)
         self.show_threshold_properties(thresholds)
-        #NO UNCOMMENT show_threshold_spread(mid, background)
+        # NO UNCOMMENT show_threshold_spread(mid, background)
 
         self.show_threshold()
 
@@ -194,7 +194,7 @@ class InteractivePlot:
            this is a sorted list containing paths to all the image files from one recording.
         """
         first = mpimg.imread(impaths[0])
-        mid = mpimg.imread(impaths[int(len(impaths)/2)])
+        mid = mpimg.imread(impaths[int(len(impaths) / 2)])
         last = mpimg.imread(impaths[-1])
         return np.maximum(np.maximum(first, mid), last)
 
@@ -264,7 +264,7 @@ class InteractivePlot:
             else:
                 valid, N, m, s = self.data_from_threshold(t)
             if valid:
-               self.thresholds.append((t, N, m, s))
+                self.thresholds.append((t, N, m, s))
 
         x, ns, means, stds = zip(*self.thresholds)
         final_t = x[-1]
@@ -288,8 +288,10 @@ class InteractivePlot:
         self.ax_area.set_ylabel('mean area')
         self.ax_objects.set_xlim([0, final_t])
 
-        self.line_objects = self.ax_objects.plot((self.current_threshold, self.current_threshold), (-10000, 10000), '--', color='red')
-        self.line_area = self.ax_area.plot((self.current_threshold, self.current_threshold), (-1000000, 1000000), '--', color='red')
+        self.line_objects = self.ax_objects.plot((self.current_threshold, self.current_threshold), (-10000, 10000),
+                                                 '--', color='red')
+        self.line_area = self.ax_area.plot((self.current_threshold, self.current_threshold), (-1000000, 1000000), '--',
+                                           color='red')
 
     def show_threshold(self):
         """
@@ -393,8 +395,10 @@ class InteractivePlot:
 
                 self.line_objects[0].remove()
                 self.line_area[0].remove()
-                self.line_objects = self.ax_objects.plot((self.current_threshold, self.current_threshold), (-10000, 10000), '--', color='red')
-                self.line_area = self.ax_area.plot((self.current_threshold, self.current_threshold), (-1000000, 1000000), '--', color='red')
+                self.line_objects = self.ax_objects.plot((self.current_threshold, self.current_threshold),
+                                                         (-10000, 10000), '--', color='red')
+                self.line_area = self.ax_area.plot((self.current_threshold, self.current_threshold),
+                                                   (-1000000, 1000000), '--', color='red')
 
                 self.show_threshold()
                 self.fig.canvas.draw()
@@ -411,7 +415,6 @@ class InteractivePlot:
                     self.circle_radius = radius
                     self.update_image_circle()
                     self.mouse_points = []
-
 
     def on_button_released(self, ev):
         pass
@@ -432,6 +435,7 @@ class InteractivePlot:
             with filename.open("w") as f:
                 json.dump(result, f)
 
+
 if __name__ == '__main__':
     import os
     from waldo.conf import settings
@@ -440,8 +444,3 @@ if __name__ == '__main__':
     dirs = [d for d in os.listdir(DATA_DIR) if os.path.isdir(DATA_DIR + d)]
     ip = InteractivePlot(dirs, 0.0005)
     ip.run_plot()
-    #ip.precalculate_threshold_data()
-
-    #ex_id = '20130318_131111'
-    #threshold = 0.0001
-    #threshold = 0.0003
