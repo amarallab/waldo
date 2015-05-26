@@ -9,7 +9,7 @@ import numpy as np
 import networkx as nx
 
 # package specific
-from waldo import viz
+import waldo.viz.subgraph as subgraph
 from waldo import collider
 from waldo.conf import settings
 import waldo.tape.taper as tp
@@ -358,7 +358,7 @@ class SubgraphRecorder(object):
         # print(len(check_set))
         while len(check_set):
             current_node = check_set.pop()
-            subgraph = viz.subgraph.nearby(digraph=graph, target=current_node, max_distance=10000)
+            subgraph = subgraph.nearby(digraph=graph, target=current_node, max_distance=10000)
             # print(subgraph)
             subgraph_nodes = set(subgraph.nodes(data=False))
             check_set = check_set - subgraph_nodes

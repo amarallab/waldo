@@ -55,6 +55,8 @@ def score_images(worm_values, background_values):
     p5 = np.percentile(background_values, 5)
     # print('threshold:', p5, '(5th percentile of background)')
 
+    print('worm_values', worm_values)
+    print('p5', p5)
     good_fraction = (worm_values <= p5).sum(dtype=float) / len(worm_values)
     good_fraction = round(good_fraction, ndigits=2)
 

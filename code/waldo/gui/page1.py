@@ -24,7 +24,7 @@ class WelcomePage(QtGui.QWizardPage):
         self.data = data
         self.setTitle("Welcome")
         self.setSubTitle("Welcome to Waldo GUI. Press 'configure' to configure parameters, 'next' to continue")
-
+        
         config_button = QtGui.QPushButton("Configure")
         config_button.setToolTip(self.Tooltips.config_button)
         config_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
