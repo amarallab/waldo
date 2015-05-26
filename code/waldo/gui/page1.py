@@ -42,18 +42,18 @@ class WelcomePage(QtGui.QWizardPage):
         waldoDataButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         waldoDataButton.clicked.connect(self.waldoDataButton_clicked)
 
-        col = 0
-        folderLayout.addWidget(QtGui.QLabel("<b>Folders</b>"), col, 0, 1, 3)
+        row = 0
+        folderLayout.addWidget(QtGui.QLabel("<b>Folders</b>"), row, 0, 1, 3)
 
-        col += 1
-        folderLayout.addWidget(QtGui.QLabel("Raw Data"), col, 0, 1, 1)
-        folderLayout.addWidget(self.rawDataLabel, col, 1, 1, 1)
-        folderLayout.addWidget(rawDataButton, col, 2, 1, 1)
+        row += 1
+        folderLayout.addWidget(QtGui.QLabel("Raw Data"), row, 0, 1, 1)
+        folderLayout.addWidget(self.rawDataLabel, row, 1, 1, 1)
+        folderLayout.addWidget(rawDataButton, row, 2, 1, 1)
 
-        col += 1
-        folderLayout.addWidget(QtGui.QLabel("Project Data"), col, 0, 1, 1)
-        folderLayout.addWidget(self.waldoDataLabel, col, 1, 1, 1)
-        folderLayout.addWidget(waldoDataButton, col, 2, 1, 1)
+        row += 1
+        folderLayout.addWidget(QtGui.QLabel("Project Data"), row, 0, 1, 1)
+        folderLayout.addWidget(self.waldoDataLabel, row, 1, 1, 1)
+        folderLayout.addWidget(waldoDataButton, row, 2, 1, 1)
 
         self.runBatchModeCheckBox = QtGui.QCheckBox("Run in Batch Mode")
         self.runBatchModeCheckBox.setChecked(self.data.experiment_id_list is not None)
@@ -134,26 +134,29 @@ class ConfigDialog(QtGui.QDialog):
             guisettings.COLLIDER_SUITE_SPLIT_REL_RANGE,
             self.ToolTips.colliderSuiteSplitRel)
 
-        col = 0
-        layout.addWidget(QtGui.QLabel("<b>Collider suite</b>"), col, 0, 1, 2)
+        row = 0
+        # text, row, column, row_height, row_width
+        # Title
+        layout.addWidget(QtGui.QLabel("<b>Collider suite</b>"), row, 0, 1, 2)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Assimilate size"), col, 0, 1, 1)
-        layout.addWidget(self.colliderSuiteAssimilateSize, col, 1, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Assimilate size"), row, 0, 1, 1) # label
+        layout.addWidget(self.colliderSuiteAssimilateSize, row, 1, 1, 1) # text box
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Offshoot"), col, 0, 1, 1)
-        layout.addWidget(self.colliderSuiteOffshoot, col, 1, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Offshoot"), row, 0, 1, 1)
+        layout.addWidget(self.colliderSuiteOffshoot, row, 1, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Split Abs"), col, 0, 1, 1)
-        layout.addWidget(self.colliderSuiteSplitAbs, col, 1, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Split Abs"), row, 0, 1, 1)
+        layout.addWidget(self.colliderSuiteSplitAbs, row, 1, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Split Rel"), col, 0, 1, 1)
-        layout.addWidget(self.colliderSuiteSplitRel, col, 1, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Split Rel"), row, 0, 1, 1)
+        layout.addWidget(self.colliderSuiteSplitRel, row, 1, 1, 1)
 
         # Tape
+        # store text box contents as appropriate variables
         self.tapeFrameSearchLimit = self.createQLineEditIntValidator(
             str(settings.TAPE_FRAME_SEARCH_LIMIT),
             guisettings.TAPE_FRAME_SEARCH_LIMIT_RANGE,
@@ -191,44 +194,44 @@ class ConfigDialog(QtGui.QDialog):
             guisettings.TAPE_TRACE_LIMIT_NUM_RANGE,
             self.ToolTips.tapeTraceLimitNum)
 
-        col = 0
-        layout.addWidget(QtGui.QLabel("<b>Tape</b>"), col, 2, 1, 2)
+        row = 0
+        layout.addWidget(QtGui.QLabel("<b>Tape</b>"), row, 2, 1, 2)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Frame Search Limit"), col, 2, 1, 1)
-        layout.addWidget(self.tapeFrameSearchLimit, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Frame Search Limit"), row, 2, 1, 1)
+        layout.addWidget(self.tapeFrameSearchLimit, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("KDE Samples"), col, 2, 1, 1)
-        layout.addWidget(self.tapeKdeSamples, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("KDE Samples"), row, 2, 1, 1)
+        layout.addWidget(self.tapeKdeSamples, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Max Speed Multiplier"), col, 2, 1, 1)
-        layout.addWidget(self.tapeMaxSpeedMultiplier, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Max Speed Multiplier"), row, 2, 1, 1)
+        layout.addWidget(self.tapeMaxSpeedMultiplier, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Max Speed Smoothing"), col, 2, 1, 1)
-        layout.addWidget(self.tapeMaxSpeedSmoothing, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Max Speed Smoothing"), row, 2, 1, 1)
+        layout.addWidget(self.tapeMaxSpeedSmoothing, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Min Trace Fail"), col, 2, 1, 1)
-        layout.addWidget(self.tapeMinTraceFail, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Min Trace Fail"), row, 2, 1, 1)
+        layout.addWidget(self.tapeMinTraceFail, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Min Trace Warn"), col, 2, 1, 1)
-        layout.addWidget(self.tapeMinTraceWarn, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Min Trace Warn"), row, 2, 1, 1)
+        layout.addWidget(self.tapeMinTraceWarn, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Rel Move Threshold"), col, 2, 1, 1)
-        layout.addWidget(self.tapeRelMoveThreshold, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Rel Move Threshold"), row, 2, 1, 1)
+        layout.addWidget(self.tapeRelMoveThreshold, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Shakycam Allowance"), col, 2, 1, 1)
-        layout.addWidget(self.tapeShakycamAllowance, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Shakycam Allowance"), row, 2, 1, 1)
+        layout.addWidget(self.tapeShakycamAllowance, row, 3, 1, 1)
 
-        col += 1
-        layout.addWidget(QtGui.QLabel("Trace Limit Num"), col, 2, 1, 1)
-        layout.addWidget(self.tapeTraceLimitNum, col, 3, 1, 1)
+        row += 1
+        layout.addWidget(QtGui.QLabel("Trace Limit Num"), row, 2, 1, 1)
+        layout.addWidget(self.tapeTraceLimitNum, row, 3, 1, 1)
 
         # Buttons
         buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | QtGui.QDialogButtonBox.Cancel, Qt.Horizontal,

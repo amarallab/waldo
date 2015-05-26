@@ -105,7 +105,7 @@ class SelectBatchModeExperimentsPage(QtGui.QWizardPage):
                 item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 self.experimentTable.setItem(row, col, item)
 
-            if folder in self.data.experiment_id_list:
+            if self.data.experiment_id_list is not None and folder in self.data.experiment_id_list:
                 rowsToSelect.append(row)
 
         for row in rowsToSelect:

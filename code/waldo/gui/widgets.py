@@ -319,7 +319,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
             self.roi_center = (ev.xdata, ev.ydata)
             self.update_image_circle()
             self.save_data()
-        else:
+        elif ev.xdata is not None and ev.ydata is not None:
             self.mouse_points.append((ev.xdata, ev.ydata))
             if len(self.mouse_points) == 3:
                 center, radius = circle_3pt(*self.mouse_points)
