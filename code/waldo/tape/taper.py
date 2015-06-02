@@ -361,6 +361,11 @@ class Taper(object):
 
         acausal_limit = self.acausal_limit
 
+        if gaps_df is None:
+            # if there is no gaps file, then there is no point in trying to find gaps
+            print('WARNING: no gaps file')
+            return [], []
+            
         gaps = gaps_df.copy()
         link_list = []
         gaps = gaps[gaps['df'] < df]
