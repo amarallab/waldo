@@ -1,22 +1,32 @@
 __author__ = 'heltena'
 
-
-class LogForWindows(object):
-    def __init__(self, filename):
-        self.filename = filename
-        self.file = open(filename, 'at')
-
-    def write(self, text):
-        self.file.write(text)
-
-    def flush(self):
-        self.file.flush()
-
 import sys
-log = LogForWindows('guiwaldo_log.txt')
-sys.stdout = log
-sys.stderr = log
-del LogForWindows
+
+compile_to_windows = False
+
+if compile_to_windows:
+    class LogForWindows(object):
+        def __init__(self, filename):
+            self.filename = filename
+            self.file = open(filename, 'at')
+
+        def write(self, text):
+            self.file.write(text)
+
+        def flush(self):
+            self.file.flush()
+
+
+    from datetime import datetime
+
+    datestr = datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f')
+    log_name = 'guiwaldo_log.{}.txt'.format(datestr)
+    log = LogForWindows(log_name)
+    sys.stdout = log
+    sys.stderr = log
+    del LogForWindows
+
+
 
 import matplotlib
 matplotlib.use('Qt4Agg')
