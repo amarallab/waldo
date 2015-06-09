@@ -1,4 +1,4 @@
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt, QTimer
 
@@ -9,6 +9,7 @@ from scipy import ndimage
 import json
 import errno
 from waldo.wio import Experiment
+import math
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
@@ -51,6 +52,249 @@ except AttributeError:
     style.use(STYLE)
 
 
+class ROISelectorBar(QtGui.QWidget):
+
+    roi_changed = QtCore.pyqtSignal([])
+
+    def __init__(self, figure, ax, color=(1, 0, 0, 0.25), parent=None):
+        super(ROISelectorBar, self).__init__()
+        self.figure = figure
+        self.ax = ax
+        self.parent = parent
+
+        self.roi_type = 'circle'
+        self.roi_center = [0, 0]
+        self.roi_radius = 1
+        self.roi_points = []
+
+        self.artist = None
+        self.current_polygon_artist = None
+        self.color = color
+
+        self.explainLabel = QtGui.QLabel("")
+        self.newCircleButton = QtGui.QPushButton("New Circle")
+        self.newPolygonButton = QtGui.QPushButton("New Polygon")
+        self.cancelCircleButton = QtGui.QPushButton("Cancel")
+        self.closePolygonButton = QtGui.QPushButton("Close")
+        self.cancelPolygonButton = QtGui.QPushButton("Cancel")
+
+        self.explainLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.newCircleButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.newPolygonButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.cancelCircleButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.closePolygonButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.cancelPolygonButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+        self.newCircleButton.clicked.connect(self.newCircleButton_clicked)
+        self.newPolygonButton.clicked.connect(self.newPolygonButton_clicked)
+        self.cancelCircleButton.clicked.connect(self.cancelCircleButton_clicked)
+        self.closePolygonButton.clicked.connect(self.closePolygonButton_clicked)
+        self.cancelPolygonButton.clicked.connect(self.cancelPolygonButton_clicked)
+
+        layout = QtGui.QHBoxLayout()
+        layout.addWidget(self.explainLabel)
+        layout.addWidget(self.newCircleButton)
+        layout.addWidget(self.newPolygonButton)
+        layout.addWidget(self.cancelCircleButton)
+        layout.addWidget(self.closePolygonButton)
+        layout.addWidget(self.cancelPolygonButton)
+        self.setLayout(layout)
+
+        self.figure.canvas.mpl_connect('button_press_event', self.on_figure_button_pressed)
+        self.set_initial_state()
+
+    def set_initial_state(self):
+        self.current_roi_type = None
+        self.explainLabel.setVisible(False)
+        self.newCircleButton.setVisible(True)
+        self.newPolygonButton.setVisible(True)
+        self.cancelCircleButton.setVisible(False)
+        self.closePolygonButton.setVisible(False)
+        self.cancelPolygonButton.setVisible(False)
+
+    def clear_roi(self):
+        #self.circle = None
+        self.roi_type = 'circle'
+        self.roi_center = (0, 0)
+        self.roi_radius = 1
+        self.roi_points = []
+
+    def json_to_data(self, data):
+        self.roi_type = data.get('roi_type', 'circle')
+        self.roi_center = (data.get('y', 0), data.get('x', 0))  # stored transposed!!
+        self.roi_radius = data.get('r', 1)
+        self.roi_points = data.get('points', [])
+
+    def data_to_json(self):
+        return {'roi_type': self.roi_type,
+                'x': self.roi_center[1], # stored transposed!!
+                'y': self.roi_center[0],
+                'r': self.roi_radius,
+                'points': self.roi_points}
+
+    def update_image(self):
+        if self.artist is not None:
+            self.artist.remove()
+
+        if self.roi_type == 'circle':
+            self.artist = plt.Circle(self.roi_center, self.roi_radius, color=self.color)
+            self.ax.add_artist(self.artist)
+            self.figure.canvas.draw()
+
+        elif self.roi_type == 'polygon':
+            self.artist = plt.Polygon(
+                self.roi_points,
+                closed=True,
+                linewidth=0,
+                fill=True,
+                color=self.color)
+            self.ax.add_artist(self.artist)
+            self.figure.canvas.draw()
+
+        else:
+            self.artist = None
+
+    def isComplete(self):
+        if self.roi_type == 'circle':
+            return self.roi_center[0] != 0 or self.roi_center[1] != 0
+        elif self.roi_type == 'polygon':
+            return len(self.roi_points) > 2
+        else:
+            return False
+
+    def newCircleButton_clicked(self, ev):
+        self.current_roi_type = 'circle'
+        self.mouse_points = []
+
+        self.explainLabel.setText("Click next point (3 remains)")
+        self.explainLabel.setVisible(True)
+        self.newCircleButton.setVisible(False)
+        self.newPolygonButton.setVisible(False)
+        self.cancelCircleButton.setVisible(True)
+        self.closePolygonButton.setVisible(False)
+        self.cancelPolygonButton.setVisible(False)
+
+        if self.artist is not None:
+            self.artist.remove()
+            self.figure.canvas.draw()
+
+    def newPolygonButton_clicked(self, ev):
+        self.current_roi_type = 'polygon'
+        self.mouse_points = []
+
+        self.explainLabel.setText("Click next point or 'close' to close the polygon")
+        self.explainLabel.setVisible(True)
+        self.newCircleButton.setVisible(False)
+        self.newPolygonButton.setVisible(False)
+        self.cancelCircleButton.setVisible(False)
+        self.closePolygonButton.setVisible(True)
+        self.cancelPolygonButton.setVisible(True)
+
+        if self.artist is not None:
+            self.artist.remove()
+            self.figure.canvas.draw()
+
+    def cancelCircleButton_clicked(self, ev):
+        self.current_roi_type = None
+        self.set_initial_state()
+
+        if self.artist is not None:
+            self.ax.add_artist(self.artist)
+            self.figure.canvas.draw()
+
+    def closePolygonButton_clicked(self, ev):
+        self.__close_polygon()
+
+    def cancelPolygonButton_clicked(self, ev):
+        self.current_roi_type = None
+        self.set_initial_state()
+
+        draw = False
+        if self.artist is not None:
+            self.ax.add_artist(self.artist)
+            draw = True
+
+        if self.current_polygon_artist is not None:
+            self.current_polygon_artist.remove()
+            self.current_polygon_artist = None
+            draw = True
+
+        if draw:
+            self.figure.canvas.draw()
+
+
+    def on_figure_button_pressed(self, ev):
+        if ev.xdata is None or ev.ydata is None:
+            return
+
+        if self.current_roi_type == 'circle':
+            self.mouse_points.append((ev.xdata, ev.ydata))
+            if len(self.mouse_points) < 3:
+                remain = 3 - len(self.mouse_points)
+                self.explainLabel.setText(
+                    "Click next point ({} remain{})".format(
+                        remain, "s" if remain > 1 else ""))
+            else:
+                center, radius = circle_3pt(*self.mouse_points)
+                self.roi_center = center
+                self.roi_radius = radius
+                self.set_initial_state()
+
+                self.artist = plt.Circle(self.roi_center, self.roi_radius, color=self.color)
+                self.ax.add_artist(self.artist)
+                self.figure.canvas.draw()
+
+                self.roi_type = 'circle'
+                self.roi_changed.emit()
+
+        elif self.current_roi_type == 'polygon':
+            self.mouse_points.append((ev.xdata, ev.ydata))
+
+            closed = False
+
+            if len(self.mouse_points) > 2:
+                first = self.mouse_points[0]
+                last = self.mouse_points[-1]
+                d = math.hypot(first[0] - last[0], first[1] - last[1])
+                if d < 75:
+                    self.__close_polygon()
+                    closed = True
+
+            if not closed:
+                if self.current_polygon_artist is None:
+                    self.current_polygon_artist = plt.Polygon(
+                        self.mouse_points,
+                        closed=False,
+                        linewidth=3,
+                        fill=False,
+                        edgecolor=self.color)
+                    self.ax.add_artist(self.current_polygon_artist)
+                else:
+                    self.current_polygon_artist.set_xy(self.mouse_points)
+                self.figure.canvas.draw()
+
+    def __close_polygon(self):
+        self.roi_points = self.mouse_points
+        self.set_initial_state()
+
+        self.artist = plt.Polygon(
+            self.roi_points,
+            closed=True,
+            linewidth=0,
+            fill=True,
+            color=self.color)
+
+        if self.current_polygon_artist is not None:
+            self.current_polygon_artist.remove()
+            self.current_polygon_artist = None
+
+        self.ax.add_artist(self.artist)
+        self.figure.canvas.draw()
+
+        self.roi_type = 'polygon'
+        self.roi_changed.emit()
+
+
 class ThresholdCacheWidget(QtGui.QWidget):
     def __init__(self, on_changed_ev, parent=None):
         super(ThresholdCacheWidget, self).__init__()
@@ -86,18 +330,19 @@ class ThresholdCacheWidget(QtGui.QWidget):
         layout.addWidget(self.histogram_canvas, 2, 0, 1, 1)
         layout.addWidget(self.histogram_toolbar, 3, 0, 1, 1)
 
+        self.roiSelectorBar = ROISelectorBar(self.image_figure, self.ax_image)
+        self.roiSelectorBar.roi_changed.connect(self.roiSelectorBar_roi_changed)
+
         q2 = QtGui.QLabel("<b>Define Region of Interest</b>")
         layout.addWidget(q2, 0, 1, 1, 1)
-        layout.addWidget(QtGui.QLabel("Click on image three times to define the region of interest"), 1, 1, 1, 1)
+        layout.addWidget(self.roiSelectorBar, 1, 1, 1, 1)
         layout.addWidget(self.image_canvas, 2, 1, 1, 1)
         layout.addWidget(self.image_toolbar, 3, 1, 1, 1)
         self.setLayout(layout)
 
         self.histogram_figure.canvas.mpl_connect('button_press_event', self.on_histogram_button_pressed)
-        self.image_figure.canvas.mpl_connect('button_press_event', self.on_image_button_pressed)
+        # self.image_figure.canvas.mpl_connect('button_press_event', self.on_image_button_pressed)
 
-        self.roi_center = [0, 0]
-        self.roi_radius = 1
         self.thresholds = []
 
     @staticmethod
@@ -119,9 +364,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
         return np.maximum(np.maximum(first, mid), last)
 
     def clear_experiment_data(self):
-        self.circle = None
-        self.roi_center = (0, 0)
-        self.roi_radius = 1
+        self.roiSelectorBar.clear_roi()
         self.threshold = 0.0005
 
     def load_experiment(self, experiment):
@@ -130,9 +373,8 @@ class ThresholdCacheWidget(QtGui.QWidget):
         try:
             with open(self.annotation_filename, "rt") as f:
                 data = json.loads(f.read())
-            self.circle = None
-            self.roi_center = (data.get('y', 0), data.get('x', 0))  # stored transposed!!
-            self.roi_radius = data.get('r', 1)
+            # self.circle = None
+            self.roiSelectorBar.json_to_data(data)
             self.threshold = data.get('threshold', 0.0005)
         except IOError as ex:
             self.clear_experiment_data()
@@ -172,7 +414,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
         self.histogram_figure.canvas.draw()
 
     def isComplete(self):
-        return self.roi_center[0] != 0 or self.roi_center[1] != 0
+        return self.roiSelectorBar.isComplete()
 
     def create_binary_mask(self, img, background, threshold, minsize=100):
         """
@@ -223,10 +465,8 @@ class ThresholdCacheWidget(QtGui.QWidget):
 
         # note: the image is usually transposed. we didn't here,
         # so x and y are flipped during saving process.
-        data = {'threshold': self.threshold,
-                'x': self.roi_center[1],
-                'y': self.roi_center[0],
-                'r': self.roi_radius}
+        data = self.roiSelectorBar.data_to_json()
+        data['threshold'] = self.threshold
 
         ThresholdCacheWidget.mkdir_p(os.path.dirname(self.annotation_filename))
         with open(self.annotation_filename, "wt") as f:
@@ -285,18 +525,8 @@ class ThresholdCacheWidget(QtGui.QWidget):
         self.ax_image.imshow(self.mid_image, cmap=plt.cm.gray, interpolation='nearest')
         self.ax_image.contour(mask, [0.5], linewidths=1.2, colors='b')
         self.ax_image.axis('off')
-        self.circle = None
-        self.update_image_circle()
 
-    def update_image_circle(self):
-        if self.circle is not None:
-            self.circle.center = self.roi_center
-            self.circle.radius = self.roi_radius
-            self.image_figure.canvas.draw()
-        else:
-            self.circle = plt.Circle(self.roi_center, self.roi_radius, color=(1, 0, 0, 0.25))
-            self.ax_image.add_artist(self.circle)
-            self.image_figure.canvas.draw()
+        self.roiSelectorBar.update_image()
 
     def on_histogram_button_pressed(self, ev):
         if self.threshold != ev.xdata:
@@ -313,25 +543,9 @@ class ThresholdCacheWidget(QtGui.QWidget):
             self.histogram_figure.canvas.draw()
             self.save_data()
 
-    def on_image_button_pressed(self, ev):
-        if ev.button == 3:
-            self.mouse_points = []
-            self.roi_center = (ev.xdata, ev.ydata)
-            self.update_image_circle()
-            self.save_data()
-        elif ev.xdata is not None and ev.ydata is not None:
-            self.mouse_points.append((ev.xdata, ev.ydata))
-            if len(self.mouse_points) == 3:
-                center, radius = circle_3pt(*self.mouse_points)
-                self.roi_center = center
-                self.roi_radius = radius
-                self.update_image_circle()
-                self.mouse_points = []
-                self.save_data()
-                self.on_changed_ev()
-
-
-
+    def roiSelectorBar_roi_changed(self):
+        self.save_data()
+        self.on_changed_ev()
 
 class ExperimentResultWidget(QtGui.QWidget):
     def __init__(self, parent=None):
