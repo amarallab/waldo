@@ -61,6 +61,44 @@ def create_roi_mask(x, y, r, shape):
     roi_mask = d <= r
     return roi_mask
 
+def _pairwise(it):
+    it = iter(it)
+    while True:
+        yield next(it), next(it)
+
+def _fill_polygon(img, points):
+    yy = [y for x, y in points]
+    min_y = min(yy)
+    max_y = max(yy)
+    for y in range(min_y, max_y):
+        cut_points = []
+        p0 = points[-1]
+        for p1 in points:
+            sign = p0[1] - p1[1]
+            if sign != 0:
+                (x0, y0), (x1, y1) = zip(*sorted([p0, p1]))
+                if sign < 0:
+                    x0, y0 = p0
+                    x1, y1 = p1
+                else:
+                    x0, y0 = p1
+                    x1, y1 = p0
+
+                if y0 <= y < y1:
+                    m = float(x1 - x0) / (y1 - y0)
+                    cx = int(x0 + (y - y0) * m)
+                    cut_points.append(cx)
+            p0 = p1
+        cut_points = sorted(cut_points)
+        for x0, x1 in _pairwise(cut_points):
+            for x in range(x0, x1):
+                img[x, y] = True
+
+def create_roi_mask_polygon(points, shape):
+    nx, ny = shape
+    roi = np.zeros(shape=(nx, ny), dtype=bool)
+    _fill_polygon(roi, points)
+    return roi
 
 def create_backround(impaths):
     """

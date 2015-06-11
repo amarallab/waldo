@@ -74,8 +74,8 @@ def reformat_missing(df):
                     else:
                         m = df.loc[match]
                         mx, my = m['x'] ,m['y']
-                        nd = np.sqrt((x-nx)**2 + (y-ny)**2)
-                        md = np.sqrt((x-mx)**2 + (y-my)**2)
+                        nd = (x-nx)**2 + (y-ny)**2
+                        md = (x-mx)**2 + (y-my)**2
                         if nd < md:
                             matches[c_id] = n_id
 
@@ -108,7 +108,7 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
     if roi is not None:
         dx = img_centroids[:, 0] - roi['x']
         dy = img_centroids[:, 1] - roi['y']
-        img_roi_check = (np.sqrt(dx ** 2 + dy ** 2) <= roi['r'])
+        img_roi_check = ((dx ** 2 + dy ** 2) <= roi['r'] ** 2)
 
         for l, in_roi in zip(img_labels, img_roi_check):
             if not in_roi:

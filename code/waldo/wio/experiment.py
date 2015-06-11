@@ -89,6 +89,8 @@ class Experiment(multiworm.Experiment):
             y_mid = (self._prep_df.y_min + self._prep_df.y_max) / 2
 
             self._prep_df['in_roi'] = (x_mid - roi['x']) ** 2 + (y_mid - roi['y']) ** 2 < roi['r'] ** 2
+            ## PETER 2015 06 09 array_values_in_mask(xmid, y_mid)
+
 
         in_roi = set(
                 bid

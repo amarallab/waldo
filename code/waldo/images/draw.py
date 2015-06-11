@@ -120,16 +120,16 @@ def draw_colors_on_image(experiment, time, ax=None, colors=None):
         x, y = zip(*outline)
         ax.fill(x, y, color=color, alpha=0.5)
 
-    if roi is not None:
-        # draw full circle region of interest
-        roi_t = np.linspace(0, 2 * np.pi, 500)
-        roi_x = roi['r'] * np.cos(roi_t) + roi['x']
-        roi_y = roi['r'] * np.sin(roi_t) + roi['y']
-        ax.plot(roi_x, roi_y, color=c['roi_line_color'])
-        # resize figure
-        ymax, xmax = img.T.shape
-        ax.set_xlim([0, xmax])
-        ax.set_ylim([0, ymax])
+    # if roi is not None:
+    #     # draw full circle region of interest
+    #     roi_t = np.linspace(0, 2 * np.pi, 500)
+    #     roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+    #     roi_y = roi['r'] * np.sin(roi_t) + roi['y']
+    #     ax.plot(roi_x, roi_y, color=c['roi_line_color'])
+    #     # resize figure
+    #     ymax, xmax = img.T.shape
+    #     ax.set_xlim([0, xmax])
+    #     ax.set_ylim([0, ymax])
     print('done')
     if show_by_default:
         plt.show()
@@ -233,20 +233,20 @@ def draw_colors_on_image_T(experiment, time, ax=None, colors=None):
         x, y = zip(*outline)
         ax.fill(y, x, color=color, alpha=0.5)
 
-    if roi is not None:
-        # draw full circle region of interest
-        roi_t = np.linspace(0, 2 * np.pi, 500)
-        roi_x = roi['r'] * np.cos(roi_t) + roi['x']
-        roi_y = roi['r'] * np.sin(roi_t) + roi['y']
-        ax.plot(roi_y, roi_x, color=c['roi_line_color'])
-        # resize figure
-        ymax, xmax = img.shape
-        print()
-        print()
-        print(ymax/xmax, 'ymax/xmax')
-        print (xmax/ymax, 'xmax/ymax')
-        ax.set_xlim([0, xmax])
-        ax.set_ylim([0, ymax])
+    # if roi is not None:
+    #     # draw full circle region of interest
+    #     roi_t = np.linspace(0, 2 * np.pi, 500)
+    #     roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+    #     roi_y = roi['r'] * np.sin(roi_t) + roi['y']
+    #     ax.plot(roi_y, roi_x, color=c['roi_line_color'])
+    #     # resize figure
+    #     ymax, xmax = img.shape
+    #     print()
+    #     print()
+    #     print(ymax/xmax, 'ymax/xmax')
+    #     print (xmax/ymax, 'xmax/ymax')
+    #     ax.set_xlim([0, xmax])
+    #     ax.set_ylim([0, ymax])
     print('done')
     if show_by_default:
         plt.show()
@@ -292,20 +292,20 @@ def draw_minimal_colors_on_image_T(experiment, time, color=None, ax=None):
     ax.yaxis.set_ticks([])
 
     # if roi != None:
-    if roi is not None:
-        # draw full circle region of interest
-        roi_t = np.linspace(0, 2 * np.pi, 500)
-        roi_x = roi['r'] * np.cos(roi_t) + roi['x']
-        roi_y = roi['r'] * np.sin(roi_t) + roi['y']
-        ax.plot(roi_y, roi_x, color=color)
-        # resize figure
-        ymax, xmax = img.shape
-        print()
-        print()
-        print(ymax/xmax, 'ymax/xmax')
-        print (xmax/ymax, 'xmax/ymax')
-        ax.set_xlim([0, xmax])
-        ax.set_ylim([0, ymax])
+    # if roi is not None:
+    #     # draw full circle region of interest
+    #     roi_t = np.linspace(0, 2 * np.pi, 500)
+    #     roi_x = roi['r'] * np.cos(roi_t) + roi['x']
+    #     roi_y = roi['r'] * np.sin(roi_t) + roi['y']
+    #     ax.plot(roi_y, roi_x, color=color)
+    #     # resize figure
+    #     ymax, xmax = img.shape
+    #     print()
+    #     print()
+    #     print(ymax/xmax, 'ymax/xmax')
+    #     print (xmax/ymax, 'xmax/ymax')
+    #     ax.set_xlim([0, xmax])
+    #     ax.set_ylim([0, ymax])
     print('done')
     if show_by_default:
         plt.show()
@@ -357,5 +357,3 @@ def show_matched_image(experiment, threshold, time, roi=None):
                                            background, threshold,
                                            roi=roi, show=True)
     return bid_matching, base_acc
-
-

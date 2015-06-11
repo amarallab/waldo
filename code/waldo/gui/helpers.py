@@ -21,7 +21,11 @@ def experiment_has_thresholdCache(experiment_id):
     except IOError as ex:
         pass
 
-    return 'threshold' in data and 'r' in data and 'x' in data and 'y' in data
+
+    type = data.get('type', 'circle')
+    return 'threshold' in data and \
+            (  (type == 'circle' and 'r' in data and 'x' in data and 'y' in data) \
+            or (type == 'polygon' and 'roi_points' in data))
 
 
 def experiment_has_final_results(experiment_id):

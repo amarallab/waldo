@@ -59,17 +59,21 @@ class ImageMarkings(object):
         except:
             d = {}
         self.data = {'threshold': d.get('threshold', 0),
+                     'roi_type': d.get('roi_type', 'circle'),
                      'x': d.get('x', 0),
                      'y': d.get('y', 0),
-                     'r': d.get('r', 1)}
+                     'r': d.get('r', 1),
+                     'points': d.get('points', [])}
 
     def dump(self, data):
         with self.file.open('w') as f:
             json.dump(f, data)
 
     def roi(self, ex_id=None):
-        return {'x': self.data['x'], 'y': self.data['y'],
-                'r': self.data['r']}
+        return {'roi_type': self.data.get('roi_type', 'circle'),
+                'x': self.data['x'], 'y': self.data['y'],
+                'r': self.data['r'],
+                'points': self.data.get('points', [])}
 
     def threshold(self, ex_id=None):
         return self.data['threshold']

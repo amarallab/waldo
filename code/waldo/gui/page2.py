@@ -150,7 +150,10 @@ class SelectExperimentPage(QtGui.QWizardPage):
             except IOError as ex:
                 pass
 
-        if 'threshold' in data and 'r' in data and 'x' in data and 'y' in data:
+        type = data.get('type', 'circle')
+        if 'threshold' in data and \
+                (  (type == 'circle' and 'r' in data and 'x' in data and 'y' in data) \
+                or (type == 'polygon' and 'roi_points' in data)):
             return pages.PREVIOUS_THRESHOLD_CACHE
         else:
             return pages.THRESHOLD_CACHE
