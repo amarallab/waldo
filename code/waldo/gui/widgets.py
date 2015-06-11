@@ -135,6 +135,7 @@ class ROISelectorBar(QtGui.QWidget):
     def update_image(self):
         if self.artist is not None:
             self.artist.remove()
+            self.artist = None
 
         if self.roi_type == 'circle':
             self.artist = plt.Circle(self.roi_center, self.roi_radius, color=self.color)
@@ -203,7 +204,10 @@ class ROISelectorBar(QtGui.QWidget):
             self.figure.canvas.draw()
 
     def closePolygonButton_clicked(self, ev):
-        self.__close_polygon()
+        if len(self.mouse_points) < 3:
+            self.cancelPolygonButton_clicked(ev)
+        else:
+            self.__close_polygon()
 
     def cancelPolygonButton_clicked(self, ev):
         self.current_roi_type = None
