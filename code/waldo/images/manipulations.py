@@ -49,7 +49,22 @@ def outline_to_outline_matrix(outline, bbox=None):
         outline_matrix[i, j] = 1
     return ndimage.morphology.binary_fill_holes(outline_matrix)
 
+# TODO
+# create create_roi_mask that accepts dict from json
+# interprets which mask to create and returns it
+def create_roi_mask_new(d, shape):
 
+    t = d.get('roi_type', 'circle')
+    if t == 'circle':
+        return create_roi_mask_circle(d['x'], d['y'], d['r'], shape)
+    elif t == 'polygon':
+        return create_roi_mask_polyogn(d['points'], shape)
+    else:
+        #TODO: error
+        return None
+
+# for circle only
+# change name to create_roi_mask_circle
 def create_roi_mask(x, y, r, shape):
     nx, ny = shape
     xs = np.arange(0, nx)
@@ -61,12 +76,15 @@ def create_roi_mask(x, y, r, shape):
     roi_mask = d <= r
     return roi_mask
 
+
 def _pairwise(it):
+    ''' utilitiy function for creating polygon'''
     it = iter(it)
     while True:
         yield next(it), next(it)
 
 def _fill_polygon(img, points):
+    ''' utilitiy function for creating polygon'''
     yy = [y for x, y in points]
     min_y = min(yy)
     max_y = max(yy)
