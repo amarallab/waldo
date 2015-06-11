@@ -67,6 +67,7 @@ class ROISelectorBar(QtGui.QWidget):
         self.roi_radius = 1
         self.roi_points = []
 
+        self.previous_artist = None
         self.artist = None
         self.current_polygon_artist = None
         self.color = color
@@ -134,8 +135,11 @@ class ROISelectorBar(QtGui.QWidget):
 
     def update_image(self):
         if self.artist is not None:
-            self.artist.remove()
-            self.artist = None
+            try:
+                self.artist.remove()
+                self.artist = None
+            except:
+                pass
 
         if self.roi_type == 'circle':
             self.artist = plt.Circle(self.roi_center, self.roi_radius, color=self.color)
@@ -175,8 +179,10 @@ class ROISelectorBar(QtGui.QWidget):
         self.closePolygonButton.setVisible(False)
         self.cancelPolygonButton.setVisible(False)
 
+        self.previous_artist = self.artist
         if self.artist is not None:
             self.artist.remove()
+            self.artist = None
             self.figure.canvas.draw()
 
     def newPolygonButton_clicked(self, ev):
@@ -191,17 +197,21 @@ class ROISelectorBar(QtGui.QWidget):
         self.closePolygonButton.setVisible(True)
         self.cancelPolygonButton.setVisible(True)
 
+        self.previous_artist = self.artist
         if self.artist is not None:
             self.artist.remove()
+            self.artist = None
             self.figure.canvas.draw()
 
     def cancelCircleButton_clicked(self, ev):
         self.current_roi_type = None
         self.set_initial_state()
 
-        if self.artist is not None:
+        if self.previous_artist is not None:
+            self.artist = self.previous_artist
             self.ax.add_artist(self.artist)
             self.figure.canvas.draw()
+        self.previous_artist = None
 
     def closePolygonButton_clicked(self, ev):
         if len(self.mouse_points) < 3:
@@ -214,9 +224,11 @@ class ROISelectorBar(QtGui.QWidget):
         self.set_initial_state()
 
         draw = False
-        if self.artist is not None:
+        if self.previous_artist is not None:
+            self.artist = self.previous_artist
             self.ax.add_artist(self.artist)
             draw = True
+        self.previous_artist = None
 
         if self.current_polygon_artist is not None:
             self.current_polygon_artist.remove()
