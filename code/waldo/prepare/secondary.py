@@ -14,6 +14,7 @@ import pandas as pd
 
 # project specific
 import waldo.wio.file_manager as fm
+import waldo.images as wi
 
 def bodylengths_moved(experiment=None, bounds=None, sizes=None):
     if bounds is None or sizes is None:
@@ -34,14 +35,14 @@ def bodylengths_moved(experiment=None, bounds=None, sizes=None):
 
     return moved[['bid', 'bl_moved']]
 
-def _check_roi(bounds, x, y, r):
-    df = bounds.copy()
-    box_x = (df['x_min'] + df['x_max']) / 2
-    box_y = (df['y_min'] + df['y_max']) / 2
+# def _check_roi(bounds, x, y, r):
+#     df = bounds.copy()
+#     box_x = (df['x_min'] + df['x_max']) / 2
+#     box_y = (df['y_min'] + df['y_max']) / 2
 
-    df['inside_roi'] = r > np.sqrt((box_x - x)**2 + (box_y - y)**2)
+#     df['inside_roi'] = r > np.sqrt((box_x - x)**2 + (box_y - y)**2)
 
-    return df[['bid', 'inside_roi']]
+#     return df[['bid', 'inside_roi']]
 
 def in_roi(experiment=None, ex_id=None, bounds=None):
     """
@@ -60,8 +61,11 @@ def in_roi(experiment=None, ex_id=None, bounds=None):
         if ex_id is None:
             ex_id = experiment.id
 
-    roi_definition = fm.ImageMarkings(ex_id=ex_id).roi()
+    roi_dict = fm.ImageMarkings(ex_id=ex_id).roi()
+    roi_mask = wi.create_roi_mask(roi_dict)
 
-    roi = _check_roi(bounds, **roi_definition)
+    box_x = (bounds['x_min'] + bounds['x_max']) / 2
+    box_y = (bounds['y_min'] + bounds['y_max']) / 2
+    roi = wi.check_points_against_roi(box_x, box_y, roi_mask)
 
     return roi

@@ -105,15 +105,16 @@ def score(ex_id, experiment=None):
 
     pfile = wio.file_manager.ImageMarkings(ex_id=experiment.id)
     threshold = pfile.threshold()
-    roi = pfile.roi()
+    roi_dict = pfile.roi()
 
     times, impaths = zip(*sorted(experiment.image_files.items()))
     impaths = [str(s) for s in impaths]
 
     background = mim.create_backround(impaths)
 
-    x, y, r = roi['x'], roi['y'], roi['r']
-    roi_mask = mim.create_roi_mask(x, y, r, shape=background.shape)
+    #x, y, r = roi['x'], roi['y'], roi['r']
+    #roi_mask = mim.create_roi_mask(x, y, r, shape=background.shape)
+    roi_mask = mim.create_roi_mask(roi_dict, shape=background.shape)
 
     worm_i, background_i = get_background_and_worm_pixels(background, roi_mask,
                                                           threshold, impaths)

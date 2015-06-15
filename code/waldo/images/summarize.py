@@ -308,9 +308,7 @@ def analyze_image(experiment, time, img, background, threshold,
 
         if roi is not None:
             # draw full circle region of interest
-            roi_t = np.linspace(0, 2 * np.pi, 500)
-            roi_x = roi['r'] * np.cos(roi_t) + roi['x']
-            roi_y = roi['r'] * np.sin(roi_t) + roi['y']
+            roi_x, roi_y = mim.roi_dict_to_points(roi)
             ax.plot(roi_x, roi_y)
             # resize figure
             ymax, xmax = img.T.shape
@@ -358,7 +356,7 @@ def analyze_image(experiment, time, img, background, threshold,
 
 
 def analyze_experiment_images(experiment, threshold, roi=None, callback=None,
-                         image_callback=None):
+                              image_callback=None):
     """
     analyze all images for a given ex_id and saves the results to h5 files.
 

@@ -122,14 +122,14 @@ class ROISelectorBar(QtGui.QWidget):
 
     def json_to_data(self, data):
         self.roi_type = data.get('roi_type', 'circle')
-        self.roi_center = (data.get('y', 0), data.get('x', 0))  # stored transposed!!
+        self.roi_center = (data.get('x', 0), data.get('y', 0)) # no longer transposed
         self.roi_radius = data.get('r', 1)
         self.roi_points = data.get('points', [])
 
     def data_to_json(self):
         return {'roi_type': self.roi_type,
-                'x': self.roi_center[1], # stored transposed!!
-                'y': self.roi_center[0],
+                'x': self.roi_center[0], # no longer transposed!!
+                'y': self.roi_center[1],
                 'r': self.roi_radius,
                 'points': self.roi_points}
 
@@ -407,6 +407,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
             self.mid_image = None
         else:
             self.background = ThresholdCacheWidget.create_background(impaths)
+            self.im_shape = self.background.shape # shape is (y,x)
             self.mid_image = mpimg.imread(impaths[int(len(impaths)/2)])
         self.mouse_points = []
         QTimer.singleShot(0, self.show_dialog)
@@ -483,6 +484,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
         # so x and y are flipped during saving process.
         data = self.roiSelectorBar.data_to_json()
         data['threshold'] = self.threshold
+        data['shape'] = self.im_shape
 
         ThresholdCacheWidget.mkdir_p(os.path.dirname(self.annotation_filename))
         with open(self.annotation_filename, "wt") as f:
