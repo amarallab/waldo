@@ -25,6 +25,7 @@ from waldo.wio.experiment import Experiment
 from waldo.wio import file_manager as fm
 from waldo.wio import paths
 from .worm_finder import grab_blob_data, match_objects
+import waldo.images as wi
 
 # for IdTracker VALIDATION
 def cutouts_for_worms(ex_id, savedir, worm_component_dict):
@@ -205,7 +206,7 @@ def cutouts_from_image(img, image_objects, background, roi, threshold):
     image_objects: (scikit.measure.regionprops object)
         contains an iterator for a set of region objects
     roi: (dict)
-       contains x, y, and r coordinates for a roi
+       contains roi info
     """
     labels = []
     masks = []
@@ -213,11 +214,11 @@ def cutouts_from_image(img, image_objects, background, roi, threshold):
     image_index = []
     for obj in image_objects:
         if roi != None:
+            roi_mask = wi.create_roi_mask(roi)
             x, y = obj.centroid
-            dx = x - roi['x']
-            dy = y - roi['y']
+            in_roi = wi.check_points_against_roi([x], [y], roi_mask)[0]
             # skip if outside roi
-            if np.sqrt(dx** 2 + dy** 2) > roi['r']:
+            if not in_roi:
                 continue
 
         obj_bbox = obj.bbox

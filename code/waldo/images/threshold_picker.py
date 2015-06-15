@@ -147,6 +147,7 @@ class InteractivePlot:
             self.current_threshold = data['threshold']
             self.circle_pos = (data['y'], data['x'])  # note xy are purposely switched
             self.circle_radius = data['r']
+
         except IOError as ex:
             self.circle_pos = (0, 0)
             self.circle_radius = max(self.background.shape) / 2

@@ -14,6 +14,7 @@ from waldo import collider
 from waldo.conf import settings
 import waldo.tape.taper as tp
 import waldo.wio.file_manager as fm
+import waldo.images as wi
 
 L = logging.getLogger(__name__)
 
@@ -249,13 +250,13 @@ class ReportCard(object):
         # mark if nodes start or end outside region of interest ROI
         ex_id = experiment.id
         # print(ex_id)
-        roi = fm.ImageMarkings(ex_id=ex_id).roi()
-        # print(roi)
-        x, y, r = roi['x'], roi['y'], roi['r']
+        roi_dict = fm.ImageMarkings(ex_id=ex_id).roi()
 
-        def add_out_of_roi(df):
-            dists = np.sqrt((df['x'] - x) ** 2 + (df['y'] - y) ** 2)
-            df['outside-roi'] = dists > r
+        def add_out_of_roi(df, roi_dict):
+            roi_mask = wi.create_roi_mask(roi_dict)
+            xs = df['x']
+            ys = df['y']
+            df['outside-roi'] = wi.are_points_inside_mask(xs, ys, roi_mask)
 
         add_out_of_roi(start_terms)
         add_out_of_roi(end_terms)

@@ -19,6 +19,8 @@ import networkx as nx
 from waldo.conf import settings
 from waldo.extern import multiworm
 from waldo.network import Graph
+from waldo.images import create_roi_mask, are_points_inside_mask
+
 
 from . import file_manager as fm
 
@@ -77,6 +79,7 @@ class Experiment(multiworm.Experiment):
         return tn
 
 
+
     def in_roi(self):
         if self._prep_df is None:
             self._pull_prepdata()
@@ -84,11 +87,12 @@ class Experiment(multiworm.Experiment):
         if 'in_roi' not in self._prep_df.columns:
             prep_file = fm.ImageMarkings(ex_id=self.id)
             roi = prep_file.roi()
-
+            roi_mask = create_roi_mask(roi)
             x_mid = (self._prep_df.x_min + self._prep_df.x_max) / 2
             y_mid = (self._prep_df.y_min + self._prep_df.y_max) / 2
+            self._prep_df['in_roi'] = are_points_inside_mask(x_mid, y_mid, roi_mask)
 
-            self._prep_df['in_roi'] = (x_mid - roi['x']) ** 2 + (y_mid - roi['y']) ** 2 < roi['r'] ** 2
+            # self._prep_df['in_roi'] = (x_mid - roi['x']) ** 2 + (y_mid - roi['y']) ** 2 < roi['r'] ** 2
             ## PETER 2015 06 09 array_values_in_mask(xmid, y_mid)
 
 

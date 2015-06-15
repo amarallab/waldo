@@ -35,14 +35,6 @@ def bodylengths_moved(experiment=None, bounds=None, sizes=None):
 
     return moved[['bid', 'bl_moved']]
 
-# def _check_roi(bounds, x, y, r):
-#     df = bounds.copy()
-#     box_x = (df['x_min'] + df['x_max']) / 2
-#     box_y = (df['y_min'] + df['y_max']) / 2
-
-#     df['inside_roi'] = r > np.sqrt((box_x - x)**2 + (box_y - y)**2)
-
-#     return df[['bid', 'inside_roi']]
 
 def in_roi(experiment=None, ex_id=None, bounds=None):
     """
