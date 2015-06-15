@@ -1,10 +1,3 @@
-# import sys
-# import os
-# import pathlib
-# import random
-# import matplotlib as mpl
-# import scipy
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,7 +5,6 @@ import scipy.ndimage.morphology as morph
 
 
 class BaseDataFrame(object):
-
     def __init__(self):
         self.df = None
         self.protected_cols = []
@@ -187,7 +179,6 @@ class BaseDataFrame(object):
 
 
 class Behavior_Coding(BaseDataFrame):
-
     def __init__(self, bl=None, body_length=None):
         self.raw_df = None
         self.df = None
@@ -264,7 +255,7 @@ class Behavior_Coding(BaseDataFrame):
         self.fix_orientation(df)
 
         dt = df['time'].diff()
-        move_dist = np.sqrt(df['dx']**2 + df['dy']**2)
+        move_dist = np.sqrt(df['dx'] ** 2 + df['dy'] ** 2)
 
         theta = (df['orientation'] - df['move_or'])
 
@@ -272,7 +263,7 @@ class Behavior_Coding(BaseDataFrame):
         df.loc[:, 'speed_perp'] = move_dist * np.sin(theta) / dt
         df.loc[:, 'speed_along'] = move_dist * np.cos(theta) / dt
 
-        df.loc[:, 'std_length'] = np.sqrt(df['dx']**2 + df['dy']**2)
+        df.loc[:, 'std_length'] = np.sqrt(df['dx'] ** 2 + df['dy'] ** 2)
         df.loc[:, 'd_angle'] = df['orientation'].diff()
         df.loc[:, 'angular_v'] = df['d_angle'] / df['time'].diff()
         df.loc[:, 'ar'] = df['width'] / df['length']
@@ -307,9 +298,9 @@ class Behavior_Coding(BaseDataFrame):
         pi = np.pi
         for i in range(10):
             big_minus = df['dorr'] < - pi
-            df.loc[big_minus, 'dorr'] = df.loc[big_minus, 'dorr'] + (2*pi)
+            df.loc[big_minus, 'dorr'] = df.loc[big_minus, 'dorr'] + (2 * pi)
             big_plus = df['dorr'] > pi
-            df.loc[big_plus, 'dorr'] = df.loc[big_plus, 'dorr'] - (2*pi)
+            df.loc[big_plus, 'dorr'] = df.loc[big_plus, 'dorr'] - (2 * pi)
         df.loc[:, orientation_col] = np.cumsum(df['dorr'])
         return df
 
@@ -434,7 +425,7 @@ class Behavior_Coding(BaseDataFrame):
                 df_part.loc[:, 'orientation'] = df_part['orientation'] + np.pi
 
                 # recalculate all values that depend on orientation
-                move_dist = np.sqrt(df_part['dx']**2 + df_part['dy']**2)
+                move_dist = np.sqrt(df_part['dx'] ** 2 + df_part['dy'] ** 2)
                 theta = (df_part['orientation'] - df_part['move_or'])
                 dt = df_part['time'].diff()
 
@@ -453,7 +444,6 @@ class Behavior_Coding(BaseDataFrame):
 
 
 class Worm_Shape(object):
-
     def __init__(self, letter_cache=None):
         self.ARBIRARY_CONVERSION_FACTOR = 48
         self.letter_cache = {}
@@ -491,7 +481,7 @@ class Worm_Shape(object):
                 self.letter_cache[ch] = char_point_shifts
                 point_arrays.append(char_point_shifts)
         point_shifts = np.concatenate(point_arrays, axis=0)
-        point_shifts = point_shifts[:length+1]
+        point_shifts = point_shifts[:length + 1]
         points = np.cumsum(point_shifts, axis=0)
 
         # this code is purely to make sure outline forms a closed shape
@@ -518,7 +508,6 @@ class Worm_Shape(object):
             new_points = np.cumsum(new_point_shifts, axis=0)[1:]
             points = np.concatenate([points, new_points], axis=0)
             if np.sum(np.abs(np.array(points[0] - points[-1]))) > 1:
-
                 print('total steps', total_steps)
                 print('missing distance', missing_distance)
                 print('start', points[0])
@@ -678,10 +667,10 @@ class Worm_Shape(object):
             thin[i] = m
         return thin
 
-def iterate_z(Z, subiteration=0):
 
+def iterate_z(Z, subiteration=0):
     p = [Z[0:-2, 1:-1], Z[0:-2, 2:], Z[1:-1, 2:], Z[2:, 2:],
-         Z[2:  , 1:-1], Z[2:  , 0:-2], Z[1:-1, 0:-2], Z[0:-2, 0:-2]]
+         Z[2:, 1:-1], Z[2:, 0:-2], Z[1:-1, 0:-2], Z[0:-2, 0:-2]]
     N = np.zeros(Z.shape, int)
     N[1:-1, 1:-1] = sum(p)
     check1 = (2 <= N) & (N <= 6)
@@ -698,35 +687,35 @@ def iterate_z(Z, subiteration=0):
     # if edge count ==1 consider for removal
     check2 = (E == 1)
 
-    #HELTENA removed, we can use the defined above, offset -2!
-    #p = [0, 0, Z[0:-2,1:-1], Z[0:-2,2:], Z[1:-1,2:], Z[2:  ,2:],
+    # HELTENA removed, we can use the defined above, offset -2!
+    # p = [0, 0, Z[0:-2,1:-1], Z[0:-2,2:], Z[1:-1,2:], Z[2:  ,2:],
     #     Z[2:  ,1:-1], Z[2:  ,0:-2], Z[1:-1,0:-2], Z[0:-2,0:-2]]
 
     if subiteration == 0:
         p24 = p[2] * p[4]
         east_wind = np.zeros(Z.shape, int)
-        #east_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[1:-1,2:] * Z[2:  ,1:-1]
-        #east_wind[1:-1,1:-1] = p[2] *p[4] * p[6]
-        east_wind[1:-1,1:-1] = p[0] * p24 # p[2] * p[4] # offset p[-2]!!
+        # east_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[1:-1,2:] * Z[2:  ,1:-1]
+        # east_wind[1:-1,1:-1] = p[2] *p[4] * p[6]
+        east_wind[1:-1, 1:-1] = p[0] * p24  # p[2] * p[4] # offset p[-2]!!
         check3 = (east_wind == 0)
 
         south_wind = np.zeros(Z.shape, int)
-        #south_wind[1:-1,1:-1] = Z[1:-1,2:] * Z[2:  ,1:-1] * Z[1:-1, :-2]
-        #south_wind[1:-1,1:-1] = p[4] * p[6] * p[8]
-        south_wind[1:-1,1:-1] = p24 * p[6] #p[2] * p[4] * p[6] # offset p[-2]!!
+        # south_wind[1:-1,1:-1] = Z[1:-1,2:] * Z[2:  ,1:-1] * Z[1:-1, :-2]
+        # south_wind[1:-1,1:-1] = p[4] * p[6] * p[8]
+        south_wind[1:-1, 1:-1] = p24 * p[6]  # p[2] * p[4] * p[6] # offset p[-2]!!
         check4 = (south_wind == 0)
     else:
         p06 = p[0] * p[6]
         west_wind = np.zeros(Z.shape, int)
-        #west_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[1:-1,2:] * Z[1:-1, :-2]
-        #west_wind[1:-1,1:-1] = p[2] *p[4] * p[8]
-        west_wind[1:-1,1:-1] = p06 * p[2] # p[0] *p[2] * p[6] # offset p[-2]!!
+        # west_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[1:-1,2:] * Z[1:-1, :-2]
+        # west_wind[1:-1,1:-1] = p[2] *p[4] * p[8]
+        west_wind[1:-1, 1:-1] = p06 * p[2]  # p[0] *p[2] * p[6] # offset p[-2]!!
         check3 = (west_wind == 0)
 
         north_wind = np.zeros(Z.shape, int)
-        #north_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[2:  ,1:-1] * Z[1:-1, :-2]
-        #north_wind[1:-1,1:-1] = p[2] * p[6] * p[8]
-        north_wind[1:-1,1:-1] = p06 * p[4] # p[0] * p[4] * p[6] # offset p[-2]!!
+        # north_wind[1:-1,1:-1] = Z[ :-2,1:-1] * Z[2:  ,1:-1] * Z[1:-1, :-2]
+        # north_wind[1:-1,1:-1] = p[2] * p[6] * p[8]
+        north_wind[1:-1, 1:-1] = p06 * p[4]  # p[0] * p[4] * p[6] # offset p[-2]!!
         check4 = (north_wind == 0)
 
     removal = check1 & check2 & check3 & check4

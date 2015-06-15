@@ -13,6 +13,7 @@ import matplotlib.image as mpimg
 import waldo.wio as wio
 from . import summarize
 from . import manipulations as mim
+import wio.prepdata
 
 
 def get_background_and_worm_pixels(background, roi_mask, threshold, impaths):
@@ -114,7 +115,7 @@ def score(ex_id, experiment=None):
 
     #x, y, r = roi['x'], roi['y'], roi['r']
     #roi_mask = mim.create_roi_mask(x, y, r, shape=background.shape)
-    roi_mask = mim.create_roi_mask(roi_dict, shape=background.shape)
+    roi_mask = wio.prepdata.create_roi_mask(roi_dict, shape=background.shape)
 
     worm_i, background_i = get_background_and_worm_pixels(background, roi_mask,
                                                           threshold, impaths)

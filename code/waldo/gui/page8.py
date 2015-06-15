@@ -16,26 +16,6 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 
-# from waldo.wio import Experiment
-# from waldo import wio
-# import waldo.images.evaluate_acuracy as ea
-# import waldo.images.worm_finder as wf
-# import waldo.metrics.report_card as report_card
-
-# import waldo.metrics.step_simulation as ssim
-# import waldo.viz.eye_plots as ep
-
-# import numpy as np
-# import pandas as pd
-# import matplotlib.gridspec as gridspec
-# import matplotlib.patches as patches
-# from mpltools import style
-# from skimage import morphology
-# from skimage.measure import regionprops
-# style.use('ggplot')
-
-# from waldo.gui import pathcustomize
-
 
 class WaldoProcessDialog(QtGui.QDialog):
     def __init__(self, experiment, func, image_func, report_func, finish_func, parent=None):
