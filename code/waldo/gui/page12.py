@@ -192,6 +192,7 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
             self.showing_status = BatchModeWaldoProcessPage.SHOWING_REPORT
 
         d = report[['phase', 'connected-nodes', 'total-nodes']][::-1]
+        d.columns = ['interacting tracks', 'total tracks']
         d = d.drop_duplicates('phase', take_last=False)
         d = d.set_index('phase')
 
@@ -199,6 +200,10 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
         d.plot(ax=self.ax_report, kind='barh')
         self.ax_report.set_xlabel('Number of Track Fragments', size=15)
         self.ax_report.legend(frameon=False, loc=(1.01, 0.7), fontsize=15)
+        # check if functional
+        self.ax_report.tick_params(axis='both', which='major', labelsize=15)
+        #plt.xticks(fontsize=30)
+        #plt.yticks(fontsize=30)
         self.ax_report.set_ylabel('phase', size=15)
         self.report_figure.tight_layout()
         self.report_figure.subplots_adjust(right=0.6)

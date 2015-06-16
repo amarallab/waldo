@@ -25,7 +25,7 @@ from waldo.wio.experiment import Experiment
 from waldo.wio import file_manager as fm
 from waldo.wio import paths
 from .worm_finder import grab_blob_data, match_objects
-import waldo.images as wi
+import waldo.wio.roi_manager as roim
 
 # for IdTracker VALIDATION
 def cutouts_for_worms(ex_id, savedir, worm_component_dict):
@@ -214,9 +214,9 @@ def cutouts_from_image(img, image_objects, background, roi, threshold):
     image_index = []
     for obj in image_objects:
         if roi != None:
-            roi_mask = wi.create_roi_mask(roi)
+            roi_mask = roim.create_roi_mask(roi)
             x, y = obj.centroid
-            in_roi = wi.check_points_against_roi([x], [y], roi_mask)[0]
+            in_roi = roim.check_points_against_roi([x], [y], roi_mask)[0]
             # skip if outside roi
             if not in_roi:
                 continue

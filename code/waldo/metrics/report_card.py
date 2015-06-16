@@ -14,7 +14,7 @@ from waldo import collider
 from waldo.conf import settings
 import waldo.tape.taper as tp
 import waldo.wio.file_manager as fm
-import waldo.images as wi
+import waldo.wio.roi_manager as roim
 
 L = logging.getLogger(__name__)
 
@@ -153,15 +153,15 @@ class ReportCard(object):
         if 'bid' in terms.columns:
             terms.set_index('bid', inplace=True)
         term_ids = set(terms.index)  # get set of all bids with data
-        terms['node_id'] = 0
-        terms['n-blobs'] = 1
-        terms['id_change_found'] = False
-        terms['id_change_lost'] = False
-        terms['join_found'] = False
-        terms['join_lost'] = False
-        terms['split_found'] = False
-        terms['split_lost'] = False
-        terms['lifespan_t'] = -1
+        terms.loc[:, 'node_id'] = 0
+        terms.loc[:, 'n-blobs'] = 1
+        terms.loc[:, 'id_change_found'] = False
+        terms.loc[:, 'id_change_lost'] = False
+        terms.loc[:, 'join_found'] = False
+        terms.loc[:, 'join_lost'] = False
+        terms.loc[:, 'split_found'] = False
+        terms.loc[:, 'split_lost'] = False
+        terms.loc[:, 'lifespan_t'] = -1
         # loop through graph and assign all blob ids to cooresponding nodes.
         # also include if nodes have parents or children
 
@@ -253,13 +253,13 @@ class ReportCard(object):
         roi_dict = fm.ImageMarkings(ex_id=ex_id).roi()
 
         def add_out_of_roi(df, roi_dict):
-            roi_mask = wi.create_roi_mask(roi_dict)
+            roi_mask = roim.create_roi_mask(roi_dict)
             xs = df['x']
             ys = df['y']
-            df['outside-roi'] = wi.are_points_inside_mask(xs, ys, roi_mask)
+            df['outside-roi'] = roim.are_points_inside_mask(xs, ys, roi_mask)
 
-        add_out_of_roi(start_terms)
-        add_out_of_roi(end_terms)
+        add_out_of_roi(start_terms, roi_dict)
+        add_out_of_roi(end_terms, roi_dict)
         # mark if nodes start or end with the start/end of the recording.
 
         start_terms['timing'] = False

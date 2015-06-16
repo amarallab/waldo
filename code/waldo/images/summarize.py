@@ -9,6 +9,7 @@ from skimage.measure import regionprops
 from waldo.images import manipulations as mim
 from waldo.images.blob_interface import grab_blob_data
 from waldo.wio import file_manager as fm
+import waldo.wio.roi_manager as roim
 
 __author__ = 'peterwinter'
 
@@ -105,10 +106,10 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
     outside_objects = []
 
     if roi is not None:
-        roi_mask = mim.create_roi_mask(roi)
+        roi_mask = roim.create_roi_mask(roi)
         xs = img_centroids[:, 0]
         ys = img_centroids[:, 1]
-        img_roi_check = mim.are_points_inside_mask(xs, ys, roi_mask)
+        img_roi_check = roim.are_points_inside_mask(xs, ys, roi_mask)
         for l, in_roi in zip(img_labels, img_roi_check):
             if not in_roi:
                 outside_objects.append(l)
@@ -130,7 +131,7 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
 
         # dont bother matching blob if outside roi
         if roi is not None:
-            inside_roi = mim.are_points_inside_mask([cent[0]], [cent[1]], roi_mask)
+            inside_roi = roim.are_points_inside_mask([cent[0]], [cent[1]], roi_mask)
             if not inside_roi:
                 bid_outside_roi.append(bid)
                 continue
@@ -211,7 +212,7 @@ def match_objects(bids, blob_centroids, blob_outlines, image_objects,
             false_pos.append(bid)
             # remove this check when I'm sure it is not happening
             if roi is not None:
-                inside_roi = mim.are_points_inside_mask([cent[0]], [cent[1]], roi_mask)
+                inside_roi = roim.are_points_inside_mask([cent[0]], [cent[1]], roi_mask)
                 if not inside_roi:
                     print ('Warning! obj outside roi counted as FP')
 
@@ -305,7 +306,7 @@ def analyze_image(experiment, time, img, background, threshold,
 
         if roi is not None:
             # draw full circle region of interest
-            roi_x, roi_y = mim.roi_dict_to_points(roi)
+            roi_x, roi_y = roim.roi_dict_to_points(roi)
             ax.plot(roi_x, roi_y)
 
             # resize figure

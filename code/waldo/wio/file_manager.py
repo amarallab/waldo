@@ -63,6 +63,8 @@ class ImageMarkings(object):
                      'x': d.get('x', 0),
                      'y': d.get('y', 0),
                      'r': d.get('r', 1),
+                     'shape': d.get('shape', (1728, 2352)),
+                     #'shape': self.data['shape'],
                      'points': d.get('points', [])}
 
     def dump(self, data):
@@ -73,6 +75,7 @@ class ImageMarkings(object):
         return {'roi_type': self.data.get('roi_type', 'circle'),
                 'x': self.data['x'], 'y': self.data['y'],
                 'r': self.data['r'],
+                'shape': self.data['shape'],
                 'points': self.data.get('points', [])}
 
     def threshold(self, ex_id=None):

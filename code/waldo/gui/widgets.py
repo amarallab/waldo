@@ -5,6 +5,7 @@ from PyQt4.QtCore import Qt, QTimer
 import os
 
 import numpy as np
+import pandas as pd
 from scipy import ndimage
 import json
 import errno
@@ -125,12 +126,14 @@ class ROISelectorBar(QtGui.QWidget):
         self.roi_center = (data.get('x', 0), data.get('y', 0)) # no longer transposed
         self.roi_radius = data.get('r', 1)
         self.roi_points = data.get('points', [])
+        self.im_shape = data['shape']
 
     def data_to_json(self):
         return {'roi_type': self.roi_type,
                 'x': self.roi_center[0], # no longer transposed!!
                 'y': self.roi_center[1],
                 'r': self.roi_radius,
+                'shape': self.im_shape,
                 'points': self.roi_points}
 
     def update_image(self):
@@ -504,21 +507,24 @@ class ThresholdCacheWidget(QtGui.QWidget):
 
         # make the plot
         self.ax_objects.clear()
-        self.ax_objects.plot(x, ns, '.--')
-        self.ax_objects.set_ylabel('N objects')
+        self.ax_objects.plot(x, ns, '.-', color='black')
+        self.ax_objects.set_ylabel('N Objects')
         self.ax_objects.set_ylim([0, 150])
 
         top = np.array(means) + np.array(stds)
         bottom = np.array(means) - np.array(stds)
 
         self.ax_area.clear()
-        self.ax_area.plot(x, means, '.--', color='blue')
-        self.ax_area.plot(x, top, '--', color='green')
-        self.ax_area.plot(x, bottom, '--', color='green')
+        self.ax_area.plot(x, means, '.-', color='blue', label='mean')
+        self.ax_area.fill_between(x, top, bottom, color='green', alpha=0.5)
+        # self.ax_area.plot(x, top, '--', color='green', label='mean')
+        # self.ax_area.plot(x, bottom, '--', color='green', label='mean - std')
         self.ax_area.axvline(x=.5, ymin=0, ymax=1)
+        self.ax_area.legend(loc='upper right')
 
         self.ax_area.set_ylim([0, 600])
-        self.ax_area.set_ylabel('mean area')
+        self.ax_area.set_ylabel('Blob Area (pxls)')
+        self.ax_area.set_xlabel('Contrast Threshold')
         self.ax_objects.set_xlim([0, final_t])
 
         self.line_objects = self.ax_objects.plot((current_threshold, current_threshold), (-10000, 10000), '--', color='red')
@@ -837,14 +843,12 @@ class ExperimentResultWidget(QtGui.QWidget):
 
     def steps_from_node_report(self, experiment, min_bl=1):
         node_report = experiment.prepdata.load('node-summary')
-        print(node_report.head())
-        steps = node_report[['bl', 't0', 'tN', 'bid']]
+        steps = node_report[['bl', 't0', 'tN', 'bid']].copy()
         steps.set_index('bid', inplace=True)
-
-        steps['t0'] = steps['t0'] / 60.0
-        steps['tN'] = steps['tN'] / 60.0
-        steps['lifespan'] = steps['tN'] - steps['t0']
-        steps['mid'] = (steps['tN']  + steps['t0']) / 2.0
+        steps.loc[:, 't0'] = steps['t0'] / 60.0
+        steps.loc[:, 'tN'] = steps['tN'] / 60.0
+        steps.loc[:, 'lifespan'] = steps['tN'] - steps['t0']
+        steps.loc[:, 'mid'] = (steps['tN'] + steps['t0']) / 2.0
         return steps[steps['bl'] >= 1]
 
     def make_figures(self, ex_id, step_min_move = 1):
@@ -853,20 +857,15 @@ class ExperimentResultWidget(QtGui.QWidget):
 
         self.plot.clf()
 
-        moving_nodes =  [int(i) for i in graph.compound_bl_filter(experiment, threshold=step_min_move)]
+        moving_nodes = [int(i) for i
+                        in graph.compound_bl_filter(experiment,
+                                                    threshold=step_min_move)]
         steps, durations = report_card.calculate_duration_data_from_graph(experiment, graph, moving_nodes)
 
         final_steps = self.steps_from_node_report(experiment)
         accuracy = experiment.prepdata.load('accuracy')
         worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
-        print('worm count:', worm_count)
 
-        ### AX 0
-        # print('starting ax 0')
-        # color_cycle = ax._get_lines.color_cycle
-        # for i in range(5):
-        #     c = color_cycle.next()
-        # wf.draw_minimal_colors_on_image_T(ex_id, time=30*30, ax=ax, color=c)
         self.step_facets(steps, final_steps)
 
     def step_facets(self, df, df2, t1=5, t2=20):
@@ -899,10 +898,10 @@ class ExperimentResultWidget(QtGui.QWidget):
         short_max = max([len(short1), len(short2)])
         mid_max = max([len(mid1), len(mid2)])
         long_max = max([len(long1), len(long2)])
-        print('short', short_max)
-        print('long', long_max)
-        print('mid', mid_max)
-        print(long1.head(20))
+        # print('short', short_max)
+        # print('long', long_max)
+        # print('mid', mid_max)
+        # print(long1.head(20))
 
         self._new_plot(ax_s0, short1, 'raw', xmax=xmax)
         self._new_plot(ax_m0, mid1, 'raw', xmax=xmax)
@@ -919,15 +918,18 @@ class ExperimentResultWidget(QtGui.QWidget):
             ax.get_xaxis().set_ticklabels([])
             ax.set_ylim([0, long_max])
 
+        top[0].set_title('Input Tracks')
+        top[1].set_title('Output Tracks')
+
         for ax in mid:
             ax.get_xaxis().set_ticklabels([])
             ax.set_ylim([0, mid_max])
 
         for ax in bottom:
-            ax.set_xlabel('t (min)')
+            ax.set_xlabel('Time (min)', size=12)
             ax.set_ylim([0, short_max])
 
         for ax, t in zip(left, ylabels):
-            ax.set_ylabel(t)
+            ax.set_ylabel(t, size=12)
 
         ax_s0.get_xaxis().set_ticklabels([0, 10, 20, 30, 40, 50])
