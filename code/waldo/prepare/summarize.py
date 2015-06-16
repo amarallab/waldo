@@ -60,7 +60,6 @@ def summarize(ex_id, verbose=False, callback=None):
     # dump it out
     talk(' - Dumping to CSVs...')
     for key, value in six.iteritems(data):
-        print(key, type(value))
         talk('   - {}'.format(key))
         experiment.prepdata.dump(data_type=key, dataframe=value, index=False)
     if callback:

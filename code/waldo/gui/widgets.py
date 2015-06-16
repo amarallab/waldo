@@ -126,14 +126,12 @@ class ROISelectorBar(QtGui.QWidget):
         self.roi_center = (data.get('x', 0), data.get('y', 0)) # no longer transposed
         self.roi_radius = data.get('r', 1)
         self.roi_points = data.get('points', [])
-        self.im_shape = data['shape']
 
     def data_to_json(self):
         return {'roi_type': self.roi_type,
                 'x': self.roi_center[0], # no longer transposed!!
                 'y': self.roi_center[1],
                 'r': self.roi_radius,
-                'shape': self.im_shape,
                 'points': self.roi_points}
 
     def update_image(self):

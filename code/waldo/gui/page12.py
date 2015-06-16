@@ -202,8 +202,6 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
         self.ax_report.legend(frameon=False, loc=(1.01, 0.7), fontsize=15)
         # check if functional
         self.ax_report.tick_params(axis='both', which='major', labelsize=15)
-        #plt.xticks(fontsize=30)
-        #plt.yticks(fontsize=30)
         self.ax_report.set_ylabel('phase', size=15)
         self.report_figure.tight_layout()
         self.report_figure.subplots_adjust(right=0.6)
