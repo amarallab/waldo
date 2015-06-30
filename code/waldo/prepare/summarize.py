@@ -19,7 +19,9 @@ CALLBACK_LOAD_FRAC = 0.02
 CALLBACK_PRIMARY_FRAC = 0.90
 CALLBACK_SECONDARY_FRAC = 0.08
 
-def summarize(ex_id, verbose=False, callback=None):
+
+# TODO remove ex_id from parameters. rely solely on experiment
+def summarize(ex_id, experiment=None, verbose=False, callback=None):
     """
     intermediate summary data.
     """
@@ -39,28 +41,54 @@ def summarize(ex_id, verbose=False, callback=None):
     else:
         cb_load = cb_pri = cb_sec = None
 
-    # load experiment
-    experiment = wio.Experiment(experiment_id=ex_id, callback=cb_load)
-    talk('Loaded experiment ID: {}'.format(experiment.id))
+    print('preparing blob files')
+    if experiment is None:
+        # load experiment
+        experiment = wio.Experiment(experiment_id=ex_id, callback=cb_load)
+        talk('Loaded experiment ID: {}'.format(experiment.id))
+
+
+    def save_processed_data(data, experiment):
+        talk(' - Saving to CSVs...')
+        print(' - Saving to CSVs...')
+        dumped_keys = []
+        for key, value in six.iteritems(data):
+            talk('   - {}'.format(key))
+            print('   - {}'.format(key))
+            experiment.prepdata.dump(data_type=key, dataframe=value, index=False)
+
+        # free up memory once this is saved
+        for key in dumped_keys:
+            del data[key]
 
     # process the basic blob data
     talk(' - Summarizing raw data...')
-    data = primary.summarize(experiment, callback=cb_pri)
+    data = {}
+    for df_type in ['bounds', 'terminals', 'sizes']:
+        print(' - Summarizing {df} data...'.format(df=df_type))
+        data[df_type] = primary.create_primary_df(experiment, df_type)
+        save_processed_data(data, experiment)
+
+    # TODO: remove this commented method. it keeps failing.
+    # data = primary.summarize(experiment, callback=cb_pri)
 
     # generate secondary data
     talk(' - Generating secondary data...')
-    data['roi'] = secondary.in_roi(experiment=experiment, bounds=data['bounds'])
+    print(' - Generating secondary data...')
+    # data['roi'] = secondary.in_roi(experiment=experiment, bounds=data['bounds'])
+    data['roi'] = secondary.in_roi(experiment=experiment, bounds=None)
     if callback:
-        cb_sec(0.25)
-
-    data['moved'] = secondary.bodylengths_moved(bounds=data['bounds'], sizes=data['sizes'])
+        cb_sec(0.4)
+    save_processed_data(data, experiment)
     if callback:
-        cb_sec(0.5)
+        cb_sec(0.6)
 
-    # dump it out
-    talk(' - Dumping to CSVs...')
-    for key, value in six.iteritems(data):
-        talk('   - {}'.format(key))
-        experiment.prepdata.dump(data_type=key, dataframe=value, index=False)
+    # data['moved'] = secondary.bodylengths_moved(bounds=data['bounds'], sizes=data['sizes'])
+    data['moved'] = secondary.bodylengths_moved(experiment=experiment)
+    if callback:
+        cb_sec(0.8)
+    save_processed_data(data, experiment)
     if callback:
         cb_sec(1)
+
+    # dump it out

@@ -174,8 +174,11 @@ class ReportCard(object):
             comps = node_data.get('components', [node_id])
             known_comps = set(comps) & term_ids
             for comp in comps:
-                terms['n-blobs'].loc[list(known_comps)] = len(comps)
-                terms['node_id'].loc[list(known_comps)] = node_id
+                terms.loc[list(known_comps), 'n-blobs'] = len(comps)
+                terms.loc[list(known_comps), 'node_id'] = node_id
+                # terms['n-blobs'].loc[list(known_comps)] = len(comps)
+                # terms['node_id'].loc[list(known_comps)] = node_id
+                print('id change')
                 terms['id_change_found'].loc[list(known_comps)] = has_pred
                 terms['id_change_lost'].loc[list(known_comps)] = has_suc
 
@@ -288,7 +291,6 @@ class ReportCard(object):
         df = df.copy()
         df['lifespan_t'] = df['lifespan_t'] / 60.0
         bin_dividers = [1, 5, 10, 20, 61]
-        # reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
         reasons = ['unknown', 'on_edge', 'split', 'join', 'outside-roi', 'timing']
         # stuff = pd.DataFrame(columns=reasons, index=bin_dividers)
         data = []
@@ -311,8 +313,8 @@ class ReportCard(object):
         report_summary = pd.DataFrame(data)
         report_summary['lifespan'] = bin_dividers + ['total']
         report_summary.set_index('lifespan', inplace=True)
-        # report_summary = report_summary[['unknown', 'id_change', 'timing', 'on_edge', 'outside-roi']]
-        report_summary = report_summary[['unknown', 'split', 'join', 'timing', 'on_edge', 'outside-roi']]
+        report_summary = report_summary[['unknown', 'split', 'join', 'timing',
+                                         'on_edge', 'outside-roi']]
         print(report_summary)
         return report_summary
 
@@ -377,6 +379,8 @@ class WaldoSolver(object):
         self.taper = tp.Taper(experiment=experiment, graph=graph)
         self.report_card.add_step(graph, step_name='raw', phase_name='input')
         self.phase_name = 'input'
+        self.collisions = []
+        self.current_iteration = 0
 
     def run(self, callback=None, redraw_callback=None):
         """ runs full solver code
@@ -477,7 +481,12 @@ class WaldoSolver(object):
             gap_validation.append(gaps[['blob1', 'blob2']])
 
         # Score is based on (delta t) * (delta dist)
-        ll1, gaps = self.taper.short_tape(gaps, add_edges=True)
+        if gaps is not None and len(gaps):
+            ll1, gaps = self.taper.short_tape(gaps, add_edges=True)
+
+        # not sure if necessary.
+        else:
+            gaps = []
         # Score is based on probability that a blob would move a certain distance (from other worms on plate)
         # ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
         # link_total = len(ll1) #+ len(ll2) + len(ll3)
@@ -510,6 +519,7 @@ class WaldoSolver(object):
 
         # self.report_card.add_step(self.graph, 'iter 0')
         for i in range(6):
+            self.current_iteration = i
             self.phase_name = 'iter{i}'.format(i=i + 1)
             # untangle collisions
             n = self.untangle_collsions()
@@ -568,7 +578,37 @@ class WaldoSolver(object):
         # return self.graph, report_df
 
     def write_reports(self):
+        col_df = pd.DataFrame(self.collisions)
+        self.experiment.prepdata.dump('collisions', col_df)
         return self.report_card.save_reports(self.graph)
+
+    def collision_components(self, node_id, graph):
+        parents = list(set(graph.predecessors(node_id)))
+        children = list(set(graph.successors(node_id)))
+        if len(parents) != 2:
+            print('Warning:', node_id, 'has', len(parents),
+                  'parents. expected 2')
+        if len(children) != 2:
+            print('Warning:', node_id, 'has', len(children),
+                  'children. expected 2')
+
+        def join_components(nid, graph):
+            return '-'.join(['{i}'.format(i=i) for i in list(graph.components(nid))])
+
+        collision = {'bid': node_id,
+                     # 'resolved': resolved,
+                     # 'fail_reason': fail_reason,
+                     'iter': self.current_iteration,
+                     'comps': join_components(node_id, graph),
+                     'p0': join_components(parents[0], graph),
+                     'p1': join_components(parents[1], graph),
+                     'c0': join_components(children[0], graph),
+                     'c1': join_components(children[1], graph)}
+                     # 'p0': '-'.join(list(graph.components(parents[0]))),
+                     # 'p1': '-'.join(list(graph.components(parents[1]))),
+                     # 'c0': '-'.join(list(graph.components(children[0]))),
+                     # 'c1': '-'.join(list(graph.components(children[1])))}
+        return collision
 
     def untangle_collsions(self, verbose=True):
         """ attempt to find and untangle collisions in the graph
@@ -584,11 +624,15 @@ class WaldoSolver(object):
         overlap_fails = set()
         data_fails = set()
         dont_bother = set()
+        collision_dict = {}
 
         # trying_new_suspects = True
         collisions_were_resolved = True
         while collisions_were_resolved:
             suspects = set(collider.find_bbox_based_collisions(graph, experiment))
+            for s in suspects:
+                if s not in collision_dict:
+                    collision_dict[s] = self.collision_components(s, graph)
             s = suspects - dont_bother
             ty = len(s & data_fails)
             if verbose:
@@ -615,6 +659,24 @@ class WaldoSolver(object):
             overlap_fails = overlap_fails | set(report['no_overlap'])
             overlap_fails = overlap_fails - resolved
             dont_bother = overlap_fails - data_fails
+
+        for node_id in resolved:
+            c = collision_dict[node_id]
+            c['resolved'] = True
+            c['fail_reason'] = ''
+            self.collisions.append(c)
+
+        for node_id in overlap_fails:
+            c = collision_dict[node_id]
+            c['resolved'] = False
+            c['fail_reason'] = 'no_overlap'
+            self.collisions.append(c)
+
+        for node_id in overlap_fails:
+            c = collision_dict[node_id]
+            c['resolved'] = False
+            c['fail_reason'] = 'no_outline'
+            self.collisions.append(c)
 
         if verbose:
             full_set = resolved | overlap_fails | data_fails | dont_bother

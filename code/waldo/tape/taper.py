@@ -182,8 +182,8 @@ class Taper(object):
 
         if use_missing_objects and self._missing is not None:
             m = self._missing[['bid', 'f', 't', 'x', 'y']]
-            m['node_id'] = m['bid']
-            m['isolated'] = True
+            m.loc[:, 'node_id'] = m['bid']
+            m.loc[:, 'isolated'] = True
             gap_start_terms = pd.concat([gap_start_terms, m])
             gap_end_terms = pd.concat([gap_end_terms, m])
             #print(self._missing)
@@ -273,7 +273,7 @@ class Taper(object):
                 gap_df['t2'] = gap_df['t']
                 gap_df['f2'] = gap_df['f']
 
-
+            print('max speed', self.max_speed) # TODO remove this line when this is working.
             gap_df['speed'] = gap_df['dist'] / gap_df['df']
             if write_everything:
                 full_record.append(gap_df)
@@ -281,7 +281,7 @@ class Taper(object):
             #gap_df = gap_df[gap_df['dt'] > 0]
             gap_df['max_dist'] = self.max_speed * np.abs(gap_df['df'])
             gap_df = gap_df[gap_df['dist'] < (gap_df['max_dist'] + pixel_buffer)]
-            gap_df = gap_df[gap_df['dist'] <  max_distance_cutoff]
+            gap_df = gap_df[gap_df['dist'] < max_distance_cutoff]
 
 
             # remove self links if we allow short backwards links.
@@ -321,9 +321,9 @@ class Taper(object):
         if write_everything:
             all_gaps = pd.concat(full_record)
             all_gaps.to_csv('all_gaps.csv')
-        #print('p gaps')
-        #print(potential_gaps.head(10))
-        #print(len(potential_gaps))
+        # print('p gaps')
+        # print(potential_gaps.head(10))
+        # print(len(potential_gaps))
         return potential_gaps
 
     def make_gaps_file(self):
@@ -365,7 +365,7 @@ class Taper(object):
             # if there is no gaps file, then there is no point in trying to find gaps
             print('WARNING: no gaps file')
             return [], []
-            
+
         gaps = gaps_df.copy()
         link_list = []
         gaps = gaps[gaps['df'] < df]

@@ -4,14 +4,13 @@ import matplotlib.gridspec as grd
 import matplotlib.patches as patches
 
 from waldo import wio
-#import waldo.metrics.report_card as report_card
+# import waldo.metrics.report_card as report_card
 # import waldo.images.evaluate_acuracy as ea
 # import waldo.images.worm_finder as wf
 # import waldo.metrics.step_simulation as ssim
 # import waldo.viz.eye_plots as ep
 # from waldo.gui import pathcustomize
 plt.style.use('bmh')
-
 
 class StepPlot(object):
 
@@ -49,7 +48,7 @@ class StepPlot(object):
         steps = node_report[['bl', 't0', 'tN', 'bid']]
         steps.set_index('bid', inplace=True)
 
-        steps.loc[:, 't0'] = steps['t0'] / 60.0 
+        steps.loc[:, 't0'] = steps['t0'] / 60.0
         steps.loc[:, 'tN'] = steps['tN'] / 60.0
         steps.loc[:, 'lifespan'] = steps['tN'] - steps['t0']
         steps.loc[:, 'mid'] = (steps['tN'] + steps['t0']) / 2.0
@@ -103,7 +102,7 @@ class StepPlot(object):
         mid = [ax_m0, ax_m1]
         bottom = [ax_s0, ax_s1]
         all_axes = [ax_l0, ax_m0, ax_s0, ax_l1, ax_m1, ax_s1]
-        
+
         ylabels = ['> {t2} min'.format(t2=t2),
                    '{t1} to {t2} min'.format(t1=t1, t2=t2),
                    '< {t1} min'.format(t1=t1)]
@@ -148,13 +147,13 @@ class StepPlot(object):
 
         # for ax, t in zip(left, ylabels):
         #     ax.set_ylabel(t, size=label_size)
-            
+
         # for ax in all_axes:
         #     ax.get_xaxis()
         #     ax.get_yaxis()
         #     plt.yticks(fontsize=tick_label_size)
         #     plt.xticks(fontsize=tick_label_size)
-            
+
         #tick_labels = ax_s0.xaxis.get_majorticklabels()
         ax_s0.get_xaxis().set_ticklabels([0, 10, 20, 30, 40, 50])
         ax_s0.get_xaxis().set_ticklabels([0, 2, 4, 6, 8, 10])

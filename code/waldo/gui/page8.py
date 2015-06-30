@@ -214,7 +214,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         ex_id = self.data.experiment.id
         callback(0, 0.0 / STEPS)
 
-        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
+        prepare_summarize(ex_id, experiment=self.data.experiment, callback=PROCESS_BLOBS_CALLBACK)
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 

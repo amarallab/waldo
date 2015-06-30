@@ -367,7 +367,6 @@ def analyze_experiment_images(experiment, threshold, roi=None, callback=None,
     threshold: (float)
         threshold to use when analyzing images.
     """
-
     if callback:
         CALLBACK_LOAD_FRAC = 0.08
         CALLBACK_LOOP_FRAC = 0.84
@@ -392,6 +391,15 @@ def analyze_experiment_images(experiment, threshold, roi=None, callback=None,
     times, impaths = zip(*sorted(experiment.image_files.items()))
     # times = [float(t) for t in times]
     # times, impaths = zip(*sorted(zip(times, impaths)))
+
+
+    max_images_used = 1000
+    if len(times) > max_images_used:
+        print('too many images. to save speed waldo will only process 1000 or less')
+        times_to_long = int(len(times) / max_images_used)
+        times = times[::times_to_long]
+        impaths = impaths[::times_to_long]
+
 
     impaths = [str(s) for s in impaths]
     # create recording background

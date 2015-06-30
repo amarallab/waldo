@@ -97,6 +97,22 @@ class TerminalsBuilder(DataFrameBuilder):
             })
 
 
+def create_primary_df(experiment, df_type=None, callback=None):
+    builders = {'bounds': BoundsBuilder(),
+                'terminals': TerminalsBuilder(),
+                'sizes': SizeBuilder()}
+
+    assert df_type in builders, '{t} not a real type of df'.format(t=df_type)
+    builder = builders[df_type]
+    for i, (bid, blob) in enumerate(experiment.blobs()):
+        try:
+            builder.append(bid, blob)
+        except KeyError:
+            # zero frame blobs
+            pass
+    return builder.render()
+
+#TODO this fails on big recordings due to memory errors
 def summarize(experiment, callback=None):
     """
     Given an experiment, generate 3 data frames returned as values in a
@@ -123,7 +139,7 @@ def summarize(experiment, callback=None):
 
         if callback:
             callback(i / len(experiment))
-
+    print('done building')
     if callback:
         callback(1)
 
