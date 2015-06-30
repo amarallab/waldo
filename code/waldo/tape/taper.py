@@ -338,7 +338,7 @@ class Taper(object):
 
         self._experiment.prepdata.dump('gaps', gaps, index=False)
 
-    def short_tape(self, gaps_df, df=None, dist=None, add_edges=True):
+    def short_tape(self, gaps_df, df=None, dist=None, score_cuttoff=None, add_edges=True):
         """
         preferentially attaches really short gaps to one another.
 
@@ -358,6 +358,8 @@ class Taper(object):
             df = settings.TAPE_FRAME_SEARCH_LIMIT
         if dist is None:
             dist = settings.TAPE_PIXEL_SEARCH_LIMIT
+        if score_cuttoff is None:
+            score_cuttoff = settings.TAPE_DIST_X_DT_CUTTOFF
 
         acausal_limit = self.acausal_limit
 
@@ -373,7 +375,7 @@ class Taper(object):
         gaps = gaps[gaps['df'] > - acausal_limit]
 
         # rank all gaps based on a score
-        gaps['short_score'] = gaps['df'] * gaps['dist']
+        gaps['short_score'] = gaps['dt'] * gaps['dist']
         gaps.sort('short_score', inplace=True, ascending=False)
         already_taken_nodes = set() #set of nodes already involved
         for i, row in gaps.iterrows():
@@ -384,7 +386,8 @@ class Taper(object):
             if node2 in already_taken_nodes:
                 continue
             # add if gap is less than distance or time requirements
-            if row['df'] <= df and row['dist'] <= dist:
+            # if row['df'] <= df and row['dist'] <= dist:
+            if row['short_score'] <= score_cuttoff:
                 link_list.append((node1, node2))
                 already_taken_nodes.add(node1)
                 already_taken_nodes.add(node2)
