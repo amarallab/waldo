@@ -69,8 +69,8 @@ class SelectExperimentPage(QtGui.QWizardPage):
         table.setColumnCount(3)
         table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         table.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
-        table.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem("Filename"))
-        table.setHorizontalHeaderItem(1, QtGui.QTableWidgetItem("Title"))
+        table.setHorizontalHeaderItem(0, QtGui.QTableWidgetItem("Directory"))
+        table.setHorizontalHeaderItem(1, QtGui.QTableWidgetItem("Name"))
         table.setHorizontalHeaderItem(2, QtGui.QTableWidgetItem("Duration"))
 
         table.setColumnWidth(0, 150)
