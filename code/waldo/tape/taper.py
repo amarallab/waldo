@@ -273,7 +273,6 @@ class Taper(object):
                 gap_df['t2'] = gap_df['t']
                 gap_df['f2'] = gap_df['f']
 
-            print('max speed', self.max_speed) # TODO remove this line when this is working.
             gap_df['speed'] = gap_df['dist'] / gap_df['df']
             if write_everything:
                 full_record.append(gap_df)

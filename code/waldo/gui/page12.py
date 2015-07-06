@@ -6,9 +6,9 @@ from PyQt4.QtCore import Qt, QTimer
 
 from waldo.conf import settings
 from waldo.prepare import summarize as prepare_summarize
-from waldo.images import summarize as images_summarize
+from waldo.images import summarize_experiment as images_summarize
 from waldo.metrics.report_card import WaldoSolver
-#from waldo.wio import Experiment
+from waldo.wio import Experiment
 from waldo.output.writer import OutputWriter
 
 #from waldo import wio
@@ -260,7 +260,7 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 
-        images_summarize(ex_id, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
+        images_summarize(experiment=experiment, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
         PROCESS_IMAGES_CALLBACK(1)
         callback(0, 2.0 / STEPS)
 

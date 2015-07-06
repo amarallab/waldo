@@ -178,7 +178,6 @@ class ReportCard(object):
                 terms.loc[list(known_comps), 'node_id'] = node_id
                 # terms['n-blobs'].loc[list(known_comps)] = len(comps)
                 # terms['node_id'].loc[list(known_comps)] = node_id
-                print('id change')
                 terms['id_change_found'].loc[list(known_comps)] = has_pred
                 terms['id_change_lost'].loc[list(known_comps)] = has_suc
 
@@ -527,21 +526,21 @@ class WaldoSolver(object):
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 1 / 6.)
 
+            # connect
+            print('--- gaps ---')
+            self.connect_leaves()
+            boiler_plate(validate_steps, subgraph_recorder)
+            cb_iterate(i, 2 / 6.)
+
             # prune
             print('--- prune ---')
             self.prune()
             boiler_plate(validate_steps, subgraph_recorder)
-            cb_iterate(i, 2 / 6.)
+            cb_iterate(i, 3 / 6.)
 
             # consolidate
             print('--- consolidate ---')
             self.consolidate()
-            boiler_plate(validate_steps, subgraph_recorder)
-            cb_iterate(i, 3 / 6.)
-
-            # connect
-            print('--- gaps ---')
-            self.connect_leaves()
             boiler_plate(validate_steps, subgraph_recorder)
             cb_iterate(i, 4 / 6.)
 
