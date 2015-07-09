@@ -20,7 +20,6 @@ class OutputWriter(object):
     """
 
     """
-
     def __init__(self, ex_id, graph=None, data_dir=None, output_dir=None):
         self.ex_id = ex_id
 

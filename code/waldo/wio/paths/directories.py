@@ -15,7 +15,7 @@ __all__ = [
     'prepdata',
     'experiment',
     'output',
-    'speed',
+    'behavior',
 ]
 
 def experiment(ex_id, root=None):
@@ -43,8 +43,8 @@ def output(ex_id, root=None):
     """
     return waldo_data(ex_id, root) / 'blob_files'
 
-def speed(ex_id, root=None):
+def behavior(ex_id, root=None):
     """
-    Where to put the cleaned speed files
+    Where to put the cleaned behavior files
     """
-    return waldo_data(ex_id, root) / 'speed_files'
+    return waldo_data(ex_id, root) / 'behavior'

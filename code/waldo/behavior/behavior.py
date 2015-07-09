@@ -179,8 +179,9 @@ class BaseDataFrame(object):
 
 
 class Behavior_Coding(BaseDataFrame):
-    def __init__(self, bl=None, body_length=None):
+    def __init__(self, bl=None, body_length=None, bid=None):
         self.raw_df = None
+        self.bid = bid
         self.df = None
         self.bl = bl
         self.moving_window_size = 11
@@ -217,6 +218,13 @@ class Behavior_Coding(BaseDataFrame):
         df.loc[:, 'angle'] = np.arctan2(len_y, len_x)
 
         df.loc[:, 'std_width'] = blob_df['std_ortho']
+
+        # this would be to calculate a body lenght for the blob
+        # d = blob_df.dropna(subset=['contour_encoded'])
+        # n_rows = len(d)
+        # x_midlines = np.zeros(shape=(n_rows, 11))
+        # y_midlines = np.zeros(shape=(n_rows, 11))
+
         self.raw_df = df
         self.df = df.copy()
 

@@ -1,4 +1,3 @@
-
 get_ipython().magic('load_ext autoreload')
 get_ipython().magic('autoreload 2')
 get_ipython().magic('matplotlib inline')
@@ -28,7 +27,7 @@ import pathcustomize
 
 from waldo.conf import settings
 from waldo.wio.experiment import Experiment
-from waldo.extern import multiworm 
+from waldo.extern import multiworm
 from multiworm.core import MWTSummaryError
 from waldo.output.speed import SpeedWriter
 from waldo.output.speed import *
@@ -76,9 +75,9 @@ day_1_NQ67_eids = [
 '20130617_175430',
 ]
 
-day_1_NQ19_eids = ['20130610_161947', 
-                   '20130610_173211', 
-                   '20130617_154232', 
+day_1_NQ19_eids = ['20130610_161947',
+                   '20130610_173211',
+                   '20130617_154232',
                    '20130617_175435']
 
 print day_1_NQ67_eids
@@ -118,7 +117,7 @@ tdfs = {}
 for t in track_dfs:
     df = track_dfs[t]
     df = df[df['minutes'] >= 30].copy()
-    
+
     if df is None or not len(df):
         continue
 
@@ -127,7 +126,7 @@ for t in track_dfs:
     df['avg'] = df['bl / s'].cumsum() / np.arange(1, len(df)+1)
     tdfs[t] = df
 dfs = tdfs
-    
+
 
 
 window_size = 60 * 29
@@ -152,9 +151,9 @@ error_series = []
 for i ,t in enumerate(dfs):
     df = dfs[t]
     df_window = df[df['t'] <= window_size].copy()
-    if df_window is None: 
+    if df_window is None:
         continue
-    if len(df_window) < 0.9 * window_size: 
+    if len(df_window) < 0.9 * window_size:
         continue
     d = calculate_error_window(df_window).set_index('t')
     break
@@ -174,7 +173,7 @@ def add_crosspoint_line(cross_level, ax, d, color):
     ax.plot([cross_min, max_minute], [cross_level, cross_level], '--', alpha=0.8, color=color)
     ax.plot([cross_min, cross_min], [0, cross_level], '--', alpha=0.8, color=color)
     ax.plot([cross_min], [cross_level], 'o', color=color)
-    
+
 add_crosspoint_line(20, ax=ax, d=d, color='purple')
 add_crosspoint_line(10, ax=ax, d=d, color='darkred')
 add_crosspoint_line(5, ax=ax, d=d, color='steelblue')
@@ -186,7 +185,7 @@ plt.tight_layout()
 plt.savefig('relative-error-decay.png')
 plt.show()
 def calculate_error_window(df):
-    best_guess =  df['avg'].iloc[-1] 
+    best_guess =  df['avg'].iloc[-1]
     df['error'] = np.abs(df['avg'] - best_guess)
     df['% error'] = df['error'] / best_guess
     df['error_window'] = df['% error'].copy()
@@ -199,10 +198,10 @@ def compile_error_curves(dfs, window_size = 60):
     for i ,t in enumerate(dfs):
         df = dfs[t]
         df_window = df[df['t'] <= window_size].copy()
-        if df_window is None: 
+        if df_window is None:
             continue
-        
-        if len(df_window) < 0.9 * window_size: 
+
+        if len(df_window) < 0.9 * window_size:
             continue
         d = calculate_error_window(df_window).set_index('t')['error_window']
         d = d.reindex(np.arange(0, window_size + 1))
@@ -221,29 +220,29 @@ def plot_compiled(df):
         if i == 0:
             ax.plot(minutes, df[col] * 100, 'k', alpha=0.2, label='$R^M_i$ -- individual worms')
         ax.plot(minutes, df[col]* 100, 'k', alpha=0.2)
-    
+
     ax.plot(minutes, mean, 'black', lw=4, label='mean $R^M_i$ -- all individuals' )
-    
+
     cross_point20 = np.where(mean <= 20)[0][0] / 60.0
     ax.plot([cross_point20, cross_point20], [0, mean[int(cross_point20 * 60.0)]], '--', color='purple', lw=2)
-    ax.plot([0, cross_point20], [mean[int(cross_point20 * 60.0)], mean[int(cross_point20 * 60.0)]], 
+    ax.plot([0, cross_point20], [mean[int(cross_point20 * 60.0)], mean[int(cross_point20 * 60.0)]],
             '--', color='purple', lw=2)
     ax.plot([cross_point20], [mean[int(cross_point20 * 60.0)]], 'o', color='purple', markersize=10)
 
-    
+
     cross_point10 = np.where(mean <= 10)[0][0] / 60.0
     ax.plot([cross_point10, cross_point10], [0, mean[int(cross_point10 * 60.0)]], '--', color='darkred', lw=2)
-    ax.plot([0, cross_point10], [mean[int(cross_point10 * 60.0)], mean[int(cross_point10 * 60.0)]], 
+    ax.plot([0, cross_point10], [mean[int(cross_point10 * 60.0)], mean[int(cross_point10 * 60.0)]],
             '--', color='darkred', lw=2)
     ax.plot([cross_point10], [mean[int(cross_point10 * 60.0)]], 'o', color='purple', markersize=10)
 
-    
+
     cross_point5 = np.where(mean <= 5)[0][0] / 60.0
     ax.plot([cross_point5, cross_point5], [0, mean[int(cross_point5 * 60.0)]], '--', color='steelblue', lw=2)
     ax.plot([0, cross_point5], [mean[int(cross_point5 * 60.0)], mean[int(cross_point5 * 60.0)]], '--', color='steelblue', lw=2)
     ax.plot([cross_point5], [mean[int(cross_point5 * 60.0)]], 'o', color='steelblue', markersize=10)
     ax.legend(loc='best', frameon=False, fontsize=15)
-    
+
     ax.set_ylabel('$R^M_i$ -- % relative error', size=15)
     ax.set_xlabel('$i$ -- time (minutes)', size=15)
     ax.set_ylim([0, 50])
@@ -277,7 +276,7 @@ for w in windows:
         dat = percent_data.get(percent, [])
         dat.append(np.where(mean < percent)[0][0])
         percent_data[percent] = dat
-        
+
 #     cp1s2.append(np.where(mean < 0.01)[0][0])
     cp5s2.append(np.where(mean < 0.05)[0][0])
     cp10s2.append(np.where(mean < 0.1)[0][0])
@@ -310,7 +309,7 @@ fig = plt.figure(figsize=(8, 3))
 ax = plt.subplot(axisbg='white')
 bar_graph_df.T.plot(kind='box', vert=False, ax=ax)
 #ax.text(14, 3.2, '20 minute window', size=16)#, bbox={'facecolor':'white'})
-ax.text(24.5, 3.4, '$T$ = 30 minutes', size=18, 
+ax.text(24.5, 3.4, '$T$ = 30 minutes', size=18,
         horizontalalignment='right', verticalalignment='top', bbox={'facecolor':'white'})
 
 ax.set_xlabel('Time  to reach desired accuracy (minutes)', size=16)
@@ -332,7 +331,7 @@ for w in windows:
     means = bar_graph_df.mean(axis=1)
     means.name = w
     mean_rows.append(means)
-    
+
     med = bar_graph_df.median(axis=1)
     med.name = w
     median_rows.append(med)
@@ -361,7 +360,7 @@ ax.set_ylim([0, 20])
 #ax.semilogx()
 #plt.tight_layout()
 plt.savefig('convergence_percent2-median-lin.png')
-plt.show()   
+plt.show()
 fig = plt.figure(figsize=(6, 5))
 
 ax = plt.subplot(axisbg='white')
@@ -371,7 +370,7 @@ ax = plt.subplot(axisbg='white')
 #         #break
 #     ax.plot(windows, np.array(percent_data[percent], dtype=float) / 60, 'o-', label='{p}%'.format(p=percent*100))
 
-    
+
 # ax.plot(windows, np.array(cp1s2, dtype=float) / windows / 60, 'o-', label='1%')
 ax.plot(windows, windows, 'k-', label='linear scaling', alpha=0.5)
 ax.plot(windows, np.array(cp5s2, dtype=float) / 60, 'o', label='5%', color='steelblue')
@@ -389,10 +388,10 @@ ax.set_ylabel('$t_x$ -- time to reach $X$% accuracy (minutes)')
 ax.semilogx()
 plt.tight_layout()
 plt.savefig('convergence_percent.png')
-plt.show()    
+plt.show()
 
 def calculate_error_window2(df):
-    best_guess =  df['avg'].iloc[-1] 
+    best_guess =  df['avg'].iloc[-1]
     df['error'] = np.abs(df['avg'] - best_guess)
     df['% error'] = df['error']
     df['error_window'] = df['% error'].copy()
@@ -405,10 +404,10 @@ def compile_error_curves2(dfs, window_size = 60):
     for i ,t in enumerate(dfs):
         df = tdfs[t]
         df_window = df[df['t'] <= window_size].copy()
-        if df_window is None: 
+        if df_window is None:
             continue
-        
-        if len(df_window) < 0.9 * window_size: 
+
+        if len(df_window) < 0.9 * window_size:
             continue
         d = calculate_error_window2(df_window).set_index('t')['error_window']
         d = d.reindex(np.arange(0, window_size + 1))
@@ -425,24 +424,24 @@ def plot_compiled2(df):
     mean = compiled_df.mean(axis=1)
     for col in df:
         ax.plot(minutes, df[col], 'k', alpha=0.5)
-    
+
     ax.plot(minutes, mean, 'orange', lw=3)
-    
+
     cross_point10 = np.where(mean < 0.001)[0][0] / 60.0
     ax.plot([cross_point10, cross_point10], [0, 0.5], color='steelblue', lw=2)
-    
+
     cross_point5 = np.where(mean < 0.005)[0][0] / 60.0
     ax.plot([cross_point5, cross_point5], [0, 0.5], color='darkred', lw=2)
-    
+
     cross_point5 = np.where(mean < 0.01)[0][0] / 60.0
     ax.plot([cross_point5, cross_point5], [0, 0.5], color='green', lw=2)
-    
+
     ax.set_ylabel('error (bl / s)')
     ax.set_xlabel('time (minutes)')
     ax.set_ylim([0, 0.06])
     plt.show()
-    
-    
+
+
 dfs = tdfs
 aa, bb, cc, dd, ee = [], [], [], [], []
 windows2 = np.arange(1, 29)
@@ -453,7 +452,7 @@ for w in windows2:
     bb.append(np.where(mean < 0.002)[0][0])
     cc.append(np.where(mean < 0.003)[0][0])
     dd.append(np.where(mean < 0.005)[0][0])
-    ee.append(np.where(mean < 0.01)[0][0]) 
+    ee.append(np.where(mean < 0.01)[0][0])
 fig = plt.figure(figsize=(10, 10))
 
 ax = plt.subplot(axisbg='white')
@@ -470,7 +469,7 @@ ax.set_ylabel('fraction of observation time to be withing X of final point')
 #ax.semilogy()
 plt.tight_layout()
 plt.savefig('convergence_absolute.png')
-plt.show()   
+plt.show()
 dfs = tdfs
 ws2 = []
 e005s, e01s, e02s = [], [], []
@@ -619,12 +618,12 @@ def plot_decay(track_dfs):
     print 'b = {b}'.format(b=round(b, 3))
     print 'c = {c}'.format(c=round(c, 3))
     tau = 1/b
-    print 
+    print
     print 'tau = 1/b = {t} minutes'.format(t=round(tau, 3))
-    print 
+    print
     print 'previously reported tau is 19 min - Yemini, Jucikas, ... Schafer (2013)'
     return params
-    
+
 #track_dfs = d1_NQ67_tracks
 track_dfs = day_1_eids
 params = plot_decay(track_dfs)
@@ -635,10 +634,10 @@ track_dfs = d1_NQ67_tracks
 fdf, params, pcov = fit_decay_time(track_dfs, plot=False)
 track_ids = list(track_dfs.keys())
 def distribution_fit_insert(df, start_t=30, insert_shift=0.4, track_id=''):
-    
+
     df = df[df['minutes'] > start_t]
     s = np.array(df['bl / s'])
-    
+
     fig = plt.figure(figsize=(5, 5))
     x = np.linspace(min(s), max(s), 1000)
     loc, scale = stats.expon.fit(s)
@@ -682,7 +681,7 @@ def distribution_fit_insert(df, start_t=30, insert_shift=0.4, track_id=''):
     plt.show()
 
 def distribution_fit_survival_insert(df, start_t=30, insert_shift=0.5, track_id='', insert=True):
-    
+
     df = df[df['minutes'] > start_t]
     s = np.array(df['bl / s'])
 
@@ -692,7 +691,7 @@ def distribution_fit_survival_insert(df, start_t=30, insert_shift=0.5, track_id=
     dist = stats.expon(loc=loc, scale=scale)
 
     ax = plt.subplot(axisbg='white')
-    sx, sy = make_cdf(s) 
+    sx, sy = make_cdf(s)
     ax.plot(x, dist.sf(x), color='darkred', lw=2, alpha=0.8, label='fit')
 
     ax.plot(sx, 1.0 - np.array(sy), color='darkblue', lw=3.0, alpha=0.5, label='emperical')
@@ -705,18 +704,18 @@ def distribution_fit_survival_insert(df, start_t=30, insert_shift=0.5, track_id=
     plt.yticks(fontsize=15)
     ax.grid(b=False)
     ax.legend(loc='lower right', frameon=False, fontsize=15)
-    
+
     xtick_values = [i for i in [0, 0.05, 0.1, 0.15, 0.2, 0.25]
-                    if i < max(s)]   
-    
-    
+                    if i < max(s)]
+
+
     if insert:
         p = insert_shift
         ax2 = plt.axes([p, p, .87-p, .87-p], axisbg='w')
         #ax2.hist(s, bins=100, normed=True, color='steelblue', lw=0.1)
         ax2.plot(x, dist.sf(x), color='darkred', lw=2, alpha=0.8, label='fit')
 
-        sx, sy = make_cdf(s) 
+        sx, sy = make_cdf(s)
         ax2.plot(sx[:-1], (1.0 - np.array(sy))[:-1], color='darkblue', lw=3.0, alpha=0.5, label='data')
 
         ax2.set_yscale('log')
@@ -733,11 +732,11 @@ def distribution_fit_survival_insert(df, start_t=30, insert_shift=0.5, track_id=
     else:
         track_id
 
-        
+
     plt.setp(ax, xticks=xtick_values)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    
+
     if insert:
         insert_string = 'insert-'
     else:
@@ -745,7 +744,7 @@ def distribution_fit_survival_insert(df, start_t=30, insert_shift=0.5, track_id=
     plt.savefig('expon-fit-survival-{i}{t}.eps'.format(i=insert_string, t=track_id))
     #plt.savefig('expon-fit-survival-insert.pdf')
     plt.show()
-    
+
 bid = track_ids[1]
 print(bid)
 #print track_dfs[bid]
@@ -762,7 +761,7 @@ def plot_single_and_global_decay(track_dfs, fdf, params, track_id, save_as='eps'
 
     x = np.array(avg.index) + 0.5
     y = np.array(avg)
-    
+
     fig = plt.figure(figsize=(10,5))
     ax = plt.subplot(axisbg='white')
     #ax.plot(fdf['minutes'], fdf['bl / s'], '.', alpha=0.1, label="Origional Data")
@@ -790,7 +789,7 @@ def plot_single_and_global_decay(track_dfs, fdf, params, track_id, save_as='eps'
         savename = 'single_global_decay-{t}.{sa}'.format(t=track_id, sa=save_as)
         plt.savefig(savename)
     plt.show()
-    
+
 # track_id = '20130318_142605-87'
 # print track_id
 # plot_single_and_global_decay(track_dfs, fdf, params, track_id)
@@ -828,7 +827,7 @@ for track in track_ids:
     s = df['bl / s']
     if max(s) < 0.05:
         continue
-        
+
     print track
     track_id = track
     plot_single_and_global_decay(track_dfs, fdf, params, track_id) #, save_as='png')
@@ -842,13 +841,13 @@ fig, ax = plt.subplots()
 for t in track_dfs:
     df = track_dfs[t]
     ax.plot(df['x'], df['y'], '.')
-    
+
 # ax.set_xlim([1970, 2100])
 
 
 
 def fit_scales(sdf, start_t=30, min_window=5, min_track_time=20):
-    
+
     df = sdf[sdf['minutes'] > start_t]
     #print(len(sdf), 'points in full series')
     #print(len(df), 'points after', start_t, 'minutes')
@@ -857,18 +856,18 @@ def fit_scales(sdf, start_t=30, min_window=5, min_track_time=20):
     min_time, max_time = min(df['minutes']), max(df['minutes'])
     if max_time - min_time < min_track_time:
         return None
-    
+
     last_t = round(max_time)
     #print(last_t)
     start_t = min([min_time, start_t])
-    
+
     max_window = last_t - min_window - start_t
     windows = np.arange(min_window, max_window, 1)
     scales = []
     counts = []
     means = []
     stds = []
-    
+
     for w in windows:
         d = df[df['minutes'] <= (start_t + w)]
         s = np.array(d['bl / s'])
@@ -892,24 +891,24 @@ min_window = 1
 fig, (ax, ax1) = plt.subplots(2, 1, sharex=True)
 
 for i, (track, df) in enumerate(track_dfs.items()):
-    fits = fit_scales(df, start_t=start_t, 
-                      min_window=min_window, 
+    fits = fit_scales(df, start_t=start_t,
+                      min_window=min_window,
                       min_track_time=min_track_time)
     if fits is None:
         continue
     #print track
     w, s, c, mean, std = fits
     s = np.array(s)
-    
+
     ax.plot(w, np.array(mean))
     ax1.plot(w, s)
-    
+
     windows[track] = w
     scales[track] = s
     counts[track] = c
     means[track] = mean
     stds[track] = std
-    
+
     #ax[2].plot(windows, counts)
 #ax[0].set_ylabel('scale factor')
 ax.set_ylabel('mean')
@@ -945,13 +944,13 @@ def check_stability(x, y, closeness):
         u = current * (1.0 + (closeness / 1.0 ))
         if max(segment) > u or min(segment) < l:
             reject.append((x[pos], y[pos]))
-        else:          
+        else:
             null_hyp.append((x[pos], y[pos]))
             if first_pass == None:
-                first_pass = (x[pos], y[pos], l, u) 
-                
+                first_pass = (x[pos], y[pos], l, u)
+
         if first_pass == None:
-            last_fail = (x[pos], y[pos], l, u)   
+            last_fail = (x[pos], y[pos], l, u)
     return null_hyp, reject, first_pass, last_fail
 
 def within_percent_of_current3(x, y, df, bid, save_as=None):
@@ -968,44 +967,44 @@ def within_percent_of_current3(x, y, df, bid, save_as=None):
     ax.legend(loc='best', frameon=False, fontsize=15)
     ax.set_ylabel('speed', size=15)
     ax.set_xlabel('time (minutes)', size=15)
-    
+
     plt.yticks(fontsize=12)
     plt.xticks(fontsize=12)
-    
+
     ax = plt.subplot(212, axisbg='white')
     #ax.plot(x, y, '-', color='blue', alpha=0.5)
 
 
     #ax.plot(x, y, 'o', color='black', alpha=1)
     closeness = 0.1
-    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)     
+    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)
     xc, yc, l, u = first_pass
     ax.plot([xc, x[-1]], [yc, yc], '-', color='black', lw=0.5)
     ax.fill_between([xc, x[-1]], [l, l], [u, u], color='steelblue', alpha=0.2)
     ax.plot([xc, xc], [l, u], '-', color='black')
 
     closeness = 0.2
-    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)     
+    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)
     xc, yc, l, u = first_pass
     ax.plot([xc, x[-1]], [yc, yc], '-', color='black', lw=0.5)
     ax.fill_between([xc, x[-1]], [l, l], [u, u], color='steelblue', alpha=0.1)
     ax.plot([xc, xc], [l, u], '-', color='black')
-    
+
     ax.plot(x, y, 'o-', color='darkred')
-    
+
     ax.set_ylabel('mean speed', size=15)
     ax.set_xlabel('observation time (minutes)', size=15)
-    
+
     plt.yticks(fontsize=12)
     plt.xticks(fontsize=12)
-    
+
     plt.tight_layout()
     if save_as is not None:
         plt.savefig('stability_examples--{bid}.{sa}'.format(bid=bid, sa=save_as))
     plt.show()
     return first_pass
 
-    
+
 bid = track_ids[2]
 # print bid
 #bid = '20130318_142605-87'
@@ -1028,7 +1027,7 @@ def within_percent_of_current4(x, y, bid=''):
     #ax.plot(x, y, 'o-', lw=1)
     ax.plot(x, y, 'o-', color='black', lw=1)
     closeness = 0.1
-    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)     
+    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)
     xc, yc, l, u = first_pass
     #ax.plot([xc, x[-1]], [yc, yc], '-', color='black', lw=0.5)
     ax.fill_between([xc, x[-1]], [l, l], [u, u], color='steelblue', alpha=0.2)
@@ -1036,9 +1035,9 @@ def within_percent_of_current4(x, y, bid=''):
     ax.plot([xc, x[-1]], [u, u], color='black', alpha=0.3)
     ax.plot([xc, xc], [0, u], '-', color='black', lw=1)
 
-    
+
     closeness = 0.3
-    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)     
+    null_hyp, reject, first_pass, last_fail = check_stability(x, y, closeness)
     xc, yc, l, u = first_pass
     #ax.plot([xc, x[-1]], [yc, yc], '-', color='black', lw=0.5)
     ax.fill_between([xc, x[-1]], [l, l], [u, u], color='steelblue', alpha=0.05)
@@ -1048,7 +1047,7 @@ def within_percent_of_current4(x, y, bid=''):
 
     plt.yticks(fontsize=12)
     plt.xticks(fontsize=12)
-    
+
     ax.set_ylabel('mean speed', size=15)
     ax.set_xlabel('observation time (minutes)', size=15)
     plt.savefig('stability_plot{c}--{bid}.eps'.format(bid=bid, c=closeness))
@@ -1058,7 +1057,7 @@ def within_percent_of_current4(x, y, bid=''):
 print bid
 x = np.array(windows[bid])
 y = np.array(means[bid])
-within_percent_of_current4(x, y, bid)
+within_percent_of_current 4(x, y, bid)
 def create_stability_df(windows, scales, means, closeness = 0.1):
     stabilities = {}
     for bid in windows.keys():
@@ -1068,15 +1067,15 @@ def create_stability_df(windows, scales, means, closeness = 0.1):
         fpx, fpy, l, u = first_pass
         stabilities[bid] = {'scale-window':fpx,
                             'scale': fpy,
-                            'scale-lower': l, 
-                            'scale-upper': u} 
+                            'scale-lower': l,
+                            'scale-upper': u}
 
         y = np.array(means[bid])
         first_pass = within_percent_of_current(x, y, closeness=closeness, plot=False)
         fpx, fpy, l, u = first_pass
         stabilities[bid].update({'mean-window':fpx,
                                 'mean':fpy,
-                                'mean-lower': l, 
+                                'mean-lower': l,
                                 'mean-upper': u})
     return pd.DataFrame(stabilities).T
 

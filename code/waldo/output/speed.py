@@ -162,7 +162,6 @@ def node_speed(node, experiment, graph):
     return t_spaced, speed
 
 class SpeedWriter(object):
-
     def __init__(self, eid, window_size=11, gap_max_seconds=10, write_dir=None):
         self.eid = eid
 
@@ -342,7 +341,6 @@ class SpeedWriter(object):
             row = df.iloc[i]
             row_name = row.name
             good_rows.append(row_name)
-
 
         for i in range(half_win, N - half_win):
             # row
