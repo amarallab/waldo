@@ -172,9 +172,11 @@ def compile_error_curves(dfs, window_size = 60):
         df_window = df[df['t'] <= window_size].copy()
         if df_window is None:
             continue
-
         if len(df_window) < 0.8 * window_size:
             continue
+        end_time = df_window.iloc[len(df_window)-1]['t']
+        #print(t, len(df_window) / 60., end_time)
+
         d = calculate_error_window(df_window).set_index('t')['error_window']
         d = d.reindex(np.arange(0, window_size + 1))
         d = d.fillna(method='bfill')
