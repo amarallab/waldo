@@ -931,3 +931,4 @@ class ExperimentResultWidget(QtGui.QWidget):
             ax.set_ylabel(t, size=12)
 
         ax_s0.get_xaxis().set_ticklabels([0, 10, 20, 30, 40, 50])
+        self.plot.canvas.draw()

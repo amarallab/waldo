@@ -328,6 +328,7 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
     def finished(self):
         self.waldoProcessCompleted = True
         self.completeChanged.emit()
+        self.wizard().next()
 
     def isComplete(self):
         return self.waldoProcessCompleted
