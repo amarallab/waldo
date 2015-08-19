@@ -101,14 +101,10 @@ class ConfigDialog(QtGui.QDialog):
         colliderSuiteSplitRel = "Collider Suite Split Rel"
 
         tapeFrameSearchLimit = "Tape Frame Search Limit"
-        tapeKdeSamples = "Tape Kde Samples"
         tapeMaxSpeedMultiplier = "Tape Max Speed Multiplier"
-        tapeMaxSpeedSmoothing = "Tape Max Speed Smoothing"
         tapeMinTraceFail = "Tape Min Trace Fail"
-        tapeMinTraceWarn = "Tape Min Trace Warn"
         tapeRelMoveThreshold = "Tape Rel Move Threshold"
         tapeShakycamAllowance = "Tape Shakycam Allowance"
-        tapeTraceLimitNum = "Tape Trace Limit Num"
 
     def __init__(self, parent=None):
         super(ConfigDialog, self).__init__(parent)
@@ -161,26 +157,14 @@ class ConfigDialog(QtGui.QDialog):
             str(settings.TAPE_FRAME_SEARCH_LIMIT),
             guisettings.TAPE_FRAME_SEARCH_LIMIT_RANGE,
             self.ToolTips.tapeFrameSearchLimit)
-        self.tapeKdeSamples = self.createQLineEditIntValidator(
-            str(settings.TAPE_KDE_SAMPLES),
-            guisettings.TAPE_KDE_SAMPLES_RANGE,
-            self.ToolTips.tapeKdeSamples)
         self.tapeMaxSpeedMultiplier = self.createQLineEditDoubleValidator(
             str(settings.TAPE_MAX_SPEED_MULTIPLIER),
             guisettings.TAPE_MAX_SPEED_MULTIPLIER_RANGE,
             self.ToolTips.tapeMaxSpeedMultiplier)
-        self.tapeMaxSpeedSmoothing = self.createQLineEditIntValidator(
-            str(settings.TAPE_MAX_SPEED_SMOOTHING),
-            guisettings.TAPE_MAX_SPEED_SMOOTHING_RANGE,
-            self.ToolTips.tapeMaxSpeedSmoothing)
         self.tapeMinTraceFail = self.createQLineEditIntValidator(
             str(settings.TAPE_MIN_TRACE_FAIL),
             guisettings.TAPE_MIN_TRACE_FAIL_RANGE,
             self.ToolTips.tapeMinTraceFail)
-        self.tapeMinTraceWarn = self.createQLineEditIntValidator(
-            str(settings.TAPE_MIN_TRACE_WARN),
-            guisettings.TAPE_MIN_TRACE_WARN_RANGE,
-            self.ToolTips.tapeMinTraceWarn)
         self.tapeRelMoveThreshold = self.createQLineEditDoubleValidator(
             str(settings.TAPE_REL_MOVE_THRESHOLD),
             guisettings.TAPE_REL_MOVE_THRESHOLD_RANGE,
@@ -189,10 +173,6 @@ class ConfigDialog(QtGui.QDialog):
             str(settings.TAPE_SHAKYCAM_ALLOWANCE),
             guisettings.TAPE_SHAKYCAM_ALLOWANCE_RANGE,
             self.ToolTips.tapeShakycamAllowance)
-        self.tapeTraceLimitNum = self.createQLineEditIntValidator(
-            str(settings.TAPE_TRACE_LIMIT_NUM),
-            guisettings.TAPE_TRACE_LIMIT_NUM_RANGE,
-            self.ToolTips.tapeTraceLimitNum)
 
         row = 0
         layout.addWidget(QtGui.QLabel("<b>Tape</b>"), row, 2, 1, 2)
@@ -202,24 +182,12 @@ class ConfigDialog(QtGui.QDialog):
         layout.addWidget(self.tapeFrameSearchLimit, row, 3, 1, 1)
 
         row += 1
-        layout.addWidget(QtGui.QLabel("KDE Samples"), row, 2, 1, 1)
-        layout.addWidget(self.tapeKdeSamples, row, 3, 1, 1)
-
-        row += 1
         layout.addWidget(QtGui.QLabel("Max Speed Multiplier"), row, 2, 1, 1)
         layout.addWidget(self.tapeMaxSpeedMultiplier, row, 3, 1, 1)
 
         row += 1
-        layout.addWidget(QtGui.QLabel("Max Speed Smoothing"), row, 2, 1, 1)
-        layout.addWidget(self.tapeMaxSpeedSmoothing, row, 3, 1, 1)
-
-        row += 1
         layout.addWidget(QtGui.QLabel("Min Trace Fail"), row, 2, 1, 1)
         layout.addWidget(self.tapeMinTraceFail, row, 3, 1, 1)
-
-        row += 1
-        layout.addWidget(QtGui.QLabel("Min Trace Warn"), row, 2, 1, 1)
-        layout.addWidget(self.tapeMinTraceWarn, row, 3, 1, 1)
 
         row += 1
         layout.addWidget(QtGui.QLabel("Rel Move Threshold"), row, 2, 1, 1)
@@ -228,10 +196,6 @@ class ConfigDialog(QtGui.QDialog):
         row += 1
         layout.addWidget(QtGui.QLabel("Shakycam Allowance"), row, 2, 1, 1)
         layout.addWidget(self.tapeShakycamAllowance, row, 3, 1, 1)
-
-        row += 1
-        layout.addWidget(QtGui.QLabel("Trace Limit Num"), row, 2, 1, 1)
-        layout.addWidget(self.tapeTraceLimitNum, row, 3, 1, 1)
 
         # Buttons
         buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | QtGui.QDialogButtonBox.Cancel, Qt.Horizontal,
@@ -280,16 +244,11 @@ class ConfigDialog(QtGui.QDialog):
         settings.TAPE_REL_MOVE_THRESHOLD = self._doubleValueOf(self.tapeRelMoveThreshold,
                                                                settings.TAPE_REL_MOVE_THRESHOLD)
         settings.TAPE_MIN_TRACE_FAIL = self._intValueOf(self.tapeMinTraceFail, settings.TAPE_MIN_TRACE_FAIL)
-        settings.TAPE_MIN_TRACE_WARN = self._intValueOf(self.tapeMinTraceWarn, settings.TAPE_MIN_TRACE_WARN)
-        settings.TAPE_TRACE_LIMIT_NUM = self._intValueOf(self.tapeTraceLimitNum, settings.TAPE_TRACE_LIMIT_NUM)
         settings.TAPE_FRAME_SEARCH_LIMIT = self._intValueOf(self.tapeFrameSearchLimit, settings.TAPE_FRAME_SEARCH_LIMIT)
-        settings.TAPE_KDE_SAMPLES = self._intValueOf(self.tapeKdeSamples, settings.TAPE_KDE_SAMPLES)
         settings.TAPE_MAX_SPEED_MULTIPLIER = self._doubleValueOf(self.tapeMaxSpeedMultiplier,
                                                                  settings.TAPE_MAX_SPEED_MULTIPLIER)
         settings.TAPE_SHAKYCAM_ALLOWANCE = self._intValueOf(self.tapeShakycamAllowance,
                                                             settings.TAPE_SHAKYCAM_ALLOWANCE)
-        settings.TAPE_MAX_SPEED_SMOOTHING = self._intValueOf(self.tapeMaxSpeedSmoothing,
-                                                             settings.TAPE_MAX_SPEED_SMOOTHING)
 
         settings.save()
         self.close()

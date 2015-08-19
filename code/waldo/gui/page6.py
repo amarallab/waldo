@@ -97,7 +97,6 @@ class ScoringPage(QtGui.QWizardPage):
         self.contrastRatioResult = QtGui.QLabel()
         self.contrastDiffResult = QtGui.QLabel()
         self.goodFractionResult = QtGui.QLabel()
-        self.accuracyResult = QtGui.QLabel()
         self.coverageResult = QtGui.QLabel()
 
         layout = QtGui.QGridLayout()
@@ -110,11 +109,8 @@ class ScoringPage(QtGui.QWizardPage):
         layout.addWidget(QtGui.QLabel("Good Fraction"), 2, 0, 1, 1)
         layout.addWidget(self.goodFractionResult, 2, 1, 1, 1)
 
-        layout.addWidget(QtGui.QLabel("Accuracy"), 3, 0, 1, 1)
-        layout.addWidget(self.accuracyResult, 3, 1, 1, 1)
-
-        layout.addWidget(QtGui.QLabel("Coverage"), 4, 0, 1, 1)
-        layout.addWidget(self.coverageResult, 4, 1, 1, 1)
+        layout.addWidget(QtGui.QLabel("Coverage"), 3, 0, 1, 1)
+        layout.addWidget(self.coverageResult, 3, 1, 1, 1)
 
         self.setLayout(layout)
 
@@ -122,7 +118,6 @@ class ScoringPage(QtGui.QWizardPage):
         self.contrastRatioResult.setText("")
         self.contrastDiffResult.setText("")
         self.goodFractionResult.setText("")
-        self.accuracyResult.setText("")
         self.coverageResult.setText("")
         self.scoreCompleted = False
         QTimer.singleShot(0, self.show_dialog)
@@ -167,12 +162,6 @@ class ScoringPage(QtGui.QWizardPage):
                 self.result.get('good_fraction', None),
                 guisettings.SCORE_GOOD_FRACTION_RANGE)
         self.goodFractionResult.setText(text)
-        valid = valid and completed
-
-        text, completed = self._resultToString(
-                self.result.get('accuracy', None),
-                guisettings.SCORE_ACCURACY_RANGE)
-        self.accuracyResult.setText(text)
         valid = valid and completed
 
         text, completed = self._resultToString(
