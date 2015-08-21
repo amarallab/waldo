@@ -16,10 +16,10 @@ A compiled version of the WALDO code is available for download [here](https://am
 
 To check out the source code repository make sure to install [mercurial](\path{https://mercurial.selenic.com/}) and then use the command:
 
-printf(hg clone https://peterbwinter@bitbucket.org/peterbwinter/waldo waldo)
+`hg clone https://peterbwinter@bitbucket.org/peterbwinter/waldo waldo`
 
 Once the repository is cloned, you can launch WALDO's graphical user interface with the command:
-`python waldo/code/guiwaldo.py'
+`python waldo/code/guiwaldo.py`
 
 
 ### Who do I talk to? ###
