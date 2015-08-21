@@ -11,7 +11,8 @@ real time processing.
 
 ### How do I get set up? ###
 
-The only thing you need to do to install WALDO is to download the zipped folder (\path{https://amaral.northwestern.edu/resources/software/waldo}).
+A compiled version of the WALDO code is available for download [here](https://amaral.northwestern.edu/resources/software/waldo)
+is to download the zipped folder .
 After you unzip the folder, you can run waldo by double clicking on the guiwaldo.exe application.
 If you plan on running WALDO more frequently, we heavily recommend you create a shortcut for guiwaldo and placing it on your desktop.
 
