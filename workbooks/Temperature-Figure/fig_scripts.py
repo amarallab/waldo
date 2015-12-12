@@ -40,6 +40,7 @@ def pull_blobs_from_eid(eid, path, min_time=20, min_timepoints=5000, dt=1.0):
             df = bc.df
             #del bc
             #del blob_df
+            df['bl / s'] = df['speed'] / typical_bodylength
             b_list.append(df)
         except:
             failed_dict[bid] = len(blob_df)
@@ -55,7 +56,7 @@ def aggregate_track_dfs(df_list, total_seconds):
     for df in df_list[:]:
         for i, row in df.iterrows():
             t = row['time']
-            speed = row['speed']
+            speed = row['bl / s']
             if np.isnan(t) or np.isnan(speed):
                 continue
             t = int(t)
@@ -63,7 +64,7 @@ def aggregate_track_dfs(df_list, total_seconds):
             agg[t].append(speed)
 
     times = []
-    means =  []
+    means = []
     q1, q2, q3 = [], [], []
     counts = []
     for i, points in enumerate(agg):

@@ -15,3 +15,4 @@ from .network.ages import age_distribution
 #from .notebook import ProgressBar
 
 from .step_plots import StepPlot
+from .step_plots import StepPlot2

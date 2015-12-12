@@ -546,14 +546,14 @@ class Basic_Shape_Prep(BaseDataFrame):
         # only select times that are not sorted.
         x_df = x_df.loc[sorted_good_times]
         y_df = y_df.loc[sorted_good_times]
-        print(x_df.columns)
-        print(x_df.index.name)
+        # print(x_df.columns)
+        # print(x_df.index.name)
         x_df.index.name = 'time'
         y_df.index.name = 'time'
         y_df.reset_index(inplace=True)
         x_df.reset_index(inplace=True)
-        print(x_df.columns)
-        print(x_df.index.name)
+        # print(x_df.columns)
+        # print(x_df.index.name)
         split_x = self.split_df(x_df, max_gap_seconds)
         split_y = self.split_df(y_df, max_gap_seconds)
 
@@ -675,7 +675,11 @@ def analyze_a_blob(blob_df,bid, blobs_path):
     print('basic orr done')
     basic_shape = Basic_Shape_Prep(coil_df=basic_orr.df[['is_coil', 'is_reorienting']])
     basic_shape.read_from_blob_df(blob_df=blob_df)
-    basic_shape.preprocess_midline_dfs()
+    try:
+        basic_shape.preprocess_midline_dfs()
+    except:
+        print('midline processing failed')
+        return
     basic_shape.length_calculations()
     basic_shape.compute_curvature()
     basic_shape.find_head_tail(orr_df=basic_orr.df)
