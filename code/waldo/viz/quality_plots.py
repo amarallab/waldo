@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 import matplotlib.patches as patches
@@ -162,6 +163,7 @@ def quality_control_plot(eid, experiment, plot_dir):
 
     for ax in [step_top_ax, step_bot_ax, squiggle_ax]:
         ax.set_axis_bgcolor('white')
+        [i.set_linewidth(0.5) for i in ax.spines.itervalues()]
 
     # Set title
     title = '{eid}\n {name}'.format(eid=eid, name=experiment.basename)
@@ -180,6 +182,8 @@ def quality_control_plot(eid, experiment, plot_dir):
     # Squiggle Plot!
     squiggle_plot(e=experiment, ax=squiggle_ax)
     gs.tight_layout(fig)
+
+
 
     path = pathlib.Path(plot_dir)
     if not path.is_dir():
