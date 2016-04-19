@@ -98,7 +98,7 @@ class WelcomePage(QtGui.QWizardPage):
         result = str(QtGui.QFileDialog.getExistingDirectory(directory=self.qDataLabel.text()))
         if len(result) > 0:
             self.qDataLabel.setText(result)
-            settings.PROJECT_DATA_ROOT = str(self.qDataLabel.text())
+            settings.QUALITY_REPORT_ROOT = str(self.qDataLabel.text())
             settings.save()
 
     def nextId(self):
