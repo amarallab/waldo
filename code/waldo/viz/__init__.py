@@ -13,6 +13,6 @@ from .network.ages import age_distribution
 #from .network.notebook import look, save_graphs
 
 #from .notebook import ProgressBar
-
+from .quality_plots import quality_control_plot
 from .step_plots import StepPlot
 from .step_plots import StepPlot2
