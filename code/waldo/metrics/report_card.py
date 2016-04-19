@@ -10,6 +10,7 @@ import networkx as nx
 
 # package specific
 import waldo.viz.subgraph as subgraph
+from waldo.viz import quality_plots
 from waldo import collider
 from waldo.conf import settings
 import waldo.tape.taper as tp
@@ -388,12 +389,19 @@ class WaldoSolver(object):
             self.initial_clean(callback=lambda x: callback(x * 0.2))
             self.solve(callback=lambda x: callback(0.2 + x * 0.6), redraw_callback=redraw_callback)
             self.write_reports()
+            self.write_quality_report()
             return self.report()
         else:
             self.initial_clean()
             self.solve(redraw_callback=redraw_callback)
             self.write_reports()
+            self.write_quality_report()
             return self.report()
+
+    def write_quality_report(self):
+        quality_plots(eid=self.ex_id,
+                      experiment=self.experiment,
+                      plot_dir=settings.QUALITY_REPORT_ROOT)
 
     def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest
