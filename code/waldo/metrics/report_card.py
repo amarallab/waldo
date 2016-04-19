@@ -399,7 +399,15 @@ class WaldoSolver(object):
             return self.report()
 
     def write_quality_report(self):
+
+        md = settings.COLLIDER_SUITE_ASSIMILATE_SIZE
+        print(md)
+        print(type(md))
+
         pd = settings.QUALITY_REPORT_ROOT
+        print(pd)
+        print(type(pd))
+
         quality_plots(eid=self.ex_id,
                       experiment=self.experiment,
                       plot_dir=pd)
