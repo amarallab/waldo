@@ -133,11 +133,12 @@ def squiggle_plot(e, ax):
 
     for (bid,blob) in e.blobs():
         df = blob.df
-        x, y = zip(*df.centroid[::10])
-        mins.append((min(x), min(y)))
-        maxs.append((max(x), max(y)))
-        lens.append(len(df))
-        ax.plot(x, y, '.', markersize=0.3)
+        if df is not None:
+            x, y = zip(*df.centroid[::10])
+            mins.append((min(x), min(y)))
+            maxs.append((max(x), max(y)))
+            lens.append(len(df))
+            ax.plot(x, y, '.', markersize=0.3)
 
         
     mins = np.array(mins)
