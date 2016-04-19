@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 import matplotlib.patches as patches
-
+import pathlib
 
 class StepPlot(object):
 
@@ -179,4 +179,9 @@ def quality_control_plot(eid, experiment, plot_dir):
     # Squiggle Plot!
     squiggle_plot(e=experiment, ax=squiggle_ax)
     gs.tight_layout(fig)
-    fig.savefig('test.png')
+
+    path = pathlib.Path(plot_dir)
+    if not path.is_dir():
+        path.mkdir()
+    name = path / '{eid}-check.png'.format(eid=eid) 
+    fig.savefig(str(name))

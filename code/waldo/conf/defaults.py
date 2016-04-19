@@ -6,7 +6,7 @@ defaults = {
     "DEBUG": False,
     "MWT_DATA_ROOT": "",
     "PROJECT_DATA_ROOT": "",
-    "QUALITY_REPORT_ROOT": "",
+    "QUALITY_REPORT_ROOT": "~",
     "TAPE_FRAME_SEARCH_LIMIT": 600,
     "TAPE_PIXEL_SEARCH_LIMIT": 500,
     "TAPE_KDE_SAMPLES": 100,

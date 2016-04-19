@@ -399,9 +399,10 @@ class WaldoSolver(object):
             return self.report()
 
     def write_quality_report(self):
+        pd = settings.QUALITY_REPORT_ROOT
         quality_plots(eid=self.ex_id,
                       experiment=self.experiment,
-                      plot_dir=settings.QUALITY_REPORT_ROOT)
+                      plot_dir=pd)
 
     def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest
