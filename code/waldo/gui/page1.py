@@ -45,7 +45,7 @@ class WelcomePage(QtGui.QWizardPage):
         self.qDataLabel = QtGui.QLabel(settings.QUALITY_REPORT_ROOT)
         qualityDataButton = QtGui.QPushButton("Change")
         qualityDataButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        qualityDataButton.clicked.connect(self.waldoDataButton_clicked)
+        qualityDataButton.clicked.connect(self.qualityDataButton_clicked)
 
         row = 0
         folderLayout.addWidget(QtGui.QLabel("<b>Folders</b>"), row, 0, 1, 3)
