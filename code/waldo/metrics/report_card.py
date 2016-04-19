@@ -10,7 +10,7 @@ import networkx as nx
 
 # package specific
 import waldo.viz.subgraph as subgraph
-from waldo.viz import quality_plots
+from waldo.viz import quality_control_plot
 from waldo import collider
 from waldo.conf import settings
 import waldo.tape.taper as tp
@@ -399,18 +399,12 @@ class WaldoSolver(object):
             return self.report()
 
     def write_quality_report(self):
-
-        md = settings.COLLIDER_SUITE_ASSIMILATE_SIZE
-        print(md)
-        print(type(md))
-
         pd = settings.QUALITY_REPORT_ROOT
-        print(pd)
-        print(type(pd))
-
-        quality_plots(eid=self.ex_id,
-                      experiment=self.experiment,
-                      plot_dir=pd)
+        # print(pd)
+        # print(type(pd))
+        quality_control_plot(eid=self.ex_id,
+                             experiment=self.experiment,
+                             plot_dir=pd)
 
     def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest
