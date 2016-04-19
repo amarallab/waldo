@@ -42,6 +42,11 @@ class WelcomePage(QtGui.QWizardPage):
         waldoDataButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         waldoDataButton.clicked.connect(self.waldoDataButton_clicked)
 
+        self.qDataLabel = QtGui.QLabel(settings.QUALITY_REPORT_ROOT)
+        qualityDataButton = QtGui.QPushButton("Change")
+        qualityDataButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        qualityDataButton.clicked.connect(self.waldoDataButton_clicked)
+
         row = 0
         folderLayout.addWidget(QtGui.QLabel("<b>Folders</b>"), row, 0, 1, 3)
 
@@ -54,6 +59,11 @@ class WelcomePage(QtGui.QWizardPage):
         folderLayout.addWidget(QtGui.QLabel("Project Data"), row, 0, 1, 1)
         folderLayout.addWidget(self.waldoDataLabel, row, 1, 1, 1)
         folderLayout.addWidget(waldoDataButton, row, 2, 1, 1)
+
+        row += 1
+        folderLayout.addWidget(QtGui.QLabel("Quality Reports"), row, 0, 1, 1)
+        folderLayout.addWidget(self.qDataLabel, row, 1, 1, 1)
+        folderLayout.addWidget(qualityDataButton, row, 2, 1, 1)
 
         self.runBatchModeCheckBox = QtGui.QCheckBox("Run in Batch Mode")
         self.runBatchModeCheckBox.setChecked(self.data.experiment_id_list is not None)
@@ -81,6 +91,14 @@ class WelcomePage(QtGui.QWizardPage):
         if len(result) > 0:
             self.waldoDataLabel.setText(result)
             settings.PROJECT_DATA_ROOT = str(self.waldoDataLabel.text())
+            settings.save()
+
+    # PBW 
+    def qualityDataButton_clicked(self, ev):
+        result = str(QtGui.QFileDialog.getExistingDirectory(directory=self.qDataLabel.text()))
+        if len(result) > 0:
+            self.qDataLabel.setText(result)
+            settings.PROJECT_DATA_ROOT = str(self.qDataLabel.text())
             settings.save()
 
     def nextId(self):
