@@ -37,35 +37,22 @@ class StepPlot(object):
         ax.set_ylim([0, y])
 
 
-    def steps_from_node_report(self, fullpath, min_bl=1):
-        print(fullpath)
-        w_file_path = fullpath / '..' / 'waldo'
-        ns_file = None
-        for i in w_file_path.glob('*.csv'):
-            if 'node-summary' in i.name:
-                ns_file = i
-                break
+    # def steps_from_node_report(self, fullpath, min_bl=1):
+    #     print(fullpath)
+    #     w_file_path = fullpath / '..' / 'waldo'
+    #     ns_file = None
+    #     for i in w_file_path.glob('*.csv'):
+    #         if 'node-summary' in i.name:
+    #             ns_file = i
+    #             break
 
-        if ns_file is None:
-            print('WARNING. no node-report file found in {p}'.format(p=w_file_path))
-            return None
+    #     if ns_file is None:
+    #         print('WARNING. no node-report file found in {p}'.format(p=w_file_path))
+    #         return None
 
-        node_report = pd.read_csv(str(ns_file))
+    #     node_report = pd.read_csv(str(ns_file))
 
-        steps = node_report[['bl', 't0', 'tN', 'bid']].copy()
-        steps.set_index('bid', inplace=True)
-
-        steps.loc[:, 't0'] = steps['t0'] / 60.0
-        steps.loc[:, 'tN'] = steps['tN'] / 60.0
-        steps.loc[:, 'lifespan'] = steps['tN'] - steps['t0']
-        steps.loc[:, 'mid'] = (steps['tN'] + steps['t0']) / 2.0
-        return steps[steps['bl'] >= 1]
-
-    # def steps_from_node_report(self, min_bl=1):
-    #     experiment = self.e
-    #     node_report = experiment.prepdata.load('node-summary')
-    #     # print(node_report.head())
-    #     steps = node_report[['bl', 't0', 'tN', 'bid']]
+    #     steps = node_report[['bl', 't0', 'tN', 'bid']].copy()
     #     steps.set_index('bid', inplace=True)
 
     #     steps.loc[:, 't0'] = steps['t0'] / 60.0
@@ -73,6 +60,19 @@ class StepPlot(object):
     #     steps.loc[:, 'lifespan'] = steps['tN'] - steps['t0']
     #     steps.loc[:, 'mid'] = (steps['tN'] + steps['t0']) / 2.0
     #     return steps[steps['bl'] >= 1]
+
+    def steps_from_node_report(self, min_bl=1):
+        experiment = self.e
+        node_report = experiment.prepdata.load('node-summary')
+        # print(node_report.head())
+        steps = node_report[['bl', 't0', 'tN', 'bid']]
+        steps.set_index('bid', inplace=True)
+
+        steps.loc[:, 't0'] = steps['t0'] / 60.0
+        steps.loc[:, 'tN'] = steps['tN'] / 60.0
+        steps.loc[:, 'lifespan'] = steps['tN'] - steps['t0']
+        steps.loc[:, 'mid'] = (steps['tN'] + steps['t0']) / 2.0
+        return steps[steps['bl'] >= 1]
 
     def make_figures(self, step_min_move=1, rescale_to_hours=True, ax1=None, ax2=None):
         e = self.e 
@@ -134,12 +134,12 @@ def squiggle_plot(e, ax):
     for (bid,blob) in e.blobs():
         df = blob.df
         if df is not None:
-            x, y = zip(*df.centroid[::10])
-            mins.append((min(x), min(y)))
-            maxs.append((max(x), max(y)))
-            lens.append(len(df))
-            ax.plot(x, y, '.', markersize=0.3)
-
+            if len(df) > 50:
+                x, y = zip(*df.centroid[::10])
+                mins.append((min(x), min(y)))
+                maxs.append((max(x), max(y)))
+                lens.append(len(df))
+                ax.plot(x, y, '.', markersize=0.3)
         
     mins = np.array(mins)
     maxs = np.array(maxs)
