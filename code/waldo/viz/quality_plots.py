@@ -77,7 +77,7 @@ class StepPlot(object):
     def make_figures(self, step_min_move=1, rescale_to_hours=True, ax1=None, ax2=None):
         e = self.e 
 
-        final_steps = self.steps_from_node_report(fullpath=e.directory)
+        final_steps = self.steps_from_node_report() #fullpath=e.directory)
         if final_steps is None:
             return
         if rescale_to_hours:
