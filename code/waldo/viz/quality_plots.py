@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 import matplotlib.patches as patches
 import pathlib
+from mpltools import style
 
 class StepPlot(object):
 
@@ -154,6 +155,7 @@ def squiggle_plot(e, ax):
     ax.set_xticks([], [])
 
 def quality_control_plot(eid, experiment, plot_dir):
+    style.use('bmh')
     fig = plt.figure(figsize=(16, 10), dpi=500)
     gs = grd.GridSpec(5, 8, wspace=1, hspace=1)
 

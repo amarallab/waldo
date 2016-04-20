@@ -236,29 +236,34 @@ class OutputWriter(object):
         graph = self.graph
         lost_and_found = {}
         for i, node in enumerate(graph):
-            # print(node)
+
             node_data = graph.node[node]
             # print(node_data)
             successors = list(graph.successors(node))
             predecessors = list(graph.predecessors(node))
-            s_data = [[node, 0]]
-            p_data = [[0, node]]
-
-            if successors:
-                s_data = [[node, s] for s in successors]
-            if predecessors:
-                p_data = [[p, node] for p in predecessors]
 
             born_f = node_data['born_f']
             died_f = node_data['died_f']
 
+            # only Handle De-Novo Births
+            if predecessors:
+                # the predecessor node will insert this data
+                pass
+            else:
+                # need to insert this data ourselves
+                if born_f not in lost_and_found:
+                    lost_and_found[born_f] = []
+
+                p_data = [[0, node]]
+                lost_and_found[born_f].extend(p_data)
+
+            # Always Handle Death
             if died_f not in lost_and_found:
                 lost_and_found[died_f] = []
-            if born_f not in lost_and_found:
-                lost_and_found[born_f] = []
-
+            s_data = [[node, 0]]
+            if successors:
+                s_data = [[node, s] for s in successors]
             lost_and_found[died_f].extend(s_data)
-            lost_and_found[born_f].extend(p_data)
         return lost_and_found
 
     def _recreate_summary_file(self, summary_df, lost_and_found, file_management, callback=None):

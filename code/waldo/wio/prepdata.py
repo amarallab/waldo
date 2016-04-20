@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import, unicode_literals, division
 import numpy as np
+import pathlib
 
 """
 Preparation...pre-prepared, preprocessed information
@@ -25,7 +26,7 @@ class PrepData(object):
         if prep_root:
             self.directory = pathlib.Path(prep_root)
         else:
-            self.directory = paths.prepdata(ex_id)
+            self.directory = pathlib.Path(paths.prepdata(ex_id))
 
     def __getattr__(self, name):
         """
@@ -56,7 +57,8 @@ class PrepData(object):
         """
         # ensure directory exists
         if not self.directory.exists():
-            self.directory.mkdir()
+            # self.directory.mkdir()
+            paths.mkdirp(self.directory)
 
         dataframe.to_csv(str(self._filepath(data_type)), **kwargs)
 
