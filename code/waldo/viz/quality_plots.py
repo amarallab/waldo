@@ -6,6 +6,8 @@ import matplotlib.gridspec as grd
 import matplotlib.patches as patches
 import pathlib
 
+plt.style.use('bmh')
+
 class StepPlot(object):
 
     def __init__(self, experiment):
@@ -153,7 +155,21 @@ def squiggle_plot(e, ax):
     ax.set_yticks([], [])
     ax.set_xticks([], [])
 
+def draw_border(ax):
+    x0, xN = ax.get_xlim()
+    y0, yN = ax.get_ylim()
+    ax.add_patch(patches.Rectangle((x0, y0),   # (x,y)
+                                   xN-x0,
+                                   yN - y0,
+                                   fill=False,
+                                   edgecolor="k",
+                                   alpha=1,
+                                   linewidth=3))
+
 def quality_control_plot(eid, experiment, plot_dir):
+    print('starting quality controlplots')
+    plt.style.use('bmh')
+    print('set style to bmh')
     fig = plt.figure(figsize=(16, 10), dpi=500)
     gs = grd.GridSpec(5, 8, wspace=1, hspace=1)
 
@@ -161,15 +177,6 @@ def quality_control_plot(eid, experiment, plot_dir):
     step_bot_ax = plt.subplot(gs[3:5, 0:4])
     squiggle_ax = plt.subplot(gs[1:5, 4:8])
 
-    for ax in [step_top_ax, step_bot_ax, squiggle_ax]:
-        ax.set_axis_bgcolor('white')
-        ax.axis('on')
-        [i.set_linewidth(0.5) for i in ax.spines.itervalues()]
-        ax.patch.set_visible(True)
-        ax.spines['top'].set_visible(True)
-        ax.spines['right'].set_visible(True)
-        ax.spines['bottom'].set_visible(True)
-        ax.spines['left'].set_visible(True)
 
     # Set title
     title = '{eid}\n {name}'.format(eid=eid, name=experiment.basename)
@@ -187,6 +194,19 @@ def quality_control_plot(eid, experiment, plot_dir):
 
     # Squiggle Plot!
     squiggle_plot(e=experiment, ax=squiggle_ax)
+
+    for ax in [step_top_ax, step_bot_ax, squiggle_ax]:
+        # print('fixing axes boarder')
+        ax.set_axis_bgcolor('white')
+        # ax.axis('on')
+        # [i.set_linewidth(0.5) for i in ax.spines.itervalues()]
+        # ax.patch.set_visible(True)
+        # ax.spines['top'].set_visible(True)
+        # ax.spines['right'].set_visible(True)
+        # ax.spines['bottom'].set_visible(True)
+        # ax.spines['left'].set_visible(True)
+        draw_border(ax)
+
     gs.tight_layout(fig)
 
 
