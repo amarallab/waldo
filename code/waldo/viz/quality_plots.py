@@ -24,6 +24,7 @@ class StepPlot(object):
 
         color = 'steelblue'
 
+        y = 0
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x, y), height=height, width=width,
                                            fill=True, fc=color, ec=color,
@@ -196,8 +197,8 @@ def quality_control_plot(eid, experiment, plot_dir):
     squiggle_plot(e=experiment, ax=squiggle_ax)
 
     for ax in [step_top_ax, step_bot_ax, squiggle_ax]:
-        # print('fixing axes boarder')
         ax.set_axis_bgcolor('white')
+        # print('fixing axes boarder')
         # ax.axis('on')
         # [i.set_linewidth(0.5) for i in ax.spines.itervalues()]
         # ax.patch.set_visible(True)
