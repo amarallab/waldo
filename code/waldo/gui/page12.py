@@ -192,7 +192,7 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
             self.showing_status = BatchModeWaldoProcessPage.SHOWING_REPORT
 
         d = report[['phase', 'connected-nodes', 'total-nodes']][::-1]
-        d.columns = ['interacting tracks', 'total tracks']
+        d.rename({'connected-nodes':'interacting tracks', 'total-nodes':'total tracks'})
         d = d.drop_duplicates('phase', take_last=False)
         d = d.set_index('phase')
 
