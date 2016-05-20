@@ -217,3 +217,4 @@ def quality_control_plot(eid, experiment, plot_dir):
         path.mkdir()
     name = path / '{eid}-check.png'.format(eid=eid) 
     fig.savefig(str(name))
+    plt.close(fig)
