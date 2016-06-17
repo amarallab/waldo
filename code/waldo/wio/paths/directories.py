@@ -12,8 +12,9 @@ import pathlib # py3.4+
 from waldo.conf import settings
 
 __all__ = [
-    'prepdata',
     'experiment',
+    'waldo_data',
+    'prepdata',
     'output',
     'behavior',
 ]

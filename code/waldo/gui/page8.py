@@ -10,6 +10,7 @@ from waldo.prepare import summarize as prepare_summarize
 from waldo.images import summarize_experiment as images_summarize
 from waldo.metrics.report_card import WaldoSolver
 from waldo.output.writer import OutputWriter
+from waldo.wio import info
 from . import tasking
 
 import matplotlib.pyplot as plt
@@ -234,6 +235,8 @@ class WaldoProcessPage(QtGui.QWizardPage):
         graph = solver.graph
         CORRECT_ERROR_CALLBACK(1)
         callback(0, 4.0 / STEPS)
+
+        info.create_and_copy(experiment.id)
 
         out_writer = OutputWriter(experiment.id, graph=graph)
         out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
