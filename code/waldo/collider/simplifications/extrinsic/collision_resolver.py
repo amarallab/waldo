@@ -303,7 +303,7 @@ class CollisionResolver(object):
         cblobs = [self.child_node_to_blob.get(n, None) for n in cnodes]
         return zip(pblobs, cblobs)
 
-    def resolve_overlap_collisions(self, collision_nodes):
+    def resolve_overlap_collisions(self, collision_nodes, err_margin=10):
         """
 
         Removes all the collisions that can be resolved
@@ -327,7 +327,7 @@ class CollisionResolver(object):
             try:
                 a = self.create_collision_masks(node)
                 parent_masks, children_masks = a
-                collision_result = self.compare_masks(parent_masks, children_masks)
+                collision_result = self.compare_masks(parent_masks, children_masks, err_margin=err_margin)
 
                 ####### UNCOMMENT to start resolving MULTI-COLLISIONS
                 # a = generalized_create_collision_masks(graph, experiment, node,

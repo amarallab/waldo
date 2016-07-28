@@ -380,7 +380,14 @@ class WaldoSolver(object):
         self.report_card.add_step(graph, step_name='raw', phase_name='input')
         self.phase_name = 'input'
         self.collisions = []
+        self.gap_record = []
         self.current_iteration = 0
+
+        # single parameter for solving collisions
+        err_margin = settings.COLLISION_PIXEL_OVERLAP_MARGIN
+        # err_margin = 30
+        print('using Collision Pixel Overlap Margin of', err_margin)
+        self.err_margin = err_margin 
 
     def run(self, callback=None, redraw_callback=None):
         """ runs full solver code
@@ -402,9 +409,10 @@ class WaldoSolver(object):
         pd = settings.QUALITY_REPORT_ROOT
         print('plotting quality report')
         # print(type(pd))
-        quality_control_plot(eid=self.ex_id,
-                             experiment=self.experiment,
-                             plot_dir=pd)
+        # TODO: add this back in later!
+        # quality_control_plot(eid=self.ex_id,
+        #                      experiment=self.experiment,
+        #                      plot_dir=pd)
         print('finished plotting quality report')
 
     def initial_clean(self, callback=None):
@@ -487,20 +495,22 @@ class WaldoSolver(object):
         """
         L.warn('gaps')
         gap_start, gap_end = self.taper.find_start_and_end_nodes(use_missing_objects=True)
+
+        print('found start end')
         gaps = self.taper.score_potential_gaps(gap_start, gap_end)
         if gap_validation is not None:
+            print('validating gaps')
             gap_validation.append(gaps[['blob1', 'blob2']])
 
+        print('scored gaps')
         # Score is based on (delta t) * (delta dist)
         if gaps is not None and len(gaps):
             ll1, gaps = self.taper.short_tape(gaps, add_edges=True)
-
+            print('taped gaps')
         # not sure if necessary.
         else:
             gaps = []
-        # Score is based on probability that a blob would move a certain distance (from other worms on plate)
-        # ll2, gaps = self.taper.greedy_tape(gaps, threshold=0.001, add_edges=True)
-        # link_total = len(ll1) #+ len(ll2) + len(ll3)
+        self.gap_record.extend(ll1)
         self.report_card.add_step(self.graph, step_name='infer gaps',
                                   phase_name=self.phase_name)
 
@@ -591,6 +601,9 @@ class WaldoSolver(object):
     def write_reports(self):
         col_df = pd.DataFrame(self.collisions)
         self.experiment.prepdata.dump('collisions', col_df)
+        gap_df = pd.DataFrame(self.gap_record)
+        # pd.concat(self.gap_record)
+        self.experiment.prepdata.dump('gap_record', gap_df)
         return self.report_card.save_reports(self.graph)
 
     def collision_components(self, node_id, graph):
@@ -654,7 +667,7 @@ class WaldoSolver(object):
                 collisions_were_resolved = False
                 break
 
-            report = cr.resolve_overlap_collisions(list(s))
+            report = cr.resolve_overlap_collisions(list(s), err_margin=self.err_margin)
 
             newly_resolved = set(report['resolved'])
             resolved = resolved | newly_resolved
@@ -680,13 +693,13 @@ class WaldoSolver(object):
         for node_id in overlap_fails:
             c = collision_dict[node_id]
             c['resolved'] = False
-            c['fail_reason'] = 'no_overlap'
+            c['fail_reason'] = 'no_outline'
             self.collisions.append(c)
 
-        for node_id in overlap_fails:
+        for node_id in dont_bother:
             c = collision_dict[node_id]
             c['resolved'] = False
-            c['fail_reason'] = 'no_outline'
+            c['fail_reason'] = 'no_overlap'
             self.collisions.append(c)
 
         if verbose:
