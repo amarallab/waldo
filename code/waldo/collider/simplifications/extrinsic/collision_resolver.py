@@ -215,7 +215,7 @@ class CollisionResolver(object):
         self._mask_counts[node] = len(outline_list)
         return parents, children
 
-    def compare_masks(self, parents, children, err_margin=10, verbose=True):
+    def compare_masks(self, parents, children, err_margin=10, verbose=False):
         """
         returns a list of [parent, child] matches that maximize the
         amount of pixel overlap between parents and children.

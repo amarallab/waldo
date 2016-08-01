@@ -394,6 +394,8 @@ class Taper(object):
                 link_list.append((node1, node2))
                 already_taken_nodes.add(node1)
                 already_taken_nodes.add(node2)
+                print('gaps getting joined:')
+                print(link_list)
                 #gaps = gaps[gaps['node2'] != node2]
                 #gaps = gaps[gaps['node1'] != node1]
         if add_edges:
