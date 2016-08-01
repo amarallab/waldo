@@ -41,6 +41,7 @@ class CollisionResolver(object):
         self.reports = {}
         self.parent_node_to_blob = {}
         self.child_node_to_blob = {}
+        self.collision_overlaps = []
 
     def grab_outline(self, node, first=True, verbose=False):
         """
@@ -214,7 +215,7 @@ class CollisionResolver(object):
         self._mask_counts[node] = len(outline_list)
         return parents, children
 
-    def compare_masks(self, parents, children, err_margin=10, verbose=False):
+    def compare_masks(self, parents, children, err_margin=10, verbose=True):
         """
         returns a list of [parent, child] matches that maximize the
         amount of pixel overlap between parents and children.
@@ -283,6 +284,9 @@ class CollisionResolver(object):
             print(comparison)
             print('   diag \\   {s}   \t{d}'.format(s=d1_sum, d=d1))
             print('   diag /   {s}   \t{d}'.format(s=d2_sum, d=d2))
+        pn = '_'.join(['{i}'.format(i=i) for i in p_nodes])
+        cn = '_'.join(['{i}'.format(i=i) for i in c_nodes])
+        self.collision_overlaps.append((pn, cn, d1_sum, d2_sum))
 
         if d1_sum > d2_sum + err_margin:
             return d1

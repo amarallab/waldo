@@ -380,12 +380,12 @@ class WaldoSolver(object):
         self.report_card.add_step(graph, step_name='raw', phase_name='input')
         self.phase_name = 'input'
         self.collisions = []
+        self.collision_overlaps = []
         self.gap_record = []
         self.current_iteration = 0
 
         # single parameter for solving collisions
         err_margin = settings.COLLISION_PIXEL_OVERLAP_MARGIN
-        # err_margin = 30
         print('using Collision Pixel Overlap Margin of', err_margin)
         self.err_margin = err_margin 
 
@@ -601,6 +601,8 @@ class WaldoSolver(object):
     def write_reports(self):
         col_df = pd.DataFrame(self.collisions)
         self.experiment.prepdata.dump('collisions', col_df)
+        col_df2 = pd.DataFrame(self.collision_overlaps)
+        self.experiment.prepdata.dump('collision-overlaps', col_df2)
         gap_df = pd.DataFrame(self.gap_record)
         # pd.concat(self.gap_record)
         self.experiment.prepdata.dump('gap_record', gap_df)
@@ -724,6 +726,7 @@ class WaldoSolver(object):
             print('\t{n} missing data, no overlap {p}%'.format(n=no1, p=p_no1))
             print('\t{n} full data, no  overlap {p}%'.format(n=no2, p=p_no2))
 
+        self.collision_overlaps.extend(cr.collision_overlaps)
         self.report_card.add_step(self.graph, step_name='resolve collisions',
                                   phase_name=self.phase_name)
         return len(resolved)
