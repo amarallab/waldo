@@ -31,11 +31,11 @@ class Taper(object):
         self._experiment = experiment
         self._graph = graph
 
-        self._scorer = scorer
-        if scorer is None:
-            self._scorer = Scorer(experiment)
+        # self._scorer = scorer
+        # if scorer is None:
+        #     self._scorer = Scorer(experiment)
 
-        self.max_speed = self._scorer.max_speed * settings.TAPE_MAX_SPEED_MULTIPLIER
+        # self.max_speed = self._scorer.max_speed * settings.TAPE_MAX_SPEED_MULTIPLIER
         if acausal_frame_limit is None:
             self.acausal_limit = settings.TAPE_ACAUSAL_FRAME_LIMIT
         else:
@@ -56,26 +56,26 @@ class Taper(object):
         return missing
 
 
-    def score(self, distance_gap=None, frame_gap=None, ids=None):
-        """
-        Score the putative link based on either the distance and frame gap
-        or a pair of IDs.
-        """
-        if distance_gap is not None and frame_gap is not None:
-            Dr = distance_gap
-            Df = frame_gap
+    # def score(self, distance_gap=None, frame_gap=None, ids=None):
+    #     """
+    #     Score the putative link based on either the distance and frame gap
+    #     or a pair of IDs.
+    #     """
+    #     if distance_gap is not None and frame_gap is not None:
+    #         Dr = distance_gap
+    #         Df = frame_gap
 
-        else:
-            lost_id, found_id = ids
+    #     else:
+    #         lost_id, found_id = ids
 
-            lost = self._terminals.loc[lost_id]
-            found = self._terminals.loc[found_id]
+    #         lost = self._terminals.loc[lost_id]
+    #         found = self._terminals.loc[found_id]
 
-            Dx = lost.xN - found.x0
-            Dy = lost.yN - found.y0
-            Dr = math.sqrt(Dx**2 + Dy**2)
-            Df = lost.fN - found.f0
-        return self._scorer(frame_gap=Df, distance_gap=Dr)
+    #         Dx = lost.xN - found.x0
+    #         Dy = lost.yN - found.y0
+    #         Dr = math.sqrt(Dx**2 + Dy**2)
+    #         Df = lost.fN - found.f0
+    #     return self._scorer(frame_gap=Df, distance_gap=Dr)
 
     def find_start_and_end_nodes(self, use_missing_objects=False):
         graph = self._graph
@@ -218,13 +218,13 @@ class Taper(object):
         x, y, t, f
 
         """
-        def score(row, search_limit=settings.TAPE_FRAME_SEARCH_LIMIT):
-            # if over search limit
-            if row['df'] > search_limit:
-                return 0
-            s = self._scorer(frame_gap=np.fabs(row['df']),
-                             distance_gap=row['dist'])
-            return s
+        # def score(row, search_limit=settings.TAPE_FRAME_SEARCH_LIMIT):
+        #     # if over search limit
+        #     if row['df'] > search_limit:
+        #         return 0
+        #     s = self._scorer(frame_gap=np.fabs(row['df']),
+        #                      distance_gap=row['dist'])
+        #     return s
 
         # pull defaults from settings
         pixel_buffer = settings.TAPE_SHAKYCAM_ALLOWANCE
@@ -280,9 +280,9 @@ class Taper(object):
             if write_everything:
                 full_record.append(gap_df)
 
-            #gap_df = gap_df[gap_df['dt'] > 0]
-            gap_df['max_dist'] = self.max_speed * np.abs(gap_df['df'])
-            gap_df = gap_df[gap_df['dist'] < (gap_df['max_dist'] + pixel_buffer)]
+            # gap_df = gap_df[gap_df['dt'] > 0]
+            # gap_df['max_dist'] = self.max_speed * np.abs(gap_df['df'])
+            # gap_df = gap_df[gap_df['dist'] < (gap_df['max_dist'] + pixel_buffer)]
             gap_df = gap_df[gap_df['dist'] < max_distance_cutoff]
 
             # remove self links if we allow short backwards links.
@@ -310,8 +310,8 @@ class Taper(object):
                                      'f1', 'f2', 't1', 't2',
                                      'dist', 'dt', 'df']]
 
-                a = gap_df[['dist', 'df']].apply(score, axis=1)
-                gap_df['score'] = a
+                # a = gap_df[['dist', 'df']].apply(score, axis=1)
+                # gap_df['score'] = a
                 all_gap_dfs.append(gap_df)
 
         any_data = [d for d in all_gap_dfs if d is not None]

@@ -504,13 +504,15 @@ class WaldoSolver(object):
 
         print('scored gaps')
         # Score is based on (delta t) * (delta dist)
+        ll1 = None
         if gaps is not None and len(gaps):
             ll1, gaps = self.taper.short_tape(gaps, add_edges=True)
             print('taped gaps')
         # not sure if necessary.
         else:
             gaps = []
-        self.gap_record.extend(ll1)
+        if ll1 is not None:
+            self.gap_record.extend(ll1)
         self.report_card.add_step(self.graph, step_name='infer gaps',
                                   phase_name=self.phase_name)
 
