@@ -107,7 +107,6 @@ class CollisionResolver(object):
                 # print('grabbing', node, type(node))
                 raise CollisionException
 
-
             # if first ==True: sort chronologically. else sort in reverse.
             if first:
                 df.sort(ascending=True, inplace=True)

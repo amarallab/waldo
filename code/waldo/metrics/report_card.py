@@ -599,7 +599,7 @@ class WaldoSolver(object):
         # if callback:
         #     callback(1)
         # return self.graph, report_df
-
+        
     def write_reports(self):
         col_df = pd.DataFrame(self.collisions)
         self.experiment.prepdata.dump('collisions', col_df)
