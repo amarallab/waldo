@@ -511,8 +511,10 @@ class WaldoSolver(object):
         # not sure if necessary.
         else:
             gaps = []
-        if ll1 is not None:
-            self.gap_record.extend(ll1)
+        # if ll1 is not None:
+        #     #self.gap_record.extend(ll1)
+        print('link history:', self.taper.link_history)
+        self.gap_record = self.taper.link_history
         self.report_card.add_step(self.graph, step_name='infer gaps',
                                   phase_name=self.phase_name)
 
@@ -606,6 +608,8 @@ class WaldoSolver(object):
         col_df2 = pd.DataFrame(self.collision_overlaps)
         self.experiment.prepdata.dump('collision-overlaps', col_df2)
         gap_df = pd.DataFrame(self.gap_record)
+        print('gap record:')
+        print(gap_df)
         # pd.concat(self.gap_record)
         self.experiment.prepdata.dump('gap_record', gap_df)
         return self.report_card.save_reports(self.graph)

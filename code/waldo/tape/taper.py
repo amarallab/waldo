@@ -43,17 +43,18 @@ class Taper(object):
         self.acausal_limit = np.abs(self.acausal_limit)
 
         self._terminals = self._experiment.prepdata.load('terminals').set_index('bid')
-        self._missing = self._load_missing()
+        # self._missing = self._load_missing()
         self._node_start_blobs = {}
         self._node_end_blobs = {}
+        self.link_history = []
 
-    def _load_missing(self):
-        try:
-            missing = self._experiment.prepdata.load('missing')
-            missing.rename(columns={'id':'bid'}, inplace=True)
-        except IOError:
-            missing = None
-        return missing
+    # def _load_missing(self):
+    #     try:
+    #         missing = self._experiment.prepdata.load('missing')
+    #         missing.rename(columns={'id':'bid'}, inplace=True)
+    #     except IOError:
+    #         missing = None
+    #     return missing
 
 
     # def score(self, distance_gap=None, frame_gap=None, ids=None):
@@ -82,7 +83,6 @@ class Taper(object):
         terms = self._terminals.copy()
         #print('raw terms')
         #print(terms.head(20))
-
         # go through graph and find all node ids for start/stop canidates
         gap_start_nodes = [x for x in graph.nodes() if len(graph.successors(x)) == 0]
         gap_end_nodes = [x for x in graph.nodes() if len(graph.predecessors(x)) == 0]
@@ -183,13 +183,13 @@ class Taper(object):
             node, blob = row['node_id'], row['bid']
             self._node_end_blobs[int(node)] = int(blob)
 
-        if use_missing_objects and self._missing is not None:
-            m = self._missing[['bid', 'f', 't', 'x', 'y']]
-            m.loc[:, 'node_id'] = m['bid']
-            m.loc[:, 'isolated'] = True
-            gap_start_terms = pd.concat([gap_start_terms, m])
-            gap_end_terms = pd.concat([gap_end_terms, m])
-            #print(self._missing)
+        # if use_missing_objects and self._missing is not None:
+        #     m = self._missing[['bid', 'f', 't', 'x', 'y']]
+        #     m.loc[:, 'node_id'] = m['bid']
+        #     m.loc[:, 'isolated'] = True
+        #     gap_start_terms = pd.concat([gap_start_terms, m])
+        #     gap_end_terms = pd.concat([gap_end_terms, m])
+        #print(self._missing)
         #print(gap_end_terms.head())
         #print(gap_end_terms.tail())
         #print('start terms2')
@@ -379,7 +379,7 @@ class Taper(object):
 
         # rank all gaps based on a score
         gaps['short_score'] = gaps['dt'] * gaps['dist']
-        gaps.sort('short_score', inplace=True, ascending=False)
+        gaps.sort('short_score', inplace=True, ascending=True)
         already_taken_nodes = set() #set of nodes already involved
         for i, row in gaps.iterrows():
             node1, node2 = row['node1'], row['node2']
@@ -398,8 +398,23 @@ class Taper(object):
                 print(link_list)
                 #gaps = gaps[gaps['node2'] != node2]
                 #gaps = gaps[gaps['node1'] != node1]
+
+        # def join_components(nid, graph):
+        #     return '-'.join(['{i}'.format(i=i) for i in list(graph.components(nid))])
+
         if add_edges:
-            success, fail = self._add_taped_edges_to_graph(link_list)
+            graph = self._graph
+            # success = [(join_components(n1, graph),
+            #             join_components(n2, graph))
+            #                 for (n1, n2) in link_list]
+
+            link_history = [(self._node_start_blobs[n1],
+                        self._node_end_blobs[n2])
+                        for (n1, n2) in link_list]
+            self.link_history.extend(link_history)
+            success = link_list
+
+            self._add_taped_edges_to_graph(link_list)
         return success, gaps
 
     # def greedy_tape(self, gaps_df, threshold=0.1, add_edges=True):
@@ -483,119 +498,131 @@ class Taper(object):
         'taped' property set True.
         """
 
-        real_to_real = []
-        to_missing = []
-        from_missing = {}
-        missing_to_missing = {}
+        #self._graph.add_edges_from(real_to_real, taped=True)
 
-        any_missing = False
-        for (n1, n2) in link_list:
-            m1, m2 = False, False
-            if isinstance(n1, str) and n1[0] == 'm':
-                m1 = True
-                any_missing = True
-            if isinstance(n2, str) and n2[0] == 'm':
-                m2 = True
-                any_missing = True
-
-            if m1 and m2:
-                missing_to_missing[n1] =  n2
-            elif m1:
-                from_missing[n1] = n2
-                #to_missing[n1] = n2
-            elif m2:
-                to_missing.append((n1, n2))
-            else:
-                real_to_real.append((int(n1), int(n2)))
-            #print(n1, n2, m1, m2)
-
-        # if not using missing data, just add links and stop here.
-        if not any_missing:
-            #self._graph.add_edges_from(real_to_real, taped=True)
-            blob_to_blob = [(self._node_start_blobs[n1],
-                             self._node_end_blobs[n2])
-                            for (n1, n2) in real_to_real]
-            self._graph.bridge_gaps(real_to_real, blob_to_blob)
-            return real_to_real, []
-
-        # if missing data is involved... more steps required
-        print(len(real_to_real), 'real')
-        print(len(to_missing), 'to_missing')
-        print(len(from_missing), 'from_missing')
-        print(len(missing_to_missing), 'missing_to_missing')
-
-        missing_df = self._missing
-        for i, row in missing_df.iterrows():
-            bid, nid = row['bid'], row['next']
-            if nid and bid not in missing_to_missing:
-                missing_to_missing[bid] = nid
-
-        def find_real_end(n2):
-            """
-            recursivly searches from_missing and missing_to_missing
-            """
-            real_end = False
-            hist = []
-            node = n2
-            while not real_end:
-                hist.append(node)
-                if node in from_missing:
-                    end = from_missing[node]
-                    return end, hist
-                elif node in missing_to_missing:
-                    node = missing_to_missing[node]
-                    if node in hist:
-                        print('found loop!')
-                        return None, hist
-                else:
-                    return None, hist
-                if len(hist) > 500:
-                    real_end = True
-
-        used_missing = []
-        failed_links = []
-        new_real = []
-        max_recursion = 0
-        for n1, n2 in to_missing:
-            n3, used = find_real_end(n2)
-            #used = list(set(used))
-            #print(n1, n2, n3)
-            #print(used)
-            #if len(used) > 1:
-            #    for i in used:
-            #        print(missing_df[missing_df['bid'] == i])
-            nr = len(used)
-            if nr > max_recursion:
-                max_recursion = nr
-
-            if n3:
-                #print('adding', n1, n3)
-                #assert n1 in self._graph
-                #assert n3 in self._graph
-                real_to_real.append((n1, n3))
-                new_real.append((n1, n3))
-                used_missing.extend(used)
-            else:
-                failed_links.append((n1, n2))
-
-        print(len(new_real), 'new_real')
-        print(len(failed_links), 'failed_links')
-        print(len(used_missing), 'missing points used up')
-        #print(used_missing[:10])
-        print(len(set(used_missing)), 'unique used')
-        print(max_recursion, 'max recursion')
-        #for i in sorted(missing_to_missing):
-        #    print(i, missing_to_missing[i])
-        missing_filter = [(i not in used_missing)
-                          for i in self._missing['bid']]
-        print(len(self._missing), 'missing points to start with')
-        #print(missing_filter)
-        self._missing = self._missing[missing_filter]
-        print(len(self._missing), 'missing points left')
 
         blob_to_blob = [(self._node_start_blobs[n1],
-                         self._node_end_blobs[n2])
-                        for (n1, n2) in real_to_real]
+                            self._node_end_blobs[n2])
+                        for (n1, n2) in link_list]
 
-        self._graph.bridge_gaps(real_to_real, blob_to_blob)
-        return real_to_real, failed_links
+        self._graph.bridge_gaps(link_list, blob_to_blob)
+
+        # real_to_real = []
+        # to_missing = []
+        # from_missing = {}
+        # missing_to_missing = {}
+
+
+
+            
+        # any_missing = False
+        # for (n1, n2) in link_list:
+        #     m1, m2 = False, False
+        #     if isinstance(n1, str) and n1[0] == 'm':
+        #         m1 = True
+        #         any_missing = True
+        #     if isinstance(n2, str) and n2[0] == 'm':
+        #         m2 = True
+        #         any_missing = True
+
+        #     if m1 and m2:
+        #         missing_to_missing[n1] =  n2
+        #     elif m1:
+        #         from_missing[n1] = n2
+        #         #to_missing[n1] = n2
+        #     elif m2:
+        #         to_missing.append((n1, n2))
+        #     else:
+        #         real_to_real.append((int(n1), int(n2)))
+        #     #print(n1, n2, m1, m2)
+
+        # # if not using missing data, just add links and stop here.
+        # if not any_missing:
+        #     #self._graph.add_edges_from(real_to_real, taped=True)
+        #     blob_to_blob = [(self._node_start_blobs[n1],
+        #                      self._node_end_blobs[n2])
+        #                     for (n1, n2) in real_to_real]
+        #     self._graph.bridge_gaps(real_to_real, blob_to_blob)
+        #     return real_to_real, []
+
+        # # if missing data is involved... more steps required
+        # print(len(real_to_real), 'real')
+        # print(len(to_missing), 'to_missing')
+        # print(len(from_missing), 'from_missing')
+        # print(len(missing_to_missing), 'missing_to_missing')
+
+        # missing_df = self._missing
+        # for i, row in missing_df.iterrows():
+        #     bid, nid = row['bid'], row['next']
+        #     if nid and bid not in missing_to_missing:
+        #         missing_to_missing[bid] = nid
+
+        # def find_real_end(n2):
+        #     """
+        #     recursivly searches from_missing and missing_to_missing
+        #     """
+        #     real_end = False
+        #     hist = []
+        #     node = n2
+        #     while not real_end:
+        #         hist.append(node)
+        #         if node in from_missing:
+        #             end = from_missing[node]
+        #             return end, hist
+        #         elif node in missing_to_missing:
+        #             node = missing_to_missing[node]
+        #             if node in hist:
+        #                 print('found loop!')
+        #                 return None, hist
+        #         else:
+        #             return None, hist
+        #         if len(hist) > 500:
+        #             real_end = True
+
+        # used_missing = []
+        # failed_links = []
+        # new_real = []
+        # max_recursion = 0
+        # for n1, n2 in to_missing:
+        #     n3, used = find_real_end(n2)
+        #     #used = list(set(used))
+        #     #print(n1, n2, n3)
+        #     #print(used)
+        #     #if len(used) > 1:
+        #     #    for i in used:
+        #     #        print(missing_df[missing_df['bid'] == i])
+        #     nr = len(used)
+        #     if nr > max_recursion:
+        #         max_recursion = nr
+
+        #     if n3:
+        #         #print('adding', n1, n3)
+        #         #assert n1 in self._graph
+        #         #assert n3 in self._graph
+        #         real_to_real.append((n1, n3))
+        #         new_real.append((n1, n3))
+        #         used_missing.extend(used)
+        #     else:
+        #         failed_links.append((n1, n2))
+
+        # print(len(new_real), 'new_real')
+        # print(len(failed_links), 'failed_links')
+        # print(len(used_missing), 'missing points used up')
+        # print(used_missing[:10])
+        # print(len(set(used_missing)), 'unique used')
+        # print(max_recursion, 'max recursion')
+        # #for i in sorted(missing_to_missing):
+        # #    print(i, missing_to_missing[i])
+        # missing_filter = [(i not in used_missing)
+        #                   for i in self._missing['bid']]
+        # print(len(self._missing), 'missing points to start with')
+        # #print(missing_filter)
+        # self._missing = self._missing[missing_filter]
+        # print(len(self._missing), 'missing points left')
+
+        # blob_to_blob = [(self._node_start_blobs[n1],
+        #                  self._node_end_blobs[n2])
+        #                 for (n1, n2) in real_to_real]
+
+        # self._graph.bridge_gaps(real_to_real, blob_to_blob)
+        # return real_to_real, failed_links

@@ -104,7 +104,10 @@ def find_bbox_based_collisions(graph, experiment, min_distance=10, verbose=False
         moved = False
         for pred in preds:
             if pred in bounds_df.index:
-                bdata = bounds_df.loc[pred]
+                try:
+                    bdata = bounds_df.loc[pred]
+                except:
+                    continue
                 x_min, x_max, y_min, y_max = bdata['x_min'], bdata['x_max'], bdata['y_min'], bdata['y_max']
                 distance = (x_max - x_min) ** 2 + (y_max - y_min) ** 2
                 if distance > min_distance:

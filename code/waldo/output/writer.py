@@ -119,7 +119,7 @@ class OutputWriter(object):
             component_record = []
             for bid in components:
                 try:
-                    lines = [l for l in experiment._blob_lines(bid)]
+                    lines = [l for l in experiment._blob_lines(int(bid))]
                 except multiworm.core.MWTDataError:
                     continue
                 except ValueError:
