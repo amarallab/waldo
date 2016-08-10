@@ -392,7 +392,6 @@ def analyze_experiment_images(experiment, threshold, roi=None, callback=None,
     # times = [float(t) for t in times]
     # times, impaths = zip(*sorted(zip(times, impaths)))
 
-
     max_images_used = 1000
     if len(times) > max_images_used:
         print('too many images. to save speed waldo will only process 1000 or less')
