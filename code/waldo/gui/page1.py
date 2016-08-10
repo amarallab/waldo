@@ -119,10 +119,8 @@ class ConfigDialog(QtGui.QDialog):
         colliderSuiteSplitRel = "Collider Suite Split Rel"
 
         tapeFrameSearchLimit = "Tape Frame Search Limit"
-        tapeMaxSpeedMultiplier = "Tape Max Speed Multiplier"
-        tapeMinTraceFail = "Tape Min Trace Fail"
-        tapeRelMoveThreshold = "Tape Rel Move Threshold"
-        tapeShakycamAllowance = "Tape Shakycam Allowance"
+        tapePixelSearchLimit = "Tape Pixel Search Limit"
+        collisionPixelOverlapMargin = "Collision Pixel Overlap"
 
     def __init__(self, parent=None):
         super(ConfigDialog, self).__init__(parent)
@@ -151,7 +149,7 @@ class ConfigDialog(QtGui.QDialog):
         row = 0
         # text, row, column, row_height, row_width
         # Title
-        layout.addWidget(QtGui.QLabel("<b>Collider suite</b>"), row, 0, 1, 2)
+        layout.addWidget(QtGui.QLabel("<b>Cleaning</b>"), row, 0, 1, 2)
 
         row += 1
         layout.addWidget(QtGui.QLabel("Assimilate size"), row, 0, 1, 1) # label
@@ -175,45 +173,38 @@ class ConfigDialog(QtGui.QDialog):
             str(settings.TAPE_FRAME_SEARCH_LIMIT),
             guisettings.TAPE_FRAME_SEARCH_LIMIT_RANGE,
             self.ToolTips.tapeFrameSearchLimit)
-        self.tapeMaxSpeedMultiplier = self.createQLineEditDoubleValidator(
-            str(settings.TAPE_MAX_SPEED_MULTIPLIER),
-            guisettings.TAPE_MAX_SPEED_MULTIPLIER_RANGE,
-            self.ToolTips.tapeMaxSpeedMultiplier)
-        self.tapeMinTraceFail = self.createQLineEditIntValidator(
-            str(settings.TAPE_MIN_TRACE_FAIL),
-            guisettings.TAPE_MIN_TRACE_FAIL_RANGE,
-            self.ToolTips.tapeMinTraceFail)
-        self.tapeRelMoveThreshold = self.createQLineEditDoubleValidator(
-            str(settings.TAPE_REL_MOVE_THRESHOLD),
-            guisettings.TAPE_REL_MOVE_THRESHOLD_RANGE,
-            self.ToolTips.tapeRelMoveThreshold)
-        self.tapeShakycamAllowance = self.createQLineEditIntValidator(
-            str(settings.TAPE_SHAKYCAM_ALLOWANCE),
-            guisettings.TAPE_SHAKYCAM_ALLOWANCE_RANGE,
-            self.ToolTips.tapeShakycamAllowance)
+
+
+        self.tapePixelSearchLimit = self.createQLineEditIntValidator(
+            str(settings.TAPE_PIXEL_SEARCH_LIMIT),
+            guisettings.TAPE_PIXEL_SEARCH_LIMIT_RANGE,
+            self.ToolTips.tapePixelSearchLimit)
 
         row = 0
-        layout.addWidget(QtGui.QLabel("<b>Tape</b>"), row, 2, 1, 2)
+        layout.addWidget(QtGui.QLabel("<b>Infer Arcs</b>"), row, 2, 1, 2)
 
         row += 1
-        layout.addWidget(QtGui.QLabel("Frame Search Limit"), row, 2, 1, 1)
+        layout.addWidget(QtGui.QLabel("dt (frames)"), row, 2, 1, 1)
         layout.addWidget(self.tapeFrameSearchLimit, row, 3, 1, 1)
 
         row += 1
-        layout.addWidget(QtGui.QLabel("Max Speed Multiplier"), row, 2, 1, 1)
-        layout.addWidget(self.tapeMaxSpeedMultiplier, row, 3, 1, 1)
+        layout.addWidget(QtGui.QLabel("dD (pixels)"), row, 2, 1, 1)
+        layout.addWidget(self.tapePixelSearchLimit, row, 3, 1, 1)
+
+
+        #### COLLISION SETTINGS
+
+        self.collisionPixelOverlapMargin = self.createQLineEditIntValidator(
+            str(settings.COLLISION_PIXEL_OVERLAP_MARGIN),
+            guisettings.COLLISION_PIXEL_OVERLAP_MARGIN_RANGE,
+            self.ToolTips.collisionPixelOverlapMargin)
+
+        row = 0
+        layout.addWidget(QtGui.QLabel("<b>Collision</b>"), row, 4, 1, 2)
 
         row += 1
-        layout.addWidget(QtGui.QLabel("Min Trace Fail"), row, 2, 1, 1)
-        layout.addWidget(self.tapeMinTraceFail, row, 3, 1, 1)
-
-        row += 1
-        layout.addWidget(QtGui.QLabel("Rel Move Threshold"), row, 2, 1, 1)
-        layout.addWidget(self.tapeRelMoveThreshold, row, 3, 1, 1)
-
-        row += 1
-        layout.addWidget(QtGui.QLabel("Shakycam Allowance"), row, 2, 1, 1)
-        layout.addWidget(self.tapeShakycamAllowance, row, 3, 1, 1)
+        layout.addWidget(QtGui.QLabel("Min Pixel Overlap Diff (pixels)"), row, 4, 1, 1)
+        layout.addWidget(self.collisionPixelOverlapMargin, row, 5, 1, 1)
 
         # Buttons
         buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | QtGui.QDialogButtonBox.Cancel, Qt.Horizontal,
@@ -259,14 +250,15 @@ class ConfigDialog(QtGui.QDialog):
         settings.COLLIDER_SUITE_SPLIT_REL = self._doubleValueOf(self.colliderSuiteSplitRel,
                                                                 settings.COLLIDER_SUITE_SPLIT_REL)
 
-        settings.TAPE_REL_MOVE_THRESHOLD = self._doubleValueOf(self.tapeRelMoveThreshold,
-                                                               settings.TAPE_REL_MOVE_THRESHOLD)
-        settings.TAPE_MIN_TRACE_FAIL = self._intValueOf(self.tapeMinTraceFail, settings.TAPE_MIN_TRACE_FAIL)
+        # settings.TAPE_REL_MOVE_THRESHOLD = self._doubleValueOf(self.tapeRelMoveThreshold,
+        #                                                        settings.TAPE_REL_MOVE_THRESHOLD)
+        # settings.TAPE_MIN_TRACE_FAIL = self._intValueOf(self.tapeMinTraceFail, settings.TAPE_MIN_TRACE_FAIL)
         settings.TAPE_FRAME_SEARCH_LIMIT = self._intValueOf(self.tapeFrameSearchLimit, settings.TAPE_FRAME_SEARCH_LIMIT)
-        settings.TAPE_MAX_SPEED_MULTIPLIER = self._doubleValueOf(self.tapeMaxSpeedMultiplier,
-                                                                 settings.TAPE_MAX_SPEED_MULTIPLIER)
-        settings.TAPE_SHAKYCAM_ALLOWANCE = self._intValueOf(self.tapeShakycamAllowance,
-                                                            settings.TAPE_SHAKYCAM_ALLOWANCE)
+        settings.TAPE_PIXEL_SEARCH_LIMIT = self._intValueOf(self.tapePixelSearchLimit, settings.TAPE_PIXEL_SEARCH_LIMIT)
+        # settings.TAPE_MAX_SPEED_MULTIPLIER = self._doubleValueOf(self.tapeMaxSpeedMultiplier,
+        #                                                          settings.TAPE_MAX_SPEED_MULTIPLIER)
+        # settings.TAPE_SHAKYCAM_ALLOWANCE = self._intValueOf(self.tapeShakycamAllowance,
+        #                                                     settings.TAPE_SHAKYCAM_ALLOWANCE)
 
         settings.save()
         self.close()
