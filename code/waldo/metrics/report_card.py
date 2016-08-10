@@ -242,10 +242,15 @@ class ReportCard(object):
 
         def add_on_edge(df):
             df['on_edge'] = False
-            df['on_edge'][df['x'] < xlow] = True
-            df['on_edge'][df['y'] < ylow] = True
-            df['on_edge'][xhigh < df['x']] = True
-            df['on_edge'][yhigh < df['y']] = True
+            # df['on_edge'][df['x'] < xlow] = True
+            # df['on_edge'][df['y'] < ylow] = True
+            # df['on_edge'][xhigh < df['x']] = True
+            # df['on_edge'][yhigh < df['y']] = True
+
+            df.loc[df['x'] < xlow, 'on_edge'] = True
+            df.loc[df['y'] < ylow, 'on_edge'] = True
+            df.loc[xhigh < df['x'], 'on_edge'] = True
+            df.loc[yhigh < df['y'], 'on_edge'] = True
 
         add_on_edge(start_terms)
         add_on_edge(end_terms)
@@ -259,16 +264,18 @@ class ReportCard(object):
             roi_mask = roim.create_roi_mask(roi_dict)
             xs = df['x']
             ys = df['y']
-            df['outside-roi'] = roim.are_points_inside_mask(xs, ys, roi_mask)
+            df.loc[:, 'outside-roi'] = roim.are_points_inside_mask(xs, ys, roi_mask)
 
         add_out_of_roi(start_terms, roi_dict)
         add_out_of_roi(end_terms, roi_dict)
         # mark if nodes start or end with the start/end of the recording.
 
         start_terms['timing'] = False
-        start_terms['timing'][start_terms['t'] < start_thresh] = True
+        # start_terms['timing'][start_terms['t'] < start_thresh] = True
+        start_terms.loc[start_terms['t'] < start_thresh, 'timing'] = True
         end_terms['timing'] = False
-        end_terms['timing'][end_terms['t'] >= 3599] = True
+        # end_terms['timing'][end_terms['t'] >= 3599] = True
+        end_terms.loc[end_terms['t'] >= 3599, 'timing'] = True
 
         # by valueing certain reasons over others, we deterime a final reason.
 
@@ -277,7 +284,8 @@ class ReportCard(object):
             # reasons = ['unknown', 'on_edge', 'id_change', 'outside-roi', 'timing']
             reasons = ['unknown', 'on_edge', 'split', 'join', 'outside-roi', 'timing']
             for reason in reasons[1:]:
-                df['reason'][df[reason]] = reason
+                # df['reason'][df[reason]] = reason
+                df.loc[df[reason], 'reason'] = reason
 
         determine_reason(start_terms)
         determine_reason(end_terms)
@@ -408,12 +416,11 @@ class WaldoSolver(object):
     def write_quality_report(self):
         pd = settings.QUALITY_REPORT_ROOT
         print('plotting quality report')
-        # print(type(pd))
-        # TODO: add this back in later!
-        # quality_control_plot(eid=self.ex_id,
-        #                      experiment=self.experiment,
-        #                      plot_dir=pd)
-        print('finished plotting quality report')
+        if settings.SAVE_OVERVIEW_FIGURE:
+            quality_control_plot(eid=self.ex_id,
+                                 experiment=self.experiment,
+                                 plot_dir=pd)
+            print('finished plotting quality report')
 
     def initial_clean(self, callback=None):
         """ removes blobs that are outside of the region of interest

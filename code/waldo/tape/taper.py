@@ -257,9 +257,6 @@ class Taper(object):
         if write_everything:
             all_gaps = pd.concat(full_record)
             all_gaps.to_csv('all_gaps.csv')
-        # print('p gaps')
-        # print(potential_gaps.head(10))
-        # print(len(potential_gaps))
         return potential_gaps
 
     def make_gaps_file(self):
@@ -292,10 +289,8 @@ class Taper(object):
         """
         if df is None:
             df = settings.TAPE_FRAME_SEARCH_LIMIT
-            print(df, 'gap frame search lim')
         if dist is None:
             dist = settings.TAPE_PIXEL_SEARCH_LIMIT
-            print(dist, 'gap pix search dist')
 
         acausal_limit = self.acausal_limit
 

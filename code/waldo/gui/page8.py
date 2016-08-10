@@ -156,7 +156,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         self.ax_image.axis('off')
 
     def _set_report(self, report):
-        print("HELIO", report.head())
+        # print("HELIO", report.head())
         if self.showing_status == WaldoProcessPage.SHOWING_IMAGE:
             self.image_canvas.setParent(None)
             self.showing_status = WaldoProcessPage.SHOWING_NOTHING
