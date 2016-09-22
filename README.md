@@ -18,6 +18,8 @@ To check out the source code repository make sure to install [mercurial](\path{h
 
 `hg clone https://peterbwinter@bitbucket.org/peterbwinter/waldo waldo`
 
+`git clone https://github.com/amarallab/waldo.git waldo`
+
 Once the repository is cloned, you can launch WALDO's graphical user interface with the command:
 `python waldo/code/guiwaldo.py`
 
