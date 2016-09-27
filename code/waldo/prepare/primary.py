@@ -104,12 +104,18 @@ def create_primary_df(experiment, df_type=None, callback=None):
 
     assert df_type in builders, '{t} not a real type of df'.format(t=df_type)
     builder = builders[df_type]
-    for i, (bid, blob) in enumerate(experiment.blobs()):
+    blobs = list(experiment.blobs())
+    count = float(len(blobs))
+    for i, (bid, blob) in enumerate(blobs):
         try:
             builder.append(bid, blob)
         except KeyError:
             # zero frame blobs
             pass
+        if callback:
+            callback(i/count)
+    if callback:
+        callback(1)
     return builder.render()
 
 #TODO this fails on big recordings due to memory errors

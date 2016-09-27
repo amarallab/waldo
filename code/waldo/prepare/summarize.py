@@ -38,8 +38,11 @@ def summarize(ex_id, experiment=None, verbose=False, callback=None):
         def cb_sec(p):
             callback(CALLBACK_LOAD_FRAC + CALLBACK_PRIMARY_FRAC +
                     CALLBACK_SECONDARY_FRAC * p)
+        def cb_pri_steps(p, step, num_steps):
+            cb_pri((step + p) / num_steps)
+
     else:
-        cb_load = cb_pri = cb_sec = None
+        cb_load = cb_pri = cb_sec = cb_pri_steps = None
 
     print('preparing blob files')
     if experiment is None:
@@ -64,9 +67,14 @@ def summarize(ex_id, experiment=None, verbose=False, callback=None):
     # process the basic blob data
     talk(' - Summarizing raw data...')
     data = {}
-    for df_type in ['bounds', 'terminals', 'sizes']:
+    
+    for i, df_type in enumerate(['bounds', 'terminals', 'sizes']):
+        if callback:
+            cb = lambda x: cb_pri_steps(x, i, 3)
+        else:
+            cb = None
         print(' - Summarizing {df} data...'.format(df=df_type))
-        data[df_type] = primary.create_primary_df(experiment, df_type)
+        data[df_type] = primary.create_primary_df(experiment, df_type, callback=cb)
         save_processed_data(data, experiment)
 
     # TODO: remove this commented method. it keeps failing.

@@ -79,7 +79,7 @@ def calculate_stats_for_moves(min_moves, prep_data):
 #         widths = list(step_df['lifespan'])
 #         height = 1
 
-#         color = ax._get_lines.color_cycle.next()
+#         color = ax._get_lines.prop_cycler.next()
 #         for y, (x, width) in enumerate(zip(xs, widths)):
 #             steps.append(patches.Rectangle((x,y), height=height, width=width,
 #                                            fill=True, fc=color, ec=color, alpha=0.5))
@@ -126,9 +126,10 @@ def step_facets(df, df2, t1=5, t2=20):
         widths = list(step_df['lifespan'])
         height = 1
 
-        color = ax._get_lines.color_cycle.next()
+        color = ax._get_lines.prop_cycler.next()
         for i in range(nth_color):
-            color = ax._get_lines.color_cycle.next()
+            color = ax._get_lines.prop_cycler.next()
+        color = color['color']
 
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x,y), height=height, width=width,
@@ -243,9 +244,11 @@ def make_fig1(ex_id, step_min_move = 1, save_fig=False):
     fig, ax = plt.subplots()
     ### AX 0
     # print 'starting ax 0'
-    color_cycle = ax._get_lines.color_cycle
+    prop_cycler = ax._get_lines.prop_cycler
     for i in range(5):
-        c = color_cycle.next()
+        c = prop_cycler.next()
+    if c is not None:
+        c = c['color']
     wf.draw_minimal_colors_on_image_T(ex_id, time=30*30, ax=ax, color=c)
 
     if save_fig:
@@ -280,13 +283,13 @@ def make_fig1(ex_id, step_min_move = 1, save_fig=False):
 #     ax4 = plt.subplot(gs[2:,5:])
 
 #     ### AX 0
-#     color_cycle = ax0._get_lines.color_cycle
+#     prop_cycler = ax0._get_lines.prop_cycler
 
-#     c = {'tp_color':color_cycle.next(),
-#          'missed_color': color_cycle.next(),
-#          'fp_color': color_cycle.next(),
-#          'roi_color': color_cycle.next(),
-#          'roi_line_color': color_cycle.next()}
+#     c = {'tp_color':prop_cycler.next(),
+#          'missed_color': prop_cycler.next(),
+#          'fp_color': prop_cycler.next(),
+#          'roi_color': prop_cycler.next(),
+#          'roi_line_color': prop_cycler.next()}
 #     wf.draw_colors_on_image(ex_id, time=30*60, ax=ax0, colors=c)
 
 #     ### AX 1

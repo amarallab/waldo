@@ -285,7 +285,8 @@ def draw_minimal_colors_on_image_T(experiment, time, color=None, ax=None):
         f, ax = plt.subplots()
 
     if color is None:
-        color = ax._get_lines.color_cycle.next()
+        color = ax._get_lines.prop_cycler.next()
+        color = color['color']
 
     ax.imshow(img, cmap=plt.cm.Greys_r)
     ax.xaxis.set_ticks([])

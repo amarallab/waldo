@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
 import matplotlib.image as mpimg
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from skimage import morphology
 from skimage.measure import regionprops
 import matplotlib.patches as patches
@@ -826,9 +826,10 @@ class ExperimentResultWidget(QtGui.QWidget):
         widths = list(step_df['lifespan'])
         height = 1
 
-        color = ax._get_lines.color_cycle.next()
+        color = ax._get_lines.prop_cycler.next()
         for i in range(nth_color):
-            color = ax._get_lines.color_cycle.next()
+            color = ax._get_lines.prop_cycler.next()
+        color = color['color']
 
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x,y), height=height, width=width,

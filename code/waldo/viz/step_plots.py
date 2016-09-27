@@ -25,9 +25,10 @@ class StepPlot(object):
         widths = list(step_df['lifespan'])
         height = 1
 
-        color = ax._get_lines.color_cycle.next()
+        color = ax._get_lines.prop_cycler.next()
         for i in range(nth_color):
-            color = ax._get_lines.color_cycle.next()
+            color = ax._get_lines.prop_cycler.next()
+        color = color['color']
 
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x, y), height=height, width=width,
@@ -75,9 +76,9 @@ class StepPlot(object):
         #print(steps)
         ### AX 0
         # print('starting ax 0')
-        # color_cycle = ax._get_lines.color_cycle
+        # prop_cycler = ax._get_lines.prop_cycler
         # for i in range(5):
-        #     c = color_cycle.next()
+        #     c = prop_cycler.next()
         # wf.draw_minimal_colors_on_image_T(ex_id, time=30*30, ax=ax, color=c)
         self.step_facets(steps, final_steps)
 
@@ -173,9 +174,10 @@ class StepPlot2(object):
         widths = list(step_df['lifespan'])
         height = 1
 
-        color = ax._get_lines.color_cycle.next()
+        color = ax._get_lines.prop_cycler.next()
         for i in range(nth_color):
-            color = ax._get_lines.color_cycle.next()
+            color = ax._get_lines.prop_cycler.next()
+        color = color['color']
 
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x, y), height=height, width=width,
@@ -220,9 +222,9 @@ class StepPlot2(object):
         #print(steps)
         ### AX 0
         # print('starting ax 0')
-        # color_cycle = ax._get_lines.color_cycle
+        # prop_cycler = ax._get_lines.prop_cycler
         # for i in range(5):
-        #     c = color_cycle.next()
+        #     c = prop_cycler.next()
         # wf.draw_minimal_colors_on_image_T(ex_id, time=30*30, ax=ax, color=c)
         self.step_facets(steps, final_steps)
 

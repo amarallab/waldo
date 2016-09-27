@@ -6,12 +6,16 @@ import matplotlib.gridspec as grd
 import matplotlib.patches as patches
 import pathlib
 
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 plt.style.use('bmh')
+
 
 class StepPlot(object):
 
     def __init__(self, experiment):
-        self.plot = plt.figure(figsize=(7, 9))
+        # self.plot = plt.figure(figsize=(7, 9))
         self.e = experiment
 
     def _new_plot(self, ax, df, label, nth_color=0, xmax=60, alpha=0.5):
@@ -171,12 +175,14 @@ def quality_control_plot(eid, experiment, plot_dir):
     print('starting quality controlplots')
     plt.style.use('bmh')
     print('set style to bmh')
-    fig = plt.figure(figsize=(16, 10), dpi=500)
+    fig = Figure(figsize=(16, 10), dpi=100)
+    canvas = FigureCanvas(fig)
+    # fig = plt.figure(figsize=(16, 10), dpi=500)
     gs = grd.GridSpec(5, 8, wspace=1, hspace=1)
 
-    step_top_ax = plt.subplot(gs[1:3, 0:4])
-    step_bot_ax = plt.subplot(gs[3:5, 0:4])
-    squiggle_ax = plt.subplot(gs[1:5, 4:8])
+    step_top_ax = fig.add_subplot(gs[1:3, 0:4])
+    step_bot_ax = fig.add_subplot(gs[3:5, 0:4])
+    squiggle_ax = fig.add_subplot(gs[1:5, 4:8])
 
 
     # Set title
@@ -210,11 +216,12 @@ def quality_control_plot(eid, experiment, plot_dir):
 
     gs.tight_layout(fig)
 
-
-
     path = pathlib.Path(plot_dir)
     if not path.is_dir():
         path.mkdir()
-    name = path / '{eid}-check.png'.format(eid=eid) 
-    fig.savefig(str(name))
-    plt.close(fig)
+    name = path / '{eid}-check.png'.format(eid=eid)
+    print('Saving figure as {}'.format(name)) 
+    #fig.savefig(str(name))
+    #plt.close(fig)
+    canvas.print_png(str(name))
+    print('End!')

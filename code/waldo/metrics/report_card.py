@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
+
 # package specific
 import waldo.viz.subgraph as subgraph
 from waldo.viz import quality_control_plot
@@ -16,6 +17,7 @@ from waldo.conf import settings
 import waldo.tape.taper as tp
 import waldo.wio.file_manager as fm
 import waldo.wio.roi_manager as roim
+
 
 L = logging.getLogger(__name__)
 
