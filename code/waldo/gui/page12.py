@@ -53,7 +53,7 @@ class BatchModeWaldoProcessDialog(QtGui.QDialog):
         self.report_func = report_func
         self.finish_func = finish_func
 
-        progress_bar_labels = ["Experiments", "Global progress", "Process blobs", "Process images", "Load experiment",
+        progress_bar_labels = ["Experiments", "Global progress", "Process blobs", "Load experiment",
                                "Correct errors", "Write output", "Generate report"]
         progress_bars = []
         for i in range(len(progress_bar_labels)):
@@ -245,15 +245,14 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
             callback(1, x)
             callback_with_image(x)
 
-        PROCESS_IMAGES_CALLBACK = lambda x: callback(2, x)
-        LOAD_EXPERIMENT_CALLBACK = lambda x: callback(3, x)
-        CORRECT_ERROR_CALLBACK = lambda x: callback(4, x)
-        WRITE_OUTPUT_CALLBACK = lambda x: callback(5, x)
-        GENERATE_REPORT_CALLBACK = lambda x: callback(6, x)
+        LOAD_EXPERIMENT_CALLBACK = lambda x: callback(2, x)
+        CORRECT_ERROR_CALLBACK = lambda x: callback(3, x)
+        WRITE_OUTPUT_CALLBACK = lambda x: callback(4, x)
+        GENERATE_REPORT_CALLBACK = lambda x: callback(5, x)
         NEW_IMAGE_CALLBACK = lambda im: callback(11, im)
         REDRAW_SOLVE_FIGURE_CALLBACK = lambda df: callback(21, df)
 
-        STEPS = 5.0
+        STEPS = 4.0
         ex_id = experiment.id
         callback(0, 0.0 / STEPS)
 
@@ -261,19 +260,19 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
         PROCESS_BLOBS_CALLBACK(1)
         callback(0, 1.0 / STEPS)
 
-        images_summarize(experiment=experiment, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
-        PROCESS_IMAGES_CALLBACK(1)
-        callback(0, 2.0 / STEPS)
+        # images_summarize(experiment=experiment, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
+        # PROCESS_IMAGES_CALLBACK(1)
+        # callback(0, 2.0 / STEPS)
 
         LOAD_EXPERIMENT_CALLBACK(1)
-        callback(0, 3.0 / STEPS)
+        callback(0, 2.0 / STEPS)
 
         graph = experiment.graph.copy()
         solver = WaldoSolver(experiment, graph)
         solver.run(callback=CORRECT_ERROR_CALLBACK, redraw_callback=REDRAW_SOLVE_FIGURE_CALLBACK)
         graph = solver.graph
         CORRECT_ERROR_CALLBACK(1)
-        callback(0, 4.0 / STEPS)
+        callback(0, 3.0 / STEPS)
 
         info.create_and_copy(experiment.id)
 
@@ -281,7 +280,7 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
         out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
         WRITE_OUTPUT_CALLBACK(1)
         GENERATE_REPORT_CALLBACK(1)
-        callback(0, 5.0 / STEPS)
+        callback(0, 4.0 / STEPS)
 
         self.export_tables(experiment)
 

@@ -237,9 +237,9 @@ def make_fig1(ex_id, step_min_move = 1, save_fig=False):
     steps, durations = report_card.calculate_duration_data_from_graph(experiment, graph, moving_nodes)
 
     final_steps = steps_from_node_report(experiment)
-    accuracy = experiment.prepdata.load('accuracy')
-    worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
-    print('worm count:', worm_count)
+    # accuracy = experiment.prepdata.load('accuracy')
+    # worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
+    # print('worm count:', worm_count)
 
     fig, ax = plt.subplots()
     ### AX 0

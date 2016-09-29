@@ -862,8 +862,8 @@ class ExperimentResultWidget(QtGui.QWidget):
         steps, durations = report_card.calculate_duration_data_from_graph(experiment, graph, moving_nodes)
 
         final_steps = self.steps_from_node_report(experiment)
-        accuracy = experiment.prepdata.load('accuracy')
-        worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
+        #accuracy = experiment.prepdata.load('accuracy')
+        #worm_count = np.mean(accuracy['true-pos'] + accuracy['false-neg'])
 
         self.step_facets(steps, final_steps)
 
