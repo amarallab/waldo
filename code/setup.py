@@ -1,11 +1,12 @@
+import os
+import glob
 from distutils.core import setup
+
 import py2exe
 import matplotlib
 import FileDialog
 
-import os
-import glob
-import waldo.extern
+import multiworm
 
 def find_data_files(source, target, patterns):
     if glob.has_magic(source) or glob.has_magic(target):
@@ -18,7 +19,7 @@ def find_data_files(source, target, patterns):
                 targetpath = os.path.join(target, os.path.relpath(filename, source))
                 path = os.path.dirname(targetpath)
                 ret.setdefault(path, []).append(filename)
-    
+
     return sorted(ret.items())
 
 data_files = []

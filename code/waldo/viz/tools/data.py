@@ -9,12 +9,13 @@ from six.moves import (zip, filter, map, reduce, input, range)
 import itertools
 import collections
 
+import multiworm
+from multiworm.blob import BlobDataFrame
+from multiworm.readers.blob import parse as parse_blob
+
 from .box import Box
 from .viz import get_contour
 
-from waldo.extern import multiworm
-from multiworm.blob import BlobDataFrame
-from multiworm.readers.blob import parse as parse_blob
 
 __all__ = [
     'frame_dataframe',

@@ -10,14 +10,14 @@ import os
 import argparse
 import functools
 
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import multiworm
+from multiworm.readers import blob as blob_reader
+import numpy as np
 
 import pathcustomize
 from waldo import wio
-from waldo.extern import multiworm
-from multiworm.readers import blob as blob_reader
 
 # Derived from http://stackoverflow.com/a/2566508/194586
 # However, I claim these as below the threshold of originality

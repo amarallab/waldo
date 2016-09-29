@@ -1,2 +1,0 @@
-data/annotation = ssh://hg@bitbucket.org/peterbwinter/worm-annotation
-code/waldo/extern/multiworm-hg = ssh://hg@bitbucket.org/nick_timkovich/multi-worm-tracker-adapter

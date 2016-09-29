@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 #from mpltools import style
 import matplotlib.gridspec as gridspec
+import multiworm
+from multiworm.core import MWTSummaryError
 #from mpltools import layout
 #from networkx import Graph
 #import seaborn as sns
@@ -27,8 +29,6 @@ import pathcustomize
 
 from waldo.conf import settings
 from waldo.wio.experiment import Experiment
-from waldo.extern import multiworm
-from multiworm.core import MWTSummaryError
 from waldo.output.speed import SpeedWriter
 from waldo.output.speed import *
 from waldo.wio.worm_writer import WormWriter

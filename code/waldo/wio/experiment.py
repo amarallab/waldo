@@ -11,13 +11,13 @@ from six.moves import (zip, filter, map, reduce, input, range)
 # standard library
 
 # third party
+import multiworm
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
 
 # package specific
 from waldo.conf import settings
-from waldo.extern import multiworm
 from waldo.network import Graph
 #from waldo.images import create_roi_mask, are_points_inside_mask
 

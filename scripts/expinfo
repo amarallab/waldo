@@ -11,13 +11,12 @@ import argparse
 import errno
 
 import numpy as np
+from multiworm import analytics
 
 import pathcustomize
 
 import waldo.wio as wio
 
-from waldo.extern import multiworm
-from multiworm import analytics
 
 def longest_10(experiment, ten=10):
     df = experiment.summary.copy()
