@@ -67,10 +67,10 @@ install:
   # target Python version and architecture
 
   # this is the madness from ./installpyreqs
-  - "%CMD_IN_ENV% pip install -r requirements/phase1.txt"
-  - "%CMD_IN_ENV% pip install -r requirements/phase2.txt"
-  - "%CMD_IN_ENV% pip install -r requirements/phase3.txt"
-  - "%CMD_IN_ENV% pip install -r requirements/py2only.txt"
+  - "%CMD_IN_ENV% pip install http://avila.chem-eng.northwestern.edu/appveyor/numpy-1.11.2rc1+mkl-cp27-cp27m-win32.whl"
+  - "%CMD_IN_ENV% pip install http://avila.chem-eng.northwestern.edu/appveyor/scipy-0.18.1-cp27-cp27m-win32.whl"
+  - "%CMD_IN_ENV% pip install http://avila.chem-eng.northwestern.edu/appveyor/scikit_image-0.12.3-cp27-cp27m-win32.whl"
+  - "%CMD_IN_ENV% pip install -r requirements/appveyor.txt"
 
 build_script:
   # Build the compiled extension
