@@ -14,11 +14,11 @@ import types
 import logging
 
 # third party
-import pandas as pd
+import multiworm
 import networkx as nx
+import pandas as pd
 
 # package specific
-from waldo.extern import multiworm
 
 __all__ = [
     'flat_node_list',

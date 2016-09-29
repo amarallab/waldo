@@ -2,7 +2,7 @@ import functools
 import numpy as np
 import six
 
-from waldo.extern import multiworm
+import multiworm
 from multiworm.readers import blob as blob_reader
 
 __author__ = 'peterwinter'

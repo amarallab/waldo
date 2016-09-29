@@ -10,6 +10,7 @@ import os.path
 import argparse
 import numbers
 
+import multiworm.analytics.sgolay
 import numpy as np
 import scipy.optimize as spo
 import scipy.stats as sps
@@ -18,8 +19,6 @@ import scipy.signal as ss
 import pathcustomize
 from waldo import wio
 
-from waldo.extern import multiworm
-import multiworm.analytics.sgolay
 
 def IQR(dist):
     return np.percentile(dist, 75) - np.percentile(dist, 25)
