@@ -8,6 +8,8 @@ import FileDialog
 
 import multiworm
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 def find_data_files(source, target, patterns):
     if glob.has_magic(source) or glob.has_magic(target):
         raise ValueError("Magic not allowed in source, target")
@@ -28,7 +30,7 @@ data_files.extend(find_data_files('C:\\Program Files (x86)\\Graphviz2.38\\bin', 
 data_files.extend(find_data_files('c:\\Python27\\Lib\\site-packages\\skimage\io\_plugins', 'skimage\\io\\_plugins', ['*.ini']))
 data_files.extend(find_data_files('c:\\Python27\\lib\\site-packages\\brewer2mpl\data', 'brewer2mpl\\data', ['*.json', '*.txt']))
 
-setup(windows=['guiwaldo.py'],
+setup(windows=[os.path.join(HERE, 'guiwaldo.py')],
       data_files=data_files,
       options = {"py2exe": {"skip_archive": True,
                             "packages": ["matplotlib", "pytz", "skimage"],
