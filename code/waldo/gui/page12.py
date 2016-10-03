@@ -12,6 +12,9 @@ from waldo.wio import Experiment
 from waldo.wio import info
 from waldo.output.writer import OutputWriter
 
+from .appdata import WaldoAppData, WaldoBatchRunResult
+
+
 #from waldo import wio
 #import waldo.images.evaluate_acuracy as ea
 #import waldo.images.worm_finder as wf
@@ -22,6 +25,7 @@ from waldo.output.writer import OutputWriter
 
 #from waldo.gui import pathcustomize
 import os
+import traceback
 
 #import numpy as np
 #import pandas as pd
@@ -43,7 +47,6 @@ from .helpers import experiment_has_final_results
 #style.use('ggplot')
 
 from . import tasking
-
 from time import time
 
 class BatchModeWaldoProcessDialog(QtGui.QDialog):
@@ -215,74 +218,89 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
         if self.data.experiment_id_list is None:
             return
         count = 0
+        result_messages = {}
         for ex_id in self.data.experiment_id_list:
             for current in [2, 3, 4, 5, 6]:
                 callback(current, 0)
-            if not experiment_has_final_results(ex_id):
+            if experiment_has_final_results(ex_id):
+                result_messages[ex_id] = (WaldoBatchRunResult.CACHED, None)
+            else:
                 experiment = Experiment(experiment_id=ex_id)
-                self.waldoProcessOneExperiment(experiment, lambda x, y: callback(x+1, y))
+                result, ex = self.waldoProcessOneExperiment(experiment, lambda x, y: callback(x+1, y))
+                if result:
+                    result_messages[ex_id] = (WaldoBatchRunResult.SUCCEEDED, None)
+                else:
+                    result_messages[ex_id] = (WaldoBatchRunResult.FAILED, ex)
             callback(0, float(count) / len(self.data.experiment_id_list))
             count += 1
+        self.data.batch_result_messages = result_messages
 
     def waldoProcessOneExperiment(self, experiment, callback):
-        times, impaths = zip(*sorted(experiment.image_files.items()))
-        impaths = [str(s) for s in impaths]
+        try:
+            times, impaths = zip(*sorted(experiment.image_files.items()))
+            impaths = [str(s) for s in impaths]
 
-        self.last_image_index = 0
-        def callback_with_image(x):
-            if len(impaths) == 0:
-                return
-            index = int(x * len(impaths))
-            if index > len(impaths) - 1:
-                index = len(impaths) - 1
-            if index - self.last_image_index < 1:
-                return
-            self.last_image_index = index
-            im = mpimg.imread(impaths[index])
-            callback(10, im)
+            self.last_image_index = 0
+            def callback_with_image(x):
+                if len(impaths) == 0:
+                    return
+                index = int(x * len(impaths))
+                if index > len(impaths) - 1:
+                    index = len(impaths) - 1
+                if index - self.last_image_index < 1:
+                    return
+                self.last_image_index = index
+                im = mpimg.imread(impaths[index])
+                callback(10, im)
 
-        def PROCESS_BLOBS_CALLBACK(x):
-            callback(1, x)
-            callback_with_image(x)
+            def PROCESS_BLOBS_CALLBACK(x):
+                callback(1, x)
+                callback_with_image(x)
 
-        LOAD_EXPERIMENT_CALLBACK = lambda x: callback(2, x)
-        CORRECT_ERROR_CALLBACK = lambda x: callback(3, x)
-        WRITE_OUTPUT_CALLBACK = lambda x: callback(4, x)
-        GENERATE_REPORT_CALLBACK = lambda x: callback(5, x)
-        NEW_IMAGE_CALLBACK = lambda im: callback(11, im)
-        REDRAW_SOLVE_FIGURE_CALLBACK = lambda df: callback(21, df)
+            LOAD_EXPERIMENT_CALLBACK = lambda x: callback(2, x)
+            CORRECT_ERROR_CALLBACK = lambda x: callback(3, x)
+            WRITE_OUTPUT_CALLBACK = lambda x: callback(4, x)
+            GENERATE_REPORT_CALLBACK = lambda x: callback(5, x)
+            NEW_IMAGE_CALLBACK = lambda im: callback(11, im)
+            REDRAW_SOLVE_FIGURE_CALLBACK = lambda df: callback(21, df)
 
-        STEPS = 4.0
-        ex_id = experiment.id
-        callback(0, 0.0 / STEPS)
+            STEPS = 4.0
+            ex_id = experiment.id
+            callback(0, 0.0 / STEPS)
 
-        prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
-        PROCESS_BLOBS_CALLBACK(1)
-        callback(0, 1.0 / STEPS)
+            prepare_summarize(ex_id, callback=PROCESS_BLOBS_CALLBACK)
+            PROCESS_BLOBS_CALLBACK(1)
+            callback(0, 1.0 / STEPS)
 
-        # images_summarize(experiment=experiment, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
-        # PROCESS_IMAGES_CALLBACK(1)
-        # callback(0, 2.0 / STEPS)
+            # images_summarize(experiment=experiment, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
+            # PROCESS_IMAGES_CALLBACK(1)
+            # callback(0, 2.0 / STEPS)
 
-        LOAD_EXPERIMENT_CALLBACK(1)
-        callback(0, 2.0 / STEPS)
+            LOAD_EXPERIMENT_CALLBACK(1)
+            callback(0, 2.0 / STEPS)
 
-        graph = experiment.graph.copy()
-        solver = WaldoSolver(experiment, graph)
-        solver.run(callback=CORRECT_ERROR_CALLBACK, redraw_callback=REDRAW_SOLVE_FIGURE_CALLBACK)
-        graph = solver.graph
-        CORRECT_ERROR_CALLBACK(1)
-        callback(0, 3.0 / STEPS)
+            graph = experiment.graph.copy()
+            solver = WaldoSolver(experiment, graph)
+            solver.run(callback=CORRECT_ERROR_CALLBACK, redraw_callback=REDRAW_SOLVE_FIGURE_CALLBACK)
+            graph = solver.graph
+            CORRECT_ERROR_CALLBACK(1)
+            callback(0, 3.0 / STEPS)
 
-        info.create_and_copy(experiment.id)
+            info.create_and_copy(experiment.id)
 
-        out_writer = OutputWriter(experiment.id, graph=graph)
-        out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
-        WRITE_OUTPUT_CALLBACK(1)
-        GENERATE_REPORT_CALLBACK(1)
-        callback(0, 4.0 / STEPS)
+            out_writer = OutputWriter(experiment.id, graph=graph)
+            out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
+            WRITE_OUTPUT_CALLBACK(1)
+            GENERATE_REPORT_CALLBACK(1)
+            callback(0, 4.0 / STEPS)
 
-        self.export_tables(experiment)
+            self.export_tables(experiment)
+
+            return True, None
+        except Exception as ex:
+            tb = traceback.format_exc()
+            return False, (tb, ex)
+
 
     def show_image(self, id, image):
         self._set_image(image)

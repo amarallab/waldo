@@ -17,6 +17,7 @@ from waldo import wio
 import waldo.images.evaluate_acuracy as ea
 #import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
+from .appdata import WaldoAppData, WaldoBatchRunResult
 
 #import waldo.metrics.step_simulation as ssim
 #import waldo.viz.eye_plots as ep
@@ -51,13 +52,41 @@ class FinalPage(QtGui.QWizardPage):
         self.setTitle("Final Results")
         self.setSubTitle("")
 
+        self.message = QtGui.QLabel("Select an experiment")
         self.result = ExperimentResultWidget(self)
         layout = QtGui.QVBoxLayout()
+        layout.addWidget(self.message)
         layout.addWidget(self.result)
         self.setLayout(layout)
 
     def initializePage(self):
-        self.result.initializeWidget(self.data.experiment)
+        if self.data.single_result_message is None:
+            state = WaldoBatchRunResult.CACHED
+            param = None
+        else:
+            state, param = self.data.single_result_message
+
+        showExperiment = True
+        if state == WaldoBatchRunResult.CACHED:
+            self.message.setVisible(True)
+            self.message.setText("Using cache data.")
+            self.message.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        elif state == WaldoBatchRunResult.SUCCEEDED:
+            self.message.setVisible(False)
+        else:
+            tb, ex = param
+            self.message.setVisible(True)
+            self.message.setText("<font color=\"red\">Failed:</font> {}".format(ex))
+            self.message.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+            showExperiment = False
+            print("Trace: {}".format(tb))
+            print("End Trace.")
+
+        if showExperiment:
+            self.result.setVisible(True)
+            self.result.initializeWidget(self.data.experiment)
+        else:
+            self.result.setVisible(False)
 
     def nextId(self):
         return -1  # Final page

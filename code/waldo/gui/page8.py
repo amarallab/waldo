@@ -1,6 +1,8 @@
 __author__ = 'heltena'
 
 import os
+import traceback
+
 from PyQt4 import QtGui
 from PyQt4.QtGui import QSizePolicy
 from PyQt4.QtCore import Qt, QTimer
@@ -11,7 +13,9 @@ from waldo.images import summarize_experiment as images_summarize
 from waldo.metrics.report_card import WaldoSolver
 from waldo.output.writer import OutputWriter
 from waldo.wio import info
+
 from . import tasking
+from .appdata import WaldoAppData, WaldoBatchRunResult
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -91,6 +95,7 @@ class WaldoProcessDialog(QtGui.QDialog):
         self.task = None
         self.result = "Cancelled"
         self.close()
+        self.finish_func()
 
     def closeEvent(self, ev):
         if self.task is None:
@@ -132,6 +137,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         self.setLayout(layout)
 
     def initializePage(self):
+        self.data.single_result_message = (WaldoBatchRunResult.CACHED, None)
         self.waldoProcessCompleted = False
 
         QTimer.singleShot(0, self.show_dialog)
@@ -182,69 +188,75 @@ class WaldoProcessPage(QtGui.QWizardPage):
         # plt.xticks(fontsize=12)
 
     def waldoProcess(self, callback):
-        times, impaths = zip(*sorted(self.data.experiment.image_files.items()))
-        impaths = [str(s) for s in impaths]
+        try:
+            times, impaths = zip(*sorted(self.data.experiment.image_files.items()))
+            impaths = [str(s) for s in impaths]
 
-        self.last_image_index = 0
+            self.last_image_index = 0
 
-        def callback_with_image(x):
-            if len(impaths) == 0:
-                return
-            index = int(x * len(impaths))
-            if index > len(impaths) - 1:
-                index = len(impaths) - 1
-            if index - self.last_image_index < 1:
-                return
-            self.last_image_index = index
-            im = mpimg.imread(impaths[index])
-            callback(10, im)
+            def callback_with_image(x):
+                if len(impaths) == 0:
+                    return
+                index = int(x * len(impaths))
+                if index > len(impaths) - 1:
+                    index = len(impaths) - 1
+                if index - self.last_image_index < 1:
+                    return
+                self.last_image_index = index
+                im = mpimg.imread(impaths[index])
+                callback(10, im)
 
-        def PROCESS_BLOBS_CALLBACK(x):
-            callback(1, x)
-            callback_with_image(x)
+            def PROCESS_BLOBS_CALLBACK(x):
+                callback(1, x)
+                callback_with_image(x)
 
-        LOAD_EXPERIMENT_CALLBACK = lambda x: callback(2, x)
-        CORRECT_ERROR_CALLBACK = lambda x: callback(3, x)
-        WRITE_OUTPUT_CALLBACK = lambda x: callback(4, x)
-        GENERATE_REPORT_CALLBACK = lambda x: callback(5, x)
-        NEW_IMAGE_CALLBACK = lambda im: callback(11, im)
-        REDRAW_SOLVE_FIGURE_CALLBACK = lambda df: callback(21, df)
+            LOAD_EXPERIMENT_CALLBACK = lambda x: callback(2, x)
+            CORRECT_ERROR_CALLBACK = lambda x: callback(3, x)
+            WRITE_OUTPUT_CALLBACK = lambda x: callback(4, x)
+            GENERATE_REPORT_CALLBACK = lambda x: callback(5, x)
+            NEW_IMAGE_CALLBACK = lambda im: callback(11, im)
+            REDRAW_SOLVE_FIGURE_CALLBACK = lambda df: callback(21, df)
 
-        STEPS = 4.0
-        ex_id = self.data.experiment.id
-        callback(0, 0.0 / STEPS)
+            STEPS = 4.0
+            ex_id = self.data.experiment.id
+            callback(0, 0.0 / STEPS)
 
-        prepare_summarize(ex_id, experiment=self.data.experiment, callback=PROCESS_BLOBS_CALLBACK)
-        PROCESS_BLOBS_CALLBACK(1)
-        callback(0, 1.0 / STEPS)
+            prepare_summarize(ex_id, experiment=self.data.experiment, callback=PROCESS_BLOBS_CALLBACK)
+            PROCESS_BLOBS_CALLBACK(1)
+            callback(0, 1.0 / STEPS)
 
-        # images_summarize(experiment=self.data.experiment, callback=PROCESS_IMAGES_CALLBACK,
-        #                  image_callback=NEW_IMAGE_CALLBACK)
-        # PROCESS_IMAGES_CALLBACK(1)
-        # callback(0, 2.0 / STEPS)
+            # images_summarize(experiment=self.data.experiment, callback=PROCESS_IMAGES_CALLBACK,
+            #                  image_callback=NEW_IMAGE_CALLBACK)
+            # PROCESS_IMAGES_CALLBACK(1)
+            # callback(0, 2.0 / STEPS)
 
-        experiment = self.data.experiment
-        LOAD_EXPERIMENT_CALLBACK(1)
-        callback(0, 2.0 / STEPS)
+            experiment = self.data.experiment
+            LOAD_EXPERIMENT_CALLBACK(1)
+            callback(0, 2.0 / STEPS)
 
-        graph = experiment.graph.copy()
-        solver = WaldoSolver(experiment, graph)
-        callback(22, solver.report())
-        solver.run(callback=CORRECT_ERROR_CALLBACK, redraw_callback=REDRAW_SOLVE_FIGURE_CALLBACK)
-        graph = solver.graph
-        CORRECT_ERROR_CALLBACK(1)
-        callback(0, 3.0 / STEPS)
+            graph = experiment.graph.copy()
+            solver = WaldoSolver(experiment, graph)
+            callback(22, solver.report())
+            solver.run(callback=CORRECT_ERROR_CALLBACK, redraw_callback=REDRAW_SOLVE_FIGURE_CALLBACK)
+            graph = solver.graph
+            CORRECT_ERROR_CALLBACK(1)
+            callback(0, 3.0 / STEPS)
 
-        info.create_and_copy(experiment.id)
+            info.create_and_copy(experiment.id)
 
-        out_writer = OutputWriter(experiment.id, graph=graph)
-        out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
-        WRITE_OUTPUT_CALLBACK(1)
-        GENERATE_REPORT_CALLBACK(1)
-        callback(0, 4.0 / STEPS)
+            out_writer = OutputWriter(experiment.id, graph=graph)
+            out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
+            WRITE_OUTPUT_CALLBACK(1)
+            GENERATE_REPORT_CALLBACK(1)
+            callback(0, 4.0 / STEPS)
 
-        self.export_tables()
+            self.export_tables()
 
+            self.data.single_result_message = (WaldoBatchRunResult.SUCCEEDED, None)
+        except Exception as ex:
+            tb = traceback.format_exc()
+            self.data.single_result_message = (WaldoBatchRunResult.FAILED, (ex, tb))
+         
     def show_image(self, id, image):
         self._set_image(image)
 

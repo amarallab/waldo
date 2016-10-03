@@ -4,10 +4,11 @@ __author__ = 'heltena'
 
 # standard library
 import os
+import traceback
 
 # third party
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QSizePolicy
+from PyQt4.QtGui import QSizePolicy, QLabel
 from PyQt4.QtCore import Qt
 import matplotlib.pyplot as plt
 
@@ -19,6 +20,8 @@ import waldo.images.evaluate_acuracy as ea
 #import waldo.images.worm_finder as wf
 import waldo.metrics.report_card as report_card
 from .widgets import ExperimentResultWidget
+from .appdata import WaldoAppData, WaldoBatchRunResult
+
 
 #import waldo.metrics.step_simulation as ssim
 #import waldo.viz.eye_plots as ep
@@ -61,9 +64,11 @@ class BatchModeFinalPage(QtGui.QWizardPage):
         hbox.addWidget(QtGui.QLabel("Select experiment"))
         hbox.addWidget(self.experimentListComboBox)
 
+        self.message = QtGui.QLabel("Select an experiment")
         self.result = ExperimentResultWidget(self)
         layout = QtGui.QVBoxLayout()
         layout.addLayout(hbox)
+        layout.addWidget(self.message)
         layout.addWidget(self.result)
         self.setLayout(layout)
 
@@ -83,9 +88,29 @@ class BatchModeFinalPage(QtGui.QWizardPage):
     def experimentListComboBox_currentIndexChanged(self, index):
         experiment_id = self.data.experiment_id_list[index]
         if self.current_experiment_id != experiment_id:
-            experiment = Experiment(experiment_id=experiment_id)
-            self.result.setVisible(True)
-            self.result.initializeWidget(experiment)
+            state, param = self.data.batch_result_messages[experiment_id]
+
+            showExperiment = True
+            if state == WaldoBatchRunResult.CACHED:
+                self.message.setVisible(True)
+                self.message.setText("Using cache data.")
+                self.message.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+            elif state == WaldoBatchRunResult.SUCCEEDED:
+                self.message.setVisible(False)
+            else:
+                tb, ex = param
+                self.message.setVisible(True)
+                self.message.setText("<font color=\"red\">Failed:</font> {}".format(ex))
+                self.message.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+                showExperiment = False
+                print("Trace: {}".format(tb))
+                print("End Trace.")
+            if showExperiment:
+                experiment = Experiment(experiment_id=experiment_id)
+                self.result.setVisible(True)
+                self.result.initializeWidget(experiment)
+            else:
+                self.result.setVisible(False)
             self.current_experiment_id = experiment_id
 
     def nextId(self):

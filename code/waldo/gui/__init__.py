@@ -29,45 +29,15 @@ from .page12 import BatchModeWaldoProcessPage
 from .page13 import BatchModeFinalPage
 
 from . import pages
+from .appdata import WaldoAppData
 
-class WaldoAppData:
-    def __init__(self):
-        self.single_mode = True
-        # Single mode data
-        self.selected_ex_id = None
-        self.experiment = None
-        self.threshold = 0
-        self.roi_center = (0, 0)
-        self.roi_radius = 0
-
-        # Batch mode data
-        self.experiment_id_list = []
-        self.no_thresholdcache_experiment_id_list = []
-
-    def singleMode(self):
-        self.single_mode = True
-
-    def batchMode(self):
-        self.single_mode = False
-
-    def loadSelectedExperiment(self):
-        if not self.single_mode:
-            self.experiment = None
-            return
-
-        if self.selected_ex_id is not None:
-            self.loadExperiment(self.selected_ex_id)
-        else:
-            self.experiment = None
-
-    def loadExperiment(self, ex_id):
-        self.experiment = Experiment(experiment_id=ex_id)
 
 class WaldoApp(QtGui.QWizard):
     def __init__(self, parent=None):
         super(WaldoApp, self).__init__(parent)
 
         self.data = WaldoAppData()
+        
         # self.data.selected_ex_id = '20130226_010927'
         # self.data.loadSelectedExperiment()
 
