@@ -3,6 +3,8 @@ import pathlib
 import json
 import shutil
 from . import paths
+from waldo.conf import settings
+
 
 INFO_FILE_NAME = "info.json"
 
@@ -27,7 +29,8 @@ def create(path, created_by=""):
                     'strain': '',
                     'camera_id': camera_id,
                     'created_by': created_by,
-                    'notes': ''}
+                    'notes': '',
+                    'settings': settings._data}
             with open(str(info_file_name), 'w') as outfile:
                 json.dump(info, outfile)
                 outfile.close()
@@ -35,7 +38,7 @@ def create(path, created_by=""):
         print("WARNING: info file not created.")
 
 
-def create_and_copy(ex_id, root=None, created_by="guiwaldo.py"):
+def create_and_copy(ex_id, root=None, created_by=""):
     print('-------------------------------------Create and Copy!')
     input_path = paths.experiment(ex_id, root=root)
     output_path = paths.waldo_data(ex_id, root=root)

@@ -37,8 +37,11 @@ class _Worker(QtCore.QObject):
             self.finished.emit()
         except _WorkerCancelled:
             self.cancelled.emit()
-        except Exception as ex:
-            traceback.print_exc()
+        except:
+            try:
+                traceback.print_exc()
+            finally:
+                pass
             self.cancelled.emit()
 
     def _callback(self, item, value):

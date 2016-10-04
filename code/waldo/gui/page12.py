@@ -286,7 +286,7 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
             CORRECT_ERROR_CALLBACK(1)
             callback(0, 3.0 / STEPS)
 
-            info.create_and_copy(experiment.id)
+            info.create_and_copy(experiment.id, created_by="guiwaldo.py")
 
             out_writer = OutputWriter(experiment.id, graph=graph)
             out_writer.export(callback1=WRITE_OUTPUT_CALLBACK, callback2=GENERATE_REPORT_CALLBACK)
