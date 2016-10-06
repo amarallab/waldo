@@ -9,7 +9,7 @@ import pandas as pd
 from scipy import ndimage
 import json
 import errno
-from waldo.wio import Experiment
+from waldo.wio import Experiment, PlateDistance
 import math
 
 import matplotlib.pyplot as plt
@@ -53,10 +53,126 @@ except AttributeError:
     style.use(STYLE)
 
 
+class CalibrationBar(QtGui.QWidget):
+    calibration_changed = QtCore.pyqtSignal([])
+
+    def __init__(self, enclosureSizeValue, figure, ax, color=(0.5, 0.8, 0.4, 1), parent=None):
+        super(CalibrationBar, self).__init__()
+        self.enclosureSizeValue = enclosureSizeValue
+        self.figure = figure
+        self.ax = ax
+        self.parent = parent
+        self.plate_distance = None
+
+        self.plate_distance_artists = []
+        self.color = color
+
+        self.calibrationLabel = QtGui.QLabel("Current enclosure size (mm)")
+        self.enclosureSizeLabel = QtGui.QLabel("{}".format(enclosureSizeValue))
+        self.enclosureSizeLineEdit = QtGui.QLineEdit("{}".format(enclosureSizeValue))
+        self.enclosureSizeLineEdit.setValidator(QtGui.QIntValidator(0, 500000, self))
+        self.calibrateButton = QtGui.QPushButton("Calibrate")
+        self.saveButton = QtGui.QPushButton("Save changes")
+        self.cancelButton = QtGui.QPushButton("Cancel")
+
+        self.calibrateButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.saveButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.cancelButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+        self.calibrateButton.clicked.connect(self.calibrateButton_clicked)
+        self.saveButton.clicked.connect(self.saveButton_clicked)
+        self.cancelButton.clicked.connect(self.cancelButton_clicked)
+
+        layout = QtGui.QHBoxLayout()
+        layout.addWidget(self.calibrationLabel)
+        layout.addWidget(self.enclosureSizeLabel)
+        layout.addWidget(self.enclosureSizeLineEdit)
+        layout.addWidget(self.calibrateButton)
+        layout.addWidget(self.cancelButton)
+        layout.addWidget(self.saveButton)
+        self.setLayout(layout)
+
+        self.editingCalibration = False
+        self.set_initial_state()
+
+    def set_initial_state(self):
+        self.editingCalibration = False
+        self.calibrationLabel.setVisible(True)
+        self.enclosureSizeLabel.setVisible(True)
+        self.enclosureSizeLineEdit.setVisible(False)
+        self.calibrateButton.setVisible(True)
+        self.saveButton.setVisible(False)
+        self.cancelButton.setVisible(False)
+        self.update_image()
+
+    def clear_calibration(self):
+        self.enclosureSizeValue = 0
+        self.enclosureSizeLabel.setText("0")
+        self.enclosureSizeLineEdit.setText("0")
+
+    def json_to_data(self, data):
+        self.enclosureSizeValue = data.get('enclosureSize', 0)
+        self.enclosureSizeLabel.setText("{}".format(self.enclosureSizeValue))
+        self.enclosureSizeLineEdit.setText("{}".format(self.enclosureSizeValue))
+
+    def data_to_json(self):
+        return {'enclosureSize': self.enclosureSizeValue}
+
+    def update_image(self):
+        for artist in self.plate_distance_artists:
+            try:
+                artist.remove()
+            except:
+                pass
+        self.plate_distance_artists = []
+
+        if not self.editingCalibration:
+            return
+
+        if self.plate_distance is not None:
+            polygons = self.plate_distance.largest_segment_pretty(arrow_size=75)
+            for polygon in polygons:
+                points = [(y, x) for x, y in polygon]  # traspose
+                artist = plt.Polygon(
+                    points,
+                    closed=False,
+                    linewidth=3,
+                    fill=False,
+                    edgecolor=self.color)
+                self.ax.add_artist(artist)
+                self.plate_distance_artists.append(artist)
+                print("Artist added!!!!")
+            self.figure.canvas.draw()
+
+    def update_plate_distance(self, plate_distance):
+        self.plate_distance = plate_distance
+        self.update_image()
+
+    def calibrateButton_clicked(self, ev):
+        self.editingCalibration = True
+        self.calibrationLabel.setVisible(True)
+        self.enclosureSizeLabel.setVisible(False)
+        self.enclosureSizeLineEdit.setVisible(True)
+        self.calibrateButton.setVisible(False)
+        self.saveButton.setVisible(True)
+        self.cancelButton.setVisible(True)
+        self.update_image()
+        
+    def saveButton_clicked(self, ev):
+        value, result = self.enclosureSizeLineEdit.text().toInt()
+        if result:
+            self.enclosureSizeValue = value
+            self.enclosureSizeLabel.setText("{}".format(value))
+            self.set_initial_state()
+            self.calibration_changed.emit()
+
+    def cancelButton_clicked(self, ev):
+        self.enclosureSizeLineEdit.setText("{}".format(self.enclosureSizeValue))
+        self.set_initial_state()
+
+
 class ROISelectorBar(QtGui.QWidget):
-
     roi_changed = QtCore.pyqtSignal([])
-
     def __init__(self, figure, ax, color=(1, 0, 0, 0.25), parent=None):
         super(ROISelectorBar, self).__init__()
         self.figure = figure
@@ -98,8 +214,8 @@ class ROISelectorBar(QtGui.QWidget):
         layout.addWidget(self.newCircleButton)
         layout.addWidget(self.newPolygonButton)
         layout.addWidget(self.cancelCircleButton)
-        layout.addWidget(self.closePolygonButton)
         layout.addWidget(self.cancelPolygonButton)
+        layout.addWidget(self.closePolygonButton)
         self.setLayout(layout)
 
         self.figure.canvas.mpl_connect('button_press_event', self.on_figure_button_pressed)
@@ -239,7 +355,6 @@ class ROISelectorBar(QtGui.QWidget):
         if draw:
             self.figure.canvas.draw()
 
-
     def on_figure_button_pressed(self, ev):
         if ev.xdata is None or ev.ydata is None:
             return
@@ -334,7 +449,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
         self.image_toolbar.coordinates = False
         self.image_toolbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
-        gs = grd.GridSpec(2, 1)
+        gs = grd.GridSpec(3, 1)
         self.ax_objects = self.histogram_figure.add_subplot(gs[0, 0])
         self.ax_area = self.histogram_figure.add_subplot(gs[1, 0], sharex=self.ax_objects)
         self.ax_image = self.image_figure.add_subplot(111)
@@ -344,17 +459,21 @@ class ThresholdCacheWidget(QtGui.QWidget):
         q1 = QtGui.QLabel("<b>Choose Threshold</b>")
         layout.addWidget(q1, 0, 0, 1, 1)
         layout.addWidget(QtGui.QLabel("Click on either graph to pick a threshold value"), 1, 0, 1, 1)
-        layout.addWidget(self.histogram_canvas, 2, 0, 1, 1)
-        layout.addWidget(self.histogram_toolbar, 3, 0, 1, 1)
+        layout.addWidget(self.histogram_canvas, 3, 0, 1, 1)
+        layout.addWidget(self.histogram_toolbar, 4, 0, 1, 1)
 
         self.roiSelectorBar = ROISelectorBar(self.image_figure, self.ax_image)
         self.roiSelectorBar.roi_changed.connect(self.roiSelectorBar_roi_changed)
 
+        self.calibrationBar = CalibrationBar(10, self.image_figure, self.ax_image)
+        self.calibrationBar.calibration_changed.connect(self.calibrationBar_calibration_changed)
+
         q2 = QtGui.QLabel("<b>Define Region of Interest</b>")
         layout.addWidget(q2, 0, 1, 1, 1)
         layout.addWidget(self.roiSelectorBar, 1, 1, 1, 1)
-        layout.addWidget(self.image_canvas, 2, 1, 1, 1)
-        layout.addWidget(self.image_toolbar, 3, 1, 1, 1)
+        layout.addWidget(self.calibrationBar, 2, 1, 1, 1)
+        layout.addWidget(self.image_canvas, 3, 1, 1, 1)
+        layout.addWidget(self.image_toolbar, 4, 1, 1, 1)
         self.setLayout(layout)
 
         self.histogram_figure.canvas.mpl_connect('button_press_event', self.on_histogram_button_pressed)
@@ -396,6 +515,14 @@ class ThresholdCacheWidget(QtGui.QWidget):
         except IOError as ex:
             self.clear_experiment_data()
 
+        self.calibration_filename = str(paths.calibration_data(experiment.id))
+        try:
+            with open(self.calibration_filename, "rt") as f:
+                data = json.loads(f.read())
+            self.calibrationBar.json_to_data(data)
+        except IOError as ex:
+            self.calibrationBar.clear_calibration()
+
         times, impaths = zip(*sorted(experiment.image_files.items()))
         impaths = [str(s) for s in impaths]
 
@@ -406,10 +533,15 @@ class ThresholdCacheWidget(QtGui.QWidget):
         if impaths is None or len(impaths) == 0:
             self.background = None
             self.mid_image = None
+            self.plate_distance = None
         else:
             self.background = ThresholdCacheWidget.create_background(impaths)
             self.im_shape = self.background.shape # shape is (y,x)
             self.mid_image = mpimg.imread(impaths[int(len(impaths)/2)])
+            self.plate_distance = PlateDistance(self.background)
+            self.plate_distance.calculate()
+
+        self.calibrationBar.update_plate_distance(self.plate_distance)
         self.mouse_points = []
         QTimer.singleShot(0, self.show_dialog)
 
@@ -477,7 +609,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
                 pass
             else: raise
 
-    def save_data(self):
+    def save_roi_data(self):
         if self.annotation_filename is None:
             return
 
@@ -491,6 +623,15 @@ class ThresholdCacheWidget(QtGui.QWidget):
         with open(self.annotation_filename, "wt") as f:
             f.write(json.dumps(data, indent=4))
 
+    def save_calibration_data(self):
+        if self.calibration_filename is None:
+            return
+        
+        data = self.calibrationBar.data_to_json()
+        ThresholdCacheWidget.mkdir_p(os.path.dirname(self.calibration_filename))
+        with open(self.calibration_filename, "wt") as f:
+            f.write(json.dumps(data, indent=4))
+    
     def update_data(self, thresholds, current_threshold):
         if len(thresholds) == 0:
             self.ax_objects.clear()
@@ -549,6 +690,7 @@ class ThresholdCacheWidget(QtGui.QWidget):
         self.ax_image.axis('off')
 
         self.roiSelectorBar.update_image()
+        self.calibrationBar.update_image()
 
     def on_histogram_button_pressed(self, ev):
         if self.threshold != ev.xdata:
@@ -563,11 +705,15 @@ class ThresholdCacheWidget(QtGui.QWidget):
 
             self.show_threshold()
             self.histogram_figure.canvas.draw()
-            self.save_data()
+            self.save_roi_data()
 
     def roiSelectorBar_roi_changed(self):
-        self.save_data()
+        self.save_roi_data()
         self.on_changed_ev()
+
+    def calibrationBar_calibration_changed(self):
+        self.save_calibration_data()
+
 
 class ExperimentResultWidget(QtGui.QWidget):
     def __init__(self, parent=None):

@@ -4,3 +4,4 @@ __author__ = 'peterwinter'
 from . import file_manager as fm
 from . import paths
 from .experiment import Experiment
+from .plate_distance import PlateDistance
