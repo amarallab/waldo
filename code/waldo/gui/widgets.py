@@ -26,6 +26,7 @@ from waldo.gui import tasking
 from waldo.wio import paths
 from .loaders import CacheThresholdLoadingDialog
 from .helpers import circle_3pt
+from waldo.conf import settings
 
 # from waldo.conf import settings
 # from waldo.prepare import summarize as prepare_summarize
@@ -106,12 +107,12 @@ class CalibrationBar(QtGui.QWidget):
         self.update_image()
 
     def clear_calibration(self):
-        self.enclosureSizeValue = 0
-        self.enclosureSizeLabel.setText("0")
-        self.enclosureSizeLineEdit.setText("0")
+        self.enclosureSizeValue = settings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE
+        self.enclosureSizeLabel.setText(str(self.enclosureSizeValue))
+        self.enclosureSizeLineEdit.setText(str(self.enclosureSizeValue))
 
     def json_to_data(self, data):
-        self.enclosureSizeValue = data.get('enclosureSize', 0)
+        self.enclosureSizeValue = data.get('enclosureSize', settings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE)
         self.enclosureSizeLabel.setText("{}".format(self.enclosureSizeValue))
         self.enclosureSizeLineEdit.setText("{}".format(self.enclosureSizeValue))
 

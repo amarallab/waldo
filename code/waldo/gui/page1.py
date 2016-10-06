@@ -120,6 +120,7 @@ class ConfigDialog(QtGui.QDialog):
 
         tapeFrameSearchLimit = "Tape Frame Search Limit"
         tapePixelSearchLimit = "Tape Pixel Search Limit"
+        defaultCalibrationEnclosureSize = "Default Calibration Enclosure Size"
         collisionPixelOverlapMargin = "Collision Pixel Overlap"
 
     def __init__(self, parent=None):
@@ -180,6 +181,11 @@ class ConfigDialog(QtGui.QDialog):
             guisettings.TAPE_PIXEL_SEARCH_LIMIT_RANGE,
             self.ToolTips.tapePixelSearchLimit)
 
+        self.defaultCalibrationEnclosureSize = self.createQLineEditIntValidator(
+            str(settings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE),
+            guisettings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE_RANGE,
+            self.ToolTips.defaultCalibrationEnclosureSize)
+        
         row = 0
         layout.addWidget(QtGui.QLabel("<b>Infer Arcs</b>"), row, 2, 1, 2)
 
@@ -191,6 +197,12 @@ class ConfigDialog(QtGui.QDialog):
         layout.addWidget(QtGui.QLabel("dD (pixels)"), row, 2, 1, 1)
         layout.addWidget(self.tapePixelSearchLimit, row, 3, 1, 1)
 
+        row += 1
+        layout.addWidget(QtGui.QLabel("<b>Calibration</b>"), row, 2, 1, 2)
+        
+        row += 1
+        layout.addWidget(QtGui.QLabel("Default Enclosure Size (mm)"), row, 2, 1, 1)
+        layout.addWidget(self.defaultCalibrationEnclosureSize, row, 3, 1, 1)
 
         #### COLLISION SETTINGS
 
@@ -259,6 +271,9 @@ class ConfigDialog(QtGui.QDialog):
         #                                                          settings.TAPE_MAX_SPEED_MULTIPLIER)
         # settings.TAPE_SHAKYCAM_ALLOWANCE = self._intValueOf(self.tapeShakycamAllowance,
         #                                                     settings.TAPE_SHAKYCAM_ALLOWANCE)
+
+        settings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE = self._intValueOf(self.defaultCalibrationEnclosureSize, 
+                                                                       settings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE)
 
         settings.save()
         self.close()

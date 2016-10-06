@@ -225,11 +225,6 @@ class WaldoProcessPage(QtGui.QWizardPage):
             PROCESS_BLOBS_CALLBACK(1)
             callback(0, 1.0 / STEPS)
 
-            # images_summarize(experiment=self.data.experiment, callback=PROCESS_IMAGES_CALLBACK,
-            #                  image_callback=NEW_IMAGE_CALLBACK)
-            # PROCESS_IMAGES_CALLBACK(1)
-            # callback(0, 2.0 / STEPS)
-
             experiment = self.data.experiment
             LOAD_EXPERIMENT_CALLBACK(1)
             callback(0, 2.0 / STEPS)

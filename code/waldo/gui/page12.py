@@ -272,10 +272,6 @@ class BatchModeWaldoProcessPage(QtGui.QWizardPage):
             PROCESS_BLOBS_CALLBACK(1)
             callback(0, 1.0 / STEPS)
 
-            # images_summarize(experiment=experiment, callback=PROCESS_IMAGES_CALLBACK, image_callback=NEW_IMAGE_CALLBACK)
-            # PROCESS_IMAGES_CALLBACK(1)
-            # callback(0, 2.0 / STEPS)
-
             LOAD_EXPERIMENT_CALLBACK(1)
             callback(0, 2.0 / STEPS)
 
