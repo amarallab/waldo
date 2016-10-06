@@ -19,7 +19,7 @@ class PlateDistance:
         self.v2 = 0          # Vert line size (right)
         self.v = 0           # Vert lien size (average)
         self.aspect = 1      # Horiz / Vert aspect
-       
+
     @staticmethod
     def __intersection_line_line(lines, a, b):
         m1, b1 = lines[a]
@@ -106,6 +106,9 @@ class PlateDistance:
 
         self.aspect = aspect
     
+    def largest_distance(self):
+        return self.h if self.h > self.v else self.v
+
     def largest_segment(self):
         print("TL {}, BL {}, TR {}, BR {}".format(self.tl, self.bl, self.tr, self.br))
         if self.h > self.v:
@@ -129,6 +132,56 @@ class PlateDistance:
         r3 = p2[0] + arrow_size * math.cos(ang - math.pi*3.0/4.0), p2[1] + arrow_size * math.sin(ang - math.pi*3.0/4.0)
         return [[r0, p1, r1], [p1, p2], [r2, p2, r3]]
 
+    def polygon(self, border, corner):
+        if self.tl is None:
+            return []
+
+        # Left line
+        n = self.tl[0] - self.bl[0], self.tl[1] - self.bl[1]
+        d = math.hypot(n[0], n[1])
+        if d == 0:
+            return []
+        n = n[0] / d, n[1] / d
+        nt = n[1], -n[0]
+        
+        tlA = self.tl[0] + nt[0] * border - n[0] * corner, self.tl[1] + nt[1] * border - n[1] * corner
+        blA = self.bl[0] + nt[0] * border + n[0] * corner, self.bl[1] + nt[1] * border + n[1] * corner
+
+        # Right line
+        n = self.tr[0] - self.br[0], self.tr[1] - self.br[1]
+        d = math.hypot(n[0], n[1])
+        if d == 0:
+            return []
+        n = n[0] / d, n[1] / d
+        nt = -n[1], n[0]
+
+        trA = self.tr[0] + nt[0] * border - n[0] * corner, self.tr[1] + nt[1] * border - n[1] * corner
+        brA = self.br[0] + nt[0] * border + n[0] * corner, self.br[1] + nt[1] * border + n[1] * corner
+    
+        # Top line
+        n = self.tl[0] - self.tr[0], self.tl[1] - self.tr[1]
+        d = math.hypot(n[0], n[1])
+        if d == 0:
+            return []
+        n = n[0] / d, n[1] / d
+        nt = -n[1], n[0]
+
+        tlB = self.tl[0] + nt[0] * border - n[0] * corner, self.tl[1] + nt[1] * border - n[1] * corner
+        trB = self.tr[0] + nt[0] * border + n[0] * corner, self.tr[1] + nt[1] * border + n[1] * corner
+
+        # Bottom line
+        n = self.bl[0] - self.br[0], self.bl[1] - self.br[1]
+        d = math.hypot(n[0], n[1])
+        if d == 0:
+            return []
+        n = n[0] / d, n[1] / d
+        nt = -n[1], n[0]
+
+        blB = self.bl[0] - nt[0] * border - n[0] * corner, self.bl[1] - nt[1] * border - n[1] * corner
+        brB = self.br[0] - nt[0] * border + n[0] * corner, self.br[1] - nt[1] * border + n[1] * corner
+            
+        return [tlA, tlB, trB, trA, brA, brB, blB, blA]        
+        
     def __repr__(self):
         return "H side: {}, {}, mean: {}, V side: {}, {}, mean: {}, aspect: {}" \
             .format(self.h1, self.h2, self.h, self.v1, self.v2, self.v, self.aspect)

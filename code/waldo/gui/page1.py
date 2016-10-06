@@ -123,6 +123,9 @@ class ConfigDialog(QtGui.QDialog):
         defaultCalibrationEnclosureSize = "Default Calibration Enclosure Size"
         collisionPixelOverlapMargin = "Collision Pixel Overlap"
 
+        roiBorderOffset = "Pixels to contract the borders on guess ROI polygon"
+        roiCornerOffset = "Pixels to contract in the corners on guess ROI polygon"
+
     def __init__(self, parent=None):
         super(ConfigDialog, self).__init__(parent)
 
@@ -211,6 +214,16 @@ class ConfigDialog(QtGui.QDialog):
             guisettings.COLLISION_PIXEL_OVERLAP_MARGIN_RANGE,
             self.ToolTips.collisionPixelOverlapMargin)
 
+        self.roiBorderOffset = self.createQLineEditIntValidator(
+            str(settings.ROI_BORDER_OFFSET),
+            guisettings.ROI_BORDER_OFFSET_RANGE,
+            self.ToolTips.roiBorderOffset)
+        
+        self.roiCornerOffset = self.createQLineEditIntValidator(
+            str(settings.ROI_CORNER_OFFSET),
+            guisettings.ROI_CORNER_OFFSET_RANGE,
+            self.ToolTips.roiCornerOffset)
+        
         row = 0
         layout.addWidget(QtGui.QLabel("<b>Collision</b>"), row, 4, 1, 2)
 
@@ -218,6 +231,17 @@ class ConfigDialog(QtGui.QDialog):
         layout.addWidget(QtGui.QLabel("Min Pixel Overlap Diff (pixels)"), row, 4, 1, 1)
         layout.addWidget(self.collisionPixelOverlapMargin, row, 5, 1, 1)
 
+        row += 1
+        layout.addWidget(QtGui.QLabel("<b>Guess ROI Polygon</b>"), row, 4, 1, 2)
+
+        row += 1
+        layout.addWidget(QtGui.QLabel("Border Offset"), row, 4, 1, 1)
+        layout.addWidget(self.roiBorderOffset, row, 5, 1, 1)
+
+        row += 1
+        layout.addWidget(QtGui.QLabel("Corner Offset"), row, 4, 1, 1)
+        layout.addWidget(self.roiCornerOffset, row, 5, 1, 1)
+        
         # Buttons
         buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | QtGui.QDialogButtonBox.Cancel, Qt.Horizontal,
                                          self)
@@ -275,6 +299,9 @@ class ConfigDialog(QtGui.QDialog):
         settings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE = self._intValueOf(self.defaultCalibrationEnclosureSize, 
                                                                        settings.DEFAULT_CALIBRATION_ENCLOSURE_SIZE)
 
+        settings.ROI_BORDER_OFFSET = self._intValueOf(self.roiBorderOffset, settings.ROI_BORDER_OFFSET)
+        settings.ROI_CORNER_OFFSET = self._intValueOf(self.roiCornerOffset, settings.ROI_CORNER_OFFSET)
+    
         settings.save()
         self.close()
 

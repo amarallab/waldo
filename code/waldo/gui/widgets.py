@@ -117,7 +117,12 @@ class CalibrationBar(QtGui.QWidget):
         self.enclosureSizeLineEdit.setText("{}".format(self.enclosureSizeValue))
 
     def data_to_json(self):
-        return {'enclosureSize': self.enclosureSizeValue}
+        mm = self.enclosureSizeValue
+        px = self.plate_distance.largest_distance()
+        factor = 1 if px == 0 else mm / px
+        return {'enclosureSize_mm': mm,
+                'enclosureSize_px': px,
+                'px_to_mm': factor}
 
     def update_image(self):
         for artist in self.plate_distance_artists:
@@ -179,6 +184,7 @@ class ROISelectorBar(QtGui.QWidget):
         self.figure = figure
         self.ax = ax
         self.parent = parent
+        self.guess_polygon = []
 
         self.roi_type = 'circle'
         self.roi_center = [0, 0]
@@ -193,9 +199,13 @@ class ROISelectorBar(QtGui.QWidget):
         self.explainLabel = QtGui.QLabel("")
         self.newCircleButton = QtGui.QPushButton("New Circle")
         self.newPolygonButton = QtGui.QPushButton("New Polygon")
+        self.guessPolygonButton = QtGui.QPushButton("Guess polygon")
+
         self.cancelCircleButton = QtGui.QPushButton("Cancel")
         self.closePolygonButton = QtGui.QPushButton("Close")
         self.cancelPolygonButton = QtGui.QPushButton("Cancel")
+        self.acceptGuessPolygonButton = QtGui.QPushButton("Accept")
+        self.cancelGuessPolygonButton = QtGui.QPushButton("Cancel")
 
         self.explainLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.newCircleButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -203,20 +213,28 @@ class ROISelectorBar(QtGui.QWidget):
         self.cancelCircleButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.closePolygonButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.cancelPolygonButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.acceptGuessPolygonButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.cancelGuessPolygonButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         self.newCircleButton.clicked.connect(self.newCircleButton_clicked)
         self.newPolygonButton.clicked.connect(self.newPolygonButton_clicked)
+        self.guessPolygonButton.clicked.connect(self.guessPolygonButton_clicked)
         self.cancelCircleButton.clicked.connect(self.cancelCircleButton_clicked)
         self.closePolygonButton.clicked.connect(self.closePolygonButton_clicked)
         self.cancelPolygonButton.clicked.connect(self.cancelPolygonButton_clicked)
+        self.acceptGuessPolygonButton.clicked.connect(self.acceptGuessPolygonButton_clicked)
+        self.cancelGuessPolygonButton.clicked.connect(self.cancelGuessPolygonButton_clicked)
 
         layout = QtGui.QHBoxLayout()
         layout.addWidget(self.explainLabel)
         layout.addWidget(self.newCircleButton)
         layout.addWidget(self.newPolygonButton)
+        layout.addWidget(self.guessPolygonButton)
         layout.addWidget(self.cancelCircleButton)
         layout.addWidget(self.cancelPolygonButton)
         layout.addWidget(self.closePolygonButton)
+        layout.addWidget(self.cancelGuessPolygonButton)
+        layout.addWidget(self.acceptGuessPolygonButton)
         self.setLayout(layout)
 
         self.figure.canvas.mpl_connect('button_press_event', self.on_figure_button_pressed)
@@ -227,9 +245,12 @@ class ROISelectorBar(QtGui.QWidget):
         self.explainLabel.setVisible(False)
         self.newCircleButton.setVisible(True)
         self.newPolygonButton.setVisible(True)
+        self.guessPolygonButton.setVisible(True)
         self.cancelCircleButton.setVisible(False)
         self.closePolygonButton.setVisible(False)
         self.cancelPolygonButton.setVisible(False)
+        self.acceptGuessPolygonButton.setVisible(False)
+        self.cancelGuessPolygonButton.setVisible(False)
 
     def clear_roi(self):
         #self.circle = None
@@ -250,6 +271,9 @@ class ROISelectorBar(QtGui.QWidget):
                 'y': self.roi_center[1],
                 'r': self.roi_radius,
                 'points': self.roi_points}
+
+    def set_guess_polygon(self, points):
+        self.guess_polygon_points = points
 
     def update_image(self):
         if self.artist is not None:
@@ -293,9 +317,12 @@ class ROISelectorBar(QtGui.QWidget):
         self.explainLabel.setVisible(True)
         self.newCircleButton.setVisible(False)
         self.newPolygonButton.setVisible(False)
+        self.guessPolygonButton.setVisible(False)
         self.cancelCircleButton.setVisible(True)
         self.closePolygonButton.setVisible(False)
         self.cancelPolygonButton.setVisible(False)
+        self.acceptGuessPolygonButton.setVisible(False)
+        self.cancelGuessPolygonButton.setVisible(False)
 
         self.previous_artist = self.artist
         if self.artist is not None:
@@ -311,9 +338,12 @@ class ROISelectorBar(QtGui.QWidget):
         self.explainLabel.setVisible(True)
         self.newCircleButton.setVisible(False)
         self.newPolygonButton.setVisible(False)
+        self.guessPolygonButton.setVisible(False)
         self.cancelCircleButton.setVisible(False)
         self.closePolygonButton.setVisible(True)
         self.cancelPolygonButton.setVisible(True)
+        self.acceptGuessPolygonButton.setVisible(False)
+        self.cancelGuessPolygonButton.setVisible(False)
 
         self.previous_artist = self.artist
         if self.artist is not None:
@@ -321,6 +351,35 @@ class ROISelectorBar(QtGui.QWidget):
             self.artist = None
             self.figure.canvas.draw()
 
+    def guessPolygonButton_clicked(self, ev):
+        self.current_roi_type = 'guess_polygon'
+
+        self.explainLabel.setText("Accept this polygon?")
+        self.explainLabel.setVisible(True)
+        self.newCircleButton.setVisible(False)
+        self.newPolygonButton.setVisible(False)
+        self.guessPolygonButton.setVisible(False)
+        self.cancelCircleButton.setVisible(False)
+        self.closePolygonButton.setVisible(False)
+        self.cancelPolygonButton.setVisible(False)
+        self.acceptGuessPolygonButton.setVisible(True)
+        self.cancelGuessPolygonButton.setVisible(True)
+
+        self.previous_artist = self.artist
+        if self.artist is not None:
+            self.artist.remove()
+            self.artist = None
+            self.figure.canvas.draw()
+
+        self.current_polygon_artist = plt.Polygon(
+            self.guess_polygon_points,
+            closed=True,
+            linewidth=0,
+            fill=True,
+            color=self.color)
+        self.ax.add_artist(self.current_polygon_artist)
+        self.figure.canvas.draw()
+        
     def cancelCircleButton_clicked(self, ev):
         self.current_roi_type = None
         self.set_initial_state()
@@ -338,6 +397,46 @@ class ROISelectorBar(QtGui.QWidget):
             self.__close_polygon()
 
     def cancelPolygonButton_clicked(self, ev):
+        self.current_roi_type = None
+        self.set_initial_state()
+
+        draw = False
+        if self.previous_artist is not None:
+            self.artist = self.previous_artist
+            self.ax.add_artist(self.artist)
+            draw = True
+        self.previous_artist = None
+
+        if self.current_polygon_artist is not None:
+            self.current_polygon_artist.remove()
+            self.current_polygon_artist = None
+            draw = True
+
+        if draw:
+            self.figure.canvas.draw()
+
+    def acceptGuessPolygonButton_clicked(self, ev):
+        self.roi_points = self.guess_polygon_points
+        self.set_initial_state()
+
+        self.artist = plt.Polygon(
+            self.roi_points,
+            closed=True,
+            linewidth=0,
+            fill=True,
+            color=self.color)
+
+        if self.current_polygon_artist is not None:
+            self.current_polygon_artist.remove()
+            self.current_polygon_artist = None
+
+        self.ax.add_artist(self.artist)
+        self.figure.canvas.draw()
+
+        self.roi_type = 'polygon'
+        self.roi_changed.emit()
+
+    def cancelGuessPolygonButton_clicked(self, ev):
         self.current_roi_type = None
         self.set_initial_state()
 
@@ -535,12 +634,16 @@ class ThresholdCacheWidget(QtGui.QWidget):
             self.background = None
             self.mid_image = None
             self.plate_distance = None
+            self.roiSelectorBar.set_guess_polygon([])
         else:
             self.background = ThresholdCacheWidget.create_background(impaths)
             self.im_shape = self.background.shape # shape is (y,x)
             self.mid_image = mpimg.imread(impaths[int(len(impaths)/2)])
             self.plate_distance = PlateDistance(self.background)
             self.plate_distance.calculate()
+            p = self.plate_distance.polygon(border=settings.ROI_BORDER_OFFSET, corner=settings.ROI_CORNER_OFFSET)
+            p = [(y, x) for x, y in p]
+            self.roiSelectorBar.set_guess_polygon(p)
 
         self.calibrationBar.update_plate_distance(self.plate_distance)
         self.mouse_points = []
