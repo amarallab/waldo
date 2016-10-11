@@ -103,7 +103,7 @@ class BatchModeFinalPage(QtGui.QWizardPage):
                 self.message.setText("<font color=\"red\">Failed:</font> {}".format(ex))
                 self.message.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
                 showExperiment = False
-                print("Trace: {}".format(self.message.getText()))
+                print("Trace: {}".format(ex))
                 print("End Trace.")
             if showExperiment:
                 experiment = Experiment(experiment_id=experiment_id)

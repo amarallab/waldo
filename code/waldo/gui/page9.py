@@ -79,7 +79,7 @@ class FinalPage(QtGui.QWizardPage):
             self.message.setText("<font color=\"red\">Failed:</font> {}".format(ex))
             self.message.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
             showExperiment = False
-            print("Trace: {}".format(tb))
+            print("Trace: {}".format(ex))
             print("End Trace.")
 
         if showExperiment:
