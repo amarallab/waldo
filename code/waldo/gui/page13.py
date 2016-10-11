@@ -99,12 +99,12 @@ class BatchModeFinalPage(QtGui.QWizardPage):
                 self.message.setVisible(False)
             else:
                 tb, ex = param
+                print("Trace: {}".format(ex))
+                print("End Trace.")
                 self.message.setVisible(True)
                 self.message.setText("<font color=\"red\">Failed:</font> {}".format(ex))
                 self.message.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
                 showExperiment = False
-                print("Trace: {}".format(ex))
-                print("End Trace.")
             if showExperiment:
                 experiment = Experiment(experiment_id=experiment_id)
                 self.result.setVisible(True)
