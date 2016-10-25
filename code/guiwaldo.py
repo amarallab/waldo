@@ -2,7 +2,6 @@ __author__ = 'heltena'
 
 import sys
 
-
 compile_to_windows = False
 
 if compile_to_windows:

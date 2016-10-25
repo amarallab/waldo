@@ -96,7 +96,6 @@ class TerminalsBuilder(DataFrameBuilder):
                 'f0': min(blob['frame']), 'fN': max(blob['frame']),
             })
 
-
 def create_primary_df(experiment, df_type=None, callback=None):
     builders = {'bounds': BoundsBuilder(),
                 'terminals': TerminalsBuilder(),
@@ -104,8 +103,10 @@ def create_primary_df(experiment, df_type=None, callback=None):
 
     assert df_type in builders, '{t} not a real type of df'.format(t=df_type)
     builder = builders[df_type]
-    blobs = list(experiment.blobs())
-    count = float(len(blobs))
+    count = 0
+    for _ in experiment.blobs():
+        count += 1
+    blobs = experiment.blobs()
     for i, (bid, blob) in enumerate(blobs):
         try:
             builder.append(bid, blob)

@@ -44,7 +44,7 @@ def summarize(ex_id, experiment=None, verbose=False, callback=None):
     else:
         cb_load = cb_pri = cb_sec = cb_pri_steps = None
 
-    print('preparing blob files')
+    talk('preparing blob files')
     if experiment is None:
         # load experiment
         experiment = wio.Experiment(experiment_id=ex_id, callback=cb_load)
@@ -53,12 +53,11 @@ def summarize(ex_id, experiment=None, verbose=False, callback=None):
 
     def save_processed_data(data, experiment):
         talk(' - Saving to CSVs...')
-        print(' - Saving to CSVs...')
         dumped_keys = []
         for key, value in six.iteritems(data):
             talk('   - {}'.format(key))
-            print('   - {}'.format(key))
             experiment.prepdata.dump(data_type=key, dataframe=value, index=False)
+            dumped_keys.append(key)
 
         # free up memory once this is saved
         for key in dumped_keys:
@@ -82,7 +81,6 @@ def summarize(ex_id, experiment=None, verbose=False, callback=None):
 
     # generate secondary data
     talk(' - Generating secondary data...')
-    print(' - Generating secondary data...')
     # data['roi'] = secondary.in_roi(experiment=experiment, bounds=data['bounds'])
     data['roi'] = secondary.in_roi(experiment=experiment, bounds=None)
     if callback:
