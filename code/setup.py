@@ -1,6 +1,7 @@
 import os
 import glob
 from distutils.core import setup
+import sys
 
 import py2exe
 import matplotlib
@@ -29,6 +30,18 @@ data_files.extend(matplotlib.get_py2exe_datafiles())
 data_files.extend(find_data_files('C:\\Program Files (x86)\\Graphviz2.38\\bin', '', ['config6', '*.dll', '*.exe']))
 data_files.extend(find_data_files('c:\\Python27\\Lib\\site-packages\\skimage\io\_plugins', 'skimage\\io\\_plugins', ['*.ini']))
 data_files.extend(find_data_files('c:\\Python27\\lib\\site-packages\\brewer2mpl\data', 'brewer2mpl\\data', ['*.json', '*.txt']))
+
+import numpy as np
+def numpy_dll_paths_fix():
+    paths = set()
+    np_path = np.__path__[0]
+    for dirpath, _, filenames in os.walk(np_path):
+        for item in filenames:
+            if item.endswith('.dll'):
+                paths.add(dirpath)
+                break
+    sys.path.append(*list(paths))
+numpy_dll_paths_fix()
 
 setup(windows=[os.path.join(HERE, 'guiwaldo.py')],
       data_files=data_files,

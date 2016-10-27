@@ -220,7 +220,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
             STEPS = 4.0
             ex_id = self.data.experiment.id
             callback(0, 0.0 / STEPS)
-            
+
             prepare_summarize(ex_id, experiment=self.data.experiment, callback=PROCESS_BLOBS_CALLBACK)
             PROCESS_BLOBS_CALLBACK(1)
             callback(0, 1.0 / STEPS)
@@ -251,7 +251,7 @@ class WaldoProcessPage(QtGui.QWizardPage):
         except Exception as ex:
             tb = traceback.format_exc()
             self.data.single_result_message = (WaldoBatchRunResult.FAILED, (ex, tb))
-         
+
     def show_image(self, id, image):
         self._set_image(image)
 
