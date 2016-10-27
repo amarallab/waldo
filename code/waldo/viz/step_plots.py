@@ -25,10 +25,9 @@ class StepPlot(object):
         widths = list(step_df['lifespan'])
         height = 1
 
-        color = ax._get_lines.prop_cycler.next()
+        color = ax._get_lines.color_cycle.next()
         for i in range(nth_color):
-            color = ax._get_lines.prop_cycler.next()
-        color = color['color']
+            color = ax._get_lines.color_cycle.next()
 
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x, y), height=height, width=width,
@@ -174,10 +173,9 @@ class StepPlot2(object):
         widths = list(step_df['lifespan'])
         height = 1
 
-        color = ax._get_lines.prop_cycler.next()
+        color = ax._get_lines.color_cycle.next()
         for i in range(nth_color):
-            color = ax._get_lines.prop_cycler.next()
-        color = color['color']
+            color = ax._get_lines.color_cycle.next()
 
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x, y), height=height, width=width,

@@ -126,10 +126,9 @@ def step_facets(df, df2, t1=5, t2=20):
         widths = list(step_df['lifespan'])
         height = 1
 
-        color = ax._get_lines.prop_cycler.next()
+        color = ax._get_lines.color_cycle.next()
         for i in range(nth_color):
-            color = ax._get_lines.prop_cycler.next()
-        color = color['color']
+            color = ax._get_lines.color_cycle.next()
 
         for y, (x, width) in enumerate(zip(xs, widths)):
             steps.append(patches.Rectangle((x,y), height=height, width=width,
@@ -244,11 +243,15 @@ def make_fig1(ex_id, step_min_move = 1, save_fig=False):
     fig, ax = plt.subplots()
     ### AX 0
     # print 'starting ax 0'
-    prop_cycler = ax._get_lines.prop_cycler
+    # prop_cycler = ax._get_lines.prop_cycler
+    # for i in range(5):
+    #     c = prop_cycler.next()
+    # if c is not None:
+    #     c = c['color']
+    c = ax._get_lines.color_cycle.next()
     for i in range(5):
-        c = prop_cycler.next()
-    if c is not None:
-        c = c['color']
+        c = ax._get_lines.color_cycle.next()
+
     wf.draw_minimal_colors_on_image_T(ex_id, time=30*30, ax=ax, color=c)
 
     if save_fig:
