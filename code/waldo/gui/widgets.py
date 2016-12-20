@@ -163,7 +163,7 @@ class CalibrationBar(QtGui.QWidget):
         self.saveButton.setVisible(True)
         self.cancelButton.setVisible(True)
         self.update_image()
-        
+
     def saveButton_clicked(self, ev):
         value, result = self.enclosureSizeLineEdit.text().toInt()
         if result:
@@ -379,7 +379,7 @@ class ROISelectorBar(QtGui.QWidget):
             color=self.color)
         self.ax.add_artist(self.current_polygon_artist)
         self.figure.canvas.draw()
-        
+
     def cancelCircleButton_clicked(self, ev):
         self.current_roi_type = None
         self.set_initial_state()
@@ -730,12 +730,12 @@ class ThresholdCacheWidget(QtGui.QWidget):
     def save_calibration_data(self):
         if self.calibration_filename is None:
             return
-        
+
         data = self.calibrationBar.data_to_json()
         ThresholdCacheWidget.mkdir_p(os.path.dirname(self.calibration_filename))
         with open(self.calibration_filename, "wt") as f:
             f.write(json.dumps(data, indent=4))
-    
+
     def update_data(self, thresholds, current_threshold):
         if len(thresholds) == 0:
             self.ax_objects.clear()

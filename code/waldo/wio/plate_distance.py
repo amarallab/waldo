@@ -14,7 +14,7 @@ class PlateDistance:
         self.br = (0, 0)     # Bottom Right point
         self.h1 = 0          # Horiz line size (top)
         self.h2 = 0          # Horiz line size (bottom)
-        self.h = 0           # Horiz line size (average) 
+        self.h = 0           # Horiz line size (average)
         self.v1 = 0          # Vert line size (left)
         self.v2 = 0          # Vert line size (right)
         self.v = 0           # Vert lien size (average)
@@ -46,7 +46,7 @@ class PlateDistance:
         kernel = np.ones((30, 30))
         n = scimorph.binary_erosion(n, kernel)
         n = scimorph.binary_dilation(n, kernel)
-    
+
         print("Shape: {} x {}".format(n.shape[0], n.shape[1]))
         center_x = n.shape[0] / 2
         center_y = n.shape[1] / 2
@@ -89,13 +89,13 @@ class PlateDistance:
         v = (v1 + v2) / 2
 
         aspect = h/v
-        
+
         self.lines = lines
         self.tl = tl
         self.tr = tr
         self.bl = bl
         self.br = br
-        
+
         self.h1 = h1
         self.h2 = h2
         self.h = h
@@ -105,7 +105,7 @@ class PlateDistance:
         self.v = v
 
         self.aspect = aspect
-    
+
     def largest_distance(self):
         return self.h if self.h > self.v else self.v
 
@@ -124,7 +124,7 @@ class PlateDistance:
         p1, p2 = self.largest_segment()
         v = (p2[0] - p1[0], p2[1] - p1[1])
         ang = math.atan2(v[1], v[0])
-        
+
         r0 = p1[0] + arrow_size * math.cos(ang + math.pi/4), p1[1] + arrow_size * math.sin(ang + math.pi/4)
         r1 = p1[0] + arrow_size * math.cos(ang - math.pi/4), p1[1] + arrow_size * math.sin(ang - math.pi/4)
 
@@ -143,7 +143,7 @@ class PlateDistance:
             return []
         n = n[0] / d, n[1] / d
         nt = n[1], -n[0]
-        
+
         tlA = self.tl[0] + nt[0] * border - n[0] * corner, self.tl[1] + nt[1] * border - n[1] * corner
         blA = self.bl[0] + nt[0] * border + n[0] * corner, self.bl[1] + nt[1] * border + n[1] * corner
 
@@ -157,7 +157,7 @@ class PlateDistance:
 
         trA = self.tr[0] + nt[0] * border - n[0] * corner, self.tr[1] + nt[1] * border - n[1] * corner
         brA = self.br[0] + nt[0] * border + n[0] * corner, self.br[1] + nt[1] * border + n[1] * corner
-    
+
         # Top line
         n = self.tl[0] - self.tr[0], self.tl[1] - self.tr[1]
         d = math.hypot(n[0], n[1])
@@ -179,9 +179,9 @@ class PlateDistance:
 
         blB = self.bl[0] - nt[0] * border - n[0] * corner, self.bl[1] - nt[1] * border - n[1] * corner
         brB = self.br[0] - nt[0] * border + n[0] * corner, self.br[1] - nt[1] * border + n[1] * corner
-            
-        return [tlA, tlB, trB, trA, brA, brB, blB, blA]        
-        
+
+        return [tlA, tlB, trB, trA, brA, brB, blB, blA]
+
     def __repr__(self):
         return "H side: {}, {}, mean: {}, V side: {}, {}, mean: {}, aspect: {}" \
             .format(self.h1, self.h2, self.h, self.v1, self.v2, self.v, self.aspect)
