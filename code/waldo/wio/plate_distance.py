@@ -24,10 +24,22 @@ class PlateDistance:
     def __intersection_line_line(lines, a, b):
         m1, b1 = lines[a]
         m2, b2 = lines[b]
-        if m1 == m2:
+        if m1 is None and m2 is None:
+            if b1 == b2:
+                return (b1, 0)
+            else:
+                return (-1, -1)
+        elif m1 is None:
+            x = b1
+            y = m2 * x + b2
+        elif m2 is None:
+            x = b2
+            y = m1 * x + b1
+        elif m1 == m2:
             return -1, -1
-        x = (b2 - b1) / (m1 - m2)
-        y = m1 * x + b1
+        else:
+            x = (b2 - b1) / (m1 - m2)
+            y = m1 * x + b1
         return x, y
 
     @staticmethod
@@ -47,15 +59,15 @@ class PlateDistance:
         n = scimorph.binary_erosion(n, kernel)
         n = scimorph.binary_dilation(n, kernel)
 
-        print("Shape: {} x {}".format(n.shape[0], n.shape[1]))
         center_x = n.shape[0] / 2
         center_y = n.shape[1] / 2
-
+        print("Shape: {} x {} (center: {}, {})".format(n.shape[0], n.shape[1], center_x, center_y))
+        
         arrows = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         lines = []
         for dx, dy in arrows:
             current_line = []
-            for i in range(-300, 300, 2):
+            for i in range(-300, 300, 15):
                 if dx == 0:  # Looking top and bottom
                     x = center_x + i
                     y = center_y
@@ -72,8 +84,14 @@ class PlateDistance:
                         x += dx
                 current_line.append((x, y))
             xx, yy = zip(*current_line)
-            m, b = np.polyfit(xx, yy, 1)
+            if len(set(xx)) == 1:  # Vertical line?
+                m = None  # That means it is a vertical line and 'b' is the position
+                b = xx[0]
+            else:
+                m, b = np.polyfit(xx, yy, 1)
             lines.append((m, b))
+            print(current_line)
+            print("Added line {}, {}".format(m, b))
 
         tl = self.__intersection_line_line(lines, 0, 2)
         tr = self.__intersection_line_line(lines, 0, 3)
@@ -185,3 +203,31 @@ class PlateDistance:
     def __repr__(self):
         return "H side: {}, {}, mean: {}, V side: {}, {}, mean: {}, aspect: {}" \
             .format(self.h1, self.h2, self.h, self.v1, self.v2, self.v, self.aspect)
+
+    def __repr__(self):
+        return "H side: {}, {}, mean: {}, V side: {}, {}, mean: {}, aspect: {}" \
+            .format(self.h1, self.h2, self.h, self.v1, self.v2, self.v, self.aspect)
+    
+    def plot(self):
+        n = self.image.copy()
+
+        line_points = []
+        for m, b in self.lines:
+            points = []
+            if m is None: # Vertical line
+                for y in range(n.shape[1]):
+                    points.append((b, y))
+            else:
+                for x in range(0, n.shape[0], 20):
+                    y = x * m + b
+                    if y > 0 and y < n.shape[1]:
+                        points.append((x, y))
+            line_points.append(points)        
+        fig = plt.figure(figsize=(10, 10))
+        tmp_n = np.asarray(self.image)
+        plt.imshow(tmp_n, cmap='Greys_r')
+        for points in line_points:
+            xx, yy = zip(*points)
+            plt.scatter(yy, xx, color="yellow")
+        for x, y in [self.tl, self.bl, self.tr, self.br]:
+            plt.scatter(y, x, color="green")
