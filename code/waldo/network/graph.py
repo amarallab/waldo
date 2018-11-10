@@ -90,6 +90,14 @@ class Graph(nx.DiGraph):
 
         self.tag_edges()
 
+    def _edges_iter(self):
+        # newer NX adapter
+        try:
+            return self.edges_iter()
+        except AttributeError:
+            return self.edges()
+
+
     def tag_edges(self):
         """
         Record all original edges as the node ids can become totally
@@ -100,14 +108,14 @@ class Graph(nx.DiGraph):
         Multiple calls to this function will not overwrite edge data if
         already present.
         """
-        for a, b in self.edges_iter():
-            self.edge[a][b].setdefault(kc.BLOB_ID_EDGES, {(a, b)})
+        for a, b in self._edges_iter():
+            self.edges[a, b].setdefault(kc.BLOB_ID_EDGES, {(a, b)})
 
     def copy(self):
         return type(self)(self, experiment=self.experiment)
 
     def components(self, node):
-        return set(int(n) for n in self.node[node].get(kc.COMPONENTS, [node]))
+        return set(int(n) for n in self.nodes[node].get(kc.COMPONENTS, [node]))
 
     def where_is(self, bid):
         return self._whereis_data.get(bid, bid)
@@ -321,7 +329,7 @@ class Graph(nx.DiGraph):
                     raise AssertionError("Node {} missing required key '{}'".format(
                         node, req_key))
 
-        for a, b in self.edges_iter():
+        for a, b in self._edges_iter():
             f_delta = self.node[b][kc.FRAME_BORN] - self.node[a][kc.FRAME_DIED]
             if f_delta < - acceptable_f_delta:
                 print('limit', acceptable_f_delta)
